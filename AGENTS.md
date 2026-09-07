@@ -129,7 +129,9 @@ Run all five before any commit that touches code. A dependency change re-runs th
 
 `npm run visual` boots the production build, drives OrbitControls with synthesised pointer and wheel input, and writes twelve frames to `artifacts/visual/` — six azimuths at street level and six from above — plus a `manifest.json` naming each frame's camera pose and its SHA-256.
 
-What it proves on its own: the app rendered, the input path moved the camera, and each frame is a distinct, non-blank 1280x720 image. It fails loudly when WebGL is unavailable, when the loop draws no frames, when the camera never settles, when the page on the preview port is not this app, and when two frames come back identical.
+What it proves on its own: the app rendered, the input path moved the camera, and each frame is a distinct, non-blank 1280x720 image.
+
+Three of its failure paths have been made to go red on purpose, with the mutation and the message it produced recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, and a page that fails to boot. Four more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, the camera never settling, and another app answering on the preview port. Treat those four as code, not as evidence.
 
 What it cannot prove is that any of those frames looks right. Open all twelve at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
 

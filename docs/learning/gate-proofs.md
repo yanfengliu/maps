@@ -70,4 +70,9 @@ Exit status 1, in seconds rather than at the ten-minute test timeout.
 
 ## Not yet proved red
 
-The WebGL-unavailable path in `createRenderer` and `waitForFirstFrame` has not been made to fire. Forcing headless Chromium to refuse a context without also breaking the page some other way needs a launch-flag combination that was not worth chasing in Phase 0. Its message is written and its code path is reachable, but nobody has watched it happen.
+Four failure paths are written and reachable and have never been watched to fire. They are code, not evidence, and a later phase that relies on one should make it go red first.
+
+- **WebGL unavailable** — `createRenderer` and `waitForFirstFrame`. Forcing headless Chromium to refuse a context without also breaking the page some other way needs a launch-flag combination that was not worth chasing in Phase 0.
+- **The render loop stopping mid-sweep** — the stalled-frame-count branch in `OrbitDriver.settle`. Needs the loop to die after the first frame, which no natural failure in Phase 0 produced.
+- **The camera never settling** — the poll-limit branch in `OrbitDriver.settle`. Would need damping turned off or a control that oscillates.
+- **Another app on the preview port** — `assertServingThisApp`. This one *was* observed as the failure it was written to prevent, but only before the check existed, so the check itself has never been seen to reject anything.
