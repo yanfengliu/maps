@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Fetched map data — Phase 1, `npm run data:fetch`.
+# About 620 MiB downloaded and 1.4 GiB unpacked, all of it regenerable from
+# tools/data/manifest.ts, and far over the canon's blob ceilings. The repository
+# holds the recipe and the checksums; it never holds the bytes.
+#
+# Anchored with a leading slash on purpose. A bare `data/` matches a directory of
+# that name at any depth, and it silently swallowed `tools/data/` — the fetch
+# script itself — which `git status` then reported as simply not existing.
+/data/

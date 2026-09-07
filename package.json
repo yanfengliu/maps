@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "data:fetch": "node tools/data/fetch.ts",
     "visual": "npm run build && playwright test",
     "visual:install": "playwright install chromium",
     "audit": "npm audit --audit-level=high"

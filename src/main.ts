@@ -1,5 +1,6 @@
 import { createApp } from "./app.js";
 import { installFailedBridge } from "./harness/bridge.js";
+import { installAttribution } from "./ui/attribution.js";
 import { DEFAULT_SEED } from "./world/rng.js";
 
 /**
@@ -24,6 +25,12 @@ function boot(): void {
   const requested = new URLSearchParams(window.location.search).get("seed");
   const parsed = requested === null ? Number.NaN : Number.parseInt(requested, 10);
   const seed = Number.isFinite(parsed) ? parsed : DEFAULT_SEED;
+
+  // Before the scene, not after: PLATEAU, OpenStreetMap and GSI all require a
+  // credit, so a run that draws the city without one is the wrong failure to
+  // tolerate. It throws if the element is missing, and the handler below turns
+  // that into a message on the page.
+  installAttribution(document);
 
   createApp(canvas, { seed });
 }

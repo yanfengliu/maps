@@ -12,26 +12,32 @@
  *
  * Keeping the origin at the crossing is what keeps float precision usable: every
  * coordinate in the area of interest stays inside about 700 m of zero instead of
- * carrying the ~ 8,000,000 m northing that EPSG:6677 would put on it.
+ * carrying the -37,768 m northing that EPSG:6677 puts on it. (An earlier draft of
+ * this comment said 8,000,000 m, which is the geocentric figure, not the plane
+ * rectangular one — CS IX's origin is at 36 N, only 38 km away.)
  */
 
 import { Vector3 } from "three";
 
+import { AOI_CENTRE_WGS84 } from "./aoi.js";
+
 /** One scene unit is one metre. Stated so nothing has to guess. */
 export const METRE = 1;
 
-/** Where the world origin sits in the real world, in WGS84 degrees. */
-export const ORIGIN_WGS84 = Object.freeze({
-  latitude: 35.6595,
-  longitude: 139.7005,
-});
+/**
+ * Where the world origin sits in the real world, in WGS84 degrees.
+ *
+ * The origin is the centre of the area of interest, so this is an alias rather
+ * than a second copy of the number. `aoi.ts` owns the box.
+ */
+export const ORIGIN_WGS84 = AOI_CENTRE_WGS84;
 
 /**
  * Half the width of the 1 km area of interest, in metres.
  *
- * The plan's box is 35.6550–35.6640 N by 139.6950–139.7060 E, which is a little
- * wider than 1 km east to west. 500 m is the nominal half extent; anything that
- * needs the true box reads it from the data pipeline, not from here.
+ * The nominal half extent, for anything that just needs a radius. The box is not
+ * exactly square — 997.1 m by 997.3 m projected — so anything sizing a grid or a
+ * tile budget reads `AOI_EXTENT_M` from `aoi.ts` instead.
  */
 export const AOI_HALF_EXTENT_M = 500 * METRE;
 

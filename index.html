@@ -40,9 +40,11 @@
         color: #ffd9dc;
       }
       /*
-        Attribution for the map sources is Phase 1's item 8. This placeholder is
-        here so the surface exists rather than being remembered later; it carries
-        no source text yet because no source data is loaded yet.
+        The map-data credits replace this element at boot and bring their own
+        styles with them — see src/ui/attribution.ts. What is left here is the
+        fallback a reader sees if the script never runs, which still has to name
+        the three sources, because the licences ask for a credit whether or not
+        the scene draws.
       */
       #attribution {
         position: absolute;
@@ -50,13 +52,14 @@
         bottom: 6px;
         opacity: 0.55;
         font-size: 11px;
-        pointer-events: none;
       }
     </style>
   </head>
   <body>
     <canvas id="scene"></canvas>
-    <div id="attribution">placeholder scene — no map data loaded</div>
+    <div id="attribution">
+      Map data: PLATEAU (PDL 1.0 / CC BY 4.0) · OpenStreetMap (ODbL) · GSI — modified
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

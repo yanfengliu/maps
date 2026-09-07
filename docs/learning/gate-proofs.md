@@ -47,6 +47,8 @@ Exit status 1.
 
 **Bound.** The empty scene measured 2.84 rather than 0 because the attribution overlay is still drawn over it. Real frames measured 17.98 at the worst. The floor of 6 sits between those two numbers, so it separates "rendered" from "did not render" and nothing finer. It would not notice a frame that rendered the wrong thing.
 
+**Re-measured in Phase 1, 2026-09-06.** Item 8 replaced the placeholder overlay with the real attribution surface, which changes the only thing drawn on an empty scene and therefore changes this bound. The same mutation was run again and the empty frame now measures **2.20**, with the failure reading `street-az000.png is uniformly flat (luminance spread 2.20)`. Exit status 1. Real frames in the same build ran 18.0 to 36.9. So the gap either side of the floor widened rather than narrowed, and the gate still separates the two cases. The number is a property of the overlay, not of the scene: anything that grows or brightens `src/ui/attribution.ts` must measure it again.
+
 ## The visual gate reports a boot failure instead of a timeout
 
 **Gate:** `npm run visual` — `OrbitDriver.waitForFirstFrame` in `tools/visual/orbit.ts`, reading the `#boot-error` element and the bridge's `error` field.
@@ -94,6 +96,69 @@ Exit status 1, after 462 ms, with `artifacts/visual/` left empty.
 **Bound.** The check compares one string, so it separates another app from this app and nothing finer. A stale build of *this* app answering on the port carries the same `app-id` and sails through. `reuseExistingServer: false` is what covers that case, and it has not been proved red.
 
 **A claim this run did not support.** `docs/devlog/summary.md` says the first sweep "photographed a sibling repo's app", which reads as twelve captured frames and a green run. The detailed entry for the same day records what actually happened: a ten-minute wait for `window.__mapsHarness` and a timeout, with no frames written. This run matches the detailed account — `artifacts/visual/` was empty when it failed. A wrong-app run has never produced a passing sweep here, and nothing in this repo shows that it could.
+
+## The coordinate gate catches a mirrored city
+
+**Gate:** `npm test` — `test/aoi.test.ts`, checking `tools/geo/plane-rectangular.ts` and the composed chain through `planeRectangularToWorld`.
+
+**Landed:** Phase 1, 2026-09-06.
+
+**Mutation:** the two return values of `geographicToPlaneRectangular` transposed, so the function hands back the easting as the northing and the northing as the easting. That is the EPSG:6677 northing-first trap written out literally. Nothing else changed.
+
+**Failure:**
+
+```
+× projecting into EPSG:6677 > lands the Scramble Crossing on its measured coordinates
+  → expected -12026.816802151134 to be close to -37768.561, received difference is 25741.744197848868, but expected 0.0005
+× the whole chain, latitude and longitude to scene metres > is not mirrored: Shibuya Scramble Square lands south-east of the crossing
+  → expected -25873.97263837627 to be greater than 0
+× projecting into EPSG:6677 > is northing-first: going north moves the northing and leaves the easting alone
+  → expected 1.4996061942456436 to be greater than 1000
+```
+
+Nine of fifteen tests failed. Exit status 1.
+
+**Why this one matters.** A transposed Shibuya renders perfectly: right scale, right buildings, right terrain, reflected about a diagonal. Nobody in this fleet knows the skyline well enough to notice it backwards, and every other gate in the repo goes green on it — the visual gate would photograph twelve mirrored frames and report distinct, non-blank images, because that is all it measures. There are two independent chances to make this mistake, since CityGML's `posList` is latitude-first and EPSG:6677 is northing-first, and the mutation above is only one of them.
+
+**Bound.** The gate checks the projection and the axis mapping against four measured points and the box's size. It says nothing about whether loaded data is placed correctly, which is Phase 2's problem and needs its own gate.
+
+A second bound worth naming, because it is luck rather than design: the "measures 997.1 by 997.3 metres" assertion also caught the transposition, reporting 997.297 where 997.1 was expected. It could only do that because the box is 0.17 m wider than it is tall. A square AOI would have made that particular assertion blind to a transposition while still passing.
+
+## The elevation gate catches a vertical datum that has slipped
+
+**Gate:** `npm test` — `test/elevation.test.ts`, comparing `tools/geo/plateau-tin.ts` against `tools/geo/gsi-elevation-tile.ts` at the crossing, over the two fixtures in `test/fixtures/`.
+
+**Landed:** Phase 1, 2026-09-06.
+
+**Mutation A**, on the PLATEAU half: `sampleTin` returns the interpolated height plus 36.8772, the GSIGEO2024 geoid undulation at the AOI centre. This is what reading orthometric heights as ellipsoidal does, and it is the specific failure the cross-check was built to catch.
+
+**Failure:**
+
+```
+× the PLATEAU terrain TIN > reads about 15.2 m of ground at the crossing
+  → expected 52.07583360361154 to be close to 15.2, received difference is 36.87583360361154, but expected 0.5
+× the two surveys against each other > agree at the crossing, which is what says the vertical datum is shared
+  → expected 36.89583360361154 to be less than 0.5
+```
+
+Three of seven tests failed. Exit status 1.
+
+**Mutation B**, on the GSI half: `decodeElevation` replaced with Mapbox Terrain-RGB, `-10000 + packed * 0.1`, which is the encoding a reader reaches for by habit and is the wrong one for a GSI tile.
+
+**Failure:**
+
+```
+× GSI elevation tiles > uses GSI's own encoding, not Terrain-RGB and not Terrarium
+  → expected -9848.2 to be close to 15.18, received difference is 9863.380000000001, but expected 5e-7
+× the two surveys against each other > agree at the crossing, which is what says the vertical datum is shared
+  → expected 9863.398633603612 to be less than 0.5
+```
+
+Three of seven tests failed. Exit status 1. Both halves of the comparison have now been made to fire, so neither is carrying the other.
+
+**Why it matters.** Terrain that is uniformly 36.877 m too high looks exactly like terrain. Buildings would sit on it correctly, the valley would still be a valley, and every frame would pass review. The only thing that separates the two cases is a second, independent survey of the same ground — which is what GSI is for here, and the whole reason the plan's item 7 keeps GSI after moving terrain to PLATEAU's own TIN.
+
+**Bound.** One point, at the crossing, against one vintage of each source. It proves the parse, the tile maths and the encoding agree with an independent survey at that point. It does not prove the TIN is right anywhere else in the AOI, and it says nothing about the terrain mesh Phase 2 will build from the TIN — a mesh with its winding order reversed would pass this and render inside out.
 
 ## Not yet proved red
 

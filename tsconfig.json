@@ -15,6 +15,11 @@
     "exactOptionalPropertyTypes": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
+    // `tools/data/` is run by bare Node, which strips types but does not rewrite
+    // a `.js` specifier to the `.ts` file beside it. Those files therefore import
+    // with the real extension. Everything Vite or Vitest resolves keeps the `.js`
+    // convention; this option permits both rather than requiring either.
+    "allowImportingTsExtensions": true,
 
     "noEmit": true,
     "skipLibCheck": true

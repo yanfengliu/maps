@@ -143,7 +143,11 @@ What it cannot prove is that any of those frames looks right. Open all twelve at
 
 **The world frame.** Scene units are metres. Y is up. The world origin is the Shibuya Scramble Crossing, at 35.6595 N, 139.7005 E. +X is east and +Z is south. It lives in `src/world/frame.ts`, and everything that places anything reads it from there.
 
+**The area of interest.** 35.6550–35.6640 N by 139.6950–139.7060 E, which projects to 997.1 x 997.3 m. It lives in `src/world/aoi.ts` — bounds, centre, projected extent, EPSG:6677 origin, mesh codes, Overpass bbox — and the world frame, the fetch manifest and the Overpass query all read it from there rather than restating it.
+
 **No global coordinates reach the browser.** EPSG:6677 northings around Shibuya run to the tens of thousands, and float32 vertex buffers run out of centimetres long before that. `planeRectangularToWorld` subtracts the origin at load time, so nothing in the scene sits more than about a kilometre from zero.
+
+**The data is fetched, never committed.** `npm run data:fetch` pins the PLATEAU archive by length and SHA-256 into a gitignored `data/`. Attribution for PLATEAU, OpenStreetMap and GSI is required in the running app and lives in `src/ui/attribution.ts`; `docs/policies/local-rules.md` carries what each licence obliges.
 
 **Randomness is seeded.** Everything generated draws from `createRng` in `src/world/rng.ts`, never from `Math.random`. The visual gate compares frames across runs, and a scene that reshuffles itself would make the gate measure the shuffle.
 
