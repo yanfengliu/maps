@@ -1,0 +1,6 @@
+# Task-run evidence lives under an ignored path and never enters Git on its own.
+# Anything in here is regenerable: `npm run visual` rewrites it from scratch.
+# Promoting a frame to a fixture or a golden is a review decision, and it moves
+# the file out of this directory rather than un-ignoring it here.
+*
+!.gitignore

@@ -111,14 +111,46 @@ Do not declare the result fully verified while material findings or required che
 
 ## Gates
 
-There is no gate yet: no toolchain, no build, no tests, so there is no command to run here. Nothing in this section stands in for one.
+Node 24, pinned in `.nvmrc`. Every command below was run in this repo on Node 24.18.1 before it was written here.
 
-The first substantial code commit establishes them and lists them here, each one run in this repo before it is written down: a build or run command, a test command, a pinned toolchain version in the file that toolchain reads (`.nvmrc`, `requires-python`, `rust-toolchain.toml`), and a dependency audit command if the stack pulls dependencies.
+Run all five before any commit that touches code. A dependency change re-runs the audit.
+
+| Gate | Command | About |
+| --- | --- | --- |
+| Build | `npm run build` | Vite production build into `dist/`. |
+| Types | `npm run typecheck` | `tsc --noEmit` over `src`, `test`, `tools` and the configs. |
+| Unit tests | `npm test` | Vitest, `test/**/*.test.ts`. |
+| Visual | `npm run visual` | Builds, then the Playwright sweep. Takes a few minutes on a software rasteriser. |
+| Audit | `npm run audit` | `npm audit --audit-level=high`. |
+
+`npm run visual:install` fetches the browser the visual gate needs. Run it once per machine; the gate fails with Playwright's own install message if you skip it.
+
+### The visual gate is only half a gate
+
+`npm run visual` boots the production build, drives OrbitControls with synthesised pointer and wheel input, and writes twelve frames to `artifacts/visual/` — six azimuths at street level and six from above — plus a `manifest.json` naming each frame's camera pose and its SHA-256.
+
+What it proves on its own: the app rendered, the input path moved the camera, and each frame is a distinct, non-blank 1280x720 image. It fails loudly when WebGL is unavailable, when the loop draws no frames, when the camera never settles, when the page on the preview port is not this app, and when two frames come back identical.
+
+What it cannot prove is that any of those frames looks right. Open all twelve at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
+
+### The harness drives the controls and never sets state
+
+`tools/visual/` may read `window.__mapsHarness`, which is frozen and has no setter. It may not assign `camera.position`, call `controls.setAzimuthalAngle`, or call the render function. That is the fleet canon's rule above, and `src/harness/bridge.ts` is built so the harness structurally cannot break it.
 
 ## Invariants & boundaries
 
-None yet. There is no code, so there are no boundaries between its parts to hold, and no contract it has to satisfy. The commit that creates the first ones records them here.
+**The world frame.** Scene units are metres. Y is up. The world origin is the Shibuya Scramble Crossing, at 35.6595 N, 139.7005 E. +X is east and +Z is south. It lives in `src/world/frame.ts`, and everything that places anything reads it from there.
+
+**No global coordinates reach the browser.** EPSG:6677 northings around Shibuya run to the tens of thousands, and float32 vertex buffers run out of centimetres long before that. `planeRectangularToWorld` subtracts the origin at load time, so nothing in the scene sits more than about a kilometre from zero.
+
+**Randomness is seeded.** Everything generated draws from `createRng` in `src/world/rng.ts`, never from `Math.random`. The visual gate compares frames across runs, and a scene that reshuffles itself would make the gate measure the shuffle.
+
+**Simulation runs on a fixed step.** `RenderLoop` calls fixed steps at a constant rate and frame steps with the real elapsed time. Integrators — car following, pedestrian avoidance, signal phases — register as fixed steps, so they give the same answer on a fast machine and a slow one, and so one clock drives them all.
+
+**Where things live.** `src/scene/terrain.ts`, `src/scene/buildings.ts` and `src/scene/roads.ts` are the homes for those three; `src/agents/agents.ts` is the home for pedestrians and vehicles; `src/render/` owns the renderer, the camera rig and the loop. Each holds a named seam and a comment saying which phase fills it.
+
+**The performance budget.** 60 fps at 1080p with 3,000 animated pedestrians and 200 vehicles, recorded as `PERFORMANCE_TARGET` in `src/world/frame.ts`. Nothing enforces it yet; Phase 9 owns measuring it.
 
 ## Conventions
 
-Only the fleet canon above and the documents it asks for. This repo adds nothing on top of them yet; anything it does add goes to `docs/policies/local-rules.md`.
+The fleet canon above, the documents it asks for, and `docs/policies/local-rules.md`, which now carries the stack, the world frame, the harness rule, and the port and host settings the gate depends on.

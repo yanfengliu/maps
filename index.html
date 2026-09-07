@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The visual gate checks this before it captures anything. Ports are shared
+      across the fleet and `vite preview` defaults are the same in every repo, so
+      a gate that trusts whatever answers on its port will happily photograph
+      another project's app and report on it.
+    -->
+    <meta name="app-id" content="maps-shibuya-1km" />
+    <title>maps — Shibuya 1 km</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #10141a;
+        color: #e6e9ef;
+        font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+      #scene {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        touch-action: none;
+      }
+      #boot-error {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        padding: 24px;
+        white-space: pre-wrap;
+        background: #2b1416;
+        color: #ffd9dc;
+      }
+      /*
+        Attribution for the map sources is Phase 1's item 8. This placeholder is
+        here so the surface exists rather than being remembered later; it carries
+        no source text yet because no source data is loaded yet.
+      */
+      #attribution {
+        position: absolute;
+        right: 8px;
+        bottom: 6px;
+        opacity: 0.55;
+        font-size: 11px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div id="attribution">placeholder scene — no map data loaded</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
