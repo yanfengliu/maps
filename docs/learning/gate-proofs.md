@@ -68,11 +68,37 @@ Exit status 1, in seconds rather than at the ten-minute test timeout.
 
 **What it proves.** A harness that only waits for a bridge that never appears reports "did not run" as a timeout, and a timeout says nothing about which of a dozen causes produced it. This path carries the app's own message out to the test report.
 
+## The visual gate refuses to photograph another app on the preview port
+
+**Gate:** `npm run visual` — `OrbitDriver.assertServingThisApp` in `tools/visual/orbit.ts`, comparing the page's `app-id` meta tag against the one `index.html` carries. It runs at the top of `waitForFirstFrame`, before anything is waited on or captured.
+
+**Landed:** Phase 0, 2026-09-06, in `74d0df18f79cac9cd392c840f27f181482857cfd`. Proved red 2026-09-06 from `c35ae775e51474e922a6fbee1c09d218c72a1e05`.
+
+**Mutation:** the two other fixes undone, and nothing else. `preview.port` in `vite.config.ts` from 4319 back to Vite's 4173 default, `PREVIEW_URL` in `playwright.config.ts` from `http://127.0.0.1:4319` back to `http://127.0.0.1:4173`, and `reuseExistingServer` from `false` back to `true`. Phase 0 had it as `!CI` rather than a literal `true`; with `CI` unset those are the same value, and this ran with `CI` unset. The check itself was left alone, because it is the thing under test.
+
+No decoy app was needed and none was written. aoe2's `vite preview` was live on 4173 while this ran — the same sibling app the gate photographed the first time — so this is the original two-part failure and not a staged stand-in for it: the fleet's shared default port, plus a Playwright that attaches to whatever answers on it.
+
+**Failure:**
+
+```
+Error: Port 4173 is serving a different app, so this run would photograph that one.
+http://127.0.0.1:4173/ carries meta app-id absent and the title "AoE2 Prototype".
+This gate captures only a page whose <meta name="app-id"> is "maps-shibuya-1km".
+Free port 4173, or point the gate at the port this app previews on, and run it again.
+```
+
+Exit status 1, after 462 ms, with `artifacts/visual/` left empty.
+
+**What it proves.** Playwright reused aoe2's server without a word, exactly as it did in Phase 0, and the run refused anyway. The gain is in what the failure says and when. Phase 0's run sat for ten minutes waiting for a bridge that page was never going to publish and then reported a timeout, which says nothing about which of a dozen causes produced it; this one stops in under a second and names the app it found.
+
+**Bound.** The check compares one string, so it separates another app from this app and nothing finer. A stale build of *this* app answering on the port carries the same `app-id` and sails through. `reuseExistingServer: false` is what covers that case, and it has not been proved red.
+
+**A claim this run did not support.** `docs/devlog/summary.md` says the first sweep "photographed a sibling repo's app", which reads as twelve captured frames and a green run. The detailed entry for the same day records what actually happened: a ten-minute wait for `window.__mapsHarness` and a timeout, with no frames written. This run matches the detailed account — `artifacts/visual/` was empty when it failed. A wrong-app run has never produced a passing sweep here, and nothing in this repo shows that it could.
+
 ## Not yet proved red
 
-Four failure paths are written and reachable and have never been watched to fire. They are code, not evidence, and a later phase that relies on one should make it go red first.
+Three failure paths are written and reachable and have never been watched to fire. They are code, not evidence, and a later phase that relies on one should make it go red first.
 
 - **WebGL unavailable** — `createRenderer` and `waitForFirstFrame`. Forcing headless Chromium to refuse a context without also breaking the page some other way needs a launch-flag combination that was not worth chasing in Phase 0.
 - **The render loop stopping mid-sweep** — the stalled-frame-count branch in `OrbitDriver.settle`. Needs the loop to die after the first frame, which no natural failure in Phase 0 produced.
 - **The camera never settling** — the poll-limit branch in `OrbitDriver.settle`. Would need damping turned off or a control that oscillates.
-- **Another app on the preview port** — `assertServingThisApp`. This one *was* observed as the failure it was written to prevent, but only before the check existed, so the check itself has never been seen to reject anything.

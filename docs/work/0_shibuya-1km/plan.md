@@ -1,6 +1,6 @@
 # 1km x 1km animated Shibuya model
 
-Status: planned
+Status: Phase 0 complete and on main; Phase 1 next
 Owner: Coordinator
 Created: 2026-09-06
 Updated: 2026-09-06
@@ -62,6 +62,10 @@ That is why emissive signage (item 16) is the single highest-value item in the p
 
 The geospatial work is offline, deterministic and cached. Its outputs stay gitignored and regenerable, under the canon's blob ceilings, so the repository holds the recipe rather than the bytes.
 
+**Gate frames are not byte-reproducible, and no phase should assume otherwise.**
+
+The visual harness aims the camera through the real controls and accepts a pose within 0.012 rad of the one it asked for, and damped controls come to rest at a slightly different residual on every run. Measured on 2026-09-06: three runs of the same build produced no frame that was byte-identical in all three, with settled azimuths drifting up to 3.5e-4 rad between runs and distinct-colour counts moving by a few either way. Pixel-exact goldens need a tighter settle tolerance bought first; until some phase pays for it, frames are reviewed by eye and compared by content, never diffed byte for byte.
+
 ## Acceptance criteria
 
 Each of these is checked by looking at a rendered result or watching the scene run. None of them is satisfied by a passing test.
@@ -86,9 +90,9 @@ Thirty-four items across eleven phases. The numbering is stable — refer to ite
 
 ### Phase 0 — Toolchain & gates (blocks everything)
 
-- [ ] 1. Vite + three.js + TypeScript scaffold; `.nvmrc` pinned to Node 24
-- [ ] 2. Playwright visual harness that drives OrbitControls and never assigns camera pose directly — the canon names direct state-setting structurally blind, with `scenes` as its case study
-- [ ] 3. Fill the currently-empty `Gates` section of `AGENTS.md` with commands actually run in this repo
+- [x] 1. Vite + three.js + TypeScript scaffold; `.nvmrc` pinned to Node 24
+- [x] 2. Playwright visual harness that drives OrbitControls and never assigns camera pose directly — the canon names direct state-setting structurally blind, with `scenes` as its case study
+- [x] 3. Fill the currently-empty `Gates` section of `AGENTS.md` with commands actually run in this repo
 
 ### Phase 1 — Data & provenance
 
@@ -159,8 +163,17 @@ Blocked: target agent counts are unset, so there is no number to hit. See Blocke
 
 ## Outcome
 
-Pending. Nothing has been built: the repository still holds no code, and this plan is the whole of the work so far.
+Phase 0 is complete and merged to main. Items 1, 2 and 3 delivered a Vite + three.js + TypeScript scaffold on Node 24, a Playwright harness that drives OrbitControls with synthesised pointer and wheel events and writes twelve frames at 1280x720, and a filled-in `Gates` section in `AGENTS.md` naming five commands that were all run here.
 
-Phase 0 is next, and it blocks every other phase.
+Four of the visual gate's failure paths have been made to go red on purpose; three more are written but unproved. `docs/learning/gate-proofs.md` holds the mutation and the message for each.
+
+Phase 0 also set the contracts every later phase builds against. These are contracts and not conventions: changing one changes every system downstream of it.
+
+- **The world frame**, in `src/world/frame.ts`. Scene units are metres, Y is up, the world origin is the Shibuya Scramble Crossing at 35.6595 N, 139.7005 E, +X is east and +Z is south. Everything that places anything reads it from there rather than restating it.
+- **No global coordinate reaches the scene.** `planeRectangularToWorld` swaps EPSG:6677's northing-first axes and subtracts the origin at load time, so no eight-million-metre northing ever lands in a float32 vertex buffer. Projecting to EPSG:6677 is Phase 2's offline job, and Phase 2 supplies the origin.
+- **Homes for the geometry.** `src/scene/terrain.ts`, `src/scene/buildings.ts` and `src/scene/roads.ts` for those three, `src/agents/agents.ts` for pedestrians and vehicles. Each holds a named seam and a comment saying which phase fills it.
+- **Two hooks on `RenderLoop`**, in `src/render/loop.ts`. `onFixedStep` runs at a constant rate and is where Phases 7 and 8 both register, so one clock drives vehicles and pedestrians and Phase 6's signal phase model can drive both from it. `onFrame` runs once per drawn frame with the real elapsed time, for anything that should look smooth rather than be reproducible.
+
+Phase 1 is next. Nothing beyond Phase 0 has started: no map data, no PLATEAU, no OSM, no agents, and the scene is a placeholder.
 
 Record the verified revision, the checks actually run and their limitations here at closure.

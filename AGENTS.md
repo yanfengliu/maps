@@ -131,7 +131,7 @@ Run all five before any commit that touches code. A dependency change re-runs th
 
 What it proves on its own: the app rendered, the input path moved the camera, and each frame is a distinct, non-blank 1280x720 image.
 
-Three of its failure paths have been made to go red on purpose, with the mutation and the message it produced recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, and a page that fails to boot. Four more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, the camera never settling, and another app answering on the preview port. Treat those four as code, not as evidence.
+Four of its failure paths have been made to go red on purpose, with the mutation and the message it produced recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, a page that fails to boot, and another app answering on the preview port. Three more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, and the camera never settling. Treat those three as code, not as evidence.
 
 What it cannot prove is that any of those frames looks right. Open all twelve at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
 

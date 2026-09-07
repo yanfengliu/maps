@@ -140,11 +140,14 @@ export class OrbitDriver {
     }));
 
     if (identity.appId !== APP_ID) {
+      const port = portOf(identity.url);
       throw new Error(
-        `${identity.url} is not this app: its meta app-id is ` +
-          `${identity.appId === null ? "absent" : `"${identity.appId}"`} and its title is ` +
-          `"${identity.title}", where "${APP_ID}" was expected. Something else is holding the ` +
-          "port the gate previews on.",
+        `Port ${port} is serving a different app, so this run would photograph that one. ` +
+          `${identity.url} carries meta app-id ` +
+          `${identity.appId === null ? "absent" : `"${identity.appId}"`} and the title ` +
+          `"${identity.title}". This gate captures only a page whose ` +
+          `<meta name="app-id"> is "${APP_ID}". Free port ${port}, or point the gate at the ` +
+          "port this app previews on, and run it again.",
       );
     }
   }
@@ -346,6 +349,24 @@ export class OrbitDriver {
         "If the distance is pinned, the requested zoom is outside minDistance/maxDistance.",
     );
   }
+}
+
+/**
+ * The port a page URL was served from, as text.
+ *
+ * The port is the whole point of the wrong-app error, and a URL with the default
+ * port in it does not spell the port out, so this fills it in rather than leaving
+ * the reader to know which port a scheme implies.
+ */
+function portOf(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return `(no port in "${url}")`;
+  }
+  if (parsed.port !== "") return parsed.port;
+  return parsed.protocol === "https:" ? "443" : "80";
 }
 
 /** Wrap an angle difference into [-PI, PI] so 359 degrees is a step of one. */
