@@ -28,9 +28,9 @@ import type { Page } from "@playwright/test";
 // so this file sees the same read-only shape the app publishes rather than a
 // copy of it that can drift. Nothing runnable crosses this boundary: the checks
 // on the frames themselves read the PNG bytes and share nothing with the app.
-import type { CameraSnapshot, RenderStatus } from "../../src/harness/bridge.js";
+import type { CameraSnapshot, RenderStatus, TileStatus } from "../../src/harness/bridge.js";
 
-export type { CameraSnapshot, RenderStatus };
+export type { CameraSnapshot, RenderStatus, TileStatus };
 
 export interface OrbitDriverOptions {
   /** How close to the requested pose counts as arrived, in radians. */
@@ -166,6 +166,64 @@ export class OrbitDriver {
       throw new Error("The harness bridge vanished from window mid-run; the page was replaced.");
     }
     return camera;
+  }
+
+  async readTiles(): Promise<TileStatus> {
+    const tiles = await this.page.evaluate(() => window.__mapsHarness?.tiles() ?? null);
+    if (tiles === null) {
+      throw new Error("The harness bridge vanished from window mid-run; the page was replaced.");
+    }
+    return tiles;
+  }
+
+  /**
+   * Wait until the building tileset has stopped loading for the pose it is at.
+   *
+   * The city refines from the camera: move it and the traversal asks for
+   * different tiles, and until those arrive the frame shows a coarser Shibuya
+   * than the one under review. Capturing without this waits produces frames that
+   * differ between runs for reasons that have nothing to do with the scene, and —
+   * worse — a reviewer would read a half-refined block as the data being poor.
+   *
+   * Idle is not one poll of a counter. A tile that finishes parsing queues its
+   * children, so the count drops to zero and rises again; this asks for several
+   * consecutive idle polls, and separately requires frames to keep being drawn,
+   * because a stopped loop also reports nothing pending.
+   */
+  async waitForTilesIdle(): Promise<TileStatus> {
+    const idlePollsNeeded = 5;
+    let idlePolls = 0;
+    let last = await this.readTiles();
+
+    for (let poll = 0; poll < MAX_POLLS; poll += 1) {
+      await this.page.waitForTimeout(POLL_MS);
+      const tiles = await this.readTiles();
+      const status = await this.readStatus();
+
+      if (tiles.error !== null) {
+        throw new Error(`The building tileset reported a load failure:
+${tiles.error}`);
+      }
+      if (tiles.failed > 0) {
+        throw new Error(
+          `${tiles.failed} building tiles failed to load. The scene would be photographed with ` +
+            "holes in it, and a hole in a city looks like a car park.",
+        );
+      }
+      if (status.contextLost) {
+        throw new Error("The WebGL context was lost while waiting for the tileset to settle.");
+      }
+
+      last = tiles;
+      idlePolls = tiles.idle ? idlePolls + 1 : 0;
+      if (idlePolls >= idlePollsNeeded) return tiles;
+    }
+
+    throw new Error(
+      `The building tileset never stopped loading: after ${MAX_POLLS * POLL_MS} ms it still had ` +
+        `${last.pending} tiles in flight, with ${last.loaded} loaded and ${last.visible} visible. ` +
+        "Capturing now would photograph a city that is still filling in.",
+    );
   }
 
   private async readCanvasBox(): Promise<void> {

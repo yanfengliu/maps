@@ -12,6 +12,19 @@ Some of it I measured again in this repository, against the archive `npm run dat
 
 Nothing in either pass has been through a renderer. Every geometry claim comes from parsing bytes. The plan is right that only a rendered frame counts, and Phase 3 is where that starts.
 
+## What Phase 2 corrected, once the geometry met a renderer
+
+**[corrected in Phase 2, 2026-09-06]** Six claims below were wrong or incomplete. Each one is fixed where it appears as well as listed here, because this document is the project's provenance and an error in it propagates into every later phase. Every number in this section was measured by `npm run data:scene`, which decodes all 67 tiles and reconciles them against the CityGML building by building.
+
+1. **The LOD2 tileset does not omit the LOD1 buildings.** This document said they "live in a separate tileset, so the two must be merged and de-duplicated on `gml_id`". They do not: `13113-bldg-lod2-texture-latest` carries the whole ward, LOD1 buildings included, in untextured tiles of their own, and the batch table's `_lod` says which is which. All 1,740 buildings in the box come out of the one tileset, and matching every one of them against the CityGML found 1,676 with LOD2 geometry, 64 without, and **no disagreement at all** between the tiles' `_lod` and the source.
+2. **The sentinels are not −9999 and 9999 in the tiles — they are `null`.** The counts are the same fact and they match: 62 missing heights, 297 missing storey counts. But a binary batch-table column cannot hold a missing value, so the converter writes those columns as JSON arrays with nulls in them and the raw sentinel never appears. `Number(null)` is 0, so the naive read here produces a building of no height rather than one 9,999 m underground. `src/world/building-attributes.ts` handles both and `test/sentinel.test.ts` gates it.
+3. **The atlases are not "one 2048x2048 per tile".** Over the 67 AOI tiles they run from 128x128 to 4096x4096, with **25 of them at 4096x4096**, totalling 551.9 megapixels. Decoded to RGBA with mipmaps that is **2,943 MB** if everything is resident, against 923 MB for the 44 leaf tiles alone at a 2048 cap and 235 MB at 1024. This is the binding constraint on the whole scene and the number this document gave was 5.5 times too small.
+4. **The AOI holds 1,740 buildings by this repository's own count, not 1,741.** Same files, same rule — the centroid of `lod0RoofEdge` inside the box — and the LOD split comes out 1,676 / 64 rather than 1,678 / 63. The difference is not a parsing disagreement: **25 buildings sit within two metres of the box boundary**, so the count is sensitive to exactly how a centroid is computed and the last digit of it should not be treated as a constant.
+5. **The Draco decode works.** It is declared in `extensionsRequired` on every one of the 67 tiles, so nothing draws without it, and it has now been exercised — offline over all 67 tiles by `tools/tiles/draco.ts` and in the browser by three.js's own decoder. 532,315 triangles came out, and every building's decoded bounding box agrees with what its batch table states to **0.062 m horizontally and 0.051 m vertically**.
+6. **A fact this document does not mention, which broke the first build.** 3D Tiles glTF content is **Y-up**, and the frame `CESIUM_RTC` translates in is **Z-up**; a runtime turns one into the other from `asset.gltfUpAxis`. Placing a tile with the right translation and no turn puts every building a median of 68 m from where it belongs, lying on its side over the correct street pattern. Nothing in the b3dm says this, and `design.md`'s account of route B's cost did not either.
+
+One claim held up exactly. **`_zmin` and `_zmax` really are orthometric where the ECEF geometry is ellipsoidal**, and the difference between them recovers the geoid undulation from the data alone: **36.786 m**, measured over 2,607 buildings with a middle-98% spread of 0.094 m, against the published GSIGEO value of 36.877 m. The 0.09 m gap is far inside anything that matters here and the pipeline uses what it measured.
+
 ## The sources
 
 | | supplies | licence | where |
@@ -169,7 +182,7 @@ Meanwhile MLIT publishes ready-made 3D Tiles for this exact ward, whose `.b3dm` 
 
 **Individually addressable geometry.** `BATCH_LENGTH` plus a `_BATCHID` vertex attribute, so every building inside a tile is separable. The tileset is already a five-level `REPLACE` hierarchy of 730 content tiles, of which **67 intersect the AOI**. That is item 12's culling and LOD unit, built. The converter by contrast emits **one GLB per feature *type*** — `bldg_Building.glb` for every building in the input — so item 12 would have to rebuild the split from `_FEATURE_ID_0` or by invoking the tool per tile.
 
-**Texture fidelity.** One 2048×2048 lossy WebP atlas per tile, about 700 KB at roughly 1.3 bits per pixel. Against the source: mesh 53393596's appearance directory is 2,634 JPEGs totalling **184.4 Mpx and 28.5 MiB**, and the 75 pre-converted tiles covering the same cell carry **314.6 Mpx** of atlas. So the pre-converted route is not resolution-limited — there is 1.7× the source pixel budget — and the loss is one lossy re-encode of already-lossy JPEG. WebP atlases also replace roughly 10,000 loose JPEGs, which matters for a web app.
+**Texture fidelity.** A lossy WebP atlas per tile. The two tiles sampled in Phase 1 were 2048×2048 at about 700 KB; **[corrected in Phase 2]** over the 67 tiles the AOI needs they run from 128×128 to 4096×4096, 25 of them at 4096×4096, and 551.9 megapixels in total — which is 2,943 MB decoded and is the constraint the whole scene is built around. Against the source: mesh 53393596's appearance directory is 2,634 JPEGs totalling **184.4 Mpx and 28.5 MiB**, and the 75 pre-converted tiles covering the same cell carry **314.6 Mpx** of atlas. So the pre-converted route is not resolution-limited — there is 1.7× the source pixel budget — and the loss is one lossy re-encode of already-lossy JPEG. WebP atlases also replace roughly 10,000 loose JPEGs, which matters for a web app.
 
 **Geometry.** Both routes derive from the same FME-authored source; the tiles are MLIT's own build of it. Positions are local metres about the tile centre (±88 to ±174 m in the samples), which is the small-float property item 9 is after. Triangles are Draco-compressed.
 
@@ -189,8 +202,8 @@ The CityGML archive is still downloaded and still the source of record, for thre
 
 Three things this decision has **not** proved, and a Phase 2 worker should not assume:
 
-- **Nothing has been rendered.** The Draco decode has not been exercised, only observed to be declared. Phase 2 should decode one tile and reconcile its triangle count before converting the rest.
-- **The LOD2 tileset is LOD2 only.** `_lod` is 2 for every feature sampled. The 3.6% of AOI buildings that are LOD1 live in a separate tileset, so the two must be merged and de-duplicated on `gml_id`. The converter would have done that per building automatically with `use_lod=textured_max_lod`.
+- ~~**Nothing has been rendered.**~~ **[done in Phase 2]** All 67 AOI tiles decode, offline and in the browser, and every building's decoded bounds were reconciled against its batch table — worst residual 0.062 m horizontally, 0.051 m vertically. What the decode did *not* cover, and what cost a day, is the glTF up axis: see correction 6 above.
+- ~~**The LOD2 tileset is LOD2 only.**~~ `_lod` was 2 for every feature sampled, and the conclusion drawn from that — that the LOD1 buildings live in a separate tileset needing a merge on `gml_id` — is **wrong**. **[corrected in Phase 2]** They are in this tileset, in untextured tiles of their own; the AOI's 64 of them arrive with everything else and `_lod` separates them. The two tiles Phase 1 sampled happened to hold no LOD1 features, which is what a sample of two can do.
 - **`bldg:measuredHeight` appears as a JSON array in one tile and as a binary batch-table property in another**, depending on whether any value is null. A reader must handle both.
 
 If route B fails in Phase 2, the fallback is the Rust build — `cargo build --profile release-lto -p nusamai` from MIERUNE at v0.1.19, with `--sink gltf --epsg 6677 -t use_lod=textured_max_lod`. It lands in EPSG:6677 metres natively, which is genuinely nicer, and `--epsg 6677` is mandatory because the glTF sink refuses anything that is not a Japan Plane Rectangular CS.
@@ -203,13 +216,15 @@ The plan said PLATEAU supplies "almost no texture". For this AOI that is false, 
 
 **[verified here, independently of the research]** Parsing all four building files and counting buildings whose `lod0RoofEdge` centroid falls inside the box:
 
-| | count | share |
-|---|---|---|
-| buildings in the AOI box | 1,741 | |
-| with LOD2 geometry | 1,678 | **96.4%** |
-| with a texture target | 1,678 | **96.4%** |
-| LOD2 but untextured | **0** | |
-| textured but not LOD2 | **0** | |
+| | count (Phase 1) | count (Phase 2) | share |
+|---|---|---|---|
+| buildings in the AOI box | 1,741 | **1,740** | |
+| with LOD2 geometry | 1,678 | **1,676** | **96.3%** |
+| with a texture target | 1,678 | 1,676 | 96.3% |
+| LOD2 but untextured | **0** | 0 | |
+| textured but not LOD2 | **0** | 0 | |
+
+**[corrected in Phase 2]** The right-hand column is the same rule run again over the same files, and it also matches the tiles' own `_lod` on every one of the 1,740. The one- and two-building differences are the boundary: 25 buildings have their `lod0RoofEdge` centroid within two metres of the edge of the box, so the last digit of this count is a property of the centroid rule and not of Shibuya.
 
 The split is exactly clean, and `uro:appearanceSrcDescLod2` is `1` (空中写真, aerial photography) for all 1,678 and `99` (未作成, not produced) for the other 63. This reproduces the research's figure to the building.
 
@@ -304,11 +319,11 @@ The credit is legible over the scene's dark road surfaces but was faint over its
 
 Ordered by damage if ignored.
 
-1. **Nothing has been rendered.** Every claim here is from parsing bytes. Phase 2's first act should be to render one tile and look at it.
+1. ~~**Nothing has been rendered.**~~ **[closed in Phase 2]** It has been. Two defects that only a rendered frame could show are in the corrections at the top of this document, and both of them produced a scene that looked like a city.
 2. **`tran` LOD1 and LOD2 are flat at z = 0**, and 57% of roads have no LOD3 and must be draped.
 3. **The Scramble node splices into a subway platform** in any naive shared-node graph.
-4. **The 3D Tiles LOD2 set omits the 63 LOD1 buildings**, which live in a separate tileset and must be merged on `gml_id`.
-5. **Sentinel values**: `bldg:measuredHeight` −9999 on 62 buildings, `bldg:storeysAboveGround` 9999 on 298.
+4. ~~**The 3D Tiles LOD2 set omits the 63 LOD1 buildings**, which live in a separate tileset and must be merged on `gml_id`.~~ **[wrong; corrected in Phase 2]** It carries them, and there are 64 of them in the box.
+5. **Sentinel values**: `bldg:measuredHeight` −9999 on 62 buildings, `bldg:storeysAboveGround` 9999 on 297 — **[corrected in Phase 2]**, and in the 3D Tiles they read `null` rather than −9999 or 9999, which is a different defect on the same fact.
 6. **`gml:OrientableSurface`, `TriangulatedSurface` and `Tin` are `todo!()` panics** in the converter's geometry parser, reported against bridges, and the AOI has four bridge files. Only relevant if the fallback route is ever taken.
 7. **The two CityGML archives differ by 2,465 bytes** between the citable resource and the `latest` alias. Neither pass diffed them.
 8. **`frn` coverage is partial** and the crossing's own markings are absent from it.

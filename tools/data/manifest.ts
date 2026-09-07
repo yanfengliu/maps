@@ -46,6 +46,34 @@ export const PLATEAU_CITYGML: ChecksummedDownload = {
   note: "PLATEAU 3D City Model, Shibuya-ku FY2025, CityGML 2.0 with i-UR uro 3.2. Dataset page: https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025",
 };
 
+/**
+ * MLIT's own 3D Tiles build of the same dataset, which is where buildings come from.
+ *
+ * Plan item 10, decided in Phase 1: the pre-converted tiles win over running the
+ * PLATEAU GIS Converter, because they carry per-building attributes in a form with
+ * no known bug and an already-built spatial hierarchy, and because the converter's
+ * Windows CLI is never CI-tested upstream. `docs/work/0_shibuya-1km/design.md` has
+ * the full comparison.
+ *
+ * The entry URL is a two-line redirect: this tileset holds a single child whose
+ * content is the real tileset on the asset CDN. `resolvedTilesetUrl` is where that
+ * pointed when the pins in `tiles-pins.json` were taken, and the fetch fails
+ * loudly rather than quietly following a moved alias, because a different build
+ * would invalidate every hash next to it.
+ */
+export const PLATEAU_3DTILES = Object.freeze({
+  entryUrl:
+    "https://api.plateauview.mlit.go.jp/datacatalog/3dtiles/13113-bldg-lod2-texture-latest/tileset.json",
+  resolvedTilesetUrl:
+    "https://assets.cms.plateau.reearth.io/assets/16/b016d3-42ef-4428-ad99-d229310b39fd/13113_shibuya-ku_pref_2025_citygml_1_op_bldg_3dtiles_13113_shibuya-ku_lod2/tileset.json",
+  /** Where the mirror lands under `data/`. */
+  root: "3dtiles/bldg-lod2",
+  note:
+    "PLATEAU 3D Tiles, Shibuya-ku FY2025 buildings, LOD2 with texture. 730 content tiles in a " +
+    "five-level REPLACE hierarchy; 67 of them intersect the area of interest. Despite the name " +
+    "the set also carries the ward's LOD1 buildings, in untextured tiles of their own.",
+});
+
 const [southWest, southEast, northWest, northEast] = AOI_MESH_CODES.level3;
 
 /**

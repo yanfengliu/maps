@@ -8,7 +8,7 @@ The first deliverable is a model of roughly 1km by 1km of Shibuya, Tokyo, leanin
 
 Non-goals: not a map viewer, not a navigation or routing product, not a survey-grade reconstruction of the real place. Nothing past the Shibuya deliverable is decided — a second location, a product surface, or a shipping target is out of scope until the owner says otherwise.
 
-Stack: not chosen. No language, renderer, map data source, or build tool has been picked, and the repo holds no code — `README.md`, `LICENSE`, `.gitignore`, and these docs are all of it. Whoever writes the first substantial code picks the stack, records the choice and its reasons in the work folder's plan, pins the toolchain version in the file that toolchain reads, and fills in Gates below.
+Stack: Vite, three.js and TypeScript on Node 24, with `3d-tiles-renderer` for the building tileset. Chosen in Phase 0 and recorded in `docs/work/0_shibuya-1km/plan.md`; the repo rules carry the details.
 
 The repo's own rules: [docs/policies/local-rules.md](docs/policies/local-rules.md).
 
@@ -125,15 +125,17 @@ Run all five before any commit that touches code. A dependency change re-runs th
 
 `npm run visual:install` fetches the browser the visual gate needs. Run it once per machine; the gate fails with Playwright's own install message if you skip it.
 
+`npm run data:fetch` gets the map data and `npm run data:scene` builds the scene from it, into a gitignored `data/`. Neither runs from `npm run build`; both are needed once before anything renders. `npm run data:scene` is itself a check — it decodes all 67 building tiles, reconciles every building against PLATEAU's own CityGML, and refuses to write a scene whose ground, landmarks, road heights or attributes disagree with what they should be.
+
 ### The visual gate is only half a gate
 
-`npm run visual` boots the production build, drives OrbitControls with synthesised pointer and wheel input, and writes twelve frames to `artifacts/visual/` — six azimuths at street level and six from above — plus a `manifest.json` naming each frame's camera pose and its SHA-256.
+`npm run visual` boots the production build, drives OrbitControls with synthesised pointer and wheel input, and writes eighteen frames to `artifacts/visual/` — six azimuths at each of three distances, eye level on the crossing, above the rooftops a block back, and high enough to hold the whole square kilometre — plus a `manifest.json` naming each frame's camera pose, tile counts, memory and SHA-256. It waits for the building tileset to stop refining before every capture, so a frame is not a picture of a city still loading.
 
-What it proves on its own: the app rendered, the input path moved the camera, and each frame is a distinct, non-blank 1280x720 image.
+What it proves on its own: the app rendered, the input path moved the camera, each frame is a distinct non-blank 1280x720 image, and the building geometry that is actually in the scene sits on the ground near the crossing in the right quantity.
 
-Four of its failure paths have been made to go red on purpose, with the mutation and the message it produced recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, a page that fails to boot, and another app answering on the preview port. Three more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, and the camera never settling. Treat those three as code, not as evidence.
+Six of its failure paths have been made to go red, with the mutation and the message recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, a page that fails to boot, another app answering on the preview port, a tileset that loads and draws nothing, and one that draws in the wrong orientation. Three more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, and the camera never settling. Treat those three as code, not as evidence.
 
-What it cannot prove is that any of those frames looks right. Open all twelve at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
+What it cannot prove is that any of those frames looks right. Open all eighteen at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
 
 ### The harness drives the controls and never sets state
 
@@ -153,7 +155,11 @@ What it cannot prove is that any of those frames looks right. Open all twelve at
 
 **Simulation runs on a fixed step.** `RenderLoop` calls fixed steps at a constant rate and frame steps with the real elapsed time. Integrators — car following, pedestrian avoidance, signal phases — register as fixed steps, so they give the same answer on a fast machine and a slow one, and so one clock drives them all.
 
-**Where things live.** `src/scene/terrain.ts`, `src/scene/buildings.ts` and `src/scene/roads.ts` are the homes for those three; `src/agents/agents.ts` is the home for pedestrians and vehicles; `src/render/` owns the renderer, the camera rig and the loop. Each holds a named seam and a comment saying which phase fills it.
+**Where things live.** `src/scene/terrain.ts`, `src/scene/buildings.ts` and `src/scene/roads.ts` are the homes for those three; `src/agents/agents.ts` is the home for pedestrians and vehicles; `src/render/` owns the renderer, the camera rig and the loop. `tools/scene/` is the offline pipeline that feeds the first three, and `src/world/scene-data.ts` says what it writes and where the app finds it.
+
+**The scene is data on disk, not bytes in the bundle.** `npm run data:scene` writes about 148 MB into a gitignored `data/scene/` — the terrain mesh, the road mesh, and 67 building tiles already placed in the world frame — and a Vite plugin serves that directory at `/scene/`. `dist/` is therefore not self-contained, which is the price of not copying 148 MB into it on every build.
+
+**Building texture is capped at 1024 pixels at load.** The 67 tiles carry 2,943 MB of texture decoded, which no browser holds, and PLATEAU's coarse levels are decimated to 255 buildings of 1,740, so stopping the hierarchy higher up is not an answer either. `src/scene/texture-budget.ts` holds the cap and the table of what each alternative costs.
 
 **The performance budget.** 60 fps at 1080p with 3,000 animated pedestrians and 200 vehicles, recorded as `PERFORMANCE_TARGET` in `src/world/frame.ts`. Nothing enforces it yet; Phase 9 owns measuring it.
 

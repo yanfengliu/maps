@@ -19,7 +19,11 @@
 
 import { Vector3 } from "three";
 
-import { AOI_CENTRE_WGS84 } from "./aoi.js";
+// The real extension, not the `.js` convention the rest of `src/` uses. Bare Node
+// strips types but does not rewrite a `.js` specifier to the `.ts` beside it, and
+// the offline pipeline in `tools/` runs under bare Node and places every tile
+// through `planeRectangularToWorld` below. Vite and Vitest resolve either form.
+import { AOI_CENTRE_WGS84 } from "./aoi.ts";
 
 /** One scene unit is one metre. Stated so nothing has to guess. */
 export const METRE = 1;

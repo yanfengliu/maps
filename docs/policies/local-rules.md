@@ -57,3 +57,30 @@ This rule fixes this repo's exposure only. Every other visual gate in the fleet 
 ## Gate artifacts live in `artifacts/`
 
 That directory ignores itself. `npm run visual` wipes and rewrites it, so nothing in it is ever evidence for a run other than the last one. Promoting a frame to a fixture or a golden moves it out of there; it does not get un-ignored in place.
+
+## The scene is built offline and served from `data/`, not bundled
+
+`npm run data:scene` reads `data/plateau/` and `data/3dtiles/` and writes `data/scene/` — the terrain mesh, the road mesh, a clipped tileset and 67 placed building tiles, about 148 MB. `tools/vite/serve-scene-data.ts` serves that at `/scene/`, and three.js's Draco decoder out of `node_modules` at `/draco/`, in the dev server and in `vite preview` alike.
+
+The alternative was Vite's `public/`, which copies everything into `dist/` on every build — and `npm run visual` builds before every run. The cost of this choice, stated here so it is not rediscovered: **`dist/` is not self-contained.** Serving it from anywhere other than `vite preview` means serving those two directories too. The app names the missing file rather than drawing an empty city.
+
+Everything under `data/scene/` is in the world frame already: metres, Y up, origin at the crossing. No latitude, no EPSG:6677 northing and no ECEF position reaches the browser.
+
+## 3D Tiles: two rotations, and getting either wrong renders
+
+MLIT's `.b3dm` tiles state their position as a `CESIUM_RTC` centre in ECEF metres, and their vertices are **Y-up in the glTF convention** over data that is **Z-up in ECEF**. Nothing in the file says so. Placing a tile therefore needs the turn as well as the translation, and the two ways to get it wrong look the same from the inside:
+
+- **Turn missing.** Every building lands a median of 68 m from where its own batch table puts it, up to 122 m, and the city renders lying on its side over the correct street pattern.
+- **Turn applied twice.** `3d-tiles-renderer` applies its own from `asset.gltfUpAxis`, which defaults to `"y"`. A pipeline that has already folded the turn in must declare `gltfUpAxis: "z"` — `tools/tiles/tileset.ts` does.
+
+`test/placement.test.ts` gates the transform and `npm run data:scene` reconciles every building's decoded geometry against its batch table, refusing at 2 m of horizontal residual. Neither can see the second application; the visual gate's drawn-geometry bounds are what caught that.
+
+## Texture memory is this scene's binding constraint
+
+The 67 building tiles carry 551.9 megapixels — **2,943 MB decoded to RGBA with mipmaps**. The tile cache counts decoded bytes, not downloaded ones, and a cache too small to hold a leaf tile does not degrade: a `REPLACE` parent waits for all its children, so the traversal deadlocks at the root and the app draws seventeen decimated buildings while reporting itself loaded and idle.
+
+Letting the hierarchy stop higher up is not an answer either, because PLATEAU's coarse levels are decimated to **255 buildings of 1,740** at depth 4. So textures are capped at 1024 pixels on the longest side at load time, which puts the whole area of interest at leaf detail inside 335 MB. `src/scene/texture-budget.ts` holds the cap, the measured cost of each alternative, and the reason it is one constant.
+
+## PLATEAU road polygons below LOD3 are flat at sea level, and the edge is the worst part
+
+`tran` LOD1 and LOD2 are flat at z = 0 — every vertex, measured — so they must be draped onto the terrain. What `design.md` did not warn about is what happens to a road ring that reaches past the terrain: there is nothing to drape it onto, it keeps its own height of zero, and a sheet of asphalt appears fifteen metres under the valley extending past the edge of the ground. `tools/scene/build-roads.ts` drops any ring with a vertex off the terrain, and `npm run data:scene` refuses a road mesh whose lowest vertex is more than 5 m below the lowest ground.

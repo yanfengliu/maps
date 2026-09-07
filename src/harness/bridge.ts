@@ -18,6 +18,7 @@ import type { PerspectiveCamera, WebGLRenderer } from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type { RenderLoop } from "../render/loop.js";
+import type { BuildingsStatus } from "../scene/buildings.js";
 
 /** The property the harness reads off `window`. */
 export const HARNESS_KEY = "__mapsHarness";
@@ -48,10 +49,26 @@ export interface RenderStatus {
   glRenderer: string;
 }
 
+/**
+ * What the building tileset is doing right now.
+ *
+ * An observation and nothing more: the harness reads it to know when the city
+ * has finished refining for the pose it just moved to, and to record what loaded
+ * and unloaded across a sweep. It cannot ask for a tile, evict one, or change the
+ * error target — the traversal decides all of that from the camera, which moves
+ * only through synthesised input.
+ *
+ * This is the widening the bridge's rule allows: another observation, never a
+ * mutation. Without it the sweep photographs a half-loaded city and the frames
+ * differ between runs for reasons that have nothing to do with the scene.
+ */
+export type TileStatus = BuildingsStatus;
+
 export interface HarnessBridge {
   readonly version: 1;
   status(): RenderStatus;
   camera(): CameraSnapshot;
+  tiles(): TileStatus;
 }
 
 declare global {
@@ -67,6 +84,9 @@ export interface BridgeSources {
   loop: RenderLoop;
   isReady: () => boolean;
   contextLost: () => boolean;
+  /** A failure that happened after boot — loading the map data, say. */
+  error: () => string | null;
+  tiles: () => TileStatus;
 }
 
 export function installBridge(sources: BridgeSources): HarnessBridge {
@@ -77,7 +97,11 @@ export function installBridge(sources: BridgeSources): HarnessBridge {
       return {
         ready: sources.isReady(),
         frameCount: sources.loop.frameCount,
-        error: null,
+        // A failure loading the map data arrives long after boot, so it cannot
+        // be a thrown exception in `main.ts`. Reporting it here is what turns it
+        // into a named failure in the gate instead of a wait for a `ready` that
+        // is never coming.
+        error: sources.error(),
         contextLost: sources.contextLost(),
         drawingBufferWidth: context.drawingBufferWidth,
         drawingBufferHeight: context.drawingBufferHeight,
@@ -93,6 +117,9 @@ export function installBridge(sources: BridgeSources): HarnessBridge {
         polar: controls.getPolarAngle(),
         distance: controls.getDistance(),
       };
+    },
+    tiles(): TileStatus {
+      return sources.tiles();
     },
   });
 
@@ -125,6 +152,25 @@ export function installFailedBridge(error: unknown): void {
     camera(): CameraSnapshot {
       const zero = { x: 0, y: 0, z: 0 };
       return { position: zero, target: zero, azimuth: 0, polar: 0, distance: 0 };
+    },
+    tiles(): TileStatus {
+      return {
+        idle: false,
+        visible: 0,
+        active: 0,
+        pending: 0,
+        failed: 0,
+        cachedBytes: 0,
+        gpuBytes: 0,
+        loaded: 0,
+        unloaded: 0,
+        texturesShrunk: 0,
+        maxTextureSize: 0,
+        error: message,
+        drawnMeshes: 0,
+        drawnTriangles: 0,
+        drawnBounds: null,
+      };
     },
   });
 }

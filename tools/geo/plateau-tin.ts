@@ -14,6 +14,8 @@
  * no geoid term in it.
  */
 
+import { createReadStream } from "node:fs";
+
 export interface TinTriangle {
   /** Three vertices as [latitude, longitude, height], closing vertex dropped. */
   vertices: readonly [
@@ -117,4 +119,58 @@ export function sampleTin(
     }
   }
   return undefined;
+}
+
+/**
+ * Walk the triangles of a TIN file without holding it in memory.
+ *
+ * `parseTin` above takes a string, which is right for the small fixture the
+ * elevation gate measures against and wrong for the real thing: the AOI's terrain
+ * file is 378 MB of one XML document and holding it as a JavaScript string costs
+ * twice that. This reads it in chunks and hands over one triangle at a time.
+ *
+ * The parsing rules are `parseTin`'s — the same triangle and posList shapes, the
+ * same complaints when a document does not match — so a change to one is a change
+ * to both. What is different is only where the text comes from.
+ *
+ * `onTriangle` receives the raw vertices, latitude first, exactly as PLATEAU
+ * writes them, and it is the caller's job to clip. The return value is the number
+ * of triangles the file held, so a caller clipping to the area of interest can
+ * say what share of the cell it kept rather than only how much it kept.
+ */
+export async function streamTinTriangles(
+  path: string,
+  onTriangle: (triangle: TinTriangle) => void,
+): Promise<number> {
+  let tail = "";
+  let count = 0;
+
+  for await (const chunk of createReadStream(path, { encoding: "utf8" })) {
+    tail += chunk as string;
+
+    let searchFrom = 0;
+    for (;;) {
+      const open = tail.indexOf("<gml:Triangle>", searchFrom);
+      if (open === -1) break;
+      const close = tail.indexOf("</gml:Triangle>", open);
+      if (close === -1) break;
+      const end = close + "</gml:Triangle>".length;
+      for (const triangle of parseTin(tail.slice(open, end))) {
+        onTriangle(triangle);
+        count += 1;
+      }
+      searchFrom = end;
+    }
+
+    const lastOpen = tail.lastIndexOf("<gml:Triangle>");
+    tail = lastOpen === -1 ? tail.slice(-"<gml:Triangle>".length) : tail.slice(lastOpen);
+  }
+
+  if (count === 0) {
+    throw new Error(
+      `${path} holds no <gml:Triangle> at all. A dem:TINRelief always does, so either the file is ` +
+        "not a TIN or `npm run data:fetch` extracted something else.",
+    );
+  }
+  return count;
 }

@@ -2,8 +2,15 @@
  * The sweep the visual gate walks.
  *
  * One framing is not a check: a defect that the chosen view happens to hide is
- * the normal case, so the gate looks from several azimuths at two elevations and
- * two zoom levels — one at street level, one from above the whole area.
+ * the normal case, so the gate looks from six azimuths at three distances — eye
+ * level on the crossing, a block back, and high enough to hold the whole square
+ * kilometre.
+ *
+ * The three distances are not decoration now that the scene is real map data.
+ * They exercise three different levels of the building tileset's `REPLACE`
+ * hierarchy, so a sweep that comes back clean has watched tiles refine and unload
+ * rather than watched one resolution of the city. The overhead shot in particular
+ * is the one that would show the whole ward trying to be resident at once.
  *
  * Every frame is written as its own file at the capture resolution and reviewed
  * on its own. There is deliberately no contact sheet: an aggregate view answers
@@ -25,11 +32,22 @@ export interface Shot {
 
 export const SHOTS: readonly Shot[] = Object.freeze([
   Object.freeze({
-    name: "street",
-    // 84 degrees from vertical: about 12 m above the ground at this distance.
-    polar: 1.47,
-    distance: 115,
-    description: "street level, just outside the crossing plaza, looking across it",
+    name: "plaza",
+    // 86 degrees from vertical: about 3 m above the crossing at this distance,
+    // which is a person's eye level looking across it.
+    polar: 1.5,
+    distance: 45,
+    description: "on the crossing, eye level, close enough to read a facade",
+  }),
+  Object.freeze({
+    name: "block",
+    // 73 degrees from vertical: about 65 m up, above most of the roofs around
+    // the crossing but well under the towers. A first attempt put this at 12 m
+    // and 115 m out, which is below the roofline and inside the block — half of
+    // every frame was the ground twenty metres in front of the camera.
+    polar: 1.28,
+    distance: 220,
+    description: "above the rooftops a block back, the crossing and the towers in frame",
   }),
   Object.freeze({
     name: "overhead",

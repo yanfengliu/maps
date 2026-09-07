@@ -1,6 +1,6 @@
 # 1km x 1km animated Shibuya model
 
-Status: Phases 0 and 1 complete and on main; Phase 2 next
+Status: Phases 0 to 3 complete and on main; Phase 4 next
 Owner: Coordinator
 Created: 2026-09-06
 Updated: 2026-09-06
@@ -70,8 +70,8 @@ The visual harness aims the camera through the real controls and accepts a pose 
 
 Each of these is checked by looking at a rendered result or watching the scene run. None of them is satisfied by a passing test.
 
-- [ ] The AOI renders end to end — terrain, buildings and road surfaces across the full 1 km box — inspected from several angles and zoom levels, each frame at native resolution. (Phases 1–3)
-- [ ] The ground is not flat: the Shibuya valley and the Dōgenzaka slope are visible in the rendered terrain, and building footprints sit on it without floating or sinking. (Phases 2–3)
+- [x] The AOI renders end to end — terrain, buildings and road surfaces across the full 1 km box — inspected from several angles and zoom levels, each frame at native resolution. (Phases 1–3)
+- [x] The ground is not flat: the Shibuya valley and the Dōgenzaka slope are visible in the rendered terrain, and building footprints sit on it without floating or sinking. (Phases 2–3)
 - [ ] Buildings hold up close: window grids follow floor counts and the PBR materials respond to light, checked at street level and from above. (Phase 4)
 - [ ] A dusk frame of the crossing reads as Shibuya rather than as a generic Japanese city, because the emissive signage and neon are there. (Phases 4–5)
 - [ ] Road markings match reference imagery, including the scramble's diagonals, with signals, guardrails and street furniture in place. (Phase 4)
@@ -80,7 +80,7 @@ Each of these is checked by looking at a rendered result or watching the scene r
 - [ ] Pedestrians avoid each other and surge diagonally across the crossing on the signal phase — the signature shot — with no visible interpenetration and no sliding feet. (Phase 8)
 - [ ] Vehicles and pedestrians run off the same clock: one signal phase model drives both, and no frame shows traffic moving through the scramble while pedestrians are on it. (Phase 6)
 - [ ] 60 fps at 1080p in a running build under the target agent counts. This criterion is incomplete until the owner sets those counts — see Blockers. (Phase 9)
-- [ ] The scene rebuilds from a clean checkout: delete the derived geospatial outputs, re-run the pipeline, render again, and compare with the frames above. (Phase 2)
+- [x] The scene rebuilds from a clean checkout: delete the derived geospatial outputs, re-run the pipeline, render again, and compare with the frames above. (Phase 2)
 - [x] The running app shows its attribution: PLATEAU (PDL 1.0, with CC BY 4.0 permitted — the licence name here was imprecise and is corrected), OpenStreetMap (ODbL) and GSI. (Phase 1)
 - [ ] A multi-angle, multi-zoom sweep and a flythrough driven through the real controls both come back clean, an independent review passes, and the work is merged to main. (Phase 10)
 
@@ -104,15 +104,15 @@ Thirty-five items across eleven phases. The numbering is stable and append-only 
 
 ### Phase 2 — Geospatial pipeline (offline, deterministic, cached)
 
-- [ ] 9. Project to JGD2011 / Japan Plane Rectangular CS IX (EPSG:6677), local origin at the crossing so floats stay small
-- [ ] 10. Buildings from **MLIT's pre-converted 3D Tiles**, not from a local CityGML conversion; unwrap b3dm to glTF, georeference, clip to AOI. The PLATEAU GIS Converter this item first named has no prebuilt Windows CLI — the release is a GUI installer and the CLI ships only for Linux and macOS, so it needs a Rust build on a path upstream never CI-tests. The decision and the sample it rests on are in the Outcome section below; the CityGML archive is still fetched, because terrain and the authoritative attributes come from it
-- [ ] 11. Terrain mesh from the DEM; snap building footprints to it
-- [ ] 12. Tile the output for culling and LOD; outputs stay gitignored and regenerable, under the canon's blob ceilings
+- [x] 9. Project to JGD2011 / Japan Plane Rectangular CS IX (EPSG:6677), local origin at the crossing so floats stay small
+- [x] 10. Buildings from **MLIT's pre-converted 3D Tiles**, not from a local CityGML conversion; unwrap b3dm to glTF, georeference, clip to AOI. The PLATEAU GIS Converter this item first named has no prebuilt Windows CLI — the release is a GUI installer and the CLI ships only for Linux and macOS, so it needs a Rust build on a path upstream never CI-tests. The decision and the sample it rests on are in the Outcome section below; the CityGML archive is still fetched, because terrain and the authoritative attributes come from it
+- [x] 11. Terrain mesh from the DEM; snap building footprints to it
+- [x] 12. Tile the output for culling and LOD; outputs stay gitignored and regenerable, under the canon's blob ceilings
 
 ### Phase 3 — Static scene
 
-- [ ] 13. Terrain, buildings and road surfaces rendering
-- [ ] 14. Camera, controls, first visual-gate baseline
+- [x] 13. Terrain, buildings and road surfaces rendering
+- [x] 14. Camera, controls, first visual-gate baseline
 
 ### Phase 4 — Realism pass (where the deliverable is won)
 
@@ -193,6 +193,24 @@ Items 4 to 8 are done. The data is on disk, verified, attributed, and reachable 
 
 **Provenance lives in `design.md`**, distilled from a read-only research pass and marked where this phase re-measured rather than carried a claim.
 
-What Phase 1 did **not** do, and Phase 2 should not assume: nothing has been rendered, the Draco decode in those tiles has never been exercised, and the 3.6% of buildings that are LOD1 live in a separate tileset that must be merged on `gml_id`.
+What Phase 1 did **not** do, and Phase 2 should not assume: nothing has been rendered, the Draco decode in those tiles has never been exercised, and the 3.6% of buildings that are LOD1 live in a separate tileset that must be merged on `gml_id`. The last of those turned out to be false — see below.
 
-Phase 2 is next.
+### Phases 2 and 3
+
+Items 9 to 14 are done. Real Shibuya renders: PLATEAU's 2.5 m terrain TIN, its `tran` road surfaces, and all 1,740 buildings in the box from MLIT's own 3D Tiles, with photographic facades, standing on the ground.
+
+**The loader decision: `3d-tiles-renderer`, against a tileset the pipeline has already moved into the world frame.** The tileset is a real five-level `REPLACE` hierarchy with geometric errors from 316 down to 0, which is item 12's culling and LOD unit already built; what a purpose-built loader would have had to add is screen-space error selection, a download queue and an eviction policy. The last is not optional here — 551.9 megapixels of texture over the 67 AOI tiles is 2,943 MB decoded — so a loader of our own would have grown the same LRU cache with less testing behind it. The cost is three transitive dependencies this project does not use and a library that assumes tiles sit on an ellipsoid; the second is paid offline, where `npm run data:scene` rewrites every `region` bounding volume as a `box` in world metres, so the browser holds no coordinate over about two kilometres and Phase 0's frame contract is kept exactly.
+
+**Three things this phase found that a passing test would not have.**
+
+- **glTF is Y-up and `CESIUM_RTC` translates in a Z-up frame.** Nothing in a b3dm says so and `design.md` did not either. Placed without the turn, every building landed a median of 68 m from where its own batch table puts it and the city rendered lying on its side over the right street pattern. Placed with the turn folded into the tile matrix *and* the tileset not declaring `gltfUpAxis: "z"`, the library applied its own on top and it tilted again.
+- **The tile cache counts decoded bytes.** Sized from the 137 MB the tiles weigh on disk, it could not hold a single 4096x4096 leaf, so the traversal never refined past the root and the app drew seventeen decimated buildings over the whole ward while reporting itself loaded, idle and error-free.
+- **PLATEAU's road polygons below LOD3 are flat at z = 0**, as `design.md` warned, and the part it did not warn about is what happens at the edge: a road ring reaching past the terrain has nothing to be draped onto, so it stays at sea level and drags asphalt out past the edge of the world. 461 polygons were dropped for that.
+
+**Corrections to `design.md`, which is the project's provenance.** Six of its claims were wrong or incomplete and each is now marked in place: the LOD1 buildings are in the same tileset rather than a separate one; the sentinels read `null` in the tiles rather than −9999; the atlases run to 4096x4096 rather than 2048x2048, which is 5.5 times the memory; the AOI holds 1,740 buildings by this repository's own count rather than 1,741, and the count is sensitive to the centroid rule because 25 buildings sit within two metres of the boundary; the Draco decode now works and is exercised; and the up-axis fact above was missing entirely. One claim held exactly — `_zmin` and `_zmax` are orthometric where the ECEF geometry is ellipsoidal, and the difference between them recovers the geoid undulation from the data alone at 36.786 m against a published 36.877 m.
+
+**Two new gates, both proved red**, in `docs/learning/gate-proofs.md`: `test/sentinel.test.ts` over a real PLATEAU batch table, and `test/placement.test.ts` over the ECEF and up-axis transforms. The visual gate gained a third check that has fired on two real defects — the bounding box and triangle count of the building geometry actually in the scene, which is the first thing in this repository that looks at the scene rather than at the framebuffer.
+
+**What Phase 4 inherits, and should not rediscover.** Building textures are capped at 1024 pixels on the longest side at load time, in `src/scene/texture-budget.ts`, because the alternative is a scene that cannot hold the area of interest at leaf detail; the table of what each cap costs is in that file and the number is one constant. The 64 LOD1 buildings render as untextured white, which is item 15's stated job. Nothing here touches materials or lighting.
+
+Phase 4 is next.

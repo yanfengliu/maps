@@ -160,6 +160,74 @@ Three of seven tests failed. Exit status 1. Both halves of the comparison have n
 
 **Bound.** One point, at the crossing, against one vintage of each source. It proves the parse, the tile maths and the encoding agree with an independent survey at that point. It does not prove the TIN is right anywhere else in the AOI, and it says nothing about the terrain mesh Phase 2 will build from the TIN — a mesh with its winding order reversed would pass this and render inside out.
 
+## The sentinel gate catches PLATEAU's "no value" read as a measurement
+
+**Gate:** `npm test` — `test/sentinel.test.ts`, checking `readMeasuredHeightM`, `readStoreysAboveGround` and `assertNoSentinels` in `src/world/building-attributes.ts`, over the real batch table in `test/fixtures/plateau-batch-table.b3dm`.
+
+**Landed:** Phase 2, 2026-09-06.
+
+**Mutation:** the body of `readMeasuredHeightM` replaced by `return Number(raw);`, which is what a reader written without knowing about the sentinels does.
+
+**Failure:**
+
+```
+× reading PLATEAU's building attributes > refuses the CityGML sentinels, which are numbers and not measurements
+  → expected -9999 to be undefined
+× reading PLATEAU's building attributes > refuses the 3D Tiles form of the same fact, which is null and not −9999
+  → expected +0 to be undefined
+× a real PLATEAU batch table > yields a building index with no sentinel in it
+  → expected [] to have a length of 4 but got +0
+```
+
+Three of ninety-six tests failed. Exit status 1.
+
+**Why the middle one matters most.** −9999 is the sentinel everybody looks for, and it is not in the bytes this scene is built from. MLIT's pre-converted tiles cannot hold a missing value in a binary batch-table column, so those buildings read `null` — and `Number(null)` is **0**, not NaN and not −9999. The same defect therefore arrives as a building of no height rather than a building nine kilometres underground, which looks like bad modelling instead of a units bug. The fixture is real PLATEAU bytes for exactly this reason: a synthetic one would have been written with the sentinel the author expected.
+
+**Bound.** This covers the reader and the placement validator over one tile of 17 buildings. It says nothing about the other 1,723 in the box — `npm run data:scene` does that, over all of them and against PLATEAU's own CityGML, and refuses to write an index that fails `assertNoSentinels`. What this gate proves is that the function it calls can fail.
+
+## The placement gate catches glTF's up axis
+
+**Gate:** `npm test` — `test/placement.test.ts`, checking `tools/geo/ecef.ts` and `GLTF_Y_UP_TO_Z_UP` in `tools/tiles/b3dm.ts` against the `CESIUM_RTC` centre `design.md` measured and against a local east-north-up frame built by differencing the ellipsoid.
+
+**Landed:** Phase 2, 2026-09-06.
+
+**Mutation:** `GLTF_Y_UP_TO_Z_UP` replaced by the identity matrix — the turn left out, which is the defect exactly as it happened.
+
+**Failure:**
+
+```
+× the linear placement a tile is given > turns a glTF up into a world up
+  → expected 38.39891419989702 to be close to 100, received difference is 61.60108580010298, but expected 0.05
+× the linear placement a tile is given > keeps a horizontal step horizontal and the right length
+  → expected 84.54115106934934 to be less than 0.5
+```
+
+Two of ninety-six tests failed. Exit status 1.
+
+**This is not hypothetical.** It is what the first build of this scene did. 3D Tiles content is Y-up in the glTF convention over data that was Z-up in ECEF, and a runtime is expected to turn it. With the turn missing, every building landed a median of **68 m** from where its own batch table puts it, up to 122 m — and the city still rendered: right place, right scale, buildings lying on their sides at a plausible angle over the correct street pattern. The offline reconciliation caught it (22 m of horizontal residual against a 2 m tolerance) before anything was looked at.
+
+The mirror image of the same mistake happened next and this gate cannot catch it: with the turn folded into each tile's matrix, `3d-tiles-renderer` applied its own on top, because a tileset that says nothing about `asset.gltfUpAxis` is assumed to be Y-up. The city came back tilted again. The fix is that `tools/tiles/tileset.ts` now writes `gltfUpAxis: "z"`, and what catches it is the visual gate's drawn-geometry bounds, below.
+
+**Bound.** These are the transforms in isolation, against measured constants. They cannot see whether the pipeline applies them to the right tiles, and they cannot see a second application at load time.
+
+## The visual gate catches a city that loaded and did not draw
+
+**Gate:** `npm run visual` — the `drawnBounds`, `drawnTriangles` and `visible` assertions in `tools/visual/sweep.spec.ts`, reading the tile status the harness bridge publishes in `src/harness/bridge.ts`.
+
+**Landed:** Phase 2, 2026-09-06.
+
+**Mutation:** none was needed. Both of these were found by the check firing on a real defect during Phase 2, and both are recorded here as the failures they produced rather than as failures staged afterwards.
+
+**Failure one — the tile cache too small to hold a leaf.** `lruCache.maxBytesSize` was set to 48 MB, reasoned from the 137 MB the tiles weigh on disk. The cache counts **decoded** bytes, and 25 of the 67 tiles carry a 4096x4096 atlas which is 89 MB each with mipmaps. Measured result: all 67 tiles downloaded, seven produced a model, and the traversal never refined past the root, because a `REPLACE` parent keeps displaying until every used child has loaded and a cache that cannot hold the children never lets that happen. The app reported `idle: true`, `error: null`, `loaded: 7`, `visible: 1`, and drew the root tile's seventeen decimated buildings over the whole ward.
+
+Every pixel measure in the sweep passed on those frames. The terrain and the roads were still there, so the luminance spread, the colour count and the pairwise signature distances were all comfortable — the frames were a correct map of Shibuya with no buildings on it. `drawnTriangles` was 663.
+
+**Failure two — the up-axis turn applied twice.** `drawnBounds` read `y: −678 to 748` where every building in the area of interest stands between 8.7 m and 245.6 m above sea level, and `z` spanned 460 m where the tile set covers about 1,400 m. The frames looked like a city seen through a shear.
+
+**What these assertions add.** The floors that were already here separate a rendered frame from an unrendered one and nothing finer, and this is the first check in the repository that looks at what is in the scene rather than at what reached the framebuffer. Both defects above left the tileset reporting itself loaded, idle and error-free, and both would have shipped.
+
+**Bound.** It measures the bounding box of the drawn building geometry and the triangle count, against a band that runs −20 m to 400 m vertically and 2.5 km horizontally. That separates a city on the ground near the crossing from one that is underground, floating, sheared or absent. It cannot tell one block from the next — the landmark check in `npm run data:scene` is what pins that, against Shibuya Scramble Square, Hikarie and Shibuya Stream at their published positions and heights.
+
 ## Not yet proved red
 
 Three failure paths are written and reachable and have never been watched to fire. They are code, not evidence, and a later phase that relies on one should make it go red first.

@@ -2,6 +2,7 @@ import { PerspectiveCamera } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { AOI_HALF_EXTENT_M } from "../world/frame.js";
+import { GROUND_AT_ORIGIN_M } from "../world/scene-data.js";
 
 /**
  * The camera and the controls the user actually drives.
@@ -31,24 +32,34 @@ export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {
   const camera = new PerspectiveCamera(
     55,
     canvas.clientWidth / Math.max(canvas.clientHeight, 1),
-    // A 0.5 m near plane keeps street level usable; 8 km of far plane covers the
-    // whole area of interest plus the sky dome around it.
-    0.5,
+    // 1 m of near plane and 8 km of far. The far plane covers the area of
+    // interest plus the sky dome around it; the near plane was 0.5 m and was
+    // raised when the road surface arrived. Depth resolution goes as the square
+    // of the distance over the near plane, so at the 950 m the overhead sweep
+    // sits at, 0.5 m of near resolved about 11 cm and the road surface — which
+    // is a coplanar sheet 20 cm above the ground — flickered against the terrain.
+    // At 1 m it resolves about 5 cm. `minDistance` is 25 m, so nothing is ever
+    // close enough for 1 m of near plane to clip.
+    1,
     8000,
   );
 
   // The starting pose is set here, once, before the controls exist. After this
   // line the controls own the camera.
+  //
+  // The target is the crossing at ground level, not at y = 0. Scene Y is metres
+  // above Tokyo Bay mean sea level and the ground at the crossing is 15.2 m, so
+  // a target at zero would put the street-level sweep — 11.6 m above its target —
+  // nearly four metres underground, looking up at the inside of the terrain.
   const sinPolar = Math.sin(INITIAL_VIEW.polar);
   camera.position.set(
     INITIAL_VIEW.distance * sinPolar * Math.sin(INITIAL_VIEW.azimuth),
-    INITIAL_VIEW.distance * Math.cos(INITIAL_VIEW.polar),
+    GROUND_AT_ORIGIN_M + INITIAL_VIEW.distance * Math.cos(INITIAL_VIEW.polar),
     INITIAL_VIEW.distance * sinPolar * Math.cos(INITIAL_VIEW.azimuth),
   );
 
   const controls = new OrbitControls(camera, canvas);
-  // The target is the crossing, which is the world origin.
-  controls.target.set(0, 0, 0);
+  controls.target.set(0, GROUND_AT_ORIGIN_M, 0);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.minDistance = 25;

@@ -33,10 +33,12 @@ import { fileURLToPath } from "node:url";
 import {
   GSI_TILES,
   OVERPASS,
+  PLATEAU_3DTILES,
   PLATEAU_AOI_MEMBERS,
   PLATEAU_CITYGML,
   type ChecksummedDownload,
 } from "./manifest.ts";
+import { fetchTiles } from "./fetch-tiles.ts";
 import { buildOverpassQuery } from "./overpass-query.ts";
 import { AOI_BOUNDS_WGS84, AOI_MESH_CODES } from "../../src/world/aoi.ts";
 
@@ -240,6 +242,14 @@ async function main(): Promise<void> {
   console.log(`extract ${PLATEAU_AOI_MEMBERS.length} member patterns into data/plateau/`);
   extractPlateauMembers();
 
+  // The buildings in the scene come from MLIT's pre-converted 3D Tiles rather
+  // than from a local conversion of the CityGML above — plan item 10, decided in
+  // Phase 1. The CityGML is still fetched and is still the source of record: the
+  // terrain TIN has no 3D Tiles equivalent, the authoritative attributes and the
+  // codelists live there, and `npm run data:scene` cross-checks the tiles against
+  // it building by building.
+  await fetchTiles({ force: options.force });
+
   for (const tile of GSI_TILES) {
     const destination = join(DATA_ROOT, tile.path);
     if ((await sizeOf(destination)) !== undefined && !options.force) {
@@ -262,6 +272,7 @@ async function main(): Promise<void> {
     meshCodes: AOI_MESH_CODES,
     plateau: PLATEAU_CITYGML,
     gsiTiles: GSI_TILES,
+    plateau3dTiles: PLATEAU_3DTILES,
     overpass: {
       endpoint: OVERPASS.endpoint,
       note: "OSM changes daily, so this response is pinned by osm3s.timestamp_osm_base inside the JSON, not by hash.",
