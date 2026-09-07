@@ -1,0 +1,6 @@
+# These are pinned inputs, so they must come out of a checkout as the same bytes
+# that went in. Without this, Git's autocrlf rewrote the line endings of the GML
+# on checkout and turned 68,517 bytes into 69,950 — and a fixture whose length
+# depends on the machine that checked it out is not pinned.
+# `docs/work/.gitattributes` does the same thing for the same reason.
+* -text
