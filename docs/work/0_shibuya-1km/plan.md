@@ -1,9 +1,9 @@
 # 1km x 1km animated Shibuya model
 
-Status: Phases 0 to 3 complete and on main; Phase 4 next
+Status: Phases 0 to 3 and the reviewed Phase 6 network milestone on main; graphics and populated simulation remain incomplete
 Owner: Coordinator
 Created: 2026-09-06
-Updated: 2026-09-06
+Updated: 2026-09-11
 
 ## Problem and outcome
 
@@ -36,7 +36,7 @@ Ownership boundaries inside the work:
 
 - Rigged pedestrian character models — no licensed source chosen. Blocks Phase 8.
 - Japanese vehicle mix (kei cars, JPN Taxi, buses) — no licensed source chosen. Blocks Phase 7.
-- Target agent counts (pedestrians and vehicles) — unset, so Phase 9 has no acceptance criterion. Needs an owner decision.
+- Agent targets are fixed at 3,000 animated pedestrians and 200 vehicles, 60 fps at 1920×1080. Runtime population, accepted assets/contact and performance remain pending.
 
 ## Approach
 
@@ -79,7 +79,7 @@ Each of these is checked by looking at a rendered result or watching the scene r
 - [ ] Vehicles hold their lanes, obey the signals, turn, and spawn and despawn at the boundary, watched over a run rather than sampled in one frame. (Phase 7)
 - [ ] Pedestrians avoid each other and surge diagonally across the crossing on the signal phase — the signature shot — with no visible interpenetration and no sliding feet. (Phase 8)
 - [ ] Vehicles and pedestrians run off the same clock: one signal phase model drives both, and no frame shows traffic moving through the scramble while pedestrians are on it. (Phase 6)
-- [ ] 60 fps at 1080p in a running build under the target agent counts. This criterion is incomplete until the owner sets those counts — see Blockers. (Phase 9)
+- [ ] 60 fps at 1080p with 3,000 animated pedestrians and 200 vehicles in a running build. (Phase 9)
 - [x] The scene rebuilds from a clean checkout: delete the derived geospatial outputs, re-run the pipeline, render again, and compare with the frames above. (Phase 2)
 - [x] The running app shows its attribution: PLATEAU (PDL 1.0, with CC BY 4.0 permitted — the licence name here was imprecise and is corrected), OpenStreetMap (ODbL) and GSI. (Phase 1)
 - [ ] A multi-angle, multi-zoom sweep and a flythrough driven through the real controls both come back clean, an independent review passes, and the work is merged to main. (Phase 10)
@@ -129,9 +129,9 @@ Thirty-five items across eleven phases. The numbering is stable and append-only 
 
 ### Phase 6 — Network graph (shared contract; must freeze before Phases 7 and 8 run in parallel)
 
-- [ ] 21. Lane-level road graph plus sidewalk and crossing graph from OSM
-- [ ] 22. Signal phase model driving vehicles and pedestrians from one clock
-- [ ] 23. Document and freeze the schema — it is the interface both agent workstreams build against. Constraint: the OSM-derived network graph stays in its own files, never fused with PLATEAU geometry. The render is a Produced Work with no share-alike, but this graph is a Derivative Database, and publishing the app obliges offering recipients that derived database or a description of the method (ODbL 4.6). Keeping them separable is nearly free now and expensive to unpick after the schema freezes
+- [x] 21. Lane-level road graph plus sidewalk and crossing graph from OSM — reviewed offline network milestone; inferred widths and missing ground remain disclosed in `network-contract.md`.
+- [ ] 22. Signal phase model driving vehicles and pedestrians from one clock — shared deterministic controller and admission API reviewed; both populated consumers remain unimplemented.
+- [x] 23. Document and freeze the schema — it is the interface both agent workstreams build against. Constraint: the OSM-derived network graph stays in its own files, never fused with PLATEAU geometry. The render is a Produced Work with no share-alike, but this graph is a Derivative Database, and publishing the app obliges offering recipients that derived database or a description of the method (ODbL 4.6). Keeping them separable is nearly free now and expensive to unpick after the schema freezes
 
 ### Phase 7 — Vehicles
 
@@ -151,7 +151,7 @@ Blocked: no licensed source is chosen for rigged pedestrian character models. Se
 
 ### Phase 9 — Performance
 
-Blocked: target agent counts are unset, so there is no number to hit. See Blockers under Scope.
+Pending populated integration and measurement at the fixed 3,000-pedestrian/200-vehicle target.
 
 - [ ] 30. Draw-call and LOD budget; 60 fps at 1080p under target agent counts
 - [ ] 31. Profile, fix, re-measure
@@ -216,3 +216,10 @@ Items 9 to 14 are done. Real Shibuya renders: PLATEAU's 2.5 m terrain TIN, its `
 **What Phase 4 inherits, and should not rediscover.** Building textures are capped at 1024 pixels on the longest side at load time, in `src/scene/texture-budget.ts`, because the alternative is a scene that cannot hold the area of interest at leaf detail; the table of what each cap costs is in that file and the number is one constant. The 64 LOD1 buildings render as untextured white, which is item 15's stated job. Nothing here touches materials or lighting.
 
 Phase 4 is next.
+
+
+### Phase 6 network milestone
+
+Review 5 accepts the separate OSM graph, deterministic signal/reservation admission, supported 3D vehicle footprint and atomic boundary lifecycle. Earlier reviewed failures and all four exact contract snapshots remain permanent. The graph has 5,094 nodes, 4,855 vehicle sections, 1,740 walking edges and 213 controllers; all 401 original conflict disks and every portal remain. The 11.6 m supported body bound enlarged the scramble union to a 211.029 m bounding-box diagonal without inventing a larger physical disk. Source lane/width inference, 47.196 m of undrapable walking path and the single no-U-turn dead-end demand exclusion remain explicit.
+
+The accepted module is available through `data:network` and `/network/network.json`; this milestone retains the main baseline application and its eighteen-view SwiftShader visual harness. It does not claim the pending two-style 44-frame graphics gate, rendered network decorations, animated agents, natural traffic throughput, actual wheel/pavement contact or continuous boundary steering. Items 24–29 and all populated/visual acceptance criteria remain open. Phase 6 item 22 closes only when both running populations use this one clock.

@@ -1,5 +1,5 @@
 /**
- * Serve two directories that are deliberately not in the bundle.
+ * Serve derived scene/network data and the decoder without copying them into the bundle.
  *
  * **`/scene/` from `data/scene/`.** `npm run data:scene` writes about 150 MB —
  * the tileset, 67 placed `.b3dm` tiles, the terrain mesh and the road mesh. That
@@ -33,6 +33,12 @@ const CONTENT_TYPES: Record<string, string> = {
   ".wasm": "application/wasm",
   ".b3dm": "application/octet-stream",
   ".mesh": "application/octet-stream",
+  ".glb": "model/gltf-binary",
+  ".bin": "application/octet-stream",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
 };
 
 interface Mount {
@@ -51,6 +57,11 @@ export function serveSceneData(rootDirectory: string): Plugin {
         "That directory is built by `npm run data:scene`, which needs `npm run data:fetch` to " +
         "have run first. It is gitignored, so a fresh checkout has to build it before the scene " +
         "can draw.",
+    },
+    {
+      route: "/network/",
+      directory: resolve(rootDirectory, "data", "network"),
+      missing: "Run `npm run data:network` after `npm run data:fetch` and `npm run data:scene` to build the separate OSM movement database.",
     },
     {
       route: "/draco/",

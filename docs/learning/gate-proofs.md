@@ -235,3 +235,20 @@ Three failure paths are written and reachable and have never been watched to fir
 - **WebGL unavailable** — `createRenderer` and `waitForFirstFrame`. Forcing headless Chromium to refuse a context without also breaking the page some other way needs a launch-flag combination that was not worth chasing in Phase 0.
 - **The render loop stopping mid-sweep** — the stalled-frame-count branch in `OrbitDriver.settle`. Needs the loop to die after the first frame, which no natural failure in Phase 0 produced.
 - **The camera never settling** — the poll-limit branch in `OrbitDriver.settle`. Would need damping turned off or a control that oscillates.
+
+
+## Network source semantics, complete bodies and boundary lifecycle
+
+**Gate:** `test/network-review.test.ts`, `test/network-compound.test.ts`, `test/network-boundaries.test.ts`, `test/network-mesh.test.ts`, `tools/network/check-admission.ts` and `tools/network/check-boundaries.ts`. These are source/controller and supported-body checks, not populated traffic or visual proof. The promoted fixtures retain their source IDs, real path geometry, declared omitted successors and actual measured asset records.
+
+**Landed:** reviewed Phase 6 network milestone, 2026-09-11. Reviews 0, 1, 3 and 5 and snapshots 0–3 remain permanent. No prior lesson prose is retired by this entry.
+
+**Source mutations:** the exact rejected builder failed internal/cross-way continuations, conflict lateral links and missing physical/control metadata. Removing cross-way permission propagation admitted a forbidden straight movement. Skipping stop dwell wrongly granted actor `s`. Centre-only clearance released a vehicle while its tail remained inside. The real source dead-end/no-U-turn exclusion remained a passing control.
+
+**F4 mutations:** the unchanged nineteen-test compound copy passed. One-pass grouping failed a newly exposed primitive pair; physical-gap release failed short vehicles, pedestrians, delayed signals and repeated laps; skipped dwell failed mapped/internal/later-lap stops; moving mapped stop distance to edge zero failed actual source and projection cases; ignored size limits admitted an oversized body; allowing backwards progress failed route occurrence checks. Each isolated mutant exited with semantic test failure. The old flat11.1m proof bounds remain historical.
+
+**F5 mutations:** the unchanged eleven-test boundary copy passed. Eight isolated mutants each exited one: restored controlled-terminal rejection failed the actual vehicle and both walking endpoints; retiring before full body clearance failed all six terminal cases; leaving active set or leaving a lease failed atomic retirement; materializing before a grant failed the physical-only entrance; ignoring generation or displayed class failed unchanged-state checks; omitting body height from projection failed independent tilted-bus bounds. Raw copies and logs are retained under ignored `artifacts/network/f5-mutations/`, bound by the Review 5 candidate manifest SHA-256 `611b82612bd360a9815855a1d187fc3c8d90c53a2d1f32d043653a7e520b1545`.
+
+**Decoder red proof:** against the original shared decoder, browser bytes and an offset Uint8Array passed while Node Buffer returned `7.185598589700907e+22` instead of `0` for the first position. Explicitly copying the selected byte view makes all three cases pass.
+
+**Measured bounds:** all 77 vehicle exits with three generated tilted classes plus 33 walking exits produce 264 lifecycle traces; 264 reachable entry/class cases include49 initial authorities, six physical-only prefixes and28 ordinary entry handoffs. An independent review checked42 analytic body projections. The corrected true-exit route census constructs3,444 vehicle and408 walking passages. Supported diameter≤11.6m, primitive gap≥12.1m, route gap≥12.5m, 1/60-second clock and selected quarter/half-metre samples define these proofs. Dwell/yield/capacity values are supplied fixtures. Continuous steering, surface contact, queues and200-vehicle throughput remain outside the claim.

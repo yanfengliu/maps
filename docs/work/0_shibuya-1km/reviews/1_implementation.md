@@ -1,0 +1,78 @@
+# Review 1: implementation
+
+## Target
+
+Repository: `maps`. Base: main `277a8332e61bd29189fa65eae7271f952b04df33`. Reviewed on 2026-09-08: the frozen, uncommitted F0–F3 repair candidate in `artifacts/network/phase6-review1-candidate.json`. All 22 listed file hashes matched before review. The exact files, candidate manifest and graph were copied with hash verification to ignored `artifacts/network/phase6-review1-frozen/`. No implementation, renderer or application files changed during this review.
+
+The graph is 10,217,404 bytes, SHA-256 `8ae12262cf19e4f1310ba9303ad9dbd6769b73d5c4fab1907bb006385350ab6c`: 5,094 nodes, 4,855 lane sections, 1,740 walking edges and 299 controllers. The manifest preserves the complete scope and file digests. Critical reviewed digests are `src/network/reservations.ts` = `5501682e9053e3ecb61216bb28b1ae6b1b8bfb3d142c4ffba2f394ae53c2ac88`, `src/network/geometry.ts` = `0d2903a0388feb7e717f0199743ced757a27ac22dd618813a9036452220425dc`, and `tools/network/generate.ts` = `8113b73e726a23955423a472cd93e366ae6df628cb16924a16384190f6df31cd`.
+
+The reviewed `network-contract.md` digest is `981cc75c23f7a0238e4bba386c93e09630198c42066b904900748d79cff21eee`. The owner must preserve these reviewed document bytes in the next permanent snapshot before editing them. The old rejected contract remains at `snapshots/0_network-contract.md`, digest `577d9b0b6f501c7cda2efd36d6ca6407cba4adbe3d8fc150f38a5efd3ec12718`. Preserve the ignored frozen source tree until its contents are bound to a recoverable committed revision; later changed source is not the target of this round.
+
+## Reviewers and coverage
+
+Independent read-only reviewer: Codex worker `/root/network_review`. This round checked Review 0 F0–F3 against the repaired source, promoted source fixtures, complete graph, physical records and new reservation controller. Coverage includes permission propagation, reciprocal lateral geometry, stop and physical marking metadata, exclusive admission, fixed-step fairness and footprint release. Additional bounded checks cover consecutive reservation areas, mixed signal/reservation admission, a 10.565 m bus footprint, and offline clustering feasibility requested by the integration owner.
+
+No app, renderer or simulation implementation was reviewed or changed. No browser, GUI or host-authenticated reviewer route was used. The forbidden host CLI route was not retried. This round does not establish the two styles' pixels, populated traffic behaviour, collision avoidance, runtime assets, performance or final integration.
+
+## Authored reports
+
+### Codex network reviewer
+
+**F0 — resolved for the reviewed source and continuation contract.** Same-way continuation now bypasses destination-only lane labels, and degree-two cross-way continuation carries those labels to the later branch. Explicit relation filtering still precedes successor admission. The original `1071659161`, `1087233628` and reverse `1377702569` counterexamples pass the promoted-source tests. Independent reverse traversal of the complete graph finds 4,578 exit-reaching lane sections and only the documented `138385061` entry without an exit. The repaired `1377702569` boundary portal is now `lane:1377702569:1:0:ground0:r:0:section0`; the old unsuffixed ID is obsolete after conflict splitting. The contract correctly retracts the false source-limitation interpretation and separately explains the remaining mapped dead end plus no-U-turn policy. The carry-permission mutation log fails on a forbidden straight movement, not on fixture setup. This establishes the named source cases and tested continuation rules, not all possible OSM conditional restrictions.
+
+**F1 — resolved within the reviewed lateral geometry.** The graph has no lateral links inside conflict sections. There are 110 reciprocal right-neighbour pairs outside them, including the repaired long parallel approaches. At 10%, 50% and 90% of each pair's reported common interval, independent signed-side checks found zero wrong-side samples, a minimum heading dot product of `0.9999130844`, and separations from 3.0 to 3.7163 m. These checks supplement the validator's overlap function instead of merely calling it as both implementation and oracle. They do not establish swept-body collision safety for a completed lane change; the vehicle consumer still needs that gate.
+
+**F2 — data contract resolved; rendered acceptance remains downstream.** The physical arrays now preserve 193 crossing records, 38 tactile paths and 119 mapped control nodes, separate from the 46 signal and 253 reservation controllers. The original three unmarked-way examples retain `markings=none`; the two source-note tactile examples retain `extent=path` and their movement routes. Direction, source tags, entry references and controller identity survive for mapped controls. The contract expressly forbids generating physical poles from inferred reservation authority and using movement widths as pavement extents. This round did not inspect replacement rendered frames, so it closes the network information-loss finding rather than claiming the earlier visual defects have been repaired.
+
+**F3 — source-control and admission interface repaired, with a new clearance defect in F4.** All 41 mapped stops retain applicable boundary entries with `entryRule=stop`; a whole-graph check found no mapped stop entry lacking that rule. The reservation controller rejects insufficient dwell, missing yield eligibility and absent receiving space, resolves reversed simultaneous batches consistently, holds one committed actor across internal edges and retains its footprint until clear. The age-bucket test demonstrates service against fresh priority arrivals within its five-second fixture. The stop-dwell and tail mutations each fail for the expected semantic reason. These are useful improvements, but the new single-lease restriction conflicts with the actual spacing of adjacent controllers.
+
+**F4 — P1: Adjacent conflict areas cannot be traversed while retaining the required footprint commitment.** `src/network/reservations.ts:52` rejects an actor that holds any other reservation. `release` at lines 71–78 correctly retains the previous lease until the footprint leaves. The generator only merges overlapping disks, so a legal route can leave less than one body length between distinct authorities. On source way `46770374`, the legal sequence `lane:46770374:1:0:ground0:f:0:section0 → section1 → section2` goes from `priority:node:11932522359` through a 0.2315342039 m gap into `priority:node:13612977940`. A 4.6 m × 1.8 m car whose front stops before the second boundary still occupies the first. The release returns false; requesting the second area throws `Actor gap-vehicle already holds another junction; retain and clear that commitment before requesting another.` Even with no competing actor, the car cannot advance while following both requirements. `node artifacts/network/review1-clearance-reproducer.mjs` reproduces this against the frozen source and graph; its assertions establish the failure state rather than claiming a passing product gate.
+
+The class is not confined to short cars or two reservation controllers. A 10.565 m × 2.5 m bus reproduces the same conflict on reverse way `87250220`, sections 0 → 1 → 2, across a 4.7046444083 m gap. On forward/reverse way `1377702569`, the signal `junction:walk:665322368:0:0:ground0` and reservation `priority:node:508450686` are separated by only 2.1180702373 m and 2.2293625543 m along the respective routes. A constructed outbound car retains its signal-area footprint while awaiting the reservation held by a returning car; the returning car retains that reservation while awaiting the signal. At 120 simulated seconds the signal remains held at clearance, cycle 0, the reservation remains held, and both admissions are denied. This is a controller-level committed-footprint reproducer using real route geometry, not an observed populated renderer run. A single mixed-authority transition does not itself trigger the duplicate-lease exception; the demonstrated mixed failure is coupled hold-and-wait. Reproduce the mixed and bus cases with `node artifacts/network/review1-mixed-clearance-reproducer.mjs`.
+
+A directed route-gap census, limited to gaps under 12 m, found the following. These counts identify nearby geometry requiring coverage; they do not prove that every listed transition deadlocks in populated traffic.
+
+| Consecutive authority kinds | Gaps below 4.6 m | Gaps below 10.565 m | Gaps below 12 m |
+|---|---:|---:|---:|
+| Reservation → reservation | 28 | 61 | 67 |
+| Reservation → signal | 7 | 23 | 26 |
+| Signal → reservation | 19 | 35 | 36 |
+| Signal → signal | 14 | 20 | 25 |
+
+The repair needs one coherent admission and clearance contract across the required route footprint. Simply allowing sequential acquisition leaves hold-and-wait; releasing the tail early violates the safety condition. Two bounded approaches are plausible. Offline grouping can share admission across controllers whose route spacing cannot contain the supported body, while retaining the original physical areas and mapped hardware separately. Alternatively, atomic look-ahead admission can obtain all required route commitments before entering the first area, coordinating signal permissions and capacity at the same decision boundary. Either route must consider turns, travel direction, mixed authority kinds and the actual largest collision body. Grouping only IDs is insufficient if a short actor can clear one primitive into a gap and prematurely drop a commitment needed at the next primitive.
+
+The owner requested a bounded offline feasibility check before selecting the repair. Unioning current controller IDs whenever a legal directed route connects them across a gap below 12 m gives 223 proposed clusters from 299 controllers, including 55 clusters with more than one controller and 154 directed links. No resulting cluster contains more than four current controllers or nine original disk primitives. The maximum width is 109.497 m, maximum depth 147.244 m, and maximum bounding-box diagonal 157.087 m. The widest grouping includes the scramble plus `priority:node:1316007410`; the greatest depth joins `junction:walk:553526345:0:0:ground0` and `junction:walk:664532506:0:0:ground0`. Thus this particular proposal does not collapse the whole AOI into one authority. It is an upper-bound proposal relative to a 10.565 m length-only threshold, not a swept-footprint proof or a capacity measurement. It may group more geometry than necessary, and combined signal scheduling remains a design obligation. Results are retained in `artifacts/network/review1-cluster-feasibility.json`. No cluster was applied to the graph or source.
+
+## Findings and disposition
+
+| ID | Finding | Disposition and reason | Repair or follow-up |
+|---|---|---|---|
+| F0 | Internal and cross-way continuation lost under turn-only tags | Resolved against the named repaired source cases and independent full-graph reachability. | Preserve the source and permission-carry regressions; do not restore the old source-limitation claim. |
+| F1 | Incorrect lateral links after conflict splitting | Resolved against the reviewed graph and bounded signed-side samples. | Vehicle lane-change collision and capacity checks remain integration work. |
+| F2 | Physical markings and hardware conflated with movement authority | Network data and contract resolved; no replacement visual acceptance claimed. | Renderer must consume physical facts and inspect the resulting two-style frames. |
+| F3 | Mapped stop/priority information absent from admission contract | Original information and admission gap repaired; the new clearance interaction is tracked separately as F4. | Retain dwell, yield, batch-order, fairness and footprint tests through F4 repair. |
+| F4 | Close consecutive authorities cannot satisfy body clearance and admission together | Integration owner accepted as material, including the mixed-authority controller reproducer. | Choose clearance-safe grouping or atomic route commitments; retain tails, avoid hold-and-wait, cover actual bus dimensions and mixed controls, then obtain focused re-review. |
+
+## Verification
+
+`npx vitest run --configLoader native test/network.test.ts test/network-review.test.ts test/network-mesh.test.ts test/network-serving.test.ts test/signals.test.ts test/signals-reservations.test.ts` passed: six files, 41 tests, Node 24.12.0. `validateShibuyaNetwork` passed on the complete frozen graph. Independent reverse traversal reproduced 4,578 exit-reaching sections and the sole unusable boundary entry. Physical stop boundary rules and bounded lateral signed-side geometry were checked separately from their source fixtures.
+
+The full-source signal controller was independently run for 360 simulated seconds at 60 Hz in empty and delayed-clearance cases. All 46 signal controllers completed at least three cycles; reservation controllers emitted no signal snapshots. The empty scramble first pedestrian and cycle times were 88 and 116 seconds. Holding its first clearance until second 27 shifted these to 92.9833333 and 120.9833333 seconds. Those green runs contained no populated adjacent-controller commitments, which is why they do not catch F4.
+
+The author-provided permission-carry, stop-dwell and tail mutation logs were inspected and showed the claimed semantic assertion failures. The reviewer did not rerun source mutations. Both newly retained F4 reproducers ran successfully in the sense that their expected failure states were reproduced, with their raw results kept in `artifacts/network/review1-clearance-result.json` and `review1-mixed-clearance-result.json`. Both scripts import the frozen reviewed implementation and assert the frozen graph digest.
+
+The F4 evidence below is retained under ignored `artifacts/network/`; these digests bind this report to the exact probes and results inspected.
+
+| Evidence file | SHA-256 |
+|---|---|
+| `review1-clearance-reproducer.mjs` | `721614e62e1fa307b8cadc7dc2be75f9727b540d657c46e0d0206953bfc53370` |
+| `review1-clearance-result.json` | `cda23b3b78f5aa54d02d4abb1bbef24ba9e2938de1af28d211a29d0850b7b5cd` |
+| `review1-mixed-clearance-reproducer.mjs` | `91aee223fd1d8088bc51e2527bc94672e7f64c028da9d1bf6adeec1193e07c5b` |
+| `review1-mixed-clearance-result.json` | `69bd7dc3591ff76df8ef187d85cfcc1ae3f578e6ddbd48062298226d595cb1c8` |
+| `review1-cluster-feasibility.json` | `487c6223abb8ddb36755b444adbe54d1513fd582a6f640049cf51c9e2a079431` |
+
+All 22 live candidate source/document hashes and the graph digest matched again at review completion, and the preserved frozen copies matched their manifest. No full build, typecheck, audit, populated simulation or visual sweep was independently run in this scope. The typecheck in the candidate manifest remains author-reported evidence. No browser, GUI or persistent server was launched; scoped tests exited and their ephemeral HTTP server and temporary directory were cleaned. System process enumeration remains unavailable under the sandbox ACL; no shared processes were terminated.
+
+## Round outcome
+
+F0–F3 have the scoped dispositions above, but this repaired Phase 6 candidate is not accepted because F4 is material. The existing passing tests and empty-controller timelines do not prove a vehicle can traverse the generated sequence of conflict areas. Preserve this candidate as counterevidence, repair the shared admission contract, and re-review the new exact source and graph with car, bus, opposite-direction and mixed-authority cases. This scoped review does not mark the Shibuya deliverable complete, integrated or merged.

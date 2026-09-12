@@ -4,6 +4,14 @@
 
 Vite, three.js and TypeScript, on Node 24 pinned in `.nvmrc`. Decided in the Shibuya plan (`docs/work/0_shibuya-1km/plan.md`) and built in Phase 0.
 
+## Shibuya delivery ownership and autonomous work
+
+For the approved Shibuya deliverable, the root orchestrator coordinates and delegates implementation to bounded workers, owns shared contracts and canonical status, and accepts the final integrated revision. Managed work continues autonomously in goal mode through the whole deliverable; the owner's 2026-09-08 instruction to continue until done overrides the default automatic-repair cap for this scope. Use each worker's scoped goal where the available tooling supports one; never overwrite another worker's or the root's goal.
+
+The existing target in `src/world/frame.ts` is 3,000 animated pedestrians and 200 vehicles at 60 fps and 1920×1080. Keep that target distinct from measured performance. The scope remains the roughly 1 km Shibuya simulated world and its approved phases; no second location, broader product surface or publication is implied.
+
+The owner's 2026-09-11 delivery instruction is to commit each meaningful step toward the current unit of work once that step is reviewed and verified. The integration owner lands accepted milestones on main rather than holding every change until the grand vision is complete. All five gates still precede a code commit, and visual work still requires native inspection and resolution of material review findings.
+
 ## Map data, and what its licences oblige
 
 Three sources, settled in Phase 1. Provenance, URLs and measured constants are in `docs/work/0_shibuya-1km/design.md`; the exact credit strings are in `src/world/sources.ts`.

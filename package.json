@@ -18,6 +18,7 @@
     "data:fetch": "node tools/data/fetch.ts",
     "data:tiles": "node tools/data/fetch-tiles.ts",
     "data:scene": "node tools/scene/build.ts",
+    "data:network": "node tools/network/build.ts",
     "visual": "npm run build && playwright test",
     "visual:install": "playwright install chromium",
     "audit": "npm audit --audit-level=high"

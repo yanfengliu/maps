@@ -124,7 +124,9 @@ export function decodeMesh(bytes: Uint8Array): MeshData {
   // Copied rather than viewed: the byte offset here is only 4-aligned, and a
   // Float32Array view needs 4 while a Uint32Array view needs 4 — but the caller
   // may also hand in a Uint8Array that is itself offset inside a larger buffer.
-  const copy = bytes.slice(offset).buffer;
+  // Uint8Array.slice copies, but Node Buffer overrides it with a view. Construct
+  // the copy explicitly so Buffer callers cannot expose the header/backing slab.
+  const copy = new Uint8Array(bytes.subarray(offset)).buffer;
   return {
     header,
     positions: new Float32Array(copy, 0, header.vertexCount * 3),
