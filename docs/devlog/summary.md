@@ -1,5 +1,7 @@
 # Devlog Summary
 
+- 2026-09-13: Preserved independent gait progression, sampled cadence and 3,000-agent cost reviews, plus the visibility observer's original F13/F14 failures and bounded CPU repair. Complete finite gait traces do not establish naturalness or affordable production poses; passing vehicle response records did not make occluded frames acceptable. See [the detailed entry](detailed/2026-09-13_gait-visibility.md).
+
 - 2026-09-13: Review 15 records accepted R2 response-completion verification. A same-collector capacity comparison reproduced both large-body inspector evictions with default buffers and verified the exact three responses with expanded buffers. The 44-view graphics gate and eighteen vehicle executions remain incomplete; the walk initialization experiment remains rejected. See `detailed/2026-09-13_completion-evidence.md`.
 
 - 2026-09-11: The reviewed Phase 6 network milestone adds the separate OSM graph, shared deterministic admission, supported vehicle hulls and atomic boundary lifecycle. Reviews caught broken continuation, invented physical meaning, adjacent-controller deadlocks and terminal leases; source fixtures and mutation gates now cover them. Populated traffic, continuous steering/contact and graphics acceptance remain pending. See `detailed/2026-09-11_network-milestone.md`.
