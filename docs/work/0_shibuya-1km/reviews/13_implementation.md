@@ -1,0 +1,77 @@
+# Review 13: implementation
+
+## Target
+
+The original three-class vehicle trim/liner repair and standalone offline vehicle builder/verifier in `maps`, based on main `279908488a29bd729e78656dade259638b98a669`. This allocated round records the completed bounded implementation evidence and root's separate review; it is not an independent worker review of the asset author's own pipeline.
+
+The accepted geometry target is `artifacts/agents/vehicle-repair-v4/handoff.json`, SHA-256 `5d34c6ae1f326ba3134a9354b659d53c622c5b8587df2dad373dc4b95d5a06d2`, containing 69 source/output/evidence bindings. Its capture manifest is `capture-1789260059337/manifest.json`, SHA-256 `86767a6cff94d26b4a9b5e876986e03fde6f174d3dfcef24e88eb4c32a656ced`. The preceding rejected V3 geometry and native evidence remain under `artifacts/agents/vehicle-repair-v3/`; its capture manifest is `836c40dd1c26ebe8945fda1b3746874cf439e22950ec6bc0585e3e0774f1fb5d`.
+
+The standalone source target is `artifacts/agents/vehicle-build-closure/manifest.json`, SHA-256 `df89b7d98a1e55a5cf9d81861f67ee85932b3c8e248041d021fcfb057dc3a060`, with 35 source, candidate-dependency, output and evidence bindings. The five owned paths are `tools/agents/build-vehicles.ts`, `verify-vehicles.ts`, `vehicle-clearance.ts`, `build-vehicles.py` and `test/vehicle-assets.test.ts`. Their preserved base-to-target patch is `artifacts/agents/vehicle-report13/closure-target.patch`, SHA-256 `15e2a1d98e84e8274ea281e1916c602c8cd35533e01d10a88ef32f3e0226d7d8`. The exact frozen copies include new files and remain recoverable ignored evidence.
+
+## Reviewers and coverage
+
+The asset worker (`/root/status_evidence`) authored the recipe, verifier, counterexamples and isolated production-renderer captures. The author checked actual selected GLB geometry, repeatability, error paths and resource closure, and inspected every native frame individually. Those are self-authored implementation and verification results.
+
+Root independently read the recipe repair, continuous geometry proof, wheel equivalence, standalone implementation and tests. Root verified the frozen digests, independently ran the standalone tests and verifier, inspected all 28 V4 native frames individually, and checked exact process identities. Root's conclusions and limits are recorded separately below. No CLI reviewer report was obtained for this unit, and no additional independent worker code review is implied. The graphics integration owner still owes its final dependency review, all five gates and main integration.
+
+## Reports
+
+### Asset worker: authored geometry and implementation evidence
+
+The original selected meshes contained literal static-body intersections with moving tires: continuous sill/rubrail strips crossed rims, solid liner geometry entered the wheel volume, and the bus front door/step group overlapped the steered front opening. Native steering views exposed the defects after isolated studio stills had appeared adequate. The repair splits or cuts the actual static details around a conservative continuous wheel volume, replaces solid liners with hollow upper liners and moves the complete bus front door/glass/step group together by the approved 0.15 m within unchanged exterior bounds. Wheel root positions, nominal rolling radii, class order, axles, collision dimensions and external bounds remain unchanged.
+
+The clearance proof derives its inputs from all actual selected final GLB triangles. It bounds every spin phase and signed parallel front-steering angle through ±35 degrees, with ±0.05 model-metre wheel displacement along support Y. A cylinder based on the maximum actual 3D wheel radius, offset bound and required 10 mm clearance is intersected with analytical XZ bounds that include interior angular extrema. Every static-body triangle must separate from that volume by X, Z or its whole projected YZ triangle distance. The distance includes edges and interior, so a triangle containing the projected disk cannot pass because its vertices are outside. Construction uses 12 mm clearance and a circumscribed cutter; the verified minimum additional margin beyond the required 10 mm is approximately 1.99987 mm. The comparison tolerance is 1 micrometre. This is a conservative separation proof for this fleet, not a finite pose scan or a general collision library.
+
+V3 passed the numerical clearance and repeatability checks but failed native review. The taxi side views showed a detached black sill fragment behind the rear wheel. Root independently confirmed it and rejected promotion. V4 removes only the two disconnected rear islands of named taxi sills. Each island has 68 source vertices and 60 source faces, spans about 26.738 mm longitudinally, and lies within guarded rear-axle and 80 mm length bounds. The policy requires exactly one retained component spanning the sill centre; it cannot remove arbitrary body islands. Kei and bus GLB bytes remain unchanged from V3. All rejected V3 frames and proof data remain preserved.
+
+Export reproducibility required a deterministic wheel join with the named tire active and a stable origin. Earlier exact-position comparisons failed at 18.5/30.7 nanometres and are retained as red evidence; wheel bytes are not claimed unchanged from the original exporter. Disabling unused UV export removed nondeterministic seam metadata. The vehicle renderer uses untextured materials, and the selected models have no UV/map consumers. Full material-labelled oriented drawn-triangle multisets preserve triangle multiplicity and surface positions within 1 micrometre, including every same-material primitive. UV removal may merge accessor vertices without changing the drawn surfaces.
+
+The earlier 1e-6 normal-vector comparison also remains red. The installed exporter rounds normals to four decimal places. Root accepted a separately declared 0.01-degree angular bound after inspecting original/new vectors and exporter behavior; this is not a positional tolerance applied to normals. The observed maximum angular difference is about 0.007310 degrees, with finite nonzero normals and no flips. Maximum surface-position change is about 0.0373 micrometres. Final steering/spin containment and body clearance are derived again from the new GLBs, rather than inherited from old analytical arrays.
+
+Two fresh V4 Blender processes produced byte-identical sets of three GLBs and the complete raw manifest in 6.04 and 6.11 seconds. No timestamp or field was excluded. The V4 raw manifest digest is `be4810c305d903e027e3c7bfe07243c8644c39debc4a053c375ac4edd179e88a`. The final model digests are:
+
+| Class | Model SHA-256 |
+|---|---|
+| kei | `342d388d5cc50a6bb583b782f47d75288c3ae774c7567a19a618301baff2e98e` |
+| taxi | `ea528fc78b9728ee3edc0758c38dddbef754609be03b8f0d58514d9d3ecb4b23` |
+| bus | `d7703b40ffb5e77b254c23b86dcd48c4237c4a10b59b85d1d8a46559401b8f6c` |
+
+The isolated viewer uses the production `VehicleRenderer`, with explicitly synthetic poses. The standard set contains 26 individual 1280×720 frames: all three classes at neutral and both steering directions, front/side comparisons, spin pairs and coupled grade/offset witnesses. Three continuous clips contain 181 frames each at 60 fps. The author inspected every native frame, and all 29 standard PNG/WebM digests matched. These captures exercise rendering and mesh transforms, not ordinary world controls, actual route support or vehicle simulation.
+
+Two additional matched taxi/bus frames change only actor `receiveShadow`. The dense hood/roof/glazing bands disappear with shadow reception disabled while geometry, normals, materials, lighting and camera remain fixed. This identifies a shadow-sampling effect in the isolated zero-bias light fixture. It does not change the production renderer or establish world-shadow acceptance. All 26 standard images retain shadow reception. Close opening facets remain visible and require judgment at actual street pixel footprints.
+
+The standalone builder now avoids the human pipeline entirely. `node tools/agents/build-vehicles.ts` builds and admits only the three rigid models and `vehicles.json`; `node tools/agents/verify-vehicles.ts` separately verifies them. Both accept `--directory`, defaulting to `data/scene/agents`. The minimal closure imports the rigid verifier/helper, existing asset metadata and only the two numeric bounds from the shared pose file. It does not download human archives, call the human builder, require an account, add dependencies or fetch vehicle assets. The recipe records original unbranded repository-authored MIT geometry and uses installed Blender 5.2.0 LTS in offline factory-startup CPU mode.
+
+The builder creates a task-owned stage inside the selected output directory, retains its direct Blender child handle, enforces a 120-second build deadline and waits for actual close in a bounded finally path. It validates every staged model before copying any published file, publishes the three models followed by their manifest, then verifies the output. It removes only a successful stage whose resolved path is inside the created output prefix. Failed stages remain named in the error. Four-file publication is sequential, not atomic: interruption can leave a digest mismatch that a rebuild repairs. The preservation rerun kept an unrelated human sentinel byte-for-byte.
+
+The production verifier checks the bytes it hashes, selected-scene membership, actual drawable triangles/transforms, wheel roots, radii, bounds and continuous whole-body clearance. Original intersecting models remain red. Valid-hash empty-scene, orphan-wheel and wrong-pivot mutations fail. Missing or malformed manifests/models and malformed GLB JSON name the actual file, preserve the cause and give the `npm run data:vehicles` remedy. Root identified the original bare JSON/read errors before freeze; focused tests cover the repaired error class.
+
+Two fresh ordinary-command bakes and a separate preservation rerun produced the same four-file output, with all three GLBs exactly matching the accepted V4 digests above. The production recipe is `bc0727f57bebfb9088627d5d8b86e61b86326a79bf4f9c849de240e24ef0cd42`; the resulting 4,128-byte raw manifest is `5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01`. Relative to V4, only the recipe digest and removal of the unused review-directory field change that manifest. Hardware and surface consumers must bind these new actual raw bytes; identical GLBs do not preserve the old raw-manifest digest.
+
+### Root: independent owner disposition
+
+Root rejected V3 after inspecting the detached taxi sill fragment. For V4, root read the exact V3-to-V4 recipe delta and unchanged proof implementation, verified all 69 handoff entries and both complete four-output bake sets, and inspected all 28 native frames individually. All 31 capture output hashes matched. Root found no new trim, door or pivot defect and accepted the repaired geometry within this scope. Root retained the close-facet and world-shadow/style limits and did not grant photoreal or motion/population acceptance.
+
+For the standalone closure, root read all four implementation files, the focused test and Python output-wiring delta; verified all 35 frozen pins; ran eight frozen unit tests and the frozen CLI verifier against the actual fleet; and independently compared the two raw manifest changes. Root accepted this minimal dependency for graphics integration. Root's fresh CIM checks found all ten earlier capture/bake identities absent and later all three standalone builder PIDs absent. That acceptance is separate from the immutable earlier authored handoff, which correctly still says its review was pending when written.
+
+## Findings and disposition
+
+| ID | Finding | Disposition and reason | Repair or follow-up |
+|---|---|---|---|
+| — | Original static trim/liners/bus door group intersect moving wheel geometry. | Repaired in the actual selected meshes and admitted by continuous geometry verification. Root accepted V4's scoped result. | Preserve the production whole-triangle gate and original red models. |
+| — | Numerically passing V3 introduced a detached taxi sill island. | Material visual rejection, preserved. Guarded V4 component removal resolves the observed defect. | Native review remains necessary; numeric clearance alone does not establish visual quality. |
+| — | Earlier exporter output was not reproducible, and strict normal-vector equality was not an appropriate angular equivalence claim. | Red evidence retained. Deterministic join/unused-UV removal yields full repeatable bytes; separately reviewed position and angular bounds establish surface equivalence. | Do not claim old wheel bytes or raw accessor topology are unchanged. |
+| — | Bare malformed/missing asset errors lacked input and repair guidance. | Root identified the class before closure freeze; named errors and focused controls now pass. | Retain the production error tests. |
+| — | Final world appearance, supported motion and all-five-gate integration remain open. | Outside this scoped acceptance. F9 separately rejects the core's wheel-side mapping in Review 9; it is not a fleet geometry defect. | Graphics/core owners rebind actual fleet bytes, repair their findings, verify integration and obtain the required later reviews. |
+
+## Verification
+
+The completed author runs include two independent V4 bakes, three ordinary standalone-command bakes, complete geometry/equivalence checks, original and valid-hash mutation controls, 15 focused tests, whole-tree typecheck and the native captures above. The 15 tests comprise eight vehicle-asset tests plus seven existing steering/support tests. Node was 24.12.0 with native Vitest config loading. The missing-Blender control failed with the exact executable path and remedy without starting a child. Successful stages and all directly owned resources were closed; no live scene fleet was published by these tests.
+
+Root's independent runs and native inspection are stated above and remain bounded to their exact frozen targets. While authoring this permanent record, `node artifacts/agents/vehicle-report13/prepare.mjs` freshly verified all 69 V4 and 35 standalone handoff entries, with zero mismatches, and preserved the exact five-path source patch. It did not repeat captures or bakes. The existing ignored reports, old failures, GLBs and handoffs were left unchanged.
+
+The standalone candidate dependency uses only the shared offset and parallel-steering constants from `artifacts/graphics-milestone/worktree/src/world/agent-poses.ts`, SHA-256 `7cfffeaeaf83535c381dc30ed1928d25fb63ce1be13550e397964facb8062394`. It does not require the live unready pose-buffer extension. Package wiring, fresh setup sequencing, hardware regeneration and the complete graphics gate are owned by the graphics integration task. No human recipe, human generated output, human schema or simulation wrapper is included in this source closure.
+
+## Round outcome
+
+Root accepted V4's scoped geometry/clearance/native result and the standalone vehicle-only dependency for graphics integration. This record preserves the author's evidence, root's independent checks, rejected V3 candidate and remaining limitations. It does not claim final photoreal appearance, ordinary vehicle motion, correct world contact, 200-vehicle traffic, 3,000-pedestrian performance, final five-gate completion or a code commit on main. Those remain dependent integration work and require their own exact verified revision.
