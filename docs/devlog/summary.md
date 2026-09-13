@@ -1,5 +1,7 @@
 # Devlog Summary
 
+- 2026-09-13: **Independent review accepted bounded facade preparation and B0 witness repairs, while confirming the evaluator slowdown.** F17–F20 now have finite repair evidence; native facade/city acceptance was not supplied. The ABBA kernel comparison is 263.45 versus 103.10 ms, with correctness retained and no cause diagnosis. See [the detailed entry](detailed/2026-09-13_facade-witness-cost.md).
+
 - 2026-09-13: Preserved separate evaluator, retirement, tiny witness and ABBA preparation reviews, including original F15/F16 failures, their focused repair and open B0 F17/F18/F19. Exact pose correspondence did not establish a speedup; tiny loss delivery did not establish city cleanup, and its failed outer report remains evidence. See [the detailed entry](detailed/2026-09-13_retirement-pose-evaluation.md).
 
 - 2026-09-13: Preserved independent gait progression, sampled cadence and 3,000-agent cost reviews, plus the visibility observer's original F13/F14 failures and bounded CPU repair. Complete finite gait traces do not establish naturalness or affordable production poses; passing vehicle response records did not make occluded frames acceptable. See [the detailed entry](detailed/2026-09-13_gait-visibility.md).
