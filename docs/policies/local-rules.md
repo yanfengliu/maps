@@ -12,6 +12,8 @@ The existing target in `src/world/frame.ts` is 3,000 animated pedestrians and 20
 
 The owner's 2026-09-11 delivery instruction is to commit each meaningful step toward the current unit of work once that step is reviewed and verified. The integration owner lands accepted milestones on main rather than holding every change until the grand vision is complete. All five gates still precede a code commit, and visual work still requires native inspection and resolution of material review findings.
 
+The owner's 2026-09-08 appearance requirement is two 3D styles, Cartographic and Satellite, selected through a World style dropdown. Cartographic takes the clean default Apple Maps view as its visual reference and adds finer scene detail; Satellite improves the existing phototextured treatment. A registry supplies the dropdown options and leaves room for later styles. Styles share world geometry, the running simulation and the current camera. Switching styles must preserve the camera and agent progress, and acceptance covers both styles at street, block and aerial distances through the actual dropdown, including keyboard input.
+
 ## Map data, and what its licences oblige
 
 Three sources, settled in Phase 1. Provenance, URLs and measured constants are in `docs/work/0_shibuya-1km/design.md`; the exact credit strings are in `src/world/sources.ts`.
