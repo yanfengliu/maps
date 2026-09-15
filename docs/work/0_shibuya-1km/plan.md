@@ -3,7 +3,7 @@
 Status: active
 Owner: root orchestrator
 Created: 2026-09-06
-Updated: 2026-09-13
+Updated: 2026-09-15
 
 ## Problem and outcome
 
@@ -82,6 +82,10 @@ Owner disposition, 2026-09-13: the preceding documentation checkpoint is `edd448
 The facade increment binds three material patches to the actual admitted tile, image, geometry and UV data while preserving the existing photographic gain expressions. The prepublication cleanup assurance limit and rejected null-KTX hypotheses remain explicit. CPU checks do not supply native shader compilation or appearance acceptance. The repaired B0 witness retains the earliest matching noon snapshot, refuses first admission after observed completion, uses the exact canonical debug-log key and rejects unfinished oversized EOF. Those finite controls do not establish the ordinary city navigation or replacement criteria.
 
 The independent ABBA interpretation reconstructs the input and row populations, all forty recorded summary sets and eleven negative arithmetic controls. The original/new/new/original kernel medians are 103.145250 / 263.538000 / 263.363600 / 103.054500 ms, with ratio 2.555296987508426 for the means of arm medians. The slowdown is accepted as measured; its cause remains unknown. Full state/pose correspondence is separate from performance. The proposed 24-tick paired CPU profile has not run. Production gait and the unchanged 3,000-pedestrian/200-vehicle target remain unintegrated.
+
+Owner disposition, 2026-09-15: four documentation units are on main at `f705e29`, `14e790f`, `cc108bd` and `ecb7dd1`, and are pushed. They move the Phase 6 network contract to `docs/reference/`, preserve review rounds 2, 4 and 12 with their recorded format corrections, record the 2026-09-13 status with the renderer-recovery and graphics-diagnostics devlog sessions, and take the candidate's newer copies of the graphics-diagnostics and facade-emission records. Some of those records name code and evidence that land only with the graphics candidate; each of those commit messages carries the list.
+
+The graphics candidate is still not on main, and its blocker is unchanged. Its `tools/visual/lifecycle.spec.ts` failed its own `page.goto('/?time=noon', { timeout: 15_000 })` after an 18.4-minute preparation, with the renderer's main thread unavailable for about 13.7 seconds. The fixed reproduction, the disqualifiers and the branch registry for that repair are held in `artifacts/lifecycle-repair-20260915/CONTRACT.md` and stay there while an attribution lane measures where the block sits. `AGENTS.md` and `docs/policies/local-rules.md` describe the candidate and land with it. About 137 paths stay uncommitted in the primary checkout: the candidate's code, the later network admission and passage work, and the agent, human and vehicle workstreams.
 
 ### Blockers (unresolved dependencies)
 
