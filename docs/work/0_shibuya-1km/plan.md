@@ -36,17 +36,26 @@ Ownership boundaries inside the work:
 
 ### Current delivery status and ownership — 2026-09-13
 
-The root orchestrator owns scope, shared contracts, canonical status and final acceptance. Implementation and independent review run in bounded worker assignments. The approved goal is the whole Shibuya deliverable through Phase 10, with autonomous goal mode across managed work. The owner instructed the team to continue until done and to commit each meaningful reviewed, verified milestone. This adds no second location or product surface.
+The root orchestrator owns scope, shared contracts, canonical status and final acceptance. Implementation and independent review run in bounded worker assignments. The approved goal is the whole Shibuya deliverable through Phase 10, with autonomous goal mode across the managed work. The owner instructed the team to continue until it is done, overriding the default automatic-repair cap for this scope. This adds no second location or product surface.
 
 | Scope | Current state | Owner and dependency |
 | --- | --- | --- |
-| Phases 0–3 | Complete on main at `277a8332e61bd29189fa65eae7271f952b04df33`; its recorded five-gate and eighteen-frame acceptance belongs to that baseline. | Root orchestrator preserves the baseline and evidence. |
+| Phases 0–3 | Complete on main at `277a8332e61bd29189fa65eae7271f952b04df33`; the recorded five-gate and eighteen-frame acceptance belongs to that baseline. | Root orchestrator preserves the baseline and its evidence. |
 | Phases 4–5 | Scoped C5, C6, C7b and C9, plus F8/F10 appearance evidence remain retained; no graphics code is committed. Review 24 accepts only the eleven-path facade source increment and CPU material preparation. Review 25 resolves F17–F20 within the B0 diagnostic contract. Native facade compilation/appearance, city build binding, ordinary 15-second navigation, 60-second replacement readiness and the full 44-view gate remain pending. | Renderer worker implements and verifies; root orchestrator accepts the integrated result after independent review. |
-| Phase 6 | The reviewed network milestone is on main at `1ca4552ceee25e34ac62335114bbb5377a4d6470`, with all five gates and eighteen native baseline views accepted. Reviews 3 and 5 retain interior safety and atomic boundary lifecycle within the 11.6 m supported-body contract. Both running population consumers remain pending. | Network worker owns the graph/admission API; root orchestrator accepts future integrated traffic. |
+| Phase 6 | Review 5 accepted F5 boundary lifecycle and the 11.6 m supported-body contract, retaining F4 interior safety. The reviewed network milestone is on main at `1ca4552ceee25e34ac62335114bbb5377a4d6470`, with all five gates and eighteen native baseline views accepted. Both running population consumers remain pending. | Network worker owns the accepted graph/admission API; root orchestrator accepts future integrated traffic. |
 | Phases 7–8 | The finite one-vehicle app and CPU visibility repair remain unintegrated; the ordinary run was canceled after eight cases/56 frames for moving-view building occlusion. Actual draw/upload/TAA feasibility is separate from live visibility or pixels; full 18-execution/126-image acceptance remains pending. The gait selector retains its 43-case 240 Hz and sampled 60 Hz acceptance, and Review 18 accepts the reusable evaluator only for finite CPU position correctness. Production gait, between-tick contact, naturalness, terrain/LOD and population behavior remain unintegrated. | Network worker owns simulation mechanics; asset worker owns source provenance, geometry, animation and rendering; root orchestrator accepts shared contracts. |
 | Phases 9–10 | Reviews 20 and 22 preserve the ABBA instrument findings and resolved F15/F16 preparation repair. Review 26 independently accepts the finite negative result: about 263.45 ms versus 103.10 ms for mean same-tick kernel arm medians, a 2.5553× slowdown. Prior correctness survives; the intended cost reduction is rejected and its cause is undiagnosed. Twelve repeated streams and validation-heavy CPU measurements do not establish heterogeneous population or whole-scene performance. | Root orchestrator owns measured performance, whole-deliverable acceptance and merge to main. |
 
-The target remains 3,000 animated pedestrians and 200 vehicles at 60 fps and 1920×1080. It is an acceptance target, not a measured result. The deliverable requires all relevant gates, native controls-driven inspection, independent review with material findings resolved, and merge to main.
+The target already pinned in `src/world/frame.ts` is 3,000 animated pedestrians and 200 vehicles at 60 fps and 1920×1080. It is an acceptance target, not a measured result. Completion requires every acceptance criterion below on the final integrated revision, all five repository gates, native-resolution inspection of the rendered sweep and controls-driven moving sequences, independent review with material findings resolved, and merge to main. Work left uncommitted or on a branch is incomplete.
+
+Owner disposition, 2026-09-12: root accepted [Review 8](reviews/8_implementation.md), SHA-256 `58bdd2d4846a8523b22220ab538cbf62e5f5a6dd26731ff70e905d2966a198c9`, after reading its independent production-order replay and verifying the seven handoff files and rebuilt mesh/source hashes. Acceptance binds producer freeze `14d88e56b5c736249f45db014cac975e640ead698d4b5594337865345a2cad71` and the exact C5 pavement, not a new support policy. The original 6,757-probe strict failure, three unchanged passing seam rays, retained source heights and unclassified regions remain explicit. Later geometry changes require another review. The authored report is unchanged.
+
+Owner disposition, 2026-09-12: root accepted C9 manifest `f0925ce615b2548a29de5a88fb2082661718cfb0c82ff3188bd51e99fdb8420a` as the current lighting increment. Environment chroma retention is 10% above 10° solar elevation and 45% below −3°, with a smooth transition. This is authored grading; albedo, exposure and texture budgets did not change. Its 80-input manifest omitted several transitive harness/config paths before capture, which were recorded afterward and cannot inherit pre-run binding. Final candidate verification must bind the complete source/build/data/harness closure before and after the run. C9's eleven retained process identities exited naturally; fallback termination was not exercised.
+
+
+Owner disposition, 2026-09-12: main is `d3699133aa9185543fdfc51997f76385be011285`, the reviewed documentation checkpoint for reports 8, 9, 10 and 13; its parent is `2799084`. The isolated graphics candidate deliberately retains base `2799084` and imports authored history as an explicit document delta. Root accepted Review 12 F9 within its source/support bounds after checking 85 reviewer and 94 author pins and 36 focused tests; populated raw-V4 motion is still unverified. Review 11's 190-input standalone/hardware copy has no new finding. Neither proof closes the full simulation or performance criteria.
+
+Owner disposition, 2026-09-12: F10 source and native acceptance binds `artifacts/graphics-milestone/f10-followup.json` (`68dd6ce33865c61eb717725b82f94d5d803f40cc33668ffd3a5d7421aff59ca7`) and the eight-frame hero manifest (`6a2390d0a6d5cc0adaa867a49f2bac8bdae4b7c291c39c48f591036ff83b018f`). Root inspected every original 1280×720 frame. The central diagonal is continuous; omitted endpoint parts 0, 44 and 45 are not material in crossing/approach views. Off-centre way 1419311959 is triangle-gated, not close-viewed. Of 1,333 total paint parts, 1,158 are placed and 175 explicitly omitted across 75 features; all 100 features retain paint. The 28 paint-only seam queries do not alter network or pedestrian/vehicle support. Final 44-view surrounding appearance remains pending.
 
 Owner disposition, 2026-09-13: [Review 15](reviews/15_implementation.md) is on main at `e93dfa9c3aca45526ad8cee31caaaf876b33fca8`, following the Review 14 checkpoint `7ec174246983d4122bd60ab1c46ada04d55709ac`. Root and the independent reviewer each passed 44 response and 110 completion controls; the reviewer also passed six actual serializer controls. Acceptance covers authentic result-artifact consistency. The old v3 failure was response-body evidence collection, not a demonstrated failure of its one observed vehicle flow. Review 11 remains open, with the full 44-frame graphics gate unfinished.
 
@@ -76,9 +85,10 @@ The independent ABBA interpretation reconstructs the input and row populations, 
 
 ### Blockers (unresolved dependencies)
 
-- Human sources are selected: pinned MPFB and MakeHuman system CC0 assets provide three adult variants. Reviews 6 and 7 preserve the rejected full-body result and the bounded commuter-male/near F6 correspondence repair. Review 14 preserves subsequent source/contact constraints. Natural gait, production animation, pavement support, all-LOD motion and populated performance remain unaccepted.
-- The vehicle mix has original unbranded kei, taxi and bus recipes, with source and physical bounds recorded in Review 13. The accepted V4 standalone candidate retains the full displayed bus envelope; this is not a licensed branded JPN Taxi model. Continuous supported trips, receiving space, native motion, IDM/MOBIL and the actual 200-vehicle population remain pending.
-- The targets remain 3,000 animated pedestrians and 200 vehicles, 60 fps at 1920×1080. Runtime populations, final assets/contact and measured performance remain pending.
+- Review 5 accepted the network lifecycle and supported-body contract; the reviewed milestone is on main at `1ca4552ceee25e34ac62335114bbb5377a4d6470`. Phase 7/8 still require continuous legal trajectories, level-aware contact, measured receiving capacity and populated integration. See `reviews/5_implementation.md`.
+- Pinned MPFB and MakeHuman system CC0 assets supply three adult clothing/body variants and baked idle/walk animation. Human format v2 requires selected-scene draw parts and world-baked VAT. A1/support repairs remain frozen; root verified 34 source/evidence hashes and reran 13 tests. Review 6 preserves the 378-case flat-contact result (3.583476 mm maximum planted drift and 9.132385 mm stance height) while rejecting full-body reference mismatch and crouch/static arms. Review 7 completes only the commuter-male/near reference proof: matching evaluated bind matrices plus full skin influences recover source correspondence, with a controlled perturbation and paired rendered evidence. Root independently verified all 163 handoff digests and inspected selected native pairs. F7 naturalness and production integration remain rejected/pending; no new production bake or phase-settled strip is accepted. Pose normals and wheel residual buffers remain unchanged. Shipping cross-pass GPU, natural motion, world contact and populated LOD quality remain unaccepted. See `reviews/6_implementation.md` and `reviews/7_implementation.md`.
+- The Japanese vehicle mix uses accepted original, unbranded kei hatchback, tall taxi and city-bus V4 recipes. The standalone `data:vehicles` / `data:vehicles:verify` closure uses the one measured fleet authority without human archives or baking. Candidate ordinary build/verify produced the exact accepted three GLBs and raw manifest `5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01`; hardware was rebound to those bytes, with all placement geometry unchanged. Review 12 separately accepted the bounded F9 wheel-offset/source support repair; integrated raw-V4 motion, natural steering, populated contact, all five code gates and merge remain pending. This does not claim a licensed branded JPN Taxi model was obtained.
+- The 3,000 animated pedestrian / 200 vehicle performance target is set in `src/world/frame.ts`; its Phase 9 measurement remains pending.
 
 ## Approach
 
@@ -87,6 +97,8 @@ These decisions are settled. Reopen one only with a reason that is new, not with
 **Target: a three.js + Vite web app, running in real time in the browser.**
 
 Chosen over Blender, over Unreal plus Cesium, and over Godot. It matches `town_3d`'s stack, so the fleet already knows it. Animated agents are natural in it. And Playwright gives cheap screenshot gates, which is exactly what the canon's visual-verification rule asks for.
+
+Current supporting contracts: [network](../../reference/network-contract.md), [facade emission](../../reference/facade-emission.md) and [bounded pavement recipe](../../reference/pavement-recipe.md). The primary checkout also retains the in-progress human asset contract at `docs/reference/agent-assets.md`; that unready pipeline is excluded from this graphics candidate.
 
 **Geometry source: Project PLATEAU LOD2 (MLIT, PDL 1.0 with CC BY 4.0 permitted) plus OpenStreetMap (ODbL).**
 
@@ -114,7 +126,6 @@ Each of these is checked by looking at a rendered result or watching the scene r
 
 - [x] The AOI renders end to end — terrain, buildings and road surfaces across the full 1 km box — inspected from several angles and zoom levels, each frame at native resolution. (Phases 1–3)
 - [x] The ground is not flat: the Shibuya valley and the Dōgenzaka slope are visible in the rendered terrain, and building footprints sit on it without floating or sinking. (Phases 2–3)
-- [ ] Cartographic and Satellite are selectable through the World style dropdown; real pointer and keyboard input preserve the camera and running agents at street, block and aerial distances. (Phases 4–5 and 10)
 - [ ] Buildings hold up close: window grids follow floor counts and the PBR materials respond to light, checked at street level and from above. (Phase 4)
 - [ ] A dusk frame of the crossing reads as Shibuya rather than as a generic Japanese city, because the emissive signage and neon are there. (Phases 4–5)
 - [ ] Road markings match reference imagery, including the scramble's diagonals, with signals, guardrails and street furniture in place. (Phase 4)
@@ -122,10 +133,11 @@ Each of these is checked by looking at a rendered result or watching the scene r
 - [ ] Vehicles hold their lanes, obey the signals, turn, and spawn and despawn at the boundary, watched over a run rather than sampled in one frame. (Phase 7)
 - [ ] Pedestrians avoid each other and surge diagonally across the crossing on the signal phase — the signature shot — with no visible interpenetration and no sliding feet. (Phase 8)
 - [ ] Vehicles and pedestrians run off the same clock: one signal phase model drives both, and no frame shows traffic moving through the scramble while pedestrians are on it. (Phase 6)
-- [ ] 60 fps at 1080p with 3,000 animated pedestrians and 200 vehicles in a running build. (Phase 9)
+- [ ] 60 fps at 1920×1080 in a running build with 3,000 animated pedestrians and 200 vehicles, the target pinned in `src/world/frame.ts`; name the measured hardware, build and timing window. (Phase 9)
 - [x] The scene rebuilds from a clean checkout: delete the derived geospatial outputs, re-run the pipeline, render again, and compare with the frames above. (Phase 2)
 - [x] The running app shows its attribution: PLATEAU (PDL 1.0, with CC BY 4.0 permitted — the licence name here was imprecise and is corrected), OpenStreetMap (ODbL) and GSI. (Phase 1)
 - [ ] A multi-angle, multi-zoom sweep and a flythrough driven through the real controls both come back clean, an independent review passes, and the work is merged to main. (Phase 10)
+- [ ] Cartographic and Satellite each hold up at street, block and aerial distances. The actual World style dropdown switches both ways with pointer and keyboard input, preserves camera and simulation progress, and takes its options from a registry that can accept later styles. (Phases 4–5, 10)
 
 ## Implementation steps
 
@@ -172,13 +184,13 @@ Thirty-five items across eleven phases. The numbering is stable and append-only 
 
 ### Phase 6 — Network graph (shared contract; must freeze before Phases 7 and 8 run in parallel)
 
-- [x] 21. Lane-level road graph plus sidewalk and crossing graph from OSM — reviewed offline network milestone; inferred widths and missing ground remain disclosed in `network-contract.md`.
+- [x] 21. Lane-level road graph plus sidewalk and crossing graph from OSM — reviewed offline network milestone; inferred widths and missing ground remain disclosed in [the canonical network contract](../../reference/network-contract.md).
 - [ ] 22. Signal phase model driving vehicles and pedestrians from one clock — shared deterministic controller and admission API reviewed; both populated consumers remain unimplemented.
 - [x] 23. Document and freeze the schema — it is the interface both agent workstreams build against. Constraint: the OSM-derived network graph stays in its own files, never fused with PLATEAU geometry. The render is a Produced Work with no share-alike, but this graph is a Derivative Database, and publishing the app obliges offering recipients that derived database or a description of the method (ODbL 4.6). Keeping them separable is nearly free now and expensive to unpick after the schema freezes
 
 ### Phase 7 — Vehicles
 
-Source recipes are selected. Supported complete trips, native rendering, car following/lane changes and the 200-vehicle population remain pending; see Blockers under Scope.
+The reviewed network milestone is on main; integrated simulation remains pending. Original, unbranded kei hatchback, tall taxi and city-bus source recipes are selected. Steering, shipping appearance and contact validation remain open; see the current delivery status above.
 
 - [ ] 24. IDM car-following with MOBIL lane changes
 - [ ] 25. Signal obedience, turns, boundary spawn and despawn
@@ -186,7 +198,7 @@ Source recipes are selected. Supported complete trips, native rendering, car fol
 
 ### Phase 8 — Pedestrians
 
-Source characters are selected. Accepted natural animation, contact, ORCA/RVO2 and the 3,000-pedestrian population remain pending; see Blockers under Scope.
+The reviewed network milestone is on main; integrated simulation remains pending. Pinned CC0 adult character sources are selected. Production animation, naturalness and shipping motion/contact validation remain open; see the current delivery status and `reviews/7_implementation.md` for the bounded reference proof.
 
 - [ ] 27. ORCA/RVO2 local avoidance with a spatial hash
 - [ ] 28. Scramble-crossing behavior driven by the signal phase — the diagonal surge is the signature shot
@@ -194,7 +206,7 @@ Source characters are selected. Accepted natural animation, contact, ORCA/RVO2 a
 
 ### Phase 9 — Performance
 
-Pending populated integration and measurement at the fixed 3,000-pedestrian/200-vehicle target.
+Pending integrated vehicles and pedestrians. The target is 60 fps at 1920×1080 with 3,000 animated pedestrians and 200 vehicles; performance has not yet been measured against it.
 
 - [ ] 30. Draw-call and LOD budget; 60 fps at 1080p under target agent counts
 - [ ] 31. Profile, fix, re-measure

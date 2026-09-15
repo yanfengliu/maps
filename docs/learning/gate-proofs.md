@@ -228,6 +228,28 @@ Every pixel measure in the sweep passed on those frames. The terrain and the roa
 
 **Bound.** It measures the bounding box of the drawn building geometry and the triangle count, against a band that runs −20 m to 400 m vertically and 2.5 km horizontally. That separates a city on the ground near the crossing from one that is underground, floating, sheared or absent. It cannot tell one block from the next — the landmark check in `npm run data:scene` is what pins that, against Shibuya Scramble Square, Hikarie and Shibuya Stream at their published positions and heights.
 
+## Fractional tile accounting can prevent disposal from terminating
+
+**Gate:** `test/tile-memory.test.ts`, using `test/fixtures/lru-disposal.mjs` and the actual `3d-tiles-renderer` 0.5.2 LRU implementation. Recorded during the 2026-09-08 renderer recovery and checked again on 2026-09-11.
+
+**Control:** estimates 0.1, 0.2 and 0.3 are removed in a different order from insertion. The floating total is 0.6000000000000001; subtraction leaves 1.1102230246251565e-16 after the cache has no items. The upstream zero-budget unload keeps looping. A separate child with a two-second watchdog reproduces this as `ETIMEDOUT`, so the intentional hang cannot trap the test runner. The repaired child applies the existing estimator through `wholeByteAccounting`, removes all three items and reports zero remaining bytes. No dependency patch or omitted disposer is involved.
+
+**Bound:** this is the actual upstream reordered-fraction disposal class over three items. The separate controls-driven browser lifecycle sequence switches both styles, moves crossing/approach and navigates from dusk to noon; its repaired candidate-2 run passed in 36.5 seconds with a 15-second navigation bound. That sequence does not establish every possible navigation, device or future upstream version. The original stalled trace and candidate bytes remain retained for the active handoff.
+
+## The complete visual evidence check catches erased or changed captures
+
+**Gate:** `test/visual-evidence.test.ts` calls `verifyVisualRun` over an explicit synthetic 44-image set: eight hero frames plus eighteen sweep frames per style. Its list is stated independently from the wrapper's expected names.
+
+**Red controls:** delete an earlier hero image (`ENOENT`); append bytes to a captured image (`changed after capture`); date a specification manifest before the run (`Stale visual manifest`); alter the frozen build (`build changed during capture`). Restoring the original inputs passes. These controls reproduce the evidence classes that the former shared-directory sweep cleanup missed. The inherited baseline logged 22 captures but retained only 18 new image files; older preserved hero frames remain separate evidence.
+
+**Bound:** filenames, freshness, native dimensions and exact bytes across the complete output set. Synthetic images do not prove scene quality. The final integrated 44-frame run and native inspection are still pending; a passing hero-only candidate cannot inherit that claim.
+
+## Normal-pass material restoration survives a failed draw
+
+**Gate:** `test/normal-pass.test.ts` exercises the shipping `withNormalMaterials` swap with ordinary geometry, a registered agent normal material, a material array and a pre-existing scene override. It runs both a successful callback and an intentionally thrown `forced draw failure`; every original material reference and scene override is restored. An animated mesh without a registered normal material throws a named error instead of silently drawing its unanimated geometry.
+
+**Bound:** material selection and restoration around one draw callback. The upstream GTAO adapter, actual shader compilation and moving VAT ambient-occlusion/shadow pixels still need populated browser verification. This proof is not an agent graphics acceptance.
+
 ## Not yet proved red
 
 Three failure paths are written and reachable and have never been watched to fire. They are code, not evidence, and a later phase that relies on one should make it go red first.
@@ -252,3 +274,15 @@ Three failure paths are written and reachable and have never been watched to fir
 **Decoder red proof:** against the original shared decoder, browser bytes and an offset Uint8Array passed while Node Buffer returned `7.185598589700907e+22` instead of `0` for the first position. Explicitly copying the selected byte view makes all three cases pass.
 
 **Measured bounds:** all 77 vehicle exits with three generated tilted classes plus 33 walking exits produce 264 lifecycle traces; 264 reachable entry/class cases include49 initial authorities, six physical-only prefixes and28 ordinary entry handoffs. An independent review checked42 analytic body projections. The corrected true-exit route census constructs3,444 vehicle and408 walking passages. Supported diameter≤11.6m, primitive gap≥12.1m, route gap≥12.5m, 1/60-second clock and selected quarter/half-metre samples define these proofs. Dwell/yield/capacity values are supplied fixtures. Continuous steering, surface contact, queues and200-vehicle throughput remain outside the claim.
+
+## F8 original texture mapping is checked through the actual plugin
+
+**Gate:** `test/facade-emission.test.ts` uses the cached, SHA-256-bound `data/scene/buildings/data/data488.b3dm` through the full tile-plugin processing path, with image decoding mocked. It does not fetch or skip a missing tile. The supported original identity mapping is positive; channel 1, flipY, offset, rotation, repeat and manual-matrix variants are negative. The old plugin produced six semantic failures and seven passes; repaired plugin passes thirteen. `artifacts/graphics-milestone/f8-followup.json`, SHA-256 `ed18871383cec3c9dada5018844860e24a74316f603c55b29d858c75e2edfd64`, preserves exact source and red/green evidence. The tests do not claim actual shader pixels or other unbound atlases. No prior lesson is retired here.
+
+## F10 paint uses finite checks against the source layer
+
+**Gate:** `test/paint-support.test.ts` calls the real `createStreetDetails`, including every mapped zebra and continuous tactile feature in the pinned graph and actual road/pavement meshes. Bounds are source deviation ≤0.5 m, grid spacing ≤0.25 m, edge rise/run ≤0.5 and sampled plane residual ≤0.04 m beneath the 0.06 m paint lift. A ≤0.10 m same-level top allowance covers presentation overlap; it is not physical-layer or actor-contact authority. Strict misses alone may bridge opposed/bracketing nearly parallel triangle edges at gap ≤0.010 m and height disagreement ≤0.001 m. Every use retains edge IDs; every omitted part retains its source and reason. Sparse samples are not full-footprint support proof.
+
+**Red controls:** the exact original Review 10 renderer emits unsupported stripes and the named real triangle still spans 7.545902252197266 m against the <0.25 m assertion. Pure-nearest selection chooses 15 rather than the positive overlapping top at 15.08 m. Removing the seam repair misses the eleven exact central probes. Enlarging seam width admits the 10.02 mm negative; enlarging height agreement admits the 10 mm layer difference; removing interior checks places the hole/ridge control. One-sided, nonbracketing and wrong-direction edges remain negative. Frozen variants/logs are `artifacts/graphics-milestone/f10-red/` and `f10-actual-red/`, bound by `f10-followup.json` SHA-256 `68dd6ce33865c61eb717725b82f94d5d803f40cc33668ffd3a5d7421aff59ca7`.
+
+**Measured bound:** all 100 features retain some paint, with 65,984 triangles, 1,158/1,333 placed parts and 175 explicit omissions across 75 features. The hero diagonal retains 43/46 parts; omitted parts 0, 44 and 45 remain outside native acceptance beyond the two inspected framings. The formerly wrong-layer crossing has 552 triangles with maximum rise/run 0.227957. Twenty-eight seam queries reach 9.220701 mm width and 0.483680 mm height disagreement. Root accepted all eight hardware hero images at native 1280×720. These checks do not claim whole-area coverage, movement support or complete 44-frame acceptance.
