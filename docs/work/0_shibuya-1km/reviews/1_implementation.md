@@ -14,7 +14,7 @@ Independent read-only reviewer: Codex worker `/root/network_review`. This round 
 
 No app, renderer or simulation implementation was reviewed or changed. No browser, GUI or host-authenticated reviewer route was used. The forbidden host CLI route was not retried. This round does not establish the two styles' pixels, populated traffic behaviour, collision avoidance, runtime assets, performance or final integration.
 
-## Authored reports
+## Reports
 
 ### Codex network reviewer
 
@@ -76,3 +76,5 @@ All 22 live candidate source/document hashes and the graph digest matched again 
 ## Round outcome
 
 F0–F3 have the scoped dispositions above, but this repaired Phase 6 candidate is not accepted because F4 is material. The existing passing tests and empty-controller timelines do not prove a vehicle can traverse the generated sequence of conflict areas. Preserve this candidate as counterevidence, repair the shared admission contract, and re-review the new exact source and graph with car, bus, opposite-direction and mixed-authority cases. This scoped review does not mark the Shibuya deliverable complete, integrated or merged.
+
+Format correction, 2026-09-12: only the section heading `## Authored reports` was renamed to `## Reports` to match the current work-docs format. All substantive report text and dispositions are unchanged. Original authored bytes remain recoverable at commit `d3699133aa9185543fdfc51997f76385be011285`, path `docs/work/0_shibuya-1km/reviews/1_implementation.md`, SHA-256 `b2b144b97b8660cf0090baf73bf8a07bb7c9f5f1053f458ae0f2c6042294c3c8`. This is not a new review or revised acceptance.

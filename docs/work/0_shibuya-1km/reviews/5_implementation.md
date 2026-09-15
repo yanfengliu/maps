@@ -55,7 +55,7 @@ One vehicle per signal compound remains the explicit provisional policy. Nothing
 | F5 | Legal boundary routes cannot construct or complete safe retirement | Resolved within the public boundary lifecycle, bound-slot operations and stated full-source route samples. No material new finding was reproduced. | Core must supply continuous truthful supported poses and complete downstream dynamics and capacity checks. |
 | Instrument correction | Review 3 used walking entrance IDs as graph-census terminal exits | Independently confirmed. Corrected census has 408 successful walking passages and zero failures. | Preserve the old instrument/result and report; the separate real controlled-terminal defect remains valid historical evidence. |
 
-## Verification and retained evidence
+## Verification
 
 Node 24.12.0. `node node_modules/vitest/vitest.mjs run --configLoader native --config artifacts/network/review5-independent/vitest.config.mjs` passed seven frozen files and 64 tests: network 11, network-review 10, network-mesh 3, network-compound 19, network-boundaries 11, signals 4 and signals-reservations 6. The custom config changes test selection and cache location only. The complete graph passed `validateShibuyaNetwork`. Independent binding/graph, lifecycle/body and evidence-audit probes passed. The frozen full-source boundary instrument rerun passed and its output digest equals the candidate report.
 
@@ -82,3 +82,5 @@ All task commands finished. The task-owned Vitest cache was removed after resolv
 ## Round outcome
 
 Accept this exact Phase 6 F5 candidate for the scoped boundary lifecycle and supported-body contract. The acceptance includes the retained F4 graph separation and physical preservation checks, and the corrected pedestrian instrument interpretation. No material finding remains open within this review's scope. The root must inspect the handoff, run the required integration gates and land the verified milestone on main. This review is complete; the broader Shibuya deliverable and unimplemented traffic core are not complete, verified, committed or merged by this report.
+
+Format correction, 2026-09-12: only the section heading `## Verification and retained evidence` was renamed to `## Verification` to match the current work-docs format. All substantive report text and dispositions are unchanged. Original authored bytes remain recoverable at commit `d3699133aa9185543fdfc51997f76385be011285`, path `docs/work/0_shibuya-1km/reviews/5_implementation.md`, SHA-256 `ec4d69b1f06ebcd05346c14fccc75de3ea5d107e5291b9e5811fb22867a0bdb1`. This is not a new review or revised acceptance.

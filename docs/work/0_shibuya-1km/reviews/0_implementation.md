@@ -16,7 +16,7 @@ Independent read-only reviewer: Codex worker `/root/network_review`. Reviewed so
 
 Coverage includes left-hand offsets, turn restrictions and continuation, conflict splitting and overlap merging, signal stages and fixed-step semantics, footprint clearance, lateral links, boundary demand, underground filtering, source-versus-inference claims, Node Buffer decoding, and the network HTTP mount. This review does not establish visual lane placement across the kilometre, ORCA/MOBIL behaviour, traffic capacity, animation quality, actual-control operation, or 3,000/200 performance.
 
-## Authored reports
+## Reports
 
 ### Codex network reviewer
 
@@ -54,3 +54,5 @@ No full build, typecheck, audit or browser sweep was run in this review scope. N
 ## Round outcome
 
 Changes are required before freezing Phase 6 for independent vehicle and pedestrian implementation. F0 and F1 are concrete generated-graph defects. F2 already has visible integration counterevidence. F3 leaves a source-control obligation unavailable to the planned vehicle consumer. The reviewed controller and decoder checks passed within their stated bounds, but they do not discharge these findings or establish final simulation acceptance. Repair, regenerate, rerun affected checks and obtain focused independent re-review against the new exact candidate. This round does not mark the Shibuya deliverable complete or merged.
+
+Format correction, 2026-09-12: only the section heading `## Authored reports` was renamed to `## Reports` to match the current work-docs format. All substantive report text and dispositions are unchanged. Original authored bytes remain recoverable at commit `d3699133aa9185543fdfc51997f76385be011285`, path `docs/work/0_shibuya-1km/reviews/0_implementation.md`, SHA-256 `12f470087d08f10446ee000006213ed76c298b4a99813ae3b5b001051622557b`. This is not a new review or revised acceptance.
