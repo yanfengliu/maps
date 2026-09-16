@@ -16,7 +16,7 @@ The owner's 2026-09-15 instruction is to commit early and commit often: commit a
 
 Where a gate can be transferred between revisions, the transfer is a proof and not a memory. A code commit inherits an earlier revision's gate results only when all three of these hold, and the commit message states which revision they came from and the check that established them: the built bundle bytes are identical, `data/scene/**` is unchanged, and the changed paths are outside the bundle graph. The check is `npm run build` followed by `Get-FileHash dist/assets/*.js`, against the hash recorded for the revision the evidence belongs to. Anything else re-runs the gate. A commit that only adds a tooling file no build reads still re-runs the build to show that, because that is a one-second check rather than an assumption.
 
-The owner's 2026-09-15 team instruction — the coordinator runs a team sized to the work rather than doing the work itself — is now the fleet constitution's team-sizing rule under Plan and delegate. What this repository adds is the concrete third hazard. `npm run visual` is a three-hour command that owns port 4319 and the whole CPU, so exactly one gate run happens at a time and lanes are chosen around it. A coordinator that implements spends those three hours on one change that a team of lanes would spend on four.
+`npm run visual` is a three-hour command that owns port 4319 and the whole CPU, so exactly one gate run happens at a time and lanes are chosen around it. A coordinator that implements spends those three hours on one change that a team of lanes would spend on four.
 
 The owner's 2026-09-08 appearance requirement is two 3D styles, Cartographic and Satellite, selected through a World style dropdown. Cartographic takes the clean default Apple Maps view as its visual reference and adds finer scene detail; Satellite improves the existing phototextured treatment. A registry supplies the dropdown options and leaves room for later styles. Styles share world geometry, the running simulation and the current camera. Switching styles must preserve the camera and agent progress, and acceptance covers both styles at street, block and aerial distances through the actual dropdown, including keyboard input.
 
@@ -73,6 +73,16 @@ This rule fixes this repo's exposure only. Every other visual gate in the fleet 
 ## Gate artifacts live in `artifacts/`
 
 That directory ignores itself. Each visual specification replaces only its own output directory: `visual/hero`, `visual/sweep/satellite` or `visual/sweep/cartographic`. Retained recovery evidence and sibling specifications are outside that cleanup scope. The wrapper requires 44 fresh native 1280×720 frames, checks their hashes and unchanged build bytes after the complete run, and writes `visual/complete.json`. This verifies the evidence set exists; every frame still needs native inspection. Promoting a frame to a fixture or golden moves it out of there; it does not get un-ignored in place.
+
+Evidence here belongs to a task and is deleted when that task closes. Once the conclusion is recorded in `docs/work/`, `docs/learning/` or `docs/devlog/`, the raw output goes with the task; only the files a tracked document names by path stay. A directory being the place a run happened is not a reason to keep it, and a second copy of a run is not a second observation.
+
+A worktree under `artifacts/` junctions `data/` and `node_modules/` to the primary checkout instead of copying them. A copy of `data/` is 1,430 MB of bytes this repository already has and can rebuild; nine such copies were measured under `artifacts/` on 2026-09-15, 12.9 GB of the 53.6 GB total.
+
+Junctions and symlinks are never followed, by a size measurement or by a delete. `Get-ChildItem -Recurse`, `Remove-Item -Recurse`, `rm -rf` and git's own recursive delete all follow a reparse point, so a measured total counts the primary checkout once per worktree and a delete reaches files outside `artifacts/`. Remove the junction itself with `rmdir` before deleting around it.
+
+The size is checked rather than assumed: `npm run artifacts:size` reports every top-level entry in real bytes with reparse points excluded and never counted, names each junction and each copied `data/` or `node_modules/`, and exits non-zero when a copied input tree passes 512 MB.
+
+The owner's 2026-09-15 instruction is to reclaim scratch whenever there is an opportunity, not only when a task ends: at the end of each step of a goal, and after a verification has finished, before the next step begins. Reclamation is therefore part of finishing a step rather than a chore deferred to the end of a deliverable, and it runs on the same boundary as the verification that step owed — which is also the moment the raw output stops having a reader, because the conclusion has just been written into `docs/work/`, `docs/learning/` or `docs/devlog/`. Running it at that boundary is what keeps the measurement honest: the first survey here found 53.6 GB, of which 28.4 GB was reclaimable.
 
 ## The visual gate is two lanes, and each one names its renderer
 

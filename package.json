@@ -29,6 +29,7 @@
     "visual": "npm run build && node tools/visual/verify-output.ts --begin && playwright test --config playwright.config.ts && playwright test --config playwright.lifecycle.config.ts --repeat-each=3 && node tools/visual/verify-output.ts",
     "visual:install": "playwright install chromium",
     "audit": "npm audit --audit-level=high",
+    "artifacts:size": "node tools/storage/artifact-size.ts",
     "data:vehicles": "node tools/agents/build-vehicles.ts",
     "data:vehicles:verify": "node tools/agents/verify-vehicles.ts",
     "data:agents": "node tools/agents/build.ts",
