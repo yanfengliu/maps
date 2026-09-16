@@ -17,6 +17,7 @@ The independent review of the proposed correction accepted it with nine conditio
 - `tools/visual/lifecycle.spec.ts` reads the unmasked `glRenderer` from the frozen harness before the expensive preparation, throws the named error when it names a software rasteriser, and writes per-run preparation/navigation/replacement times plus the build hashes to `artifacts/visual/lifecycle/`. The URL, preparation, viewport, 15 s and 60 s bounds and the noon-preset assertion are unchanged.
 - `package.json`'s `visual` script runs one build, `verify-output.ts --begin`, the software lane, the hardware lane with `--repeat-each=3`, then `verify-output.ts`.
 - `beginVisualRun` deletes any earlier `complete.json` before hashing the build, so a failed run cannot leave a previous run's success artifact behind; `test/visual-evidence.test.ts` gained that case and was made to fail by reintroducing the defect before the fix was restored.
+- **Correction, 2026-09-16: that guarantee was wrong about the chain, and the deletion alone cannot give it.** `package.json`'s `visual` script runs `npm run build` before `verify-output.ts --begin`, so a failed build stops the `&&` chain before the deletion and the previous run's `complete.json` survives it. The finding is open on `main` at `04be817`; the fix sits uncommitted in the `artifacts/gate-hardening` worktree (`REPORT.md`, SHA-256 `03D88804406372843E6BECF767F3B66EB99F233990B04A675B56FB99671968EF`).
 
 ## Evidence and where it lives
 

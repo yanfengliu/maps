@@ -315,7 +315,7 @@ Three failure paths are written and reachable and have never been watched to fir
 
 **Gate:** `npx vitest run test/population-lifecycle.test.ts` — the case "goes red on the boundary retirement path, which is the only one its vehicles retire through", driving `populationInvariants.leakRetiredBody` in `src/agents/population/tick.ts` over the delivered network.
 
-**Landed:** 2026-09-16 in `worker/gate-repair`, off `86b5a70`. Not merged; the worktree is `artifacts/gate-repair/wt`.
+**Landed:** 2026-09-16 on `main` in `27b5957`, off `86b5a70`; `artifacts/gate-repair/wt` is that lane's own copy and not a statement about the merge. This line read "Not merged; the worktree is `artifacts/gate-repair/wt`" until 2026-09-16 and it was false when it was written here: `27b5957` landed the case and its guards, and `7c6bd95`, its immediate child, copied the gate-repair record onto `main` byte-identically, that line included. On `main` at `04be817` the case is `test/population-lifecycle.test.ts:89-123`, the seam it guards is `src/agents/population/tick.ts:641-642,745,756,1423,1437`, and `npx vitest run test/population-lifecycle.test.ts` passes 3 tests in 2.3 s.
 
 **What the gate could not see.** The mutation guarded `retireSlot` in `finishVehicle` and in `retirePedestrian`, and the boundary retirement path in `lifecycle()` retired its body unguarded. Every vehicle retirement the fixture reaches goes through that envelope and none goes through `finishVehicle` (`retiredInPlace` is 0 in every run taken), so the mutation had nothing to leak for a vehicle. Measured on `main` with a census probe that drives the shipped population unchanged:
 
