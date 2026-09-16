@@ -186,6 +186,15 @@ export function createPopulation(options: PopulationOptions): Population {
    * body at its stop line always satisfies this and never waits for a window.
    */
   const GATE_SEEK_TOLERANCE_M = 0.35;
+  /**
+   * How close to its halt, and how slow, a body must already be before the
+   * integrator moves it exactly onto that halt. `HALT_CAPTURE_M` is smaller than
+   * the request tolerance on purpose: the body is snapped to the stop line it was
+   * given, so the request window is satisfied with room to spare and by the true
+   * position rather than by a tolerance.
+   */
+  const HALT_CAPTURE_M = 1.5;
+  const HALT_CAPTURE_SPEED_MPS = 1.5;
   const pending = new Set<number>();
   const planQueue: { kind: PopulationKind; slot: number }[] = [];
   const intents: Intent[] = Array.from({ length: settings.vehicles }, () => ({ acceleration: 0, stopDistanceM: Number.POSITIVE_INFINITY, committed: false }));
@@ -492,7 +501,17 @@ export function createPopulation(options: PopulationOptions): Population {
       bindings[slot] = undefined;
       entryPassages[slot] = null;
       heldPassages[slot + settings.pedestrians] = undefined;
-      retireSlot(table.poses.vehicles, slot);
+      // The leak mutation covers *every* retirement path, not only `finishVehicle`.
+      //
+      // `retireSlot` alone cannot carry it here: `JunctionAdmissions.retireBoundary`
+      // clears this slot's active byte itself (`admissions.ts:161`), so the call
+      // below is already a no-op on the shipped path and guarding it changes
+      // nothing. Measured: 24 vehicle retirements through this envelope in a
+      // 4,800-tick window with the mutation on behaved exactly like the control's 24,
+      // and the gate never fired. The mutation therefore restores the presence the
+      // authority just cleared, which is the state it exists to represent.
+      if (populationInvariants.leakRetiredBody) table.poses.vehicles.active[slot] = 1;
+      else retireSlot(table.poses.vehicles, slot);
       state.committed = false;
       state.boundary = false;
       state.egressing = false;
@@ -502,7 +521,13 @@ export function createPopulation(options: PopulationOptions): Population {
       gateFootprints[slot + settings.pedestrians] = undefined;
       counters.retired.vehicle += 1;
       counters.completed.vehicle += 1;
-      planQueue.push({ kind: "vehicle", slot });
+      // The same rule `finishVehicle` and `retirePedestrian` already carry: a
+      // leaked slot keeps its active byte *and* gets no live plan. Replanning it in
+      // this same phase would heal the leak before any conservation reading could
+      // see it — measured: with only `retireSlot` guarded here, the 24 vehicle
+      // retirements in a 4,800-tick window still leaked nothing, because step two of
+      // this phase re-planned each retired slot in the tick it retired.
+      if (!populationInvariants.leakRetiredBody) planQueue.push({ kind: "vehicle", slot });
     }
     for (const state of table.pedestrians) {
       const slot = state.slot;
@@ -1113,9 +1138,37 @@ export function createPopulation(options: PopulationOptions): Population {
       // has reached a gate is committed and no longer consults its halt.
       if (populationInvariants.driveWithoutGrant) state.committed = false;
       const allowed = populationInvariants.driveWithoutGrant ? Number.POSITIVE_INFINITY : intent.stopDistanceM;
-      const moved = Math.min(state.travelledM + speed * step, route.totalLengthM - 1e-9, allowed);
+      /**
+       * Arrive at the halt, rather than approach it.
+       *
+       * IDM's braking term is `-a*(desiredGap/gap)^2` against the halt treated as a
+       * stationary obstacle, so its equilibrium is a *relative* speed of zero: the
+       * body sheds speed in proportion to the gap and never closes the last
+       * centimetres. The request window opens `GATE_SEEK_TOLERANCE_M` short of the
+       * halt, and the shortfall left by the creep is a property of the braking
+       * curve, not a bounded quantity. Measured at the acceptance bound (3,000
+       * pedestrians, 200 vehicles, 3,600 ticks): 42 of the 65 active vehicles had
+       * never asked the authority once, slot 20 among them with zero requests, and
+       * 12 of those had moved less than a centimetre in the last ten simulated
+       * seconds — parked short of a stop line they could not reach. The same bound
+       * with this capture in place builds 147,420 vehicle requests against 28,035,
+       * leaves 2 active bodies that never asked, and parks 75 of 84 at their lines.
+       * Snapping the origin onto the halt it was already
+       * given takes nothing back: the body still never passes `holdDistanceM`, which
+       * is itself a whole footprint radius short of the gate, and a body that has
+       * already crossed its halt is never pulled backwards.
+       */
+      const stoppingShortM = allowed - state.travelledM;
+      const reached = !populationInvariants.driveWithoutGrant
+        && Number.isFinite(allowed)
+        && stoppingShortM > 0
+        && stoppingShortM <= HALT_CAPTURE_M
+        && state.speedMps <= HALT_CAPTURE_SPEED_MPS;
+      const moved = reached ? allowed : Math.min(state.travelledM + speed * step, route.totalLengthM - 1e-9, allowed);
       const actual = Math.max(0, moved - state.travelledM);
-      state.speedMps = actual / step;
+      // A captured arrival is a standstill at the stop line, not a 3 m/s blip: the
+      // dwell the authority measures and the body's own reported speed must agree.
+      state.speedMps = reached ? 0 : actual / step;
       state.travelledM += actual;
       stepLateral(state, step);
       placeVehicle(table, slot, state.travelledM, state.laneIndex);

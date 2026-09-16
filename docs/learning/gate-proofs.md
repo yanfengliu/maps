@@ -307,12 +307,63 @@ Three failure paths are written and reachable and have never been watched to fir
 
 **Bound:** one machine - the hardware arm is one RTX 4090 over D3D11, and the SwiftShader numbers are one scene at one resource count on the same machine. Hardware stability across repeats and drivers is not established here; the gate's three consecutive lifecycle invocations are what carry that, and they are recorded per run. The disclosed SwiftShader bound must be re-measured when the scene changes materially (populated agents, larger atlases). The old 2026-09-08 "36.5 seconds" claim in this file and in the defect register names no rasteriser and no raw record was found; it is annotated there as unverified.
 
-## The rendered signal lenses follow the phase, and the four defects this lane fixed are gated
+## The lifecycle gate catches a leak on the boundary retirement path
 
-**Gate:** `test/signal-lenses.test.ts` for the colour mapping, `test/human-lod-counts.test.ts` for the drawn LOD counts, `test/loop.test.ts`'s hold case for the simulation start gate, and `test/harness-bridge.test.ts` for the bridge contract. The rendered half, which no unit test can see, is `tools/render-defects/signal-frames.spec.ts` on port 4322 with its own config; it is not a visual lane, it writes no certificate, and `tools/visual/verify-output.ts` never reads it.
+**Gate:** `npx vitest run test/population-lifecycle.test.ts` — the case "goes red on the boundary retirement path, which is the only one its vehicles retire through", driving `populationInvariants.leakRetiredBody` in `src/agents/population/tick.ts` over the delivered network.
 
-**Red controls, each made to fire on 2026-09-16.** (1) Undeclaring `population()` and `signals()` from `HarnessBridge` fails `npm run typecheck` with `src/harness/bridge.ts(205,5): error TS2353: Object literal may only specify known properties, and 'population' does not exist in type 'HarnessBridge'` (and the same at line 314), plus `test/harness-bridge.test.ts(141,19): error TS2339`. (2) Restoring `this.drawn.near = level.count` fails all four cases of `test/human-lod-counts.test.ts`, e.g. `expected { near: 1, medium: 1, far: 1 } to deeply equal { near: 3, medium: 2, far: 1 }`. (3) Removing the `if (this.held) this.accumulator = 0;` guard fails the new loop case with `expected 28 to be +0`. (4) The rendered control is the same capture run against a build with only the lens wiring and the start gate reverted: 16 frames over the phases green, amber, clearance and the pedestrian stage collapse to **one** digest, `diff.ts` reports 0 of 921,600 pixels changed between tick 4,020 and tick 5,805, and the 8x crop of the head shows the red lens lit while `signals()` records that head's own green. Against the fix the same run has three digests, 445 changed pixels between green and amber and 351 between amber and red, every one inside x 670-708, y 318-333, and 0 changed pixels inside any single phase.
+**Landed:** 2026-09-16 in `worker/gate-repair`, off `86b5a70`. Not merged; the worktree is `artifacts/gate-repair/wt`.
 
-**What the rendered check is bound by.** One junction (the scramble), one pose (45 m east of the crossing at 6 m above the ground, where `scramble:vehicle:3`'s head is 16 m away and faces the camera), one build, one hardware renderer (ANGLE/D3D11 on an RTX 4090), `?agents=1&seed=9137&style=satellite&time=noon`. At the hero pose the three scramble heads in frame are edge-on with facing numbers -0.14, -0.92 and 0.19, so a lens change there is five pixels and the green and amber lenses are not visible at all; that pose is corroboration, not the primary evidence. No pedestrian signal lens exists in this city to check: none of the 78 `traffic_signals` controls carries `traffic_signals=pedestrian`, so `head(..., pedestrian: true)` never runs and the 35 pedestrian groups have nothing on screen. Records: `artifacts/render-defects/after/frames.json` (3 digests, attach tick 11), `before/frames.json` (1 digest, attach tick 1,075), `before-hero/`, `after-hero/` (5 changed pixels at x 222-223, y 285-287) and `no-agents/` for the population-free path.
+**What the gate could not see.** The mutation guarded `retireSlot` in `finishVehicle` and in `retirePedestrian`, and the boundary retirement path in `lifecycle()` retired its body unguarded. Every vehicle retirement the fixture reaches goes through that envelope and none goes through `finishVehicle` (`retiredInPlace` is 0 in every run taken), so the mutation had nothing to leak for a vehicle. Measured on `main` with a census probe that drives the shipped population unchanged:
 
-**A population-free run is unchanged.** `no-agents/frames.json` records 0 pedestrians and 0 vehicles drawn, 1,667 distinct colours and mean luminance 80.6, with the head in the same no-group state as before this work (crop luminance 42.56 against the frozen arm's 42.56). The `updateSignals` cache now starts at `undefined`, so the app's per-frame call rewrites the lenses once rather than every frame of a `?agents=`-free run, which is what makes that call affordable in the lane whose frames carry the review.
+```
+=== vehicles only, 40 of them: pedestrians 0, vehicles 40, 1200 warm-up then 4800 ticks ===
+  warm-up retirements: total 3, of which vehicles 3 (boundary 3, in place 0)
+  control (mutation off):
+    retirements in the window: 24 total = vehicles boundary 24 + vehicles in place 0 + pedestrians 0
+    first failure: tick -1
+    message: <no failure>
+  mutated (leakRetiredBody on):
+    retirements in the window: 24 total = vehicles boundary 24 + vehicles in place 0 + pedestrians 0
+    first failure: tick -1
+    message: <no failure>
+```
+
+24 vehicle retirements with the mutation on, identical to the control's 24, no failure at any tick. The mutation was a no-op on the only path its vehicles retire through.
+
+The gate was green on `main`, and that green is the failure this file exists to record. With 60 pedestrians in the fixture a walker leaks first, so `goes red when a retired body is left present` passed for a reason that has nothing to do with the vehicle path. Its message names no body at all:
+
+```
+Population lifecycle conservation failed: 71 of 72 slots agree between a present body and a planned route.
+Spawns 69, retirements 5, active 65, prepared 0. A slot with a route and no body, or a body with no route, is a leak.
+```
+
+**Mutation A, the obvious one, and why it is not the fix.** Guarding `retireSlot` in the boundary path, as the reachability lane did, changes nothing. `JunctionAdmissions.retireBoundary` clears the slot's active byte itself (`src/network/admissions.ts:161`), so that call is already a no-op on the shipped path. Measured with only that guard in place: the vehicles-only arms above still report 9 and 24 retirements, no failure, no leak.
+
+**Mutation B, the one that works.** The mutation restores the presence the authority just cleared — `table.poses.vehicles.active[slot] = 1` — and the boundary path stops re-planning the retired slot in the same phase. Re-planning healed the leak before any conservation reading could see it, because `lifecycle()` drains its plan queue in the tick it retires. That second half is measured too: with `retireSlot` guarded and the plan queue left alone, the same 24 retirements leaked nothing.
+
+**Failure, with the mutation firing.** The named per-slot conservation check, not the aggregate one:
+
+```
+Population lifecycle conservation failed: vehicle slot 0 is present in the pose buffers with no planned route.
+A body was retired without clearing its slot.
+```
+
+**Failure, with the seam reverted.** The point of the case is that it can fail. Restoring `main`'s boundary path and running the gate:
+
+```
+ ❯ test/population-lifecycle.test.ts (3 tests | 1 failed) 5539ms
+   ✓ lifecycle conservation > keeps spawns equal to retirements plus active, with no leak over a long run  3440ms
+   ✓ lifecycle conservation > goes red when a retired body is left present  861ms
+   × lifecycle conservation > goes red on the boundary retirement path, which is the only one its vehicles retire through 1237ms
+     → the leak mutation retired a vehicle through the boundary envelope and nothing noticed: expected null not to be null
+
+ FAIL  test/population-lifecycle.test.ts > lifecycle conservation > goes red on the boundary retirement path, which is the only one its vehicles retire through
+AssertionError: the leak mutation retired a vehicle through the boundary envelope and nothing noticed: expected null not to be null
+ ❯ test/population-lifecycle.test.ts:120:114
+```
+
+Exit status 1, in 6.6 s. The two cases above it stayed green, which is the finding: the gate's original red case cannot see this path at all.
+
+**Why the second case drops the pedestrians.** With walkers present the mutation leaks a walker first — tick 1330 against the vehicle path's 1251 — so a case asserting only "something failed" is satisfied by a body that never went through the boundary envelope. Removing them leaves the envelope as the only retirement path, which makes an unfixed seam fail rather than be covered for. The case also requires the failure to name the vehicle by slot, so a walker leak could not satisfy it even if one appeared.
+
+**Bound.** One delivered network at seed `0x5b1b0a`, 12 vehicles and no pedestrians, 1,200 ticks of warm-up and 4,800 mutated, `retiredInPlace` 0 throughout. It pins that the mutation can reach the boundary retirement path and that the population notices when it does. It says nothing about `retireBoundary` itself; nothing about the `finishVehicle` in-place path, which no run in this fixture reaches and which is still covered only by the older case; and nothing about the 3,000-pedestrian acceptance bound, where conservation is read from `status()` rather than from any mutation.

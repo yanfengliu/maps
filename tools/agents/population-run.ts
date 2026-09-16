@@ -131,6 +131,10 @@ if (digestOnly) {
     refusedRoutes: status.refusedRoutes.slice(0, 8),
     refusedRouteKinds: status.refusedRoutes.length,
     tickCostMs: {
+      // The fast tail as well as the slow one: under a shared machine the median
+      // alone cannot separate a heavy tick from a quiet one, and a run whose p05 is
+      // already near the frame budget has no headroom left to measure.
+      p05: percentile(0.05),
       median: measured[Math.floor(measured.length / 2)] ?? 0,
       p95: percentile(0.95),
       max: measured.at(-1) ?? 0,
