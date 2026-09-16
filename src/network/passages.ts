@@ -2,6 +2,7 @@ import type { Junction, LaneEdge, NetworkData, NetworkEdge } from "../world/netw
 import { headingAt, projectOntoEdge } from "./geometry.ts";
 import { boundaryProfile, type BoundaryNetwork, type BoundaryProfile } from "./boundaries.ts";
 import { footprintOccupies,validateActorFootprint,type ActorFootprint } from "./footprints.ts";
+import { assertBoundaryIngressPlan, validateIngressFootprint, type BoundaryIngressPlan } from "../agents/core/ingress.ts";
 
 export type ActorKind="vehicle"|"pedestrian";
 export interface RouteControl {routeIndex:number;distanceM:number;nodeIds:readonly number[];rule:"stop"|"yield"}
@@ -18,11 +19,12 @@ export function createRoutePassage(network:Pick<NetworkData,"lanes"|"walks">&Par
   return buildPassage(network,kind,routeEdgeIds,entryIndex);
 }
 /** A materializing body can overlap a controller even when its route starts outside all conflict sections. */
-export function createBoundaryEntryPassage(network:Pick<NetworkData,"lanes"|"walks"|"junctions"|"nodes"|"boundary"|"portals"|"physical">,kind:ActorKind,routeEdgeIds:readonly string[],footprint:ActorFootprint):RoutePassage|null {
+export function createBoundaryEntryPassage(network:Pick<NetworkData,"lanes"|"walks"|"junctions"|"nodes"|"boundary"|"portals"|"physical">,kind:ActorKind,routeEdgeIds:readonly string[],footprint:ActorFootprint,ingress?:BoundaryIngressPlan):RoutePassage|null {
   validateActorFootprint(footprint);const first=(kind==="vehicle"?network.lanes:network.walks).find(e=>e.id===routeEdgeIds[0]);
   const profile=first&&boundaryProfile(network,kind,first,true),origin=footprint.origin??footprint.position;
-  if(!profile||Math.hypot(origin.x-profile.position.x,origin.z-profile.position.z)>.001)throw new Error("Boundary entry passage requires the actual prepared body at a real entrance portal.");
-  const owners=network.junctions.filter(j=>kind==="pedestrian"?j.id===first!.junctionId:footprintOccupies(j,footprint));
+  if(ingress){assertBoundaryIngressPlan(ingress,network,routeEdgeIds);if(kind!=="vehicle")throw new Error("Certified vehicle ingress cannot bind a pedestrian passage.");validateIngressFootprint(ingress,0,footprint);}
+  if(!profile||!ingress&&Math.hypot(origin.x-profile.position.x,origin.z-profile.position.z)>.001)throw new Error("Boundary entry passage requires the actual prepared body at a real entrance portal.");
+  const owners=network.junctions.filter(j=>ingress?j.id===ingress.authorityId:kind==="pedestrian"?j.id===first!.junctionId:footprintOccupies(j,footprint));
   if(!owners.length)return null;if(owners.length!==1)throw new Error(`Boundary ${first!.id} body spans ${owners.length} independent authorities; regroup the supported portal envelope before materializing.`);
   const owner=owners[0]!,yaw=headingAt(first!,0),group=kind==="pedestrian"?owner.pedestrianGroup:owner.vehicleGroups.toSorted((a,b)=>{
     const angle=(id:string)=>{const sector=Number(id.split(":").at(-1));if(!Number.isInteger(sector)||sector<0||sector>3)throw new Error(`Boundary controller group ${id} has no authored heading sector.`);return Math.abs(Math.atan2(Math.sin(yaw-sector*Math.PI/2),Math.cos(yaw-sector*Math.PI/2)));};return angle(a)-angle(b)||a.localeCompare(b);

@@ -1,0 +1,142 @@
+{
+  "provenance": {
+    "scope": "Actual selected GLB wheel-root coordinates in local metres, Y up and +Z forward, extracted by GLTFLoader. This compact source fixture gates named support offset order; it is not a new fleet authority.",
+    "manifestSha256": "4cd6e59b891abec4c4ce48fa03e8f90edf746097f9e532c9f3557be1f20e4257",
+    "source": "Original MIT repository-authored vehicle geometry; retained frozen Review9 fleet.",
+    "precision": "GLB Float32 roots are compared to manifest axle coordinates within 0.2 micrometres."
+  },
+  "vehicles": [
+    {
+      "id": "kei",
+      "model": "vehicle-kei.glb",
+      "sha256": "d56b9c0a8c7f9380528880bfa257e0e0fa50fe33cc81e20793b5567cdb7a6a74",
+      "axles": {
+        "frontZ": 1.037,
+        "rearZ": -1.037,
+        "trackMetres": 1.3699999999999999
+      },
+      "wheels": [
+        {
+          "name": "wheel_0_right",
+          "position": [
+            -0.6850000023841858,
+            0.2849999964237213,
+            1.0369999408721924
+          ]
+        },
+        {
+          "name": "wheel_0_left",
+          "position": [
+            0.6850000023841858,
+            0.2849999964237213,
+            1.0369999408721924
+          ]
+        },
+        {
+          "name": "wheel_1_right",
+          "position": [
+            -0.6850000023841858,
+            0.2849999964237213,
+            -1.0369999408721924
+          ]
+        },
+        {
+          "name": "wheel_1_left",
+          "position": [
+            0.6850000023841858,
+            0.2849999964237213,
+            -1.0369999408721924
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taxi",
+      "model": "vehicle-taxi.glb",
+      "sha256": "04397d18aff3ba30be8f6b917d53cebe5038cd3fe13e936f51a13b80708474b6",
+      "axles": {
+        "frontZ": 1.342,
+        "rearZ": -1.342,
+        "trackMetres": 1.5899999999999999
+      },
+      "wheels": [
+        {
+          "name": "wheel_0_right",
+          "position": [
+            -0.7950000166893005,
+            0.3149999976158142,
+            1.3420000076293945
+          ]
+        },
+        {
+          "name": "wheel_0_left",
+          "position": [
+            0.7950000166893005,
+            0.3149999976158142,
+            1.3420000076293945
+          ]
+        },
+        {
+          "name": "wheel_1_right",
+          "position": [
+            -0.7950000166893005,
+            0.3149999976158142,
+            -1.3420000076293945
+          ]
+        },
+        {
+          "name": "wheel_1_left",
+          "position": [
+            0.7950000166893005,
+            0.3149999976158142,
+            -1.3420000076293945
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bus",
+      "model": "vehicle-bus.glb",
+      "sha256": "6309b43d37cad64832a422dfce77b4571478efdef9b8c8112cec2e37680f3d86",
+      "axles": {
+        "frontZ": 3.2760000000000002,
+        "rearZ": -2.8600000000000003,
+        "trackMetres": 2.39
+      },
+      "wheels": [
+        {
+          "name": "wheel_0_right",
+          "position": [
+            -1.1950000524520874,
+            0.47999998927116394,
+            3.2760000228881836
+          ]
+        },
+        {
+          "name": "wheel_0_left",
+          "position": [
+            1.1950000524520874,
+            0.47999998927116394,
+            3.2760000228881836
+          ]
+        },
+        {
+          "name": "wheel_1_right",
+          "position": [
+            -1.1950000524520874,
+            0.47999998927116394,
+            -2.859999895095825
+          ]
+        },
+        {
+          "name": "wheel_1_left",
+          "position": [
+            1.1950000524520874,
+            0.47999998927116394,
+            -2.859999895095825
+          ]
+        }
+      ]
+    }
+  ]
+}

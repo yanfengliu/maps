@@ -5,11 +5,12 @@ import { footprintOccupies, footprintRadius, validateActorFootprint, type ActorF
 import { boundaryProfile, boundaryProgress, type BoundaryNetwork, type BoundaryProfile } from "./boundaries.ts";
 import { assertRoutePassage, type ActorKind, type RouteControl, type RoutePassage } from "./passages.ts";
 import { SignalController, type SignalSnapshot } from "./signals.ts";
+import { assertBoundaryIngressPlan, validateIngressFootprint, ingressStopLineDistance, type BoundaryIngressPlan } from "../agents/core/ingress.ts";
 
 export const STOP_DWELL_SECONDS=1;
 export type { ActorFootprint } from "./footprints.ts";
 export interface BoundaryActorBinding {readonly actorId:string;readonly kind:ActorKind;readonly slot:number;readonly generation:number}
-interface BoundActor {binding:BoundaryActorBinding;poses:AgentPoseBuffers;route:NetworkEdge[];entry:BoundaryProfile|null;exit:BoundaryProfile;retired:boolean;outwardM:number}
+interface BoundActor {binding:BoundaryActorBinding;poses:AgentPoseBuffers;route:NetworkEdge[];entry:BoundaryProfile|null;exit:BoundaryProfile;retired:boolean;outwardM:number;ingress:BoundaryIngressPlan|undefined;ingressDistanceM:number;ingressTick:number;ingressComplete:boolean;stoppedSeconds:number}
 export interface AdmissionRequest {
   actorId:string;kind:ActorKind;entryEdgeId:string;passage:RoutePassage;routeIndex?:number;footprint:ActorFootprint;
   /** Measured continuous stop duration at the applicable mapped control. */
@@ -33,6 +34,7 @@ export class JunctionAdmissions {
   private readonly boundSlots=new WeakMap<Uint8Array,Map<number,BoundActor>>();
   private readonly waits=new Map<string,{passage:RoutePassage;routeIndex:number;age:number}>();
   private fixedStep:number|null=null;
+  private tick=0;
   constructor(network:Pick<NetworkData,"junctions"|"lanes"|"walks">&Partial<BoundaryNetwork>){this.junctions=new Map(network.junctions.map(j=>[j.id,j]));this.signals=new SignalController(network.junctions);this.edges=new Map([...network.lanes,...network.walks].map(e=>[e.id,e]));this.boundaryNetwork=network;}
 
   /** Call once per fixed tick after observing preceding positions. Signals advance before new entries resolve. */
@@ -51,8 +53,15 @@ export class JunctionAdmissions {
       if(held&&held.passage!==r.passage)throw new Error(`Actor ${r.actorId} already holds another junction/passage; retain its entire route commitment until the tail clears.`);
       if(held&&index<held.routeIndex)throw new Error(`Actor ${r.actorId} requested a passed route occurrence ${index}.`);
       if(!held?.entered&&index!==r.passage.entryIndex)throw new Error(`Actor ${r.actorId} must enter its compound at the planned first occurrence ${r.passage.entryIndex}.`);
+      const boundary=this.boundIds.get(r.actorId);
+      if(boundary?.ingress&&!boundary.ingressComplete){
+        this.validateBoundaryPresence(boundary.binding,r.footprint,held?.entered?1:0);
+        this.validateIngressPose(boundary,boundary.ingressDistanceM,r.footprint);
+        if(index!==0||r.passage.junctionId!==boundary.ingress.authorityId)throw new Error(`Actor ${r.actorId} ingress request must retain its certified outer authority and first route occurrence.`);
+        this.validateBoundCommitment(boundary,{kind:r.kind,passage:r.passage});
+      }
     }
-    this.fixedStep=stepSeconds;for(const c of this.commitments.values())c.heldSeconds+=stepSeconds;
+    this.fixedStep=stepSeconds;this.tick++;for(const c of this.commitments.values())c.heldSeconds+=stepSeconds;
     this.signals.advance(stepSeconds,id=>this.occupied(id));
     // A signal grant that was never entered expires with green. It cannot become an entry on amber/red.
     for(const[id,c]of this.commitments)if(!c.entered&&this.junctions.get(c.junctionId)!.controlKind==="signal"&&!this.signals.canEnter(c.passage.entrySignalGroupId))this.remove(id);
@@ -60,8 +69,11 @@ export class JunctionAdmissions {
     for(const r of requests){
       const index=r.routeIndex??r.passage.entryIndex,edge=r.passage.edges[index]!,owner=this.junctions.get(r.passage.junctionId)!,held=this.commitments.get(r.actorId),control=r.passage.controls.find(c=>c.routeIndex===index&&!held?.clearedControls.has(c)&&(held?.entered||c.distanceM<1e-6));
       const rule=control?.rule??(r.kind==="pedestrian"?"yield":(edge as LaneEdge).entryRule),stopNeeded=control?.rule==="stop"||(!held&&rule==="stop"&&!r.passage.controls.length),yieldNeeded=Boolean(control)||(!held&&["stop","yield"].includes(rule)&&!r.passage.controls.length);
-      const eligible=(held?.entered||r.receivingSpace)&&(!stopNeeded||r.stoppedSeconds+1e-9>=STOP_DWELL_SECONDS)&&(!yieldNeeded||r.yieldSatisfied);
-      if(held){if(eligible){if(control)held.clearedControls.add(control);granted.push(r.actorId);}continue;}
+      const boundary=this.boundIds.get(r.actorId),ingress=boundary?.ingress&&!boundary.ingressComplete,outerOnly=ingress&&!held?.entered;
+      const atIngressControl=!ingress||!control||Math.abs(ingressStopLineDistance(boundary.ingress!,r.footprint,control.distanceM)+.125)<=.125+1e-6;
+      const measuredStop=!ingress||boundary.stoppedSeconds+1e-9>=STOP_DWELL_SECONDS;
+      const eligible=(held?.entered||r.receivingSpace)&&(outerOnly||(!control||atIngressControl)&&(!stopNeeded||r.stoppedSeconds+1e-9>=STOP_DWELL_SECONDS&&measuredStop)&&(!yieldNeeded||r.yieldSatisfied));
+      if(held){if(eligible){if(control&&!outerOnly)held.clearedControls.add(control);granted.push(r.actorId);}continue;}
       if(index!==r.passage.entryIndex)throw new Error(`Actor ${r.actorId} must enter its compound at the planned first occurrence ${r.passage.entryIndex}.`);
       const entryGroup=index===r.passage.entryIndex?r.passage.entrySignalGroupId:edge.signalGroupId;
       if(!eligible||(owner.controlKind==="signal"&&(!entryGroup||!this.signals.canEnter(entryGroup)))){this.waits.delete(r.actorId);continue;}
@@ -71,12 +83,13 @@ export class JunctionAdmissions {
     for(const[junctionId,queue]of queues){
       const owner=this.junctions.get(junctionId)!,held=[...(this.byJunction.get(junctionId)?.values()??[])];queue.sort((a,b)=>Math.floor((b.age+1e-9)/2)-Math.floor((a.age+1e-9)/2)||a.priority-b.priority||b.age-a.age||a.request.actorId.localeCompare(b.request.actorId));
       const pedestrianBatch=owner.controlKind==="signal"&&queue.every(c=>c.request.kind==="pedestrian")&&held.every(c=>c.kind==="pedestrian");if(held.length&&!pedestrianBatch)continue;
-      for(const candidate of pedestrianBatch?queue:queue.slice(0,1)){const r=candidate.request,c:Commitment={actorId:r.actorId,kind:r.kind,junctionId,entryEdgeId:r.entryEdgeId,heldSeconds:0,entered:false,routeIndex:r.passage.entryIndex,progressM:-Infinity,lastConflictIndex:r.passage.lastConflictIndex,passage:r.passage,clearedControls:new Set(r.passage.controls.filter(c=>c.routeIndex===candidate.index&&c.distanceM<1e-6))};this.commitments.set(r.actorId,c);const holders=this.byJunction.get(junctionId)??new Map<string,Commitment>();holders.set(r.actorId,c);this.byJunction.set(junctionId,holders);this.waits.delete(r.actorId);granted.push(r.actorId);}
+      for(const candidate of pedestrianBatch?queue:queue.slice(0,1)){const r=candidate.request,boundary=this.boundIds.get(r.actorId),outerOnly=boundary?.ingress&&!boundary.ingressComplete,c:Commitment={actorId:r.actorId,kind:r.kind,junctionId,entryEdgeId:r.entryEdgeId,heldSeconds:0,entered:false,routeIndex:r.passage.entryIndex,progressM:-Infinity,lastConflictIndex:r.passage.lastConflictIndex,passage:r.passage,clearedControls:new Set(outerOnly?[]:r.passage.controls.filter(c=>c.routeIndex===candidate.index&&c.distanceM<1e-6))};this.commitments.set(r.actorId,c);const holders=this.byJunction.get(junctionId)??new Map<string,Commitment>();holders.set(r.actorId,c);this.byJunction.set(junctionId,holders);this.waits.delete(r.actorId);granted.push(r.actorId);}
     }
     return granted.sort();
   }
   /** A gap remains occupied logically until the planned final primitive and full tail have passed. */
   observe(actorId:string,observation:PassageObservation):boolean {
+    const bound=this.boundIds.get(actorId);if(bound?.ingress&&!bound.ingressComplete)throw new Error(`Actor ${actorId} must finish its certified exterior-to-portal ingress before ordinary route observation.`);
     const c=this.commitments.get(actorId);if(!c)return false;this.validateFootprint(actorId,observation.footprint);
     const {routeIndex,distanceM,footprint}=observation,edge=c.passage.edges[routeIndex];
     if(!Number.isInteger(routeIndex)||!edge||!Number.isFinite(distanceM)||distanceM<0||distanceM>edge.lengthM+1e-6)throw new Error(`Actor ${actorId} has invalid route progress ${routeIndex}/${distanceM}; report its actual route occurrence and arc distance.`);
@@ -92,27 +105,50 @@ export class JunctionAdmissions {
   occupied(junctionId:string):boolean {return [...(this.byJunction.get(junctionId)?.values()??[])].some(c=>c.entered);}
   signalSnapshot():SignalSnapshot[]{return this.signals.snapshot();}
   snapshot():AdmissionSnapshot[]{return [...this.commitments.values()].map(({passage:_,progressM:__,clearedControls:___,...snapshot})=>({...snapshot})).sort((a,b)=>a.junctionId.localeCompare(b.junctionId)||a.actorId.localeCompare(b.actorId));}
+  boundarySnapshot(){return [...this.boundIds.values()].map(s=>Object.freeze({...s.binding,phase:s.poses.active[s.binding.slot]===0?"prepared":s.ingressComplete?"route":"ingress",ingressDistanceM:s.ingressDistanceM,measuredStoppedSeconds:s.stoppedSeconds}));}
   /** Core-owned slot binding. No renderer or callback can activate or retire a commitment. */
-  bindBoundaryActor(actorId:string,kind:ActorKind,slot:number,poses:AgentPoseBuffers,routeIds:readonly string[]):BoundaryActorBinding {
+  bindBoundaryActor(actorId:string,kind:ActorKind,slot:number,poses:AgentPoseBuffers,routeIds:readonly string[],ingress?:BoundaryIngressPlan):BoundaryActorBinding {
     if(!actorId||!["vehicle","pedestrian"].includes(kind)||!Number.isInteger(poses.count)||!Number.isInteger(slot)||slot<0||slot>=poses.count||poses.active.length!==poses.count||poses.current.position.length!==poses.count*3||poses.current.supportNormal.length!==poses.count*3||poses.current.yaw.length!==poses.count||poses.current.generation.length!==poses.count)throw new Error(`Boundary actor ${actorId} needs a valid stable slot and complete current pose buffers.`);
     if(this.boundIds.has(actorId)||this.boundSlots.get(poses.active)?.has(slot))throw new Error(`Boundary actor ${actorId} or slot ${slot} is already bound; retire that generation before reuse.`);
     const route=routeIds.map(id=>{const edge=this.edges.get(id) as NetworkEdge|undefined;if(!edge||((edge as LaneEdge).kind==="lane"||(edge as LaneEdge).kind==="turn")!==(kind==="vehicle"))throw new Error(`Boundary route ${id} is not a ${kind} edge in this network.`);return edge;});
     if(!route.length||route.some((e,i)=>i>0&&!route[i-1]!.nextIds.includes(e.id)))throw new Error(`Boundary actor ${actorId} needs its complete legal directed route.`);
     const exit=boundaryProfile(this.boundaryNetwork,kind,route.at(-1)!);if(!exit)throw new Error(`Boundary actor ${actorId} route does not end at a real AOI exit portal.`);
-    const binding=Object.freeze({actorId,kind,slot,generation:poses.current.generation[slot]!}),state:BoundActor={binding,poses,route,entry:boundaryProfile(this.boundaryNetwork,kind,route[0]!,true),exit,retired:false,outwardM:-Infinity};
+    if(ingress){assertBoundaryIngressPlan(ingress,this.boundaryNetwork,routeIds);if(kind!=="vehicle")throw new Error("A vehicle ingress plan cannot bind a pedestrian slot.");}
+    const binding=Object.freeze({actorId,kind,slot,generation:poses.current.generation[slot]!}),state:BoundActor={binding,poses,route,entry:boundaryProfile(this.boundaryNetwork,kind,route[0]!,true),exit,retired:false,outwardM:-Infinity,ingress,ingressDistanceM:0,ingressTick:this.tick,ingressComplete:!ingress,stoppedSeconds:0};
     this.boundActors.set(binding,state);this.boundIds.set(actorId,state);const slots=this.boundSlots.get(poses.active)??new Map<number,BoundActor>();slots.set(slot,state);this.boundSlots.set(poses.active,slots);return binding;
   }
   /** All validation precedes the synchronous active-byte/commitment mutation. */
   activateBoundary(binding:BoundaryActorBinding,footprint:ActorFootprint):void {
     const state=this.validateBoundaryPresence(binding,footprint,0);if(!state.entry)throw new Error(`Boundary actor ${binding.actorId} cannot spawn at an interior route origin.`);
-    const origin=footprint.origin??footprint.position;if(Math.hypot(origin.x-state.entry.position.x,origin.z-state.entry.position.z)>.001)throw new Error(`Boundary actor ${binding.actorId} prepared pose is not at its actual entrance portal.`);
+    const origin=footprint.origin??footprint.position;
+    if(state.ingress)this.validateIngressPose(state,0,footprint);
+    else if(Math.hypot(origin.x-state.entry.position.x,origin.z-state.entry.position.z)>.001)throw new Error(`Boundary actor ${binding.actorId} prepared pose is not at its actual entrance portal.`);
     // Sidewalk staging can lie inside an authored disk without entering a crossing.
     const c=this.commitments.get(binding.actorId),touching=[...this.junctions.values()].filter(j=>binding.kind==="pedestrian"?j.id===state.route[0]!.junctionId:footprintOccupies(j,footprint));
     this.validateBoundCommitment(state,c);
+    if(state.ingress&&(c?.junctionId??null)!==state.ingress.authorityId)throw new Error(`Boundary actor ${binding.actorId} needs fresh admission for its complete ingress sweep before materializing.`);
     if(touching.some(j=>j.id!==c?.junctionId)||touching.length&&!c)throw new Error(`Boundary actor ${binding.actorId} needs admission for every intersected authority before materializing.`);
     if(c&&(c.entered||this.junctions.get(c.junctionId)!.controlKind==="signal"&&!this.signals.canEnter(c.passage.entrySignalGroupId)))throw new Error(`Boundary actor ${binding.actorId} has no fresh entry grant for this tick.`);
-    if(c&&touching.length){c.entered=true;c.routeIndex=0;c.progressM=0;}
+    if(c&&(touching.length||state.ingress)){c.entered=true;c.routeIndex=0;c.progressM=state.ingress?-state.ingress.lengthM:0;}
+    state.ingressTick=this.tick;
     state.poses.active[binding.slot]=1;
+  }
+  /** One observed supported pose per fixed tick; no caller-provided sweep or
+   * arbitrary callback can authorize the transition into the ordinary route. */
+  observeBoundaryIngress(binding:BoundaryActorBinding,observation:{distanceM:number;footprint:ActorFootprint}):boolean {
+    const state=this.validateBoundaryPresence(binding,observation.footprint,1),plan=state.ingress;
+    if(!plan||state.ingressComplete)throw new Error(`Boundary actor ${binding.actorId} has no unfinished certified ingress.`);
+    this.validateIngressPose(state,observation.distanceM,observation.footprint);
+    const delta=observation.distanceM-state.ingressDistanceM;
+    if(!this.fixedStep||this.tick!==state.ingressTick+1||delta< -1e-8||delta>plan.speedLimitMps*this.fixedStep+1e-7)throw new Error(`Boundary actor ${binding.actorId} ingress must progress monotonically once per fixed tick within its certified speed; skipped or repeated ticks cannot advance it.`);
+    const c=this.commitments.get(binding.actorId);this.validateBoundCommitment(state,c);
+    if(plan.authorityId&&(!c?.entered||c.junctionId!==plan.authorityId))throw new Error(`Boundary actor ${binding.actorId} lost its committed ingress authority.`);
+    if(c)for(const control of c.passage.controls)if(control.routeIndex===0&&!c.clearedControls.has(control)&&ingressStopLineDistance(plan,observation.footprint,control.distanceM)>1e-6)throw new Error(`Boundary actor ${binding.actorId} passed mapped ${control.rule} node/${control.nodeIds.join(",")} during ingress without measured entry admission.`);
+    const complete=observation.distanceM>=plan.lengthM-1e-8,stopped=delta<=1e-7&&state.poses.speedMps[binding.slot]!<=.01;
+    // All throwing checks precede the progress and logical-occupancy writes.
+    state.stoppedSeconds=stopped?state.stoppedSeconds+this.fixedStep:0;state.ingressDistanceM=observation.distanceM;state.ingressTick=this.tick;state.ingressComplete=complete;
+    if(c){c.progressM=complete?0:observation.distanceM-plan.lengthM;c.routeIndex=0;}
+    return complete;
   }
   /** The core supplies continuous outbound poses; this method neither moves nor turns an actor. */
   observeBoundaryEgress(binding:BoundaryActorBinding,observation:PassageObservation):boolean {
@@ -140,11 +176,16 @@ export class JunctionAdmissions {
     }
     return state;
   }
-  private validateBoundCommitment(state:BoundActor,c:Commitment|undefined):void {
+  private validateBoundCommitment(state:BoundActor,c:Pick<Commitment,"kind"|"passage">|undefined):void {
     if(c&&(c.kind!==state.binding.kind||c.passage.routeEdgeIds.length!==state.route.length||state.route.some((e,i)=>e.id!==c.passage.routeEdgeIds[i])))throw new Error(`Boundary actor ${state.binding.actorId} commitment belongs to a different kind or complete route.`);
+  }
+  private validateIngressPose(state:BoundActor,distanceM:number,footprint:ActorFootprint):void {
+    const expected=validateIngressFootprint(state.ingress!,distanceM,footprint),pose=state.poses.current as VehiclePoseSnapshot,slot=state.binding.slot;
+    if(!pose.frontSteeringRadians||!Number.isFinite(pose.frontSteeringRadians[slot])||!Number.isFinite(state.poses.speedMps[slot])||state.poses.speedMps[slot]!<0||state.poses.speedMps[slot]!>state.ingress!.speedLimitMps+1e-6||Math.abs(pose.frontSteeringRadians[slot]!-expected.steeringRadians)>1e-6||expected.support.wheelOffsets.some((v,i)=>Math.abs(v-pose.wheelOffsets[slot*4+i]!)>1e-6))throw new Error(`Boundary actor ${state.binding.actorId} displayed steering, wheel contacts or speed differ from its certified ingress pose.`);
   }
   private validateBoundaryEgress(binding:BoundaryActorBinding,observation:PassageObservation){
     const state=this.validateBoundaryPresence(binding,observation.footprint,1),last=state.route.length-1;
+    if(state.ingress&&!state.ingressComplete)throw new Error(`Boundary actor ${binding.actorId} cannot retire before finishing its certified ingress.`);
     if(observation.routeIndex!==last||!Number.isFinite(observation.distanceM)||Math.abs(observation.distanceM-state.route[last]!.lengthM)>1e-6)throw new Error(`Boundary actor ${binding.actorId} must complete its actual terminal route occurrence before egress.`);
     const c=this.commitments.get(binding.actorId);this.validateBoundCommitment(state,c);
     if(c&&(!c.entered||c.passage.controls.some(control=>!c.clearedControls.has(control))))throw new Error(`Boundary actor ${binding.actorId} must enter and satisfy every mapped control before retiring its passage.`);

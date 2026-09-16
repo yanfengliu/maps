@@ -17,6 +17,8 @@ export interface AgentPoseSnapshot {
 export interface VehiclePoseSnapshot extends AgentPoseSnapshot {
   /** Model metres along the support normal, four per slot in manifest wheelObjects order. */
   readonly wheelOffsets: Float32Array;
+  /** Core-owned bicycle-equivalent steering. Positive turns local +Z toward +X about support +Y. */
+  readonly frontSteeringRadians: Float32Array;
 }
 
 /** Shared per-wheel travel bound: ±0.05 model metres along the support normal. */
@@ -74,6 +76,14 @@ export function assertAgentPoseBuffers(poses: AgentPoseBuffers, label: string): 
 export function assertVehiclePoseBuffers(poses: VehiclePoseBuffers, label = "Vehicle"): void {
   assertAgentPoseBuffers(poses, label);
   for (const [name, snapshot] of [["previous", poses.previous], ["current", poses.current]] as const) {
+    if (!snapshot.frontSteeringRadians || snapshot.frontSteeringRadians.length !== poses.count) {
+      throw new Error(`${label} ${name}.frontSteeringRadians has ${snapshot.frontSteeringRadians?.length ?? "no"} entries; ${poses.count} stable slots require one bicycle-equivalent angle per slot.`);
+    }
+    for (const angle of snapshot.frontSteeringRadians) {
+      if (!Number.isFinite(angle) || Math.abs(angle) > Math.fround(VEHICLE_FRONT_STEERING_LIMIT_RADIANS)) {
+        throw new Error(`${label} ${name}.frontSteeringRadians value ${angle} must be finite and within ±${VEHICLE_FRONT_STEERING_LIMIT_RADIANS} radians (35 degrees bicycle-equivalent). The core must supply a supported turn.`);
+      }
+    }
     if (!snapshot.wheelOffsets || snapshot.wheelOffsets.length !== poses.count * 4) {
       throw new Error(`${label} ${name}.wheelOffsets has ${snapshot.wheelOffsets?.length ?? "no"} entries; ${poses.count} stable slots require ${poses.count * 4} in manifest wheel order.`);
     }
