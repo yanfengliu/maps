@@ -3,7 +3,7 @@
 Status: active
 Owner: root orchestrator
 Created: 2026-09-06
-Updated: 2026-09-15
+Updated: 2026-09-16
 
 ## Problem and outcome
 
@@ -97,7 +97,9 @@ Independent review of the corrected two-lane instrument reports no blocking find
 
 Three further units landed and are pushed on the same day. `620b662` adds `tools/agents/population-cost.ts`, the first measurement of the real per-tick population cost: on this machine, 3,000 pedestrians and 200 vehicles cost 2.409 ms median for admission (4.8 times the design's assumed 0.5 ms budget), 0.526 ms for pose composition, 1.007 ms for a simulation substrate that contains no motion model, and 4.346 ms for a whole tick. Admission throughput, not frame rate, is the first thing this population breaks: a median 27 grants against 2,582 requests, so 80.8% of the population queues, and two vehicle routes cannot be driven at all because a mapped stop line sits nearer the gate than half the longest vehicle and no offset policy exists. `0045b30` gives the delivered human assets the version-2 contract the runtime requires; the asset bytes were never wrong, only the four manifests were stale, and the repair leaves every GLB and VAT texture bit-identical while `tools/agents/verify.ts --humans-only` keeps the accepted bounds (worst sole drift 0.001167 m against 5 mm, worst absolute contact 0.009148 m against 15 mm). `10da8ea` lands the agent and vehicle cores with both renderers, the offline certified-geometry tools and eleven test files. All four commits were pushed, and the working tree is clean.
 
-The gate for the graphics landing was re-run after the 2026-09-15 documentation landing, because the earlier run's evidence was captured against the candidate worktree rather than against the merged revision. That re-run is still completing in `artifacts/g1-verify`; its completion signal is `artifacts/visual/complete.json` beside the 44 fresh native frames and the three hardware lifecycle runs, and this paragraph is updated when it lands.
+The gate for the graphics landing was re-run after the 2026-09-15 documentation landing, because the earlier run's evidence was captured against the candidate worktree rather than against the merged revision. That run **completed on 2026-09-16T13:08:43Z** and certified: 44 fresh native-resolution frames with matching hashes and three hardware lifecycle runs on the RTX 4090 over D3D11, navigation 158 to 177 ms and replacement 5.7 to 8.6 s. Two earlier attempts failed on wall-clock bounds inside the instrument rather than on the application, and both bounds are fixed: the settle deadline is now denominated in the frames its predicate consumes, and each capture spec's ceiling is derived from the captures it makes.
+
+**That certificate does not bind to the current revision**, which an independent review established in round 29: its build is `index-Wbd7IHvh.js` from a tree at `7c6bd95`, and three source commits landed during its four-hour capture. The 44 frames whose digests it records are intact on disk, and the native inspection recorded earlier binds to a different capture again (`index-BP1Vm0F-`). So the acceptance requirement that a sweep and a native inspection bind to the final revision is **open**, and a final capture on the frozen revision is owed once the landings in flight settle.
 
 ### Blockers (unresolved dependencies)
 
@@ -165,7 +167,7 @@ Two criteria above have evidence from the 44-frame capture and are settled here 
 
 - Line 148 (the dusk preset's post chain, and "holds still — no flicker or crawl over a moving sequence") is **not** satisfied at the time of writing, and the reason is measured: `artifacts/gate-timing/REPORT.md` found `taaAccumulating: false, taaSamples: 0` on all eight hero frames, reproduced on both renderers, so the temporal accumulation the criterion names never engaged. The frames also cannot answer "over a moving sequence" at all — that needs the controls-driven flythrough, which is Phase 10. This is the clearest case in the plan of a criterion whose mechanism is present in the code and absent from the pixels.
 - Line 147 (road markings against reference imagery, signals, guardrails, street furniture) is partly carried: the crossing's diagonal arms, the zebra bands and the tactile guidance strips are visible and correctly placed in both styles, and signal heads and posts are present. What is not established is agreement with *reference imagery* at native resolution, which needs the crop-level comparison this review's downscale bound cannot make.
-- Lines 149 to 152 and 155 to 156 stay open for the reason already recorded against them in the delivery status: they are population criteria, and the population does not yet complete a route or cross a street.
+- Lines 149 to 152 and 155 to 156 stay open, and the reason has changed rather than lapsed. The population now completes routes — pedestrians 1,815 crossed and 309 completed, vehicles 311 and 203 over 360 s at 3,000 and 200 — but round 29's independent review found three of these criteria failing on their own subject: vehicles interpenetrate (120 overlapping oriented-box pairs, deepest 4.147 m) and nothing measured spacing; the crowd overlaps (46,615 pedestrian pairs) and nobody is on the crossing, because the scramble is a single compound that no route may terminate inside; and the running app delivers 10 to 18 fps with 60 of 200 vehicles drawn, because the bus class cannot spawn anywhere in this network. The signature shot is reachable without a contract change — 17 of 33 portals have a legal route crossing the diagonal, nearest approach 0.078 m — and the blocker is the population's route distribution.
 
 ## Implementation steps
 
