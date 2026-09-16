@@ -23,6 +23,14 @@ That guard requires a contiguous section after the last conflict occurrence that
 
 A first attempt to take the lane's diff also exposed a second, smaller error in it: the lane's loop starts at `entryIndex` where the shipped scan starts at `entryIndex + 1`, so a walk that *begins* on a junction counts its own entry as a conflict occurrence. `check-boundaries` asserts the opposite. That one is a one-line correction and is noted here so the next attempt does not repeat it.
 
+## Correction, 2026-09-16 — the cause above is wrong
+
+A later lane bisected the red and found the real cause, and it is neither of the two this round proposed. `check-boundaries` failed because **the previous diff wrapped its whole scan in `if (!boundary)`**. For a boundary-entry passage — `createBoundaryEntryPassage` calls `buildPassage` with `boundary` set — whose route begins on a crossing of its own owner, the shipped scan runs from `boundary ? entryIndex : entryIndex + 1` and correctly sets `lastConflictIndex = 0`; forcing it to `-1` makes the guard examine `edges[0]`, the governed entry section itself, and throw. That is a one-line bug in the rewrite, not the exit-section requirement rejecting a narrowed window.
+
+Evidence: applying the narrow-window rule **with the boundary scan preserved** makes `check-boundaries` exit 0 (264 exit cases, 264 entry cases, 49 transitions) and `check-admission` exit 0, with `test/network-compound.test.ts`, `test/network-boundaries.test.ts` and `test/signals-reservations.test.ts` passing unedited. So the sentence in round 29 that "narrow the window and `lastConflictIndex + 1` lands on another section of the same junction" does not hold on any route either instrument builds, and neither does this round's claim that the guard "was never checking what it says". Both are corrected here rather than left standing.
+
+What survives is narrower and better founded: the shipped rule is breakable only by the **shape** of the stretch between two visits, not by its length. Measured over the delivered 31 walking routes and 165 passages, of the 118 re-entries of a compound into itself, 66 are adjacent sections, 33 are exactly one ungoverned section (none past 28.5 m), and **19 are a run of two or more ungoverned sections — and every departure past 50 m is in that group** (181.7 m, 206.3 m, 223.0 m, 300.3 m, each 62 to 97 m clear of the compound's own disks). A plain length cap would also cut the contract's own pinned case in `test/network-compound.test.ts`, "retains a commitment through a loop", which asserts `lastConflictIndex === 7` across a 52 m *single* ungoverned section. The contract is satisfiable by a consumer that plans no round trip, so the bar for changing it is not met. The rule that does land ends the visit at a run of two or more ungoverned sections and keeps the single null section the internal-gap clause names.
+
 ## What the next unit has to do
 
 Two things together, and neither alone:
