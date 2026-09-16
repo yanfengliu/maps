@@ -20,6 +20,20 @@ Where a gate can be transferred between revisions, the transfer is a proof and n
 
 The owner's 2026-09-08 appearance requirement is two 3D styles, Cartographic and Satellite, selected through a World style dropdown. Cartographic takes the clean default Apple Maps view as its visual reference and adds finer scene detail; Satellite improves the existing phototextured treatment. A registry supplies the dropdown options and leaves room for later styles. Styles share world geometry, the running simulation and the current camera. Switching styles must preserve the camera and agent progress, and acceptance covers both styles at street, block and aerial distances through the actual dropdown, including keyboard input.
 
+## Anything that can run on the GPU does not run on the CPU
+
+The owner's 2026-09-15 instruction, and it applies to work as well as to rendering. This machine has an RTX 4090 and the CPU is too slow to be the default for work the GPU can do.
+
+For a lane, that means choosing the renderer the work needs rather than the one that happens to be configured: `npm run visual:hardware` iterates on the hardware renderer and returns 44 frames in about 3.6 minutes, where the software verdict lane measures 302.4 s per frame. Measured 2026-09-15, same predicate, same pose, same build: 12 frames and 200 ms on the 4090 against 58 frames and 134.6 s on SwiftShader. Using software for iteration is not caution, it is a 58-fold tax on every round-trip.
+
+The exception is the one thing the verdict depends on, and it is narrow: the 44 appearance frames stay on SwiftShader because a pixel set captured on one renderer cannot inherit a review written on another, so the fast lane earns its speed by being permanently unquotable as evidence. One such lane exists and the team is sized around it. Everything else that can be pushed to the GPU should be, and the standing question for any new lane or instrument is which renderer it is entitled to.
+
+## The work is a list, and the list is the orchestration
+
+A goal is carried by an explicit task list, not by a running commentary. The list is written before the work starts, derived from the deliverable's own acceptance criteria and phase steps rather than invented from whatever is in front of the session, and it is what the coordinator reads to decide what to delegate next, what the team has room for, and what is stuck. Each item is one bounded unit with one owner, and it is marked done when its evidence exists rather than when its work stops.
+
+Deriving it first is what stops the failure this rule was written after: three population lanes went at one blocker in sequence while the acceptance list was in nobody's hands, and the list never showed that the populated render, the style switch, the flythrough, the frame-time measurement and the independent review had no owner at all. A commentary cannot be checked for missing work; a list can. Keep it current, mark items as they land, and read it before each delegation so the queue and the team are chosen together.
+
 ## Map data, and what its licences oblige
 
 Three sources, settled in Phase 1. Provenance, URLs and measured constants are in `docs/work/0_shibuya-1km/design.md`; the exact credit strings are in `src/world/sources.ts`.
