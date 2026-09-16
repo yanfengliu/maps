@@ -261,8 +261,8 @@ export function createPopulation(options: PopulationOptions): Population {
   /** The exact passage object each committed actor holds, so it observes with that one. */
   const heldPassages = new Array<RoutePassage | undefined>(settings.pedestrians + settings.vehicles);
   /**
-   * The occurrence the authority holds for each committed actor, read from its
-   * own `snapshot()` at the head of every request phase. This is the only floor a
+   * The occurrence the authority holds for each committed actor, read from the
+   * authority itself at the head of every request phase. This is the only floor a
    * request occurrence may be built from: the authority is the only party that
    * knows what it holds, and a population-side copy drifts the moment a request
    * is refused, a grant expires or a slot is replanned.
@@ -420,7 +420,7 @@ export function createPopulation(options: PopulationOptions): Population {
     // waits instead of planning: the alternative is a body whose every request is
     // refused, which reads as a stall a thousand ticks later in a message about
     // passages nothing in this module can see.
-    const leaked = admissions.snapshot().find((commitment) => commitment.actorId === actorId(kind, slot));
+    const leaked = admissions.commitmentFor(actorId(kind, slot));
     if (leaked) {
       refusals.add(`${kind} slot ${slot} is waiting for ${leaked.junctionId} to release its previous generation's lease at route occurrence ${leaked.routeIndex} before it can be planned again`);
       const state = kind === "vehicle" ? table.vehicles[slot]! : table.pedestrians[slot]!;
@@ -705,7 +705,7 @@ export function createPopulation(options: PopulationOptions): Population {
    */
   function releaseCommitment(kind: PopulationKind, slot: number): void {
     const id = actorId(kind, slot);
-    if (!admissions.snapshot().some((commitment) => commitment.actorId === id)) return;
+    if (!admissions.commitmentFor(id)) return;
     if (admissions.cancelPending(id)) return;
     const route = kind === "vehicle" ? table.vehicleRoutes[slot] : table.pedestrianRoutes[slot];
     if (!route) return;
@@ -925,8 +925,10 @@ export function createPopulation(options: PopulationOptions): Population {
     // is the floor a request occurrence is built from, and the only way to tell
     // which passage the authority actually holds. Taken here, after the plan
     // phase's observations, so it is this tick's truth rather than last tick's.
+    // Read as `heldCommitments`, not `snapshot`: this reader keys by actor, and
+    // the published list's sort over every commitment is work nothing here reads.
     authorityLeaseByActor.clear();
-    for (const commitment of admissions.snapshot()) {
+    for (const commitment of admissions.heldCommitments()) {
       authorityLeaseByActor.set(commitment.actorId, { routeIndex: commitment.routeIndex, lastConflictIndex: commitment.lastConflictIndex, entered: commitment.entered });
     }
     for (const state of table.vehicles) {
@@ -1441,9 +1443,10 @@ export function createPopulation(options: PopulationOptions): Population {
     // First re-check that every actor the population believes is committed is
     // still held by the authority. The authority expires a signal grant that was
     // never entered, so a slot can be released without the population observing
-    // it; re-reading its own snapshot is what keeps the two in step.
+    // it; re-reading the authority is what keeps the two in step, and the single
+    // reading taken here is the one both loops below share.
     const live = new Set<string>();
-    for (const commitment of admissions.snapshot()) live.add(commitment.actorId);
+    for (const commitment of admissions.heldCommitments()) live.add(commitment.actorId);
     for (const state of table.vehicles) {
       if (state.committed && !live.has(actorId("vehicle", state.slot))) {
         state.committed = false;
@@ -1788,8 +1791,12 @@ export function createPopulation(options: PopulationOptions): Population {
    * reading of the pose buffers can separate those.
    */
   function traceTick(tick: number): void {
+    // Nothing is traced, so nothing is looked up and the authority is not asked at all. Every
+    // iteration below already skipped on this same test, so this reads identically and derives
+    // nothing on the thousands of ticks where no caller has asked for a trace.
+    if (!trace.size) return;
     const leases = new Map<string, AdmissionSnapshot>();
-    for (const commitment of admissions.snapshot()) leases.set(commitment.actorId, commitment);
+    for (const commitment of admissions.heldCommitments()) leases.set(commitment.actorId, commitment);
     for (const state of table.vehicles) {
       const slot = state.slot;
       if (!trace.has(slot)) continue;

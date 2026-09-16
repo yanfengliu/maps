@@ -104,7 +104,28 @@ export class JunctionAdmissions {
   cancelPending(actorId:string):boolean {const c=this.commitments.get(actorId);if(!c||c.entered)return false;this.remove(actorId);this.waits.delete(actorId);return true;}
   occupied(junctionId:string):boolean {return [...(this.byJunction.get(junctionId)?.values()??[])].some(c=>c.entered);}
   signalSnapshot():SignalSnapshot[]{return this.signals.snapshot();}
-  snapshot():AdmissionSnapshot[]{return [...this.commitments.values()].map(({passage:_,progressM:__,clearedControls:___,...snapshot})=>({...snapshot})).sort((a,b)=>a.junctionId.localeCompare(b.junctionId)||a.actorId.localeCompare(b.actorId));}
+  snapshot():AdmissionSnapshot[]{return [...this.commitments.values()].map(JunctionAdmissions.published).sort((a,b)=>a.junctionId.localeCompare(b.junctionId)||a.actorId.localeCompare(b.actorId));}
+  /** The published shape of one commitment: exactly the fields `AdmissionSnapshot` names, in the
+   * order `snapshot()` has always emitted them, so a consumer's key order and JSON do not move. */
+  private static published(c:Commitment):AdmissionSnapshot{return {actorId:c.actorId,kind:c.kind,junctionId:c.junctionId,entryEdgeId:c.entryEdgeId,heldSeconds:c.heldSeconds,entered:c.entered,routeIndex:c.routeIndex,lastConflictIndex:c.lastConflictIndex};}
+  /**
+   * The one commitment the authority holds for `actorId`, or `null`.
+   *
+   * `snapshot()` answers this question too, by rebuilding and sorting every commitment the
+   * authority holds. The lifecycle asks it once per slot it is about to plan and again for a slot
+   * it is about to release, so that shape pays for the whole population to answer about one actor.
+   * The record is the same projection, built from the same fields in the same order, so a reader
+   * cannot tell which of the two it was given.
+   */
+  commitmentFor(actorId:string):AdmissionSnapshot|null {const c=this.commitments.get(actorId);return c?JunctionAdmissions.published(c):null;}
+  /**
+   * Every commitment as `snapshot()` publishes them, in the authority's own insertion order.
+   *
+   * The sort is part of the published list's contract. A consumer that keys by `actorId` — the
+   * population builds a `Map` of lease floors and a `Set` of live actors — reads the same entries
+   * and the same fields, and the `localeCompare` over every commitment buys it nothing.
+   */
+  heldCommitments():AdmissionSnapshot[]{const held:AdmissionSnapshot[]=[];for(const c of this.commitments.values())held.push(JunctionAdmissions.published(c));return held;}
   boundarySnapshot(){return [...this.boundIds.values()].map(s=>Object.freeze({...s.binding,phase:s.poses.active[s.binding.slot]===0?"prepared":s.ingressComplete?"route":"ingress",ingressDistanceM:s.ingressDistanceM,measuredStoppedSeconds:s.stoppedSeconds}));}
   /** Core-owned slot binding. No renderer or callback can activate or retire a commitment. */
   bindBoundaryActor(actorId:string,kind:ActorKind,slot:number,poses:AgentPoseBuffers,routeIds:readonly string[],ingress?:BoundaryIngressPlan):BoundaryActorBinding {
