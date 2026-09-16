@@ -1,25 +1,34 @@
 /** harness: OrbitDriver; ordinary loaded-page navigation must finish cleanup. */
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 import { LIFECYCLE_TEST_BUDGET_MS } from "./budget.js";
+import { HARDWARE_RENDERER_DENYLIST } from "./lane.js";
+import { writeLifecycleRecord, type LifecycleRecord } from "./lifecycle-record.js";
 import { OrbitDriver } from "./orbit.js";
+import { collectPageErrors } from "./page-errors.js";
 import { HERO_POSES, HERO_AZIMUTH } from "./shots.js";
+import {
+  TEARDOWN_COMPLETED,
+  TEARDOWN_RECORD_KEY,
+  teardownRecordRefusal,
+  type TeardownRecord,
+} from "../../src/harness/teardown.js";
 
 /**
  * Renderer strings that mean this lane is measuring a rasteriser rather than the
  * application. Measured 2026-09-15 under SwiftShader: the fifteen-second
- * navigation bound is spent inside Chromium destroying the outgoing page's
- * WebGL resources, while the application's own `pagehide` work (`picker.dispose()`
+ * navigation bound is spent inside Chromium destroying the outgoing page's WebGL
+ * resources, while the application's own `pagehide` work (`picker.dispose()`
  * plus `app.dispose()`) finishes in 2.1-4.3 ms and the replacement document's
  * first script has not run by the deadline. This lane therefore runs on the
  * hardware renderer (playwright.lifecycle.config.ts) and fails by name if the
  * backend is a software rasteriser.
+ *
+ * The denylist itself is in `lane.ts`, beside the pixel lane's positive
+ * predicate: both halves of the renderer split are stated in one place.
  */
-const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|basic render driver|\bwarp\b/i;
-/** Each run records its own timings, renderer and build hashes here. */
-const RECORD_DIR = "artifacts/visual/lifecycle";
+const SOFTWARE_RENDERER = HARDWARE_RENDERER_DENYLIST;
 
 /** The build the run was measured against, hashed from the served bytes. */
 async function buildFingerprint(): Promise<{ file: string; sha256: string }[]> {
@@ -45,11 +54,17 @@ test("navigates away from a refined city without blocking page cleanup", async (
   // have to fit the wrapper's declared deadline.
   test.setTimeout(LIFECYCLE_TEST_BUDGET_MS);
   const driver = new OrbitDriver(page);
+  // Attached before the first navigation, so the list covers the whole run: the
+  // preparation, the navigation away, and the replacement document's boot. What it
+  // cannot cover is the one failure this lane exists for — see the teardown record
+  // below.
+  const pageErrors = collectPageErrors(page);
   const startedAt = new Date();
   let renderer = "";
   let preparationMs = 0;
   let navigationMs = 0;
   let replacementMs = 0;
+  let teardown: TeardownRecord | null = null;
   await test.step("prepare the refined city through both styles and camera distances", async () => {
     const prepareStart = Date.now();
     await test.step("initial load and refinement", async () => {
@@ -105,9 +120,25 @@ test("navigates away from a refined city without blocking page cleanup", async (
     preparationMs = Date.now() - prepareStart;
   }, { timeout: 30 * 60_000 });
   await test.step("ordinary navigation completes cleanup within 15s", async () => {
+    // Cleared inside the outgoing document immediately before the navigation, so
+    // the value read afterwards is this navigation's own outcome. Session storage
+    // is same-origin and survives the navigation, so the replacement document can
+    // read what the outgoing one recorded on its way out.
+    //
+    // This is the check the elapsed-time bounds cannot make. Measured 2026-09-16
+    // on Chromium 153.0.8010.12: a throw inside a `pagehide` handler reaches
+    // neither `page.on("pageerror")` nor `page.on("console")` nor CDP
+    // `Runtime.exceptionThrown`/`Log.entryAdded` — the listeners attached above
+    // are silent for it — and the throw makes the cleanup finish *faster*, which
+    // is the direction the 15-second bound reads as a pass.
+    await page.evaluate((key) => sessionStorage.removeItem(key), TEARDOWN_RECORD_KEY);
     const start = Date.now();
     await page.goto("/?time=noon", { timeout: 15_000 });
     navigationMs = Date.now() - start;
+    teardown = (await page.evaluate(
+      (key) => sessionStorage.getItem(key),
+      TEARDOWN_RECORD_KEY,
+    )) as TeardownRecord | null;
   });
   await test.step("the replacement page renders within 60s", async () => {
     const start = Date.now();
@@ -116,10 +147,29 @@ test("navigates away from a refined city without blocking page cleanup", async (
   }, { timeout: 60_000 });
   expect(await page.evaluate(() => window.__mapsHarness!.lighting().preset)).toBe("noon");
 
+  // The outgoing page's cleanup ran to completion. Without this, the navigation
+  // can be satisfied by a disposer that threw and skipped every disposal after it.
+  expect(
+    teardownRecordRefusal(teardown, "This navigation"),
+    "the outgoing page's cleanup has no witness, so this navigation is not evidence that it ran",
+  ).toBeNull();
+  expect(teardown).toBe(TEARDOWN_COMPLETED);
+
+  // And the page said nothing out loud while it prepared, navigated and booted the
+  // replacement. Bound: an empty list is evidence that nothing was *reported*
+  // through these channels, not proof that nothing threw — the `pagehide` throw
+  // this lane is about is invisible to both, which is why the record above exists.
+  expect(
+    pageErrors,
+    "the page reported errors during preparation, navigation or the replacement boot, so this run is " +
+      "not evidence that the outgoing page's cleanup completed:",
+  ).toEqual([]);
+
   // Record this run's own numbers. The gate claims three consecutive hardware
   // navigations; three separate records are what makes that checkable, and each
-  // carries the renderer string and build hashes it was measured against.
-  const record = {
+  // carries the renderer string, the teardown outcome and the build hashes it was
+  // measured against.
+  const record: LifecycleRecord = {
     startedAt: startedAt.toISOString(),
     finishedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt.getTime(),
@@ -128,13 +178,13 @@ test("navigates away from a refined city without blocking page cleanup", async (
     preparationMs,
     navigationStepMs: navigationMs,
     replacementStepMs: replacementMs,
+    consoleAndPageErrors: pageErrors,
+    teardownRecord: teardown ?? "(none recorded)",
     build: await buildFingerprint(),
   };
-  await mkdir(RECORD_DIR, { recursive: true });
-  const file = join(RECORD_DIR, `lifecycle-${startedAt.toISOString().replace(/[:.]/g, "-")}.json`);
-  await writeFile(file, JSON.stringify(record, null, 2));
+  const file = await writeLifecycleRecord(record);
   console.log(
     `Lifecycle run on "${renderer}": preparation ${preparationMs} ms, navigation ${navigationMs} ms, ` +
-      `replacement ${replacementMs} ms; recorded at ${file}`,
+      `replacement ${replacementMs} ms, teardown "${record.teardownRecord}"; recorded at ${file}`,
   );
 });

@@ -18,7 +18,8 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { laneDir } from "./lane.js";
+import { laneDir, pixelLaneRefusal } from "./lane.js";
+import { collectPageErrors } from "./page-errors.js";
 import { SWEEP_CAPTURE_COUNT, SWEEP_TEST_BUDGET_MS } from "./budget.js";
 import { OrbitDriver, shortestAngle, type CameraSnapshot, type TileStatus } from "./orbit.js";
 import { decodePng, measureFrame, signatureDistance, type FrameStats } from "./png.js";
@@ -65,16 +66,20 @@ test.describe("visual sweep", () => {
     await mkdir(OUTPUT_DIR, { recursive: true });
     const ledger = captureLedger(OUTPUT_DIR, SWEEP_CAPTURE_COUNT);
 
-    const consoleErrors: string[] = [];
-    page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
-    });
-    page.on("pageerror", (error) => consoleErrors.push(`uncaught: ${error.message}`));
+    const consoleErrors = collectPageErrors(page);
 
     await page.goto(`/?style=${style}`);
 
     const driver = new OrbitDriver(page);
     const status = await driver.waitForFirstFrame();
+
+    // The renderer is asserted, not recorded. The 44 reviewed frames are
+    // comparable across machines only while they all come from the SwiftShader
+    // `playwright.config.ts` pins, and a Chromium that accepted the flag and drew
+    // somewhere else would move the reviewed set silently. Here, at the first
+    // frame, so a wrong renderer fails in seconds instead of after a whole sweep.
+    const rendererRefusal = pixelLaneRefusal(status.glRenderer, `${style}: the first frame of the sweep`);
+    if (rendererRefusal !== null) throw new Error(rendererRefusal);
 
     // eslint-disable-next-line no-console -- the gate's own provenance line.
     console.log(

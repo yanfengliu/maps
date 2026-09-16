@@ -4,7 +4,7 @@
  * `npm run visual` produces the 44-frame verdict set on SwiftShader. A pixel set
  * captured on one renderer cannot inherit a review written for another, so each
  * iteration lane is a different lane with different pixels and must be
- * impossible to mistake for the verdict. Three things enforce that here rather
+ * impossible to mistake for the verdict. Four things enforce that here rather
  * than in prose:
  *
  * 1. Each lane resolves to its own output root. No iteration lane can write into
@@ -14,6 +14,10 @@
  * 3. `assertCertifiable()` throws by name for every lane but the verdict, so an
  *    attempt to certify one fails with a message that says why instead of
  *    writing an artifact a later reader would treat as evidence.
+ * 4. Each lane's renderer is asserted positively, not recorded: the pixel lane
+ *    through `pixelLaneRefusal()`, and the lifecycle lane through
+ *    `HARDWARE_RENDERER_DENYLIST` in its own specification. A recorded string is
+ *    a note; a refused string is a check.
  *
  * The lane is named by `MAPS_VISUAL_LANE`, and the iteration lanes additionally
  * require `MAPS_VISUAL_GPU=hardware` — which is also the switch `orbit.ts`
@@ -155,4 +159,53 @@ export function assertCertifiable(lane: Lane = activeLane()): void {
         "lanes for iteration only.",
     );
   }
+}
+
+/**
+ * Software rasterisers, by the strings Chromium reports for them.
+ *
+ * A denylist rather than an allowlist, because the lifecycle lane's question is
+ * "is this the hardware renderer rather than a fallback" and an allowlist would
+ * also refuse hardware this repository has never measured. The pixel lane's
+ * question is the opposite one and has its own positive predicate below.
+ */
+export const HARDWARE_RENDERER_DENYLIST =
+  /swiftshader|llvmpipe|softpipe|software|basic render driver|\bwarp\b/i;
+
+/**
+ * The renderer the pixel lane's frames must come from, positively.
+ *
+ * `playwright.config.ts` pins `--use-angle=swiftshader`, and the whole premise of
+ * splitting the lanes by renderer is that the 44 reviewed frames come from one
+ * known renderer. Recording that string is not a check: a Chromium that accepted
+ * the flag and drew somewhere else would move the reviewed frame set silently.
+ */
+export const PIXEL_LANE_RENDERER = /swiftshader/i;
+
+/**
+ * Why this renderer string cannot be the pixel lane's, or null when it can.
+ *
+ * Shared by the two capture specifications, which fail within seconds of the
+ * first frame, and by `verify-output.ts`, which refuses to certify a frame set
+ * whose manifests name anything else — so the refusal names the offending string
+ * wherever it fires instead of only in the spec that happened to run.
+ */
+export function pixelLaneRefusal(renderer: unknown, where: string): string | null {
+  if (typeof renderer !== "string" || renderer.trim() === "") {
+    return (
+      `${where} reported no glRenderer, so this run cannot show which renderer produced its frames. ` +
+      "The pixel lane's frames are comparable across machines only while every one of them comes from " +
+      "the SwiftShader that lane pins (playwright.config.ts, --use-angle=swiftshader); a frame set with " +
+      "no renderer identity cannot be reviewed as this lane's."
+    );
+  }
+  if (!PIXEL_LANE_RENDERER.test(renderer)) {
+    return (
+      `${where} reports the renderer "${renderer}", which is not SwiftShader. The 44-frame pixel set is ` +
+      "comparable across machines only while every frame comes from the software lane the config pins " +
+      "(--use-angle=swiftshader); a set captured on another renderer cannot inherit a review written " +
+      "for this one, and there is deliberately no switch that moves this lane."
+    );
+  }
+  return null;
 }

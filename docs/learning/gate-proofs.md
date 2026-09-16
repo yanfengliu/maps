@@ -263,7 +263,100 @@ Three failure paths are written and reachable and have never been watched to fir
 - **The camera never settling** — the poll-limit branch in `OrbitDriver.settle`. Would need damping turned off or a control that oscillates.
 
 
-## Network source semantics, complete bodies and boundary lifecycle
+## The visual gate's certificate cannot be issued for a run that did not happen
+
+**Gate:** `npm run visual` — `tools/visual/verify-output.ts` (`resetVisualRun`, `beginVisualRun`, `certifyVisualRun`, `lifecycleEvidence`, `sceneTreeDigest`, `pixelLaneRefusal`, `visualRunPhase`), the chain in `package.json`, `tools/visual/lane.ts`, `tools/visual/lifecycle-record.ts`, `tools/visual/lifecycle.spec.ts` and `src/harness/teardown.ts`. Pinned by `test/visual-instrument.test.ts` (31 cases), which drives the wrapper's own functions over synthetic runs it writes itself.
+
+**Landed:** 2026-09-16 in the `artifacts/gate-integrity` worktree on branch `worker/gate-integrity`, off `0ae46df`. **Not merged.** The five findings come from `artifacts/instrument-review/review.md` and were confirmed unfixed on `main` by `artifacts/record-repairs`. Every mutation below was run by `probe/mutations.mjs`, which rewrites one tracked file, runs the named case, records the failure and restores the file byte-for-byte; the logs are under ignored `artifacts/gate-integrity/mutation-logs/`.
+
+Each of the five exists because the instrument could report "passed" for a run that did not run, which is the failure mode this repository has now been caught by three times.
+
+**(1) A failed build left an earlier success artifact.** The chain ran `npm run build` before `node tools/visual/verify-output.ts --begin`, and the deletion of `complete.json` was inside `beginVisualRun`, so a build failure stopped the `&&` chain with the previous certificate still on disk. The chain is now `--reset` → `npm run build` → `--begin` → both lanes → `--end`, with `--reset` ahead of the build, and a bare `node tools/visual/verify-output.ts` is refused rather than re-certifying whatever run is on disk.
+
+**Mutation:** `--reset` moved after `npm run build` in `package.json`.
+
+```
+× the gate's chain claims the run before the build clears the previous certificate ahead of the one step that can fail before any capture
+AssertionError: --reset is the gate's first step: expected 35 to be less than 0
+```
+
+Exit status 1. **Behavioural red control** (`node probe/gate-chain.mjs p1-stale-certificate`): a fixture holding `complete.json` with `completedAt 2026-09-14T00:30:00.000Z` and a build step that fails. Under the new order the certificate is **absent** after the chain; under the old order it is still there and still says `2026-09-14T00:30:00.000Z`. Nothing else differed between the two arms.
+
+**Bound.** The case reads the *order of the steps* in `package.json`; it does not execute the chain, and the probe's failed build is a thrown error with `cmd`'s semantics rather than a real Vite failure. What is proved is the ordering property and that the deletion happens in a step that precedes the build. One residual: if `--reset` itself fails, the chain stops with an earlier certificate still present — nothing ran in that case and the run exits non-zero, but the file is not removed.
+
+**(2) `complete.json` carried no lifecycle evidence.** The certificate was the pixel lane's word alone, so a run whose lifecycle invocation was dropped, skipped or misconfigured still reported success. `certifyVisualRun` now requires three lifecycle records newer than this run's own start, each naming a non-software renderer, carrying an empty page-error list and a completed teardown record, and hashed against this run's build bytes; the certificate carries them plus both renderers.
+
+**Mutation:** the `lifecycleEvidence` call replaced by a literal.
+
+```
+× certification requires the hardware lifecycle lane's own evidence refuses a run whose lifecycle invocation never happened
+Error: promise resolved "undefined" instead of rejecting
+```
+
+Exit status 1. **CLI red control** (`node probe/gate-chain.mjs p2-lifecycle`), where a healthy 44-frame fixture carries no lifecycle records at all:
+
+```
+The hardware lifecycle lane left no records in <root>\lifecycle: ENOENT: no such file or directory, scandir '<root>\lifecycle'. The wrapper does not certify the pixel lane alone, so a run whose lifecycle invocation never happened must not report success. Re-run the gate with `npm run visual`.
+```
+
+**Bound.** The check proves three conforming records for this build exist and postdate this run's start. It cannot prove they came from this process tree: their timestamps are the only identity a record carries, and `artifacts/visual/lifecycle/` deliberately keeps earlier runs' records, which is why the freshness filter is the whole check. It also refuses records written by an older specification, so the four records already on this machine cannot certify under the new wrapper.
+
+**(3) The build-hash binding excluded the scene data.** `dist/` bytes do not determine the frames: the same build draws a different city against a different `data/scene/`. `beginVisualRun` now pins a digest over every file `/scene/` and `/network/` will serve, `certifyVisualRun` re-derives it before reading a single frame, and the certificate carries it.
+
+**Mutation:** `await assertSceneUnchanged(scene, sceneMounts)` replaced by `void scene; void sceneMounts;`.
+
+```
+× the scene data's identity is bound into the certificate refuses to certify when the scene changed during capture
+Error: promise resolved "undefined" instead of rejecting
+```
+
+Exit status 1. **CLI red control** (`node probe/gate-chain.mjs p3-scene`), same build bytes in both arms, one served scene file changed between them: digest `519a5e65f4a8…` becomes `89db4ac9f585…` over 137 files, with `dist/index.html` hashing `bc09c00c…` in both runs.
+
+**Bound.** The digest is over file names, sizes and modification times, not contents: it cannot see a byte rewritten in place with both its length and its mtime preserved. It sees every added, removed, renamed or resized file and every ordinary rewrite. It also covers exactly the two mounts `tools/vite/serve-scene-data.ts` answers, so data the app does not serve is outside it by construction.
+
+**(4) The lifecycle lane asserted elapsed time only.** No console or pageerror assertion, so a page whose cleanup throws — and therefore finishes *faster* — passed.
+
+The listeners were added (`tools/visual/page-errors.ts`, asserted empty after the replacement page has drawn). They are not sufficient, and this is the part the review's remedy would have got wrong: measured 2026-09-16 on this machine's Chromium 153.0.8010.12 (`probe/pagehide-visibility.mjs`), an exception thrown inside a `pagehide` handler reaches neither `page.on("pageerror")` nor `page.on("console")` nor CDP `Runtime.exceptionThrown`/`Log.entryAdded`, while the same throw from a click handler is reported normally in the same run. So the page records its own cleanup outcome (`src/harness/teardown.ts`, called from `src/main.ts`'s `pagehide` listener) and the lane refuses a record that is missing or names a failure.
+
+**Mutation A:** the page-error assertion replaced by `void pageErrors;`.
+
+```
+× the gate's chain claims the run before the build writes the cleanup record from the page's own pagehide handler
+AssertionError: the lifecycle spec asserts the page-error list is empty: expected '<lifecycle.spec.ts>' to match /expect\(\s*pageErrors/
+```
+
+**Mutation B:** the teardown assertion replaced by `void teardown; void teardownRecordRefusal; void TEARDOWN_COMPLETED;`.
+
+```
+× the gate's chain claims the run before the build writes the cleanup record from the page's own pagehide handler
+AssertionError: the lifecycle spec asserts rather than records the outcome: expected '<lifecycle.spec.ts>' to contain 'teardownRecordRefusal('
+```
+
+Both exit status 1. **Executed red controls.** On the real production build through the real controls (`probe/capture.spec.ts`, port 4330, SwiftShader), a page whose app-registered `pagehide` handler is made to throw before the app's own chain runs records `"failed: TypeError: picker.dispose() is not a function"` in session storage, the reader returns a refusal naming it, and console/pageerror see nothing at all. On the unchanged app the same navigation records `"completed"`.
+
+**Bound.** The listeners see what the page *reports*; an empty list is evidence that nothing was reported, never that nothing threw. The teardown record proves the `picker.dispose()` → `app.dispose()` chain returned: it cannot show that each disposer did useful work, and if session storage is unavailable the record is absent, which the lane treats as "did not report" and fails on. Both checks are asserted inside `lifecycle.spec.ts`, so they need a hardware machine and a full lifecycle run to execute for real; what has been executed here is the recorder, the reader and the listeners on the shipping bundle, not the spec's own assertion lines.
+
+**(5) The pixel lane's renderer identity was recorded and never read.** `sweep.spec.ts` and `hero.spec.ts` wrote `glRenderer` into their manifests and nothing asserted it, so a Chromium that accepted `--use-angle=swiftshader` and drew elsewhere would have moved the reviewed 44-frame set silently. Both specs now refuse a non-SwiftShader renderer within seconds of their first frame, through `pixelLaneRefusal` in `lane.ts`, and `certifyVisualRun` asserts it again over every manifest it certifies.
+
+**Mutation:** the wrapper's refusal replaced by `void pixelLaneRefusal;`.
+
+```
+× the pixel lane's renderer is asserted, not recorded refuses to certify a run whose sweep manifest names the hardware renderer
+AssertionError: expected [Function] to throw error matching /not SwiftShader/ but got 'The pixel lane\'s manifests name 2 di…'
+```
+
+Exit status 1. **CLI red control** (`node probe/gate-chain.mjs p5-renderer`) with the satellite manifest naming the real RTX 4090 string:
+
+```
+Visual gate refused: sweep/satellite/manifest.json reports the renderer "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)", which is not SwiftShader. The 44-frame pixel set is comparable across machines only while every frame comes from the software lane the config pins (--use-angle=swiftshader); a set captured on another renderer cannot inherit a review written for this one, and there is deliberately no switch that moves this lane.
+```
+
+**Bound.** The predicate is only as strong as what Chromium reports: the unmasked `WEBGL_debug_renderer_info` string, or the masked fallback (`WebKit WebGL`) when the extension is withheld. The fallback is refused rather than passed, but it fails as "wrong renderer" rather than as "identity unavailable". The specs' own assertion fails fast and has not been watched to fire against a browser that actually drew on another renderer — what has been executed is the shipped predicate accepting the real first frame's SwiftShader string and refusing the hardware string in the same page (`probe/capture.spec.ts`), plus the wrapper's refusal above.
+
+**Not yet proved red.** The three paths in "Not yet proved red" above are unchanged by this unit, and one is added: the scene digest is re-derived at certification and has been watched to fire only against a file changed between the two hashes inside one synthetic run, not against `npm run data:scene` running during a real capture.
+
+
+
 
 **Gate:** `test/network-review.test.ts`, `test/network-compound.test.ts`, `test/network-boundaries.test.ts`, `test/network-mesh.test.ts`, `tools/network/check-admission.ts` and `tools/network/check-boundaries.ts`. These are source/controller and supported-body checks, not populated traffic or visual proof. The promoted fixtures retain their source IDs, real path geometry, declared omitted successors and actual measured asset records.
 

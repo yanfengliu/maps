@@ -26,7 +26,7 @@
     "data:paint-reference": "node tools/data/fetch-paint-reference.ts",
     "data:setup": "npm run data:fetch && npm run data:scene && npm run data:textures:verify && npm run data:network && npm run data:paint-reference && npm run data:markings && npm run data:decorations && npm run data:vehicles && npm run data:hardware",
     "data:network": "node tools/network/build.ts",
-    "visual": "npm run build && node tools/visual/verify-output.ts --begin && playwright test --config playwright.config.ts && playwright test --config playwright.lifecycle.config.ts --repeat-each=3 && node tools/visual/verify-output.ts",
+    "visual": "node tools/visual/verify-output.ts --reset && npm run build && node tools/visual/verify-output.ts --begin && playwright test --config playwright.config.ts && playwright test --config playwright.lifecycle.config.ts --repeat-each=3 && node tools/visual/verify-output.ts --end",
     "visual:hardware": "npm run build && playwright test --config playwright.hardware.config.ts",
     "visual:populated": "playwright test --config playwright.populated.config.ts",
     "visual:populated:aim": "node tools/populated/probe.ts --ticks 5400",

@@ -29,8 +29,9 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { HERO_CAPTURE_COUNT, HERO_TEST_BUDGET_MS } from "./budget.js";
-import { laneDir } from "./lane.js";
+import { laneDir, pixelLaneRefusal } from "./lane.js";
 import { OrbitDriver } from "./orbit.js";
+import { collectPageErrors } from "./page-errors.js";
 import { decodePng, measureFrame, signatureDistance } from "./png.js";
 import { captureLedger } from "./progress.js";
 import { CAPTURE_VIEWPORT, HERO_AZIMUTH, HERO_POSES, HERO_TIMES } from "./shots.js";
@@ -63,11 +64,7 @@ test.describe("hero frames", () => {
     await rm(STYLE_RETURN_DIR, { recursive: true, force: true });
     await mkdir(STYLE_RETURN_DIR, { recursive: true });
 
-    const consoleErrors: string[] = [];
-    page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(message.text());
-    });
-    page.on("pageerror", (error) => consoleErrors.push(`uncaught: ${error.message}`));
+    const consoleErrors = collectPageErrors(page);
 
     const captured: {
       time: string;
@@ -89,6 +86,18 @@ test.describe("hero frames", () => {
 
       const driver = new OrbitDriver(page);
       await driver.waitForFirstFrame();
+
+      // The renderer is asserted, not recorded. `playwright.config.ts` pins
+      // `--use-angle=swiftshader` and the eight hero frames are part of the one
+      // reviewed set, so a Chromium that accepted the flag and drew somewhere else
+      // would move that set silently. Checked here, before the first capture, so a
+      // wrong renderer fails in seconds instead of after ten of them.
+      const status = await driver.readStatus();
+      const rendererRefusal = pixelLaneRefusal(
+        status.glRenderer,
+        `the hero block's first frame at ?time=${time.id}`,
+      );
+      if (rendererRefusal !== null) throw new Error(rendererRefusal);
 
       const lighting = await page.evaluate(() => window.__mapsHarness?.lighting() ?? null);
       const post = await page.evaluate(() => window.__mapsHarness?.post() ?? null);

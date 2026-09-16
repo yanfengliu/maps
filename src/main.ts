@@ -1,5 +1,6 @@
 import { createApp } from "./app.js";
 import { installFailedBridge } from "./harness/bridge.js";
+import { recordTeardown } from "./harness/teardown.js";
 import {
   DEFAULT_TIME_PRESET,
   isTimePresetId,
@@ -79,7 +80,16 @@ function boot(): void {
     },
   });
   document.body.append(picker.element);
-  window.addEventListener("pagehide", () => { picker.dispose(); app.dispose(); }, { once: true });
+  // The cleanup result is recorded, not left implicit: an exception thrown from
+  // this handler while the document is being torn down is reported to nobody —
+  // not to the page's own error handlers, not to Playwright's — so the lifecycle
+  // lane reads this record to tell "the disposers ran" from "one of them threw
+  // and the rest were skipped". See `src/harness/teardown.ts`.
+  window.addEventListener(
+    "pagehide",
+    () => recordTeardown(() => { picker.dispose(); app.dispose(); }),
+    { once: true },
+  );
 }
 
 try {
