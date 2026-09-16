@@ -1,20 +1,12 @@
 /**
- * Single authority gate. Bound: one delivered network, one seed, 900 ticks at
- * 1/60 s, 60 pedestrians and 12 vehicles.
+ * Single authority gate. Bound: one delivered network, seed `0x5b1b0a`, 60 pedestrians and 12 vehicles. The first case advances no ticks, the second runs 900 ticks at 1/60 s, and the third runs 600 unmutated ticks, then 4,800 with the mutation on, then 4,800 unmutated as its control.
  *
- * Claim: `JunctionAdmissions.resolve` is the only admission decision either
- * population makes. Two independent readings of that:
+ * Claim: `JunctionAdmissions.resolve` is the only admission decision either population makes. Two independent readings of that:
  *
- *  1. no module in `src/agents/population/` calls `SignalController.canEnter`,
- *     which is phase eligibility rather than admission; and
- *  2. every actor the authority has committed is one the population asked about
- *     in the same tick, and the population never holds more commitments than it
- *     requested grants.
+ *  1. no module in `src/agents/population/` calls `SignalController.canEnter`, which is phase eligibility rather than admission; and
+ *  2. every commitment the authority holds is one the population asked for at some point in the run, so the cumulative grant count is at or above the standing commitment count and the population never holds more commitments than the grants it requested.
  *
- * The second case is made to go red by the mutation: a population that drives an
- * actor into a conflict section without a request produces a commitment the
- * authority never issued, and the population's own conservation reading of the
- * authority's snapshot reports it.
+ * The mutation is in the third case, not the second: `populationInvariants.driveWithoutGrant` makes integration ignore the grant check and `ignoreCurb` drops the pedestrian curb hold too, so actors enter a conflict section with no commitment of their own. What that produces is not a commitment the authority never issued but an uncommitted collision hull inside a conflict area, which is what `status.authorityViolations` counts and what `status.ts` documents as "Actors that moved into a conflict section without a grant. Must be zero." The enforcement stops the body where it stands and counts it, so the run reports the event instead of driving it.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -88,14 +80,9 @@ describe("one admission authority", () => {
     // the population's own count of uncommitted hulls that reached a conflict area,
     // which is exactly what the mutation below makes non-zero.
     const status = population.status();
-    // RED, deliberately. This asserts the single-authority claim on an unmutated
-    // run, and it fails: zero is expected and 1 to 3 is what a 20-second run
-    // reports. A body's collision hull reaches a conflict area with no commitment
-    // of its own; the enforcement below stops it there and counts it, and the run
-    // continues. That is the defect `REPORT.md` names as the blocker. It is not
-    // repaired by relaxing this assertion, so the assertion stays, and the next
-    // session cannot merge this state without seeing it.
+    // Green, and the comment that stood here said it was RED: that zero was expected, that 1 to 3 was what the run reported, and that the next session could not merge the state without seeing it. That described the run before `388a73c` finished fixing the seven consumer defects behind this gate, one of them a violation predicate that counted a body lawfully stopped 4 cm short of its stop line; that commit's own message records the acceptance reading falling from 364 to 0 in the same commit, and this comment was left describing the run before it. Measured on this revision: the unmutated 600-tick (10.0 s) run above reports `authorityViolations` 0 against 680 cumulative grants, and the unmutated control at the end reports 0 over 4,800 ticks against 9,046.
     expect(status.authorityViolations).toBe(0);
+    // What this assertion proves is bounded and is not the class: in these 600 unmutated ticks at this fixture, no uncommitted collision hull reached a conflict area. That the class can fail is the case below, whose mutated arm reports 637.
     expect(status.grants).toBeGreaterThan(0);
 
     // The mutation: integration stops respecting the grant, so actors drive into
