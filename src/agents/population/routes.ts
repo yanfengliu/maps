@@ -30,7 +30,7 @@ import { createRoutePassage, type RouteControl, type RoutePassage } from "../../
 import type { ActorKind } from "../../network/passages.ts";
 import type { NetworkData, NetworkEdge } from "../../world/network-data.ts";
 import { PEDESTRIAN_CADENCE_MPS, VEHICLE_DYNAMICS } from "./config.ts";
-import { MovementGraph } from "./graph.ts";
+import { CENTRAL_RADIUS_M, MovementGraph } from "./graph.ts";
 import type { RefusalCounts } from "./status.ts";
 
 /**
@@ -50,8 +50,64 @@ export const MINIMUM_ROUTE_EDGES = 18;
  */
 export const REDUCING_PREFERENCE = 0.45;
 
+/**
+ * What a planned route is trying to reach. A walking route has two legal shapes
+ * under the frozen contract's passage rule, and this is which one the caller
+ * asked for:
+ *
+ *  - `exit` is the delivered shape: enter at a boundary portal, cross something,
+ *    leave through a true AOI exit portal, retire through the boundary envelope.
+ *  - `centre` enters at a boundary portal and ends on the world origin's own
+ *    block. The origin is the Shibuya Scramble Crossing, so this is the shape
+ *    that puts the population where the deliverable is judged. It is legal under
+ *    the contract's own rule because the rule's first disjunct is satisfied: the
+ *    route's last conflict occurrence is the scramble, and the section after it
+ *    is an ungoverned sidewalk of the central block. It needs no boundary
+ *    retirement, because a walker retires where it stands.
+ *
+ * The distinction is a plan, not an admission setting: both shapes are built by
+ * the same passage factory and validated by the same release test.
+ */
+export type RouteDestination = "exit" | "centre";
+
 /** A route longer than this buys nothing and costs minutes of walking. */
 export const MAXIMUM_ROUTE_LENGTH_M = 700;
+
+/**
+ * The length cap for a route whose destination IS the centre.
+ *
+ * The cap above is not about walking time; it is about a route that cannot be
+ * walked. A centre route is bounded by the network's own geometry instead, and
+ * the number here is measured rather than chosen: over the 18 delivered portals
+ * whose component can reach a central terminus at all, the shortest legal walk
+ * runs 432.4 m to 756.1 m, and the planner with the step window below produces
+ * routes from 513.4 m to 936.5 m. A 700 m cap would refuse every portal past the
+ * tenth; the number here leaves the worst measured route 63 m of headroom rather
+ * than being stretched to whatever the planner happened to produce.
+ */
+export const MAXIMUM_CENTRE_ROUTE_LENGTH_M = 1_000;
+
+/**
+ * How much longer than the best successor a step may be and still be drawn by the
+ * route-variety stream, as a fraction of the best with a floor in metres.
+ *
+ * The step criterion is exact â€” `walked + step.lengthM + remaining(next)` is the
+ * length of the whole route if that step is taken â€” so the best eligible step is
+ * the one that keeps the route on its own shortest path. The window is what makes
+ * routes vary between actors instead of every actor from a portal walking one
+ * identical optimum.
+ *
+ * It is relative because a fixed window is not a bound on a route: measured, a
+ * flat 90 m of slack produced a 936.5 m route against its own 752.7 m optimum,
+ * 24% over, while the shortest portal's route measured 1.08Ã—. A fraction of the
+ * route's own optimum holds the deviation to the same proportion at every
+ * distance, and the floor keeps a short route from having a zero window.
+ *
+ * The window bounds each decision and not the total, so it is the cap above that
+ * bounds the route; this is the route-variety knob, not the safety property.
+ */
+export const CENTRE_STEP_WINDOW_FRACTION = 0.08;
+export const CENTRE_STEP_WINDOW_FLOOR_M = 30;
 
 /** One governed occurrence of a route: the gate, and where a body must stop for it. */
 export interface RouteGate {
@@ -88,6 +144,11 @@ export interface PlannedRoute {
 }
 
 export interface RouteRequest {
+  /**
+   * What the route is for. Absent means the delivered `exit` shape, so every
+   * caller that has not been taught about the centre keeps the route it had.
+   */
+  readonly destination?: RouteDestination;
   /** Collision radius used to pull the halt short of a gate. */
   readonly footprintRadiusM: number;
   readonly maxEdges: number;
@@ -96,7 +157,7 @@ export interface RouteRequest {
   /**
    * Which edges this body may *halt* on. A vehicle whose body is longer than a
    * junction's entry section cannot stand still on the approach before that
-   * gate, so a walk through that section is not a route for it Ã¢â‚¬â€ the planner
+   * gate, so a walk through that section is not a route for it ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the planner
    * routes around it instead of driving it wrongly.
    */
   readonly viable?: (edgeId: string) => boolean;
@@ -126,6 +187,12 @@ export class RouteLibrary {
   readonly pedestrianGraph: MovementGraph;
   private readonly network: NetworkData;
   private readonly refusals: RefusalCounts;
+  /**
+   * Keyed by destination *and* portal. Two destinations from one portal are two
+   * different routes, so the key has to carry both; a portal-only key would hand
+   * whichever shape was planned first to every later caller, which is a silently
+   * wrong route rather than a refusal.
+   */
   private readonly caches = new Map<string, PlannedRoute>();
   refused = 0;
 
@@ -142,13 +209,15 @@ export class RouteLibrary {
 
   /** Build (or reuse) the route one slot drives. */
   route(kind: ActorKind, slot: number, generation: number, entryEdgeId: string, request: RouteRequest): PlannedRoute | null {
-    const cached = this.caches.get(entryEdgeId);
+    const destination = request.destination ?? "exit";
+    const key = `${destination}\u0000${entryEdgeId}`;
+    const cached = this.caches.get(key);
     if (cached) return cached;
     const graph = kind === "vehicle" ? this.vehicleGraph : this.pedestrianGraph;
     const built = this.plan(graph, kind, entryEdgeId, actorSeed(0, kind, slot, generation), request);
     // Only a route with no gate-length constraint is reusable across body sizes;
     // a constrained walk depends on the radius it was planned for.
-    if (built.route && !request.viable) this.caches.set(entryEdgeId, built.route);
+    if (built.route && !request.viable) this.caches.set(key, built.route);
     return built.route;
   }
 
@@ -170,7 +239,9 @@ export class RouteLibrary {
     const drivable: string[] = [];
     for (const [index, portal] of [...portals].sort().entries()) {
       for (let attempt = 0; attempt < attempts; attempt += 1) {
-        const walk = this.walk(graph, portal, createStream(seed(index) + attempt), request.maxEdges, request.viable);
+        const walk = request.destination === "centre"
+          ? this.walkToCentre(graph, portal, createStream(seed(index) + attempt), request.maxEdges, request.viable)
+          : this.walk(graph, portal, createStream(seed(index) + attempt), request.maxEdges, request.viable);
         if (walk) {
           drivable.push(portal);
           break;
@@ -193,9 +264,13 @@ export class RouteLibrary {
     const rng = createStream(streamSeed);
     let reason: string | undefined;
     for (let attempt = 0; attempt < attempts; attempt += 1) {
-      const walk = this.walk(graph, entryEdgeId, rng, request.maxEdges, request.viable);
+      const walk = request.destination === "centre"
+        ? this.walkToCentre(graph, entryEdgeId, rng, request.maxEdges, request.viable)
+        : this.walk(graph, entryEdgeId, rng, request.maxEdges, request.viable);
       if (!walk) {
-        reason = `${kind} route from ${entryEdgeId} reaches no true AOI exit inside its component within ${request.maxEdges} sections${request.viable ? " that this body can halt on" : ""}`;
+        reason = request.destination === "centre"
+          ? `${kind} route from ${entryEdgeId} reaches no walking crossing inside ${CENTRAL_RADIUS_M} m of the world origin inside its component within ${MAXIMUM_CENTRE_ROUTE_LENGTH_M} m of walking`
+          : `${kind} route from ${entryEdgeId} reaches no true AOI exit inside its component within ${request.maxEdges} sections${request.viable ? " that this body can halt on" : ""}`;
         break;
       }
       const built = this.assemble(graph, kind, walk, request.footprintRadiusM);
@@ -205,6 +280,79 @@ export class RouteLibrary {
     this.refusals.add(reason ?? `${kind} route from ${entryEdgeId} was refused by the real passage builder`);
     this.refused += 1;
     return { route: null, ...(reason === undefined ? {} : { reason }) };
+  }
+
+  /**
+   * A walk that ends on the world origin's own block.
+   *
+   * The field it descends is seeded at the sections a route may legally end on —
+   * the ungoverned walking edges inside `CENTRAL_RADIUS_M` — so descending it is
+   * both what reaches the middle and what makes the route legal once it is there.
+   * A governed section is never the terminus, which is the property the real
+   * passage factory checks: the scramble is one compound, and a route ending on
+   * one of its crossings has no outside section after its last conflict
+   * occurrence.
+   *
+   * Four properties, each a measured correction rather than a preference:
+   *
+   *  - **Monotone descent, not a preference.** The walk only ever steps to a
+   *    section whose remaining distance is strictly lower, which makes it total:
+   *    whenever the portal's component contains a central terminus at all, this
+   *    reaches one. The wobbly walk below reaches one for 0 of the 33 portals,
+   *    because it aims at the nearest crossing of any kind and every one of those
+   *    is peripheral. Descent also cannot spin, because a strictly descending
+   *    field bounds the step count by the graph.
+   *  - **An exact distance, not a section count.** The first version descended a
+   *    count of sections and chose uniformly among the decreasing ones; measured,
+   *    it walked 906 m to reach a section 500 m away, because a step can descend a
+   *    count while adding 165 m of walking.
+   *  - **The best step, within a window.** With the exact field,
+   *    `walked + step.lengthM + remaining(next)` is the length of the whole route
+   *    if that step is taken, so the window is a bound on how far a decision may
+   *    stray from the route's own optimum rather than a knob on a heuristic. See
+   *    `CENTRE_STEP_WINDOW_FRACTION` for why it is a fraction.
+   *  - **A cap on the finished route.** The window bounds one decision, so the
+   *    cap is what bounds the route: a walk that cannot finish inside
+   *    `MAXIMUM_CENTRE_ROUTE_LENGTH_M` is refused by name rather than planned.
+   *
+   * What the delivered graph then allows is a measurement and not the intention.
+   * Of the 33 portals, 18 have a component containing a legal central terminus and
+   * 17 plan a route; their optima all end on four of those termini, between
+   * 43.85 m and 57.78 m from the origin, and none of the nearest termini — 13.50 m
+   * to 31.23 m out — lies on any portal's shortest walk. The scramble compound is
+   * on 4 of the 17 planned routes.
+   */
+  private walkToCentre(graph: MovementGraph, entryEdgeId: string, rng: () => number, maxEdges: number, viable?: (edgeId: string) => boolean): string[] | null {
+    const shortest = graph.distanceToCentre(entryEdgeId);
+    if (shortest === undefined) return null;
+    const windowM = Math.max(CENTRE_STEP_WINDOW_FLOOR_M, CENTRE_STEP_WINDOW_FRACTION * shortest);
+    const path = [entryEdgeId];
+    const visited = new Set<string>([entryEdgeId]);
+    let walkedM = graph.edge(entryEdgeId).lengthM;
+    const budget = Math.min(maxEdges, graph.edges.size);
+    for (let guard = 0; guard <= budget; guard += 1) {
+      const head = path.at(-1)!;
+      const remaining = graph.distanceToCentre(head)!;
+      if (remaining <= 1e-9) return path;
+      if (walkedM > MAXIMUM_CENTRE_ROUTE_LENGTH_M) return null;
+      let best = Number.POSITIVE_INFINITY;
+      const costs = new Map<string, number>();
+      for (const id of graph.next(head)) {
+        if (visited.has(id) || (viable !== undefined && !viable(id))) continue;
+        const next = graph.distanceToCentre(id);
+        if (next === undefined || next >= remaining - 1e-9) continue;
+        const cost = walkedM + graph.edge(id).lengthM + next;
+        costs.set(id, cost);
+        if (cost < best) best = cost;
+      }
+      const pool = [...costs].filter(([, cost]) => cost <= best + windowM).map(([id]) => id);
+      if (!pool.length) return null;
+      const chosen = [...pool].sort()[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]!;
+      path.push(chosen);
+      visited.add(chosen);
+      walkedM += graph.edge(chosen).lengthM;
+    }
+    return null;
   }
 
   /** A random walk that ends at a real way out of the AOI. */
@@ -308,7 +456,7 @@ export class RouteLibrary {
         // A body whose own radius is longer than the junction's entry section has
         // nowhere to stand on the approach: at its earliest legal halt its
         // collision centre would already be inside the junction, and a smaller
-        // footprint is not an option Ã¢â‚¬â€ the dimensions come from the delivered
+        // footprint is not an option ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the dimensions come from the delivered
         // collision envelope and must not be trimmed to buy a route. The walk's
         // `viable` filter is the same rule applied while planning, so this is a
         // backstop rather than the mechanism that finds a drivable route.
@@ -371,7 +519,7 @@ export function vehicleScale(rng: () => number, asset?: { collision: { readonly 
   const scale = VEHICLE_DYNAMICS.minimumScale + rng() * (VEHICLE_DYNAMICS.maximumScale - VEHICLE_DYNAMICS.minimumScale);
   if (!asset) return scale;
   // The shared admission bound is on the actual supported 3D envelope, so a
-  // class whose generated envelope already sits at the bound Ã¢â‚¬â€ the bus does Ã¢â‚¬â€
+  // class whose generated envelope already sits at the bound ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the bus does ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
   // cannot be scaled up at all. Clamping here keeps every later footprint legal
   // rather than discovering it when the body is projected.
   const width = Math.max(asset.bounds.max[0]! - asset.bounds.min[0]!, asset.collision.width);

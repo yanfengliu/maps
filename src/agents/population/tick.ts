@@ -199,6 +199,13 @@ export interface Population {
    * diagnostic can read a gate's own hold point rather than re-deriving it.
    */
   vehicleRoute(slot: number): PlannedRoute | null;
+  /**
+   * The plan one walking slot is driving, or null when it holds none. The walking
+   * half of `vehicleRoute`, added so a trace of one walker's journey can name the
+   * route it is on and the destination edge it ends at — which is what separates
+   * "the walker retired at the centre" from "the walker vanished somewhere".
+   */
+  pedestrianRoute(slot: number): PlannedRoute | null;
   dispose(): void;
 }
 
@@ -386,6 +393,26 @@ export function createPopulation(options: PopulationOptions): Population {
 
   /* --------------------------------------------------------------- planning */
 
+  /**
+   * The route a walking slot is given: to the central crossing if its own
+   * component contains one, otherwise the delivered portal-to-exit shape.
+   *
+   * The fallback is deliberate and is the reason the spawn refusal above names
+   * both. The walking graph has 39 components and 15 of the delivered 33 portals
+   * cannot reach any central walking edge at all — measured with
+   * `tools/agents/centre-route-census.ts` over the real `nextIds` relation — so a
+   * portal that cannot walk to the centre would otherwise refuse every spawn and
+   * drain a share of the population for a property of the graph. A walker from
+   * such a portal still walks a real route and still retires at a real exit; it
+   * simply is not one of the bodies that reaches the middle, and the census says
+   * how many of each the delivered graph can produce.
+   */
+  function planPedestrianCentreRoute(kind: PopulationKind, slot: number, generation: number, entry: string, radiusM: number): PlannedRoute | null {
+    const centre = routes.route(kind, slot, generation, entry, { destination: "centre", footprintRadiusM: radiusM, maxEdges: 120, walkAttempts: 3 });
+    if (centre) return centre;
+    return routes.route(kind, slot, generation, entry, { footprintRadiusM: radiusM, maxEdges: 120, walkAttempts: 3 });
+  }
+
   function planSlot(kind: PopulationKind, slot: number): boolean {
     // A slot may only be planned when the authority holds nothing for it. Any
     // other state means a previous generation's commitment outlived its route,
@@ -532,9 +559,9 @@ export function createPopulation(options: PopulationOptions): Population {
     state.cadenceMps = PEDESTRIAN_DYNAMICS.cadenceMps * scale;
     table.poses.pedestrians.variant[slot] = variant;
     table.poses.pedestrians.scale[slot] = scale;
-    const route = routes.route(kind, slot, generation, entry, { footprintRadiusM: PEDESTRIAN_DYNAMICS.radiusM * scale, maxEdges: 120, walkAttempts: 3 });
+    const route = planPedestrianCentreRoute(kind, slot, generation, entry, PEDESTRIAN_DYNAMICS.radiusM * scale);
     if (!route) {
-      refusals.add(`pedestrian spawn at ${entry} planned no route to a true AOI exit inside its walking component`);
+      refusals.add(`pedestrian spawn at ${entry} planned neither a route to the central crossing nor a route to a true AOI exit inside its walking component`);
       retry();
       return false;
     }
@@ -1941,6 +1968,15 @@ export function createPopulation(options: PopulationOptions): Population {
         throw new Error(`vehicleRoute needs a vehicle slot in [0, ${settings.vehicles}); received ${slot}.`);
       }
       return table.vehicleRoutes[slot] ?? null;
+    },
+    pedestrianRoute(slot: number): PlannedRoute | null {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= settings.pedestrians) {
+        throw new Error(`pedestrianRoute needs a pedestrian slot in [0, ${settings.pedestrians}); received ${slot}.`);
+      }
+      // A retired slot holds `null` and reads as "no plan", which is the same
+      // answer `vehicleRoute` gives; a trace tells the two apart by the active
+      // byte at the tick it read, not by this call.
+      return table.pedestrianRoutes[slot] ?? null;
     },
     diagnostics(): PopulationDiagnostics {
       const describe = (kind: PopulationKind, slot: number): ActorDiagnostic => {
