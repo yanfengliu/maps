@@ -12,7 +12,7 @@ Stack: Vite, three.js and TypeScript on Node 24, with `3d-tiles-renderer` for th
 
 The repo's own rules: [docs/policies/local-rules.md](docs/policies/local-rules.md).
 
-<!-- FLEET-CANON:BEGIN sha=bafdd66f8299 generated from ../fleet/FLEET.md by `npm run sync-canon` — do not edit inside this block; this repo's own rules go in docs/policies/local-rules.md -->
+<!-- FLEET-CANON:BEGIN sha=c7aa61e44093 generated from ../fleet/FLEET.md by `npm run sync-canon` — do not edit inside this block; this repo's own rules go in docs/policies/local-rules.md -->
 ## Fleet constitution
 
 ### Fleet Orchestration Policy
@@ -29,7 +29,7 @@ Workers own bounded outcomes and local implementation decisions. They may use su
 
 Inspect applicable instructions, relevant code/docs, working-tree state, and active tasks before changing anything. Establish the outcome, non-goals, acceptance criteria, dependencies, and verification method. Resolve routine ambiguity through evidence and reversible defaults.
 
-Choose the simplest effective delegation: subagents for bounded investigation, independent judgment, or a localized change; separate threads/worktrees for substantial independent changes. Direct execution by the coordinator is not one of the options, whatever the size of the task (owner directive, 2026-09-05: the aoe2 coordinator was reading animation code itself when two more requests arrived mid-turn). Agree on shared contracts before parallel implementation. Avoid duplicate or blocked work.
+Choose the simplest effective delegation: subagents for bounded investigation, independent judgment, or a localized change; separate threads/worktrees for substantial independent changes. Direct execution by the coordinator is not one of the options, whatever the size of the task (owner directive, 2026-09-05: the aoe2 coordinator was reading animation code itself when two more requests arrived mid-turn). Agree on shared contracts before parallel implementation. Avoid duplicate or blocked work. Size the team to the work continuously rather than staffing it once: widen it when the critical path is a single lane and independent work is waiting; narrow it when lanes duplicate, contend for the same file, port or CPU, or have nothing to do until something else lands. Every lane carries one bounded outcome, one owner and a written handoff; a lane without those is not a lane. Keep the roster and what each lane is waiting on in one place that outlives the conversation, and update it when a lane ends. Three things make a lane unsafe to run: it edits a file another lane is editing, it runs a gate another lane is running, or it needs a resource the machine does not have — and the third arrives with the first expensive gate, so exactly one such gate runs at a time and the other lanes are chosen around it (owner directive, 2026-09-15, in maps: `npm run visual` is a three-hour command that owns a port and the whole CPU; one run was in flight while three lanes ran beside it, and two more were added only because they touched neither its files nor its port).
 
 Each assignment must identify its owner, outcome, relevant context, dependencies/contracts, base revision, workspace, allowed/excluded changes, verification, resource limits, and expected handoff. Specify read-only versus implementation work. Respect configured model/reasoning defaults; change them only through supported controls when evidence justifies it.
 
