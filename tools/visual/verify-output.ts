@@ -19,8 +19,8 @@
  * after this run began. It cannot prove that any frame looks right. It cannot
  * prove the lifecycle records came from *this* process tree rather than from
  * three other fresh ones — their timestamps are the only identity they carry —
- * and it cannot see a scene file rewritten in place with its length and its
- * modification time preserved.
+ * and its scene digest is taken at two instants, so a scene file changed and
+ * changed back between them is outside what it can report.
  */
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
@@ -55,19 +55,20 @@ interface SceneDigest {
 }
 
 /**
- * A digest over everything `/scene/` and `/network/` will serve, taken from the
- * file names, their sizes and their modification times.
+ * A digest over what `/scene/` and `/network/` will serve: the path each file is
+ * served at, and the bytes of that file.
  *
- * Why not the file contents: the payload is 354 MB across 146 files and this runs
- * twice per gate — before the build and after the capture. Size and modification
- * time are what a rebuilt scene changes even when a file's length happens to come
- * back the same, and the digest is compared with itself inside one run, where the
- * question is only "is this still starting from the scene the run began with".
+ * Why the contents and not the metadata: this digest is what binds the frames to
+ * one city, and a rebuilt tile that keeps its length can keep its modification
+ * time too, so a digest over names, sizes and mtimes can go on carrying the old
+ * city's identity while the pixels are of a new one. Every served file is
+ * therefore read and hashed — 354 MB across 137 files on the current data, twice
+ * per gate, before the build and after the capture.
  *
- * Bound: it cannot see a byte rewritten in place with both its length and its
- * modification time preserved. It sees every added, removed, renamed or resized
- * file, and every ordinary rewrite, because those move a file's or a directory's
- * modification time.
+ * Bound: only the path and the content enter the digest, so the same tree gives
+ * the same value on every run and no timestamp, size or inode is covered. What it
+ * cannot report is a file changed and changed back between its two calls, which is
+ * a difference no digest taken at two instants can see.
  */
 export async function sceneTreeDigest(
   mounts: readonly { route: string; directory: string }[] = SCENE_MOUNTS,
@@ -94,8 +95,23 @@ export async function sceneTreeDigest(
         continue;
       }
       if (!info.isFile()) continue;
-      entries.push(`${relative}${name}\u0000${info.size}\u0000${Math.floor(info.mtimeMs)}`);
-      bytes += info.size;
+      // Content, not metadata: a rewrite in place that keeps its length can keep
+      // its modification time too, and that is precisely the change a certificate
+      // must not miss.
+      let content: Buffer;
+      try {
+        content = await readFile(path);
+      } catch (error) {
+        throw new Error(
+          `The visual gate cannot read the served scene file ${path}: ` +
+            `${error instanceof Error ? error.message : String(error)}. Every file under these mounts is ` +
+            "hashed by content into the certificate, so one this run cannot read would leave the frames " +
+            "unbound. Rebuild the scene with `npm run data:scene`, and the network database with " +
+            "`npm run data:network`, before re-running the gate.",
+        );
+      }
+      entries.push(`${relative}${name}\u0000${hash(content)}`);
+      bytes += content.byteLength;
     }
   };
   for (const mount of mounts) await walk(mount.directory, `${mount.route}`);
