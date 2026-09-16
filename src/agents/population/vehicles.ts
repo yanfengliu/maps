@@ -89,18 +89,59 @@ export function vehicleRadius(manifest: VehicleAssetManifest, table: SlotTable, 
 
 /* --------------------------------------------------------------------- IDM */
 
+/**
+ * The obstacle a body is following, with the measure it is expressed in.
+ *
+ * Two kinds, and the difference is the measure rather than a detail:
+ *
+ *  - `body` is another vehicle. `gapM` is the free distance between the two
+ *    collision envelopes — this body's front face to the leader's rear face — and
+ *    `standstillM` is the fleet's own `standstillClearanceM`.
+ *  - `halt` is a point on this body's own route: a gate's hold distance or a
+ *    mapped control's stop line. The route planner has already placed that point a
+ *    whole footprint radius short of the obligation, so it bounds the body's
+ *    *origin* rather than one of its faces, and `gapM` is the origin-to-point
+ *    distance the admission request window and the halt capture are written
+ *    against. Its standstill room is the network contract's own `stopGapM`.
+ *
+ * These were one quantity before this change: the car-following law read the
+ * contract's 0.5 m stop gap as if it separated two bodies, so a queue's
+ * equilibrium was 0.5 m between origins and every class in the fleet overlapped
+ * itself. Naming the kind here is what stops a caller handing one measure to the
+ * other, because the constructor for each kind supplies its own constant.
+ */
 export interface Leader {
+  readonly kind: "body" | "halt";
   readonly gapM: number;
   readonly speedMps: number;
+  /** The standstill distance this obstacle is held at, in the same measure as `gapM`. */
+  readonly standstillM: number;
+}
+
+/** A leader that is another body: a real bumper-to-bumper clearance at standstill. */
+export function bodyLeader(gapM: number, speedMps: number): Leader {
+  return { kind: "body", gapM, speedMps, standstillM: VEHICLE_DYNAMICS.idm.standstillClearanceM };
+}
+
+/**
+ * A halt on this body's own route. `stopGapM` is the network contract's authored
+ * stop gap, read from the delivered network rather than restated here.
+ */
+export function haltLeader(gapM: number, stopGapM: number): Leader {
+  return { kind: "halt", gapM, speedMps: 0, standstillM: stopGapM };
 }
 
 function idmAcceleration(speedMps: number, desiredMps: number, leader: Leader | null): number {
-  const { minimumSpacingM, headwaySeconds, maximumAccelerationMps2, comfortableBrakingMps2 } = VEHICLE_DYNAMICS.idm;
+  const { headwaySeconds, maximumAccelerationMps2, comfortableBrakingMps2 } = VEHICLE_DYNAMICS.idm;
   const free = maximumAccelerationMps2 * (1 - (speedMps / Math.max(0.1, desiredMps)) ** 4);
   if (!leader) return free;
-  const gap = Math.max(minimumSpacingM, leader.gapM);
+  // The standstill distance belongs to the obstacle, so the same law serves a
+  // queue of bodies and a body waiting at a stop line without either borrowing the
+  // other's constant.
+  const standstillM = Math.max(0, leader.standstillM);
+  const gap = Math.max(standstillM, leader.gapM);
   const closing = speedMps - leader.speedMps;
-  const desiredGap = minimumSpacingM + Math.max(0, speedMps * headwaySeconds + (speedMps * closing) / (2 * Math.sqrt(maximumAccelerationMps2 * comfortableBrakingMps2)));
+  const desiredGap = standstillM + Math.max(0, speedMps * headwaySeconds + (speedMps * closing) / (2 * Math.sqrt(maximumAccelerationMps2 * comfortableBrakingMps2)));
   return free - maximumAccelerationMps2 * (desiredGap / gap) ** 2;
 }
 
@@ -208,6 +249,57 @@ export function buildVehicleFrame(
     bucket.push(slot);
     byEdge.set(edgeId, bucket);
   }
+  /**
+   * A body's collision envelope, projected from the pose the population has
+   * already written for it this tick.
+   */
+  const envelope = (slot: number): { x: number; z: number; forwardX: number; forwardZ: number; halfLengthM: number; halfWidthM: number } | null => {
+    const footprint = footprints[slot];
+    if (!footprint) return null;
+    return {
+      x: footprint.position.x,
+      z: footprint.position.z,
+      forwardX: Math.sin(footprint.headingRadians),
+      forwardZ: Math.cos(footprint.headingRadians),
+      halfLengthM: footprint.lengthM / 2,
+      halfWidthM: footprint.widthM / 2,
+    };
+  };
+  /**
+   * The free distance between the two collision envelopes — the leader's rear
+   * face to the follower's front face — or null when the pair is not in
+   * car-following conflict at all.
+   *
+   * The measure is the one the collision envelope describes, and that is the whole
+   * correction: `travelledM` differences and origin distances are centre to centre
+   * and say nothing about whether two 4.573 m taxis are inside each other. A pair
+   * whose envelopes do not overlap laterally in either body's own frame is not a
+   * pair: the body beside it in the next lane is not its leader, and treating it as
+   * one is what made two parallel bodies brake for each other. A body crossing in
+   * front passes the follower's own lateral test and is one.
+   */
+  const clearance = (leader: number, follower: number): number | null => {
+    const leaderBox = envelope(leader);
+    const followerBox = envelope(follower);
+    if (!leaderBox || !followerBox) return null;
+    const halfWidths = leaderBox.halfWidthM + followerBox.halfWidthM;
+    // Right axis of a body at heading h is (cos h, -sin h) = (forwardZ, -forwardX).
+    const acrossFollower = Math.abs((leaderBox.x - followerBox.x) * followerBox.forwardZ - (leaderBox.z - followerBox.z) * followerBox.forwardX);
+    const acrossLeader = Math.abs((followerBox.x - leaderBox.x) * leaderBox.forwardZ - (followerBox.z - leaderBox.z) * leaderBox.forwardX);
+    if (Math.min(acrossFollower, acrossLeader) >= halfWidths) return null;
+    const halfLengths = leaderBox.halfLengthM + followerBox.halfLengthM;
+    const leaderState = table.vehicles[leader]!;
+    const followerState = table.vehicles[follower]!;
+    // Two bodies on one route object in one lane share an exact scale, so their
+    // separation is the route distance between them less both bodies' half lengths,
+    // and nothing is lost to the projection.
+    if (routeOf.get(leader) === routeOf.get(follower) && Math.round(leaderState.laneIndex) === Math.round(followerState.laneIndex)) {
+      const delta = leaderState.travelledM - followerState.travelledM;
+      return delta > 0 ? delta - halfLengths : null;
+    }
+    const ahead = (leaderBox.x - followerBox.x) * followerBox.forwardX + (leaderBox.z - followerBox.z) * followerBox.forwardZ;
+    return ahead > 0 ? ahead - halfLengths : null;
+  };
   for (const [edgeId, bucket] of byEdge) {
     // Descending distance along this edge, so `bucket[i]` is the body furthest
     // along it and `bucket[i + 1]` is the one behind it. `travelledM` is
@@ -221,45 +313,49 @@ export function buildVehicleFrame(
       const state = table.vehicles[slot]!;
       return state.travelledM - (routeOf.get(slot)?.starts[state.routeIndex] ?? 0);
     };
-    // Two bodies on different route objects are not comparable by route distance,
-    // so their separation is read from the pose buffers the population has already
-    // written. One route object means one shared scale, and the distance is exact.
-    const separation = (leader: number, follower: number): number => {
-      if (routeOf.get(leader) === routeOf.get(follower)) return table.vehicles[leader]!.travelledM - table.vehicles[follower]!.travelledM;
-      const pa = table.vehicles[leader]!.slot * 3, pb = table.vehicles[follower]!.slot * 3;
-      return Math.hypot(vehicles.current.position[pa]! - vehicles.current.position[pb]!, vehicles.current.position[pa + 2]! - vehicles.current.position[pb + 2]!);
-    };
     bucket.sort((a, b) => along(b) - along(a));
-    for (let i = 0; i < bucket.length; i += 1) {
-      const leader = bucket[i]!;
-      const state = table.vehicles[leader]!;
-      const behindSlot = bucket[i + 1];
-      if (behindSlot !== undefined) {
-        const other = table.vehicles[behindSlot]!;
-        // The pair is (bucket[i], bucket[i + 1]) = (ahead, behind), so the gap
-        // belongs to the body BEHIND, and its leader's speed is the one that
-        // matters. Assigning it the other way round gave every body in a platoon a
-        // leader 0.5 m in front of it — the body behind it — and each of them
-        // braked for its own follower: a queue that met at a portal stayed at
-        // standstill for the rest of the run with every hull intact and no rule
-        // broken anywhere. Measured: three bodies sharing one approach edge, gaps
-        // 0.41-0.50 m, all three at 0.00 m/s for 600 consecutive ticks.
-        const gap = separation(leader, behindSlot);
-        const existing = ahead[behindSlot];
-        if (!existing || gap < existing.gapM) ahead[behindSlot] = { gapM: gap, speedMps: state.speedMps };
-        const follower = behind[leader];
-        if (!follower || gap < follower.gapM) behind[leader] = { gapM: gap, speedMps: other.speedMps };
+    for (const follower of bucket) {
+      for (const leader of bucket) {
+        if (leader === follower) continue;
+        const gap = clearance(leader, follower);
+        if (gap === null) continue;
+        const leaderSpeed = table.vehicles[leader]!.speedMps;
+        const followerSpeed = table.vehicles[follower]!.speedMps;
+        const existing = ahead[follower];
+        if (!existing || gap < existing.gapM) ahead[follower] = bodyLeader(gap, leaderSpeed);
+        // The pair is (leader, follower), so the gap belongs to the body BEHIND and
+        // its leader's speed is the one that matters. Assigning it the other way
+        // round gave every body in a platoon a leader 0.5 m in front of it — the
+        // body behind it — and each of them braked for its own follower: a queue
+        // that met at a portal stayed at standstill for the rest of the run with
+        // every hull intact and no rule broken anywhere.
+        const behindExisting = behind[leader];
+        if (!behindExisting || gap < behindExisting.gapM) behind[leader] = bodyLeader(gap, followerSpeed);
       }
+      // MOBIL's own lane record: the nearest body of the *same* lane on this edge,
+      // ahead of and behind this one. It stays a per-lane map because that is what
+      // the lane-change test reasons about, and its gaps are the same envelope
+      // clearances as everything else here.
+      const state = table.vehicles[follower]!;
       const laneIndex = Math.round(state.laneIndex);
       const key = `${edgeId}#${laneIndex}`;
       const record = lane.get(key) ?? { ahead: null, behind: null };
-      const nextAhead = bucket[i - 1];
-      if (nextAhead !== undefined && Math.round(table.vehicles[nextAhead]!.laneIndex) === laneIndex) {
-        record.ahead = { gapM: along(nextAhead) - along(leader), speedMps: table.vehicles[nextAhead]!.speedMps };
-      }
-      const nextBehind = bucket[i + 1];
-      if (nextBehind !== undefined && Math.round(table.vehicles[nextBehind]!.laneIndex) === laneIndex) {
-        record.behind = { gapM: along(leader) - along(nextBehind), speedMps: table.vehicles[nextBehind]!.speedMps };
+      const followerBox = envelope(follower);
+      const halfLength = followerBox?.halfLengthM ?? 0;
+      for (const mate of bucket) {
+        if (mate === follower) continue;
+        if (Math.round(table.vehicles[mate]!.laneIndex) !== laneIndex) continue;
+        if (routeOf.get(mate) !== routeOf.get(follower)) continue;
+        const mateBox = envelope(mate);
+        if (!mateBox) continue;
+        const delta = along(mate) - along(follower);
+        if (delta === 0) continue;
+        const gap = Math.abs(delta) - halfLength - mateBox.halfLengthM;
+        if (delta > 0) {
+          if (!record.ahead || gap < record.ahead.gapM) record.ahead = bodyLeader(gap, table.vehicles[mate]!.speedMps);
+        } else if (!record.behind || gap < record.behind.gapM) {
+          record.behind = bodyLeader(gap, table.vehicles[mate]!.speedMps);
+        }
       }
       lane.set(key, record);
     }
@@ -270,13 +366,16 @@ export function buildVehicleFrame(
     if (ahead[slot] || !vehicles.active[slot]) continue;
     const route = table.vehicleRoutes[slot];
     if (!route || state.routeIndex + 1 >= route.edges.length) continue;
+    const ownBox = envelope(slot);
     for (const other of byEdge.get(route.edgeIds[state.routeIndex + 1]!) ?? []) {
       // Only a body on the same route can be ahead on the next occurrence; a
       // different route's distance along that edge says nothing about this one.
       if (routeOf.get(other) !== route) continue;
-      const gap = route.edges[state.routeIndex]!.lengthM - state.travelledM + table.vehicles[other]!.travelledM;
+      const otherBox = envelope(other);
+      if (!ownBox || !otherBox) continue;
+      const gap = route.edges[state.routeIndex]!.lengthM - state.travelledM + table.vehicles[other]!.travelledM - ownBox.halfLengthM - otherBox.halfLengthM;
       const existing = ahead[slot];
-      if (!existing || gap < existing.gapM) ahead[slot] = { gapM: gap, speedMps: table.vehicles[other]!.speedMps };
+      if (!existing || gap < existing.gapM) ahead[slot] = bodyLeader(gap, table.vehicles[other]!.speedMps);
     }
   }
   const candidates: number[] = [];
@@ -365,8 +464,10 @@ export function considerLaneChange(
     const advantage = vehicleAcceleration(state.speedMps, desiredSpeedMps, target.ahead) - own;
     if (advantage <= minimumAdvantageMps2) continue;
     // MOBIL's safety criterion: the new follower must not have to brake harder
-    // than `safeBrakingMps2` because of this change.
-    if (target.behind && vehicleAcceleration(target.behind.speedMps, desiredSpeedMps, { gapM: target.behind.gapM, speedMps: state.speedMps }) < -safeBrakingMps2) continue;
+    // than `safeBrakingMps2` because of this change. The candidate leader for that
+    // follower is this body, and the gap is the envelope clearance the frame
+    // already measured for the target lane.
+    if (target.behind && vehicleAcceleration(target.behind.speedMps, desiredSpeedMps, bodyLeader(target.behind.gapM, state.speedMps)) < -safeBrakingMps2) continue;
     state.targetLaneIndex = targetIndex;
     return;
   }

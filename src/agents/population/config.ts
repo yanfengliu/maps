@@ -64,6 +64,31 @@ export const PEDESTRIAN_DYNAMICS = Object.freeze({
   neighbours: POPULATION_LIMITS.neighboursPerPedestrian,
   /** ORCA time horizon and safety margin, seconds. */
   timeHorizonSeconds: 2,
+  /**
+   * How fast an already-overlapping pair is told to separate, and over how long.
+   *
+   * `separationSpeed = min(maximumSeparationMps, penetration / separationSeconds)`,
+   * so the bound is a speed and never a force or a displacement: one metre per
+   * second for at most half a second's worth of penetration, and a pair that is
+   * merely touching is asked to part at a walking pace rather than shoved.
+   */
+  maximumSeparationMps: 1,
+  separationSeconds: 0.5,
+  /**
+   * The body-ahead gate the walking step applies, metres. A walker may close to
+   * within the sum of the two collision radii of the body in front of it and no
+   * further, which is the collision envelope's own bound rather than a comfort
+   * spacing; the query radius is how far ahead that gate looks, and one tick's
+   * advance at the fastest cadence is under two centimetres.
+   */
+  spacingQueryRadiusM: 1.5,
+  /**
+   * How far apart two walkers must be for a second one to materialize at a portal.
+   * The bound is the two collision envelopes: a body may not appear inside another
+   * body. Measured on the revision before this, 3,000 pedestrians spawned at 33
+   * portals piled an average of 65 neighbours inside 2 m of every walker.
+   */
+  spawnClearanceM: 0.5,
   /** Spatial hash cell edge, metres. */
   cellSizeM: 4,
   /** How far short of a governed gate an unadmitted actor halts, metres. */
@@ -74,9 +99,29 @@ export const PEDESTRIAN_DYNAMICS = Object.freeze({
 export const VEHICLE_DYNAMICS = Object.freeze({
   minimumScale: 0.96,
   maximumScale: 1.04,
-  /** IDM. `minimumSpacingM` is never below the shared 0.5 m stop gap. */
+  /**
+   * IDM, with one constant that is this fleet's own and one that is not.
+   *
+   * `standstillClearanceM` is the gap held **between two bodies** when they are
+   * stopped: the free distance from the front face of the follower's collision
+   * envelope to the rear face of the leader's, on the vehicles the manifests
+   * author (kei 1.920 x 3.573, taxi 2.140 x 4.573, bus 3.280 x 10.565 m). Two
+   * metres is IDM's own published standstill distance and it is a *clearance*: for
+   * the 4.573 m taxi it is 2 m of air between two bumpers, not 2 m between two
+   * origins. The constant it replaced was 0.5 m measured origin to origin, which
+   * for every class in this fleet is a negative clearance, so a queue at rest was a
+   * stack of overlapping bodies — measured on the revision before this change at
+   * 200 vehicles and 3,600 ticks: 120 oriented-box overlapping pairs among 71
+   * active bodies, deepest longitudinal overlap 4.691 m.
+   *
+   * The network contract's own 0.5 m `admissionBounds.stopGapM` is a different
+   * quantity and is not changed here: it is the room a body leaves in front of a
+   * conflict area it is waiting to enter, the route planner applies it to the
+   * body's own hull, and the car-following law reads it from the network for a halt
+   * (see `haltLeader` in `vehicles.ts`). It is never used as spacing between bodies.
+   */
   idm: Object.freeze({
-    minimumSpacingM: 0.5,
+    standstillClearanceM: 2,
     headwaySeconds: 1.2,
     maximumAccelerationMps2: 1.5,
     comfortableBrakingMps2: 2,

@@ -331,13 +331,35 @@ export function createPopulation(options: PopulationOptions): Population {
    * written, and a spawn waits for the portal to clear.
    */
   function spawnClearance(slot: number, radiusM: number): boolean {
-    const gapM = 2 * radiusM + network.admissionBounds.stopGapM;
+    // `HALT_CAPTURE_M` is part of the clearance rather than a margin: the body
+    // materializes at its portal and the integrator may then move it onto its own
+    // first halt, up to that far ahead, before any body on the lane moves. Measuring
+    // only the portal under-states the separation by the size of that hop - measured
+    // at 200 vehicles, a taxi's hop was 1.457 m and closed a guard-approved 5.6 m to
+    // 4.55 m between two 4.573 m taxis.
+    const gapM = 2 * radiusM + network.admissionBounds.stopGapM + HALT_CAPTURE_M;
     const here = slot * 3;
+    const x = table.poses.vehicles.current.position[here]!;
+    const z = table.poses.vehicles.current.position[here + 2]!;
     for (const other of table.vehicles) {
-      if (other.slot === slot || !table.poses.vehicles.active[other.slot]) continue;
-      if (other.travelledM >= gapM) continue;
+      // The `pending` set is tested as well as the active byte. A body staged at a
+      // portal holds no active byte yet, so testing only active bodies left it
+      // invisible: a second body was planned at the same portal, drove up to it, and
+      // the waiting body then materialized inside it - measured at 200 vehicles, 1.24
+      // m of oriented-box overlap at ticks 315 and 535.
+      if (other.slot === slot) continue;
+      if (!table.poses.vehicles.active[other.slot] && !pending.has(other.slot)) continue;
+      // The world bounding box is the only prefilter. The guard used to skip any body
+      // whose `travelledM` had passed `gapM`, which reads as "it has driven away" but
+      // is an arc length: a lane section that curves back on itself puts a body
+      // 7.15 m along the section 2.28 m from the portal in the world, and the body it
+      // skipped was overlapped by the new one on the tick it materialized.
       const there = other.slot * 3;
-      if (Math.hypot(table.poses.vehicles.current.position[there]! - table.poses.vehicles.current.position[here]!, table.poses.vehicles.current.position[there + 2]! - table.poses.vehicles.current.position[here + 2]!) < gapM) return false;
+      const dx = table.poses.vehicles.current.position[there]! - x;
+      if (dx >= gapM || dx <= -gapM) continue;
+      const dz = table.poses.vehicles.current.position[there + 2]! - z;
+      if (dz >= gapM || dz <= -gapM) continue;
+      if (dx * dx + dz * dz < gapM * gapM) return false;
     }
     return true;
   }
@@ -812,7 +834,9 @@ export function createPopulation(options: PopulationOptions): Population {
       const stopping = intent.stopDistanceM - state.travelledM;
       const desired = Math.max(0.5, edge.speedMps * state.speedFactor);
       considerLaneChange(network, table, frame, slot, edge, desired);
-      const haltLeader: Leader | null = Number.isFinite(intent.stopDistanceM) ? { gapM: Math.max(0, stopping), speedMps: 0 } : null;
+      const haltLeader: Leader | null = Number.isFinite(intent.stopDistanceM)
+        ? { kind: "halt", gapM: Math.max(0, stopping), speedMps: 0, standstillM: network.admissionBounds.stopGapM }
+        : null;
       const aheadLeader = frame.ahead[slot] ?? null;
       // The nearest obstacle wins, and the halt is one of them.
       const obstacle = aheadLeader === null ? haltLeader : haltLeader === null ? aheadLeader : aheadLeader.gapM <= haltLeader.gapM ? aheadLeader : haltLeader;
@@ -1286,7 +1310,7 @@ export function createPopulation(options: PopulationOptions): Population {
       // disappear when it is not captured — the body approaches it under IDM and
       // reaches the request window on its own once the body ahead has gone.
       const leader = frame?.ahead[slot] ?? null;
-      const leaderRoomM = leader === null ? Number.POSITIVE_INFINITY : leader.gapM - VEHICLE_DYNAMICS.idm.minimumSpacingM;
+      const leaderRoomM = leader === null ? Number.POSITIVE_INFINITY : leader.gapM - VEHICLE_DYNAMICS.idm.standstillClearanceM;
       const reached = !populationInvariants.driveWithoutGrant
         && Number.isFinite(allowed)
         && stoppingShortM > 0
