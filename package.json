@@ -30,7 +30,10 @@
     "visual:install": "playwright install chromium",
     "audit": "npm audit --audit-level=high",
     "data:vehicles": "node tools/agents/build-vehicles.ts",
-    "data:vehicles:verify": "node tools/agents/verify-vehicles.ts"
+    "data:vehicles:verify": "node tools/agents/verify-vehicles.ts",
+    "data:agents": "node tools/agents/build.ts",
+    "data:agents:verify": "node tools/agents/verify.ts",
+    "data:agents:manifests": "node tools/agents/manifests.ts"
   },
   "dependencies": {
     "3d-tiles-renderer": "^0.5.2",
