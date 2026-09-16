@@ -175,6 +175,19 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   const agents = createAgents(loop, options.population ?? { pedestrians: 0, vehicles: 0 });
   scene.add(agents.root);
 
+  // ?agents= asked for a population, so the frame it draws and the clock it
+  // steps on have to start together. The population is built as soon as the
+  // network is in, but its renderer cannot be mounted until about 40 MB of agent
+  // assets have arrived, and the fixed step would otherwise spend that wait
+  // advancing a world that cannot be drawn: 1,189-1,238 population ticks in the
+  // four runs recorded in artifacts/populated-capture/REPORT.md, and 1,075 and
+  // 1,087 in two of my own on 2026-09-16 — 18-20 simulated seconds of vehicles
+  // and pedestrians that no frame contains. The gate is released the moment the
+  // renderer is mounted, below. Without a population there is nothing to hold,
+  // so a `?agents=`-free run is untouched.
+  const populationWanted = (options.population?.pedestrians ?? 0) + (options.population?.vehicles ?? 0) > 0;
+  if (populationWanted) loop.holdFixedSteps(true);
+
   // The tiles renderer needs the camera's world matrix as it will be *this*
   // frame, so it refines after the controls have moved it and before the draw.
   const buildings: Buildings = createBuildings(camera, renderer, {
@@ -244,7 +257,6 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // graph does, and it must not be rebuilt while actors hold admission
     // commitments against the graph they were planned on. The renderer is loaded
     // after the population so it can read the pose buffers the population writes.
-    const populationWanted = (options.population?.pedestrians ?? 0) + (options.population?.vehicles ?? 0) > 0;
     if (populationWanted) {
       const fleet = await loadManifest<VehicleAssetManifest>(VEHICLE_ASSET_URL);
       if (disposed) return;
@@ -257,6 +269,10 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
           return;
         }
         agents.mountRenderer(renderer);
+        // The world can be drawn now, so its clock starts. Releasing here rather
+        // than at the end of `ready` is the point: `ready` is already true
+        // before the agent assets have finished arriving.
+        loop.holdFixedSteps(false);
         agents.root.add(renderer.group);
         styleConsumers.push((next) => renderer.setStyle(next));
         disposers.push(() => agents.mountRenderer(null));
@@ -274,6 +290,16 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     paintObservation = streets.paintPlacements;
     paintSeamObservation = roads.paintHeightAt.seamUses ?? [];
     scene.add(streets.root);
+    // The signal lenses follow the simulation. `updateSignals` colours a lens
+    // from the group the phase has active, and it reads the same snapshot the
+    // bridge publishes, so what a frame shows and what a harness records are one
+    // reading of one clock. The frame step is the right one of the loop's two:
+    // the fixed steps that advanced the phase have already run by the time it
+    // runs, so a lens is never a phase ahead, and nothing here advances the
+    // clock it reads. Without a population the snapshot is empty and the lenses
+    // keep the no-group colours they are built with.
+    const stopLensUpdates = loop.onFrame(() => streets.updateSignals(agents.signalSnapshot()));
+    disposers.push(stopLensUpdates);
     scene.add(vegetation.root);
     vegetation.setStyle(style);
     styleConsumers.push(vegetation.setStyle);
@@ -339,6 +365,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     paint: () => paintObservation,
     paintSeams: () => paintSeamObservation,
     population: () => agents.status(),
+    signals: () => agents.signalSnapshot(),
   });
 
   loop.start();

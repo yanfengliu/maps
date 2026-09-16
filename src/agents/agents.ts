@@ -26,6 +26,7 @@
 import { Group } from "three";
 
 import { JunctionAdmissions } from "../network/admissions.ts";
+import type { SignalSnapshot } from "../network/signals.ts";
 import type { NetworkData } from "../world/network-data.ts";
 import type { VehicleAssetManifest } from "../world/agent-assets.ts";
 import type { WorldAgentPoses } from "../world/agent-poses.ts";
@@ -57,6 +58,15 @@ export interface AgentSystem {
   readonly poses: WorldAgentPoses | null;
   /** Read-only status, cloned for the bridge. */
   status(): PopulationStatus;
+  /**
+   * The shared signal clock as of the last fixed step.
+   *
+   * The one clock both populations are admitted against, exposed for readers
+   * that do not advance it: the scene colours its signal lenses from this, and
+   * the bridge publishes it, so a rendered lens and a recorded phase come from
+   * the same snapshot. Empty before `attach`, because there is no clock yet.
+   */
+  signalSnapshot(): readonly SignalSnapshot[];
   /** True while any active actor is moving, which the still predicate reads. */
   moving(): boolean;
   /** The renderer, once the app has loaded and mounted it. */
@@ -129,6 +139,9 @@ export function createAgents(loop: RenderLoop, settings?: Partial<PopulationSett
         attached: renderer !== null,
       };
       return status;
+    },
+    signalSnapshot(): readonly SignalSnapshot[] {
+      return admissions?.signalSnapshot() ?? [];
     },
     moving(): boolean {
       return population?.moving() ?? false;

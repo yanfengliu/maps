@@ -1,5 +1,35 @@
 # Defect register
 
+## 2026-09-16 — every traffic signal in the city showed a constant
+
+Observed symptom (populated capture lane, finding 5.1): a signal head shows a lit red lens during the phase the simulation says is that approach's green, and 14 frames spanning the whole scramble pedestrian green are byte-identical, lens included. Anyone reading traffic behaviour off those frames is reading a constant.
+
+Investigation: `StreetDetails.updateSignals` exists to colour lenses from `JunctionAdmissions.signalSnapshot()`, and the only call in the repository was `updateSignals([])` at construction (`src/scene/street-details.ts:225` in the base revision). Nothing ever passed live state. The app had no read-only accessor for the clock: `JunctionAdmissions.signalSnapshot()` existed and was unused. The lens cache also compared its key against `""`, so an empty state list never matched and every frame would have rewritten every lens in the city — which is why the call had to be made affordable before it could be made correct.
+
+Root cause: missing wiring between a model that existed and the scene that renders it, in the frame path rather than the simulation. No test could see it: the model was correct and the lens colouring function was correct; nothing joined them.
+
+Checked from now on: `test/signal-lenses.test.ts` gates the colour mapping (active group bright, amber for the preceding approach with red off, every other lens red, the same phase not rewritten), and the rendered check is `tools/render-defects/signal-frames.spec.ts` at a pose where a head faces the camera — 45 m east of the crossing at 6 m above the ground, where `scramble:vehicle:3` is 16 m away and face-on. The gate is the pair: the same capture against a tree with the wiring reverted produces one digest in sixteen frames and zero changed pixels across green, amber and red, and against the fix produces three digests and 445 changed pixels confined to the head's lens row. Bound: one junction, one pose, one build, hardware renderer, `?agents=1`. A population-free run still shows every lens red forever, because the signal clock only exists with a population; that is the reviewed 44-frame appearance and is deliberately unchanged.
+
+## 2026-09-16 — the reported LOD counts were one variant's, not the population's
+
+Observed symptom (finding 5.6): `population().rendered.near/medium/far` disagreed with `rendered.pedestrians` beside it. The lane's tables had to say "of the variant the bridge happens to report", and the near/medium instance caps are recorded as hypotheses whose judge is exactly these numbers.
+
+Investigation: `HumanRenderer.drawn` was assigned inside the loop over human variants (`src/agents/render/humans.ts:179-181`), so each variant overwrote the previous one's counts and the reported numbers were whichever variant the loop finished on. There are three variants, so the reported number was about a third of the truth at each level, per variant rather than per level.
+
+Root cause: an accumulator that was written as an assignment in a nested loop.
+
+Checked from now on: `test/human-lod-counts.test.ts` drives the real `HumanRenderer.update` with synthetic pose buffers and level parts and asserts the counts are the population's, that they agree with the instance counts left on the level meshes, and — new and worth keeping — that the instance caps are per variant, so the population's near count can reach `variants × nearInstances`. Mutation: restoring the assignment fails all four cases with the defect's own numbers (`{near: 1, medium: 1, far: 1}` against a population of `{3, 2, 1}`).
+
+## 2026-09-16 — the first ~19 simulated seconds of population were never drawn
+
+Observed symptom (finding 5.4): the agent renderer attaches at population tick 1,189-1,238, while the fixed step has been advancing the population since the network arrived. Everything simulated in that window — the first vehicles placed on the AOI boundary among it — is never on screen.
+
+Investigation: it is asset loading. `agents.attach` runs as soon as the network is in, and `createAgentRenderer` then loads three human variants (three LODs each, two VAT textures and a GLB per LOD) plus the fleet, about 40 MB, while the loop's fixed step steps the population at 60 Hz throughout. Measured attach ticks on 2026-09-16: 1,075 and 1,087 against a tree with the fix reverted, 6, 11 and 16 with it. The 200-vehicles-at-tick-1 part of the finding did not reproduce: `vehicles.active` was 18 at the attach tick.
+
+Root cause: two clocks that started at different times — the population's, which began when its graph was loaded, and the picture's, which could not begin until its assets had arrived.
+
+Checked from now on: `test/loop.test.ts` asserts `holdFixedSteps` stops the fixed step without stopping the frame, leaves `simulatedSeconds` at zero, and does not pay the held wall clock back as a burst on release (mutation: removing the accumulator guard fails with `expected 28 to be +0`). `tools/render-defects/signal-frames.spec.ts` records the attach tick and the active/drawn counts at that moment in every arm, so the number is re-measured by any capture rather than remembered. Bound: one machine, one build, hardware renderer; the attach tick is the evidence and no captured frame yet shows a vehicle appearing at the boundary.
+
 ## 2026-09-08 — navigation hangs while disposing a refined city
 
 Observed symptom: the hero capture could render its dusk views, then navigation to noon stalled while leaving the page. Removing selected disposers changed the failure, but omitting cleanup was not an acceptable fix. The diagnosis isolated the actual `3d-tiles-renderer` LRU path: fractional mipmap estimates accumulate and subtract in different orders, leaving a positive remainder after every item is removed. The removal loop then has no item left to advance it.

@@ -2,31 +2,42 @@
  * Which lane a capture run belongs to, and what that lane is allowed to write.
  *
  * `npm run visual` produces the 44-frame verdict set on SwiftShader. A pixel set
- * captured on one renderer cannot inherit a review written for another, so the
- * hardware iteration lane is a different lane with different pixels and must be
+ * captured on one renderer cannot inherit a review written for another, so each
+ * iteration lane is a different lane with different pixels and must be
  * impossible to mistake for the verdict. Three things enforce that here rather
  * than in prose:
  *
- * 1. Each lane resolves to its own output root. The hardware lane cannot write
- *    into `artifacts/visual/`, because its root is `artifacts/visual-hardware/`.
+ * 1. Each lane resolves to its own output root. No iteration lane can write into
+ *    `artifacts/visual/`, because its root is its own directory.
  * 2. `complete.json` is written only under the verdict root. There is no
- *    certificate file for the hardware lane to produce.
- * 3. `assertCertifiable()` throws by name for the hardware lane, so an attempt
- *    to certify one fails with a message that says why instead of writing an
- *    artifact a later reader would treat as evidence.
+ *    certificate file for an iteration lane to produce.
+ * 3. `assertCertifiable()` throws by name for every lane but the verdict, so an
+ *    attempt to certify one fails with a message that says why instead of
+ *    writing an artifact a later reader would treat as evidence.
  *
- * The lane is named by `MAPS_VISUAL_LANE`, and the hardware lane additionally
- * requires `MAPS_VISUAL_GPU=hardware` — which is also the switch `orbit.ts`
+ * The lane is named by `MAPS_VISUAL_LANE`, and the iteration lanes additionally
+ * require `MAPS_VISUAL_GPU=hardware` — which is also the switch `orbit.ts`
  * already uses to refuse a silent software fallback, so a hardware run that
  * softwarises fails by renderer name rather than reporting a fast CPU frame.
+ *
+ * The two iteration lanes are not one lane with a flag, because they differ by
+ * more than taste: the appearance sweep runs `?agents=`-free by design, so the
+ * reviewed 44 frames contain no agent at all. `populated-iteration` captures the
+ * population and is the only lane whose frames can show a pedestrian.
  */
 
-export const LANES = ["verdict", "hardware-iteration"] as const;
+export const LANES = ["verdict", "hardware-iteration", "populated-iteration"] as const;
 
 export type Lane = (typeof LANES)[number];
 
-/** The lane whose frames are comparable across machines and carry the review. */
-export const VERDICT_LANE: Lane = "verdict";
+/**
+ * The lane whose frames are comparable across machines and carry the review.
+ *
+ * Typed as the literal rather than as `Lane` so that `lane !== VERDICT_LANE`
+ * narrows the union, which is what lets `assertCertifiable` look a refusal up
+ * by lane without a cast.
+ */
+export const VERDICT_LANE = "verdict" as const;
 
 /**
  * The environment `playwright.hardware.config.ts` pins for its own run.
@@ -42,14 +53,38 @@ export const HARDWARE_ITERATION_ENV: Readonly<Record<string, string>> = Object.f
 });
 
 /**
+ * The environment `playwright.populated.config.ts` pins for its own run.
+ *
+ * A third lane, for the same reason the second one exists: the verdict set is
+ * captured `?agents=`-free by design, so its 44 frames contain no pedestrian and
+ * no vehicle, and a frame set of the *population* cannot inherit the review
+ * written for an empty city. On top of the renderer difference it carries scene
+ * state the reviewed set never had, so it is kept apart by name rather than
+ * folded into the hardware lane: a run that forgot `?agents=1` would otherwise
+ * write an empty city into the populated lane's directory and look like a
+ * capture of the population.
+ */
+export const POPULATED_ITERATION_ENV: Readonly<Record<string, string>> = Object.freeze({
+  MAPS_VISUAL_LANE: "populated-iteration",
+  // The population costs a fixed step of about 44 ms per tick with 3,000
+  // pedestrians (measured 2026-09-15 under the verdict lane's load,
+  // `artifacts/populated-capture/population-run-1800.json`), so a software
+  // rasteriser would put a wall-clock ceiling on the simulated window this lane
+  // exists to cover. It is a hardware lane for that reason and not only for
+  // comparability.
+  MAPS_VISUAL_GPU: "hardware",
+});
+
+/**
  * The ignored directory each lane writes into.
  *
- * Deliberately not a full path: both are resolved against the working directory
- * by `laneDir()`, and neither may be nested inside the other.
+ * Deliberately not a full path: all are resolved against the working directory
+ * by `laneDir()`, and none may be nested inside another.
  */
 const LANE_ROOT: Readonly<Record<Lane, string>> = Object.freeze({
   verdict: "artifacts/visual",
   "hardware-iteration": "artifacts/visual-hardware",
+  "populated-iteration": "artifacts/populated-capture",
 });
 
 function isLane(value: string): value is Lane {
@@ -67,16 +102,16 @@ export function activeLane(): Lane {
   const name = process.env["MAPS_VISUAL_LANE"] ?? VERDICT_LANE;
   if (!isLane(name)) {
     throw new Error(
-      `MAPS_VISUAL_LANE is "${name}", which is not a lane. Use ${LANES.map((lane) => `"${lane}"`).join(" or ")}. ` +
+      `MAPS_VISUAL_LANE is "${name}", which is not a lane. Use ${LANES.map((lane) => `"${lane}"`).join(", ")}. ` +
         "It is not defaulted here on purpose: an unrecognised value would otherwise capture into " +
         "the verdict directory and be reviewed as if the renderer matched.",
     );
   }
-  if (name === "hardware-iteration" && process.env["MAPS_VISUAL_GPU"] !== "hardware") {
+  if (name !== VERDICT_LANE && process.env["MAPS_VISUAL_GPU"] !== "hardware") {
     throw new Error(
-      "The hardware iteration lane requires MAPS_VISUAL_GPU=hardware. Without it the run would " +
-        "use whatever renderer Chromium picks and record frames under the hardware lane's name, " +
-        "which is a lie about the renderer and the one thing this lane must never do.",
+      `The ${name} lane requires MAPS_VISUAL_GPU=hardware. Without it the run would ` +
+        "use whatever renderer Chromium picks and record frames under the iteration lane's name, " +
+        "which is a lie about the renderer and the one thing these lanes must never do.",
     );
   }
   return name;
@@ -88,20 +123,36 @@ export function laneDir(lane: Lane = activeLane()): string {
 }
 
 /**
+ * Why a lane's frames cannot be the verdict, in that lane's own terms.
+ *
+ * Kept per lane rather than as one sentence, because the reasons genuinely
+ * differ: the hardware lane differs by renderer, and the populated lane differs
+ * by renderer *and* by scene — no frame of the reviewed set contains an agent.
+ */
+const LANE_REFUSAL: Readonly<Record<Exclude<Lane, typeof VERDICT_LANE>, string>> = Object.freeze({
+  "hardware-iteration":
+    "its frames come from a different renderer than the reviewed 44-frame set",
+  "populated-iteration":
+    "its frames come from a different renderer than the reviewed 44-frame set and from a " +
+    "populated scene the reviewed 44-frame set never contained, since the appearance sweep " +
+    "runs with the population switched off by design",
+});
+
+/**
  * Refuse to certify anything but the verdict lane.
  *
- * `complete.json` is the artifact the plan and the reviews read. A hardware run
+ * `complete.json` is the artifact the plan and the reviews read. An iteration run
  * reaching this point would produce a certificate for a pixel set that no review
  * covers, and the reader of that file cannot tell the two apart afterwards —
- * which is exactly the mistake the two-lane split exists to make impossible.
+ * which is exactly the mistake the lane split exists to make impossible.
  */
 export function assertCertifiable(lane: Lane = activeLane()): void {
   if (lane !== VERDICT_LANE) {
     throw new Error(
-      `Refusing to certify the "${lane}" lane: its frames come from a different renderer than the ` +
-        `reviewed 44-frame set, and a pixel set captured on one renderer cannot inherit a review ` +
-        `written for another. Only the "${VERDICT_LANE}" lane produces complete.json. Run ` +
-        "`npm run visual` for the verdict, and use the hardware lane for iteration only.",
+      `Refusing to certify the "${lane}" lane: ${LANE_REFUSAL[lane]}, and a pixel set captured ` +
+        `on one renderer cannot inherit a review written for another. Only the "${VERDICT_LANE}" ` +
+        "lane produces complete.json. Run `npm run visual` for the verdict, and use the iteration " +
+        "lanes for iteration only.",
     );
   }
 }

@@ -22,7 +22,8 @@ interface Part {
   flatColor: Color;
   flatUniform: { value: number };
 }
-interface HumanLod {
+/** One loaded level of one variant, and the instances it drew last frame. */
+export interface HumanLod {
   manifest: AgentAssetManifest;
   lod: AgentAssetLod;
   parts: Part[];
@@ -169,22 +170,26 @@ export class HumanRenderer {
         for (const part of level.parts) part.mesh.castShadow = level === levels[0];
       }
     }
-    for (const levels of this.lods) for (const level of levels) {
+    for (const levels of this.lods) for (const [at, level] of levels.entries()) {
       level.motion.needsUpdate = true;
       for (const part of level.parts) {
         part.mesh.count = level.count;
         part.mesh.instanceMatrix.needsUpdate = true;
       }
-      const at = levels.indexOf(level);
-      if (at === 0) this.drawn.near = level.count;
-      else if (at === 1) this.drawn.medium = level.count;
-      else this.drawn.far = level.count;
+      // Added up over the variants, not assigned: `near`, `medium` and `far` are
+      // the population's counts at each level, and every variant has its own
+      // level of the same name. Assigning here reported the last variant alone,
+      // which understated every level of a two- or three-variant crowd while
+      // `renderedCount` beside it stayed the true total.
+      if (at === 0) this.drawn.near += level.count;
+      else if (at === 1) this.drawn.medium += level.count;
+      else this.drawn.far += level.count;
     }
   }
 
   private drawn = { near: 0, medium: 0, far: 0 };
 
-  /** Drawn instance counts per level in the last frame. */
+  /** Drawn instance counts per level over every variant, in the last frame. */
   get renderedByLevel(): { near: number; medium: number; far: number } {
     return { ...this.drawn };
   }

@@ -206,10 +206,14 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
     instances(new PlaneGeometry(1, 1), new MeshStandardMaterial({ map: stopTexture, alphaTest: 0.5, roughness: 0.8 }), stopMatrices, "streets:mapped-stop-signs");
   }
   const lensMesh = instances(new SphereGeometry(1, 8, 6), new MeshBasicMaterial({ color: 0xffffff }), lenses.map((entry) => entry.matrix), "streets:signal-lenses");
-  const colour = new Color(); let signature = "";
+  const colour = new Color();
+  // `undefined` rather than `""`, because an empty state list is a state: with
+  // `""` the cache never matched the no-group colours and every frame rewrote
+  // every lens in the city.
+  let signature: string | undefined;
   const updateSignals = (states: readonly SignalSnapshot[]): void => {
     const key = states.map((entry) => `${entry.activeGroup}:${entry.amberGroup}:${entry.stage}`).join("|");
-    if (key === signature && signature !== "") return; signature = key;
+    if (key === signature) return; signature = key;
     const active = new Set(states.map((state) => state.activeGroup));
     const amber = new Set(states.map((state) => state.amberGroup));
     for (let index = 0; index < lenses.length; index += 1) {

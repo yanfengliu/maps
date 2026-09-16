@@ -52,6 +52,8 @@ export class RenderLoop {
   /** Frames actually drawn. The visual harness waits on this. */
   frameCount = 0;
 
+  private held = false;
+
   constructor(options: LoopOptions) {
     this.stepSeconds = options.stepSeconds ?? 1 / 60;
     this.maxStepsPerFrame = options.maxStepsPerFrame ?? 5;
@@ -96,6 +98,39 @@ export class RenderLoop {
     this.handle = null;
   }
 
+  /**
+   * Hold the simulation clock, or let it run.
+   *
+   * While held, no fixed step is called and `simulatedSeconds` does not advance.
+   * The loop keeps drawing, and `elapsedSeconds` keeps counting wall clock, so
+   * damping, tile refinement and the first drawn frame are unaffected: what
+   * stops is the simulation, not the picture.
+   *
+   * This is a start gate and not a second clock. The population is built when
+   * its network is loaded and its renderer is mounted when about 40 MB of agent
+   * assets have arrived, so without a gate the fixed step spends that wait
+   * advancing a world nothing can draw: 1,189-1,238 population ticks in the four
+   * runs recorded in artifacts/populated-capture/REPORT.md, and 1,075 and 1,087
+   * in two of my own on 2026-09-16 — 18-20 simulated seconds in which the first
+   * vehicles are placed on the AOI boundary, the one moment a spawn is
+   * unmissable, and no frame of any of those runs contains it.
+   *
+   * Nothing accumulates while held: a release starts the clock at the step the
+   * caller released at, rather than paying down a backlog of steps that were
+   * never simulated. A caller that holds and never releases has stopped the
+   * simulation deliberately, which is what a harness that drives fixed steps
+   * itself wants.
+   */
+  holdFixedSteps(held: boolean): void {
+    this.held = held;
+    this.accumulator = 0;
+  }
+
+  /** True while the fixed step is held. */
+  get fixedStepsHeld(): boolean {
+    return this.held;
+  }
+
   /** One iteration. Exposed so a test can drive the loop without a browser. */
   advance(timestamp: number): void {
     // A quarter second cap on the raw delta: past that the frame was a stall,
@@ -106,13 +141,16 @@ export class RenderLoop {
 
     this.accumulator += delta;
     let steps = 0;
-    while (this.accumulator >= this.stepSeconds && steps < this.maxStepsPerFrame) {
+    // Held: the simulation is not stepping, so there is no time to integrate and
+    // no backlog to pay down when it is released. The frame still runs below.
+    if (this.held) this.accumulator = 0;
+    else while (this.accumulator >= this.stepSeconds && steps < this.maxStepsPerFrame) {
       this.simulatedSeconds += this.stepSeconds;
       for (const step of this.fixedSteps) step(this.stepSeconds, this.simulatedSeconds);
       this.accumulator -= this.stepSeconds;
       steps += 1;
     }
-    if (steps === this.maxStepsPerFrame) {
+    if (!this.held && steps === this.maxStepsPerFrame) {
       // Catching up is off the table; throw the backlog away rather than carry
       // a debt that can never be paid down.
       this.accumulator = 0;

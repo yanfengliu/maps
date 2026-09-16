@@ -25,6 +25,7 @@ import type { LightingState } from "../scene/lighting.js";
 import type { ControlHardwarePlacement } from "../world/control-hardware.js";
 import type { PaintPlacement } from "../scene/street-details.js";
 import type { PaintSeamUse } from "../scene/paint-support.js";
+import type { SignalSnapshot } from "../network/signals.js";
 import { emptyPopulationStatus, type PopulationStatus } from "../agents/population/status.js";
 
 /** The property the harness reads off `window`. */
@@ -93,6 +94,19 @@ export interface LightingStatus extends LightingState {
   authoredLights: number;
 }
 
+/**
+ * The shared signal clock, as the simulation last advanced it.
+ *
+ * A third observation on the terms of `tiles` and `lighting` above, and it
+ * exists because a rendered signal is not otherwise checkable: a lens colour is
+ * one or two pixels, so a frame says what the phase looked like and nothing
+ * about which phase it was. With this the harness records the phase beside the
+ * frame it captured, and the two can be read together.
+ *
+ * It is the same snapshot the scene's own lenses are coloured from — one source,
+ * one clock — so a frame and its record cannot describe different phases. It
+ * cannot advance a phase, hold a clearance or admit an actor.
+ */
 export interface HarnessBridge {
   readonly version: 1;
   status(): RenderStatus;
@@ -105,6 +119,10 @@ export interface HarnessBridge {
   hardware(): ControlHardwarePlacement[];
   paint(): PaintPlacement[];
   paintSeams(): PaintSeamUse[];
+  /** The population's own counters, which `installBridge` has always published. */
+  population(): PopulationStatus;
+  /** Every governed junction's stage, active group and remaining seconds. */
+  signals(): SignalSnapshot[];
 }
 
 declare global {
@@ -131,10 +149,22 @@ export interface BridgeSources {
   paint: () => readonly PaintPlacement[];
   paintSeams: () => readonly PaintSeamUse[];
   population: () => PopulationStatus;
+  signals: () => readonly SignalSnapshot[];
 }
 
+/**
+ * Install the bridge.
+ *
+ * The object is built as a plain literal and *then* frozen, rather than being
+ * written inline as `Object.freeze({...})`, so the compiler checks it against
+ * `HarnessBridge` in both directions: a member the interface declares and this
+ * object does not implement is an error, and so is one it implements and the
+ * interface does not declare. `population()` was published here for a while
+ * without being declared, and every harness that wanted it had to cast around
+ * the type to reach a function that was already there.
+ */
 export function installBridge(sources: BridgeSources): HarnessBridge {
-  const bridge: HarnessBridge = Object.freeze({
+  const bridge: HarnessBridge = {
     version: 1 as const,
     status(): RenderStatus {
       const context = sources.renderer.getContext();
@@ -177,8 +207,10 @@ export function installBridge(sources: BridgeSources): HarnessBridge {
     paint(): PaintPlacement[] { return structuredClone(sources.paint()) as PaintPlacement[]; },
     paintSeams(): PaintSeamUse[] { return structuredClone(sources.paintSeams()) as PaintSeamUse[]; },
     population(): PopulationStatus { return structuredClone(sources.population()); },
-  });
+    signals(): SignalSnapshot[] { return structuredClone(sources.signals()) as SignalSnapshot[]; },
+  };
 
+  Object.freeze(bridge);
   window[HARNESS_KEY] = bridge;
   return bridge;
 }
@@ -192,7 +224,7 @@ export function installBridge(sources: BridgeSources): HarnessBridge {
  */
 export function installFailedBridge(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
-  window[HARNESS_KEY] = Object.freeze({
+  const bridge: HarnessBridge = {
     version: 1 as const,
     status(): RenderStatus {
       return {
@@ -284,7 +316,11 @@ export function installFailedBridge(error: unknown): void {
     paint(): PaintPlacement[] { return []; },
     paintSeams(): PaintSeamUse[] { return []; },
     population(): PopulationStatus { return emptyPopulationStatus(); },
-  });
+    signals(): SignalSnapshot[] { return []; },
+  };
+
+  Object.freeze(bridge);
+  window[HARNESS_KEY] = bridge;
 }
 
 function emptyAlbedoStats(): AlbedoStats {

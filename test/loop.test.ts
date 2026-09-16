@@ -64,6 +64,38 @@ describe("RenderLoop", () => {
     loop.advance(200);
     expect(calls).toBe(afterFirst);
   });
+
+  /**
+   * Bound: the loop's own clock and its frame callbacks. This is the start gate
+   * `createApp` holds until the agent renderer can draw the population, which
+   * was measured at 1,189-1,238 population ticks of undrawn simulation.
+   *
+   * Claim: while held, no fixed step runs and simulated time does not advance;
+   * frames and wall clock carry on; and the time spent held is not paid back as
+   * a burst of steps when it is released.
+   */
+  it("holds the fixed step without holding the frame, and does not pay the wait back", () => {
+    const { loop, renders } = makeLoop(1 / 60);
+    let steps = 0;
+    const fixed: number[] = [];
+    loop.onFixedStep((_step, simulatedSeconds) => { steps += 1; fixed.push(simulatedSeconds); });
+
+    loop.holdFixedSteps(true);
+    expect(loop.fixedStepsHeld).toBe(true);
+    for (let frame = 1; frame <= 30; frame += 1) loop.advance(frame * 16);
+    expect(steps).toBe(0);
+    expect(loop.simulatedSeconds).toBe(0);
+    expect(renders()).toBe(30);
+
+    loop.holdFixedSteps(false);
+    expect(loop.fixedStepsHeld).toBe(false);
+    // Two frames of 16 ms, against the 480 ms the loop spent held: if the wait
+    // had been banked, this would run about 28 steps at once.
+    loop.advance(30 * 16 + 33);
+    expect(steps).toBe(1);
+    expect(fixed).toEqual([1 / 60]);
+    expect(loop.simulatedSeconds).toBeCloseTo(1 / 60, 12);
+  });
 });
 
 describe("shortestAngle", () => {
