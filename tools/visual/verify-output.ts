@@ -1,11 +1,15 @@
 /** Complete-run evidence must survive every sibling spec with exact fresh bytes.
- * Bound: eight hero frames and eighteen sweep frames for each current style.
+ * Bound: eight hero frames and eighteen sweep frames for each current style, at
+ * 1280x720, captured in the lane this process names — the verdict lane.
+ * The hardware iteration lane is refused by name: its frames come from a
+ * different renderer than the reviewed set and it produces no certificate.
  */
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { decodePng } from "./png.ts";
+import { activeLane, assertCertifiable, laneDir } from "./lane.ts";
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 export async function beginVisualRun(root: string, dist = "dist"): Promise<void> {
   await mkdir(root, { recursive: true });
@@ -18,7 +22,7 @@ export async function beginVisualRun(root: string, dist = "dist"): Promise<void>
   const files = [`${dist}/index.html`, ...(await readdir(`${dist}/assets`)).filter((name) => /\.(js|css)$/.test(name)).map((name) => `${dist}/assets/${name}`)];
   const build: { file: string; sha256: string }[] = [];
   for (const file of files) build.push({ file, sha256: hash(await readFile(file)) });
-  await writeFile(join(root, "run.json"), JSON.stringify({ startedAt: new Date().toISOString(), requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software", build }, null, 2));
+  await writeFile(join(root, "run.json"), JSON.stringify({ startedAt: new Date().toISOString(), lane: activeLane(), requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software", build }, null, 2));
 }
 export async function verifyVisualRun(root: string): Promise<void> {
   const run = JSON.parse(await readFile(join(root, "run.json"), "utf8")) as { startedAt: string; build: { file: string; sha256: string }[] };
@@ -47,7 +51,11 @@ export async function verifyVisualRun(root: string): Promise<void> {
   console.log("All 44 fresh native-resolution frames survived the complete visual gate with matching hashes.");
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const root = resolve("artifacts/visual");
+  // This script creates the run's certificate, so it runs as the verdict lane by
+  // construction. An attempt to point it at the hardware iteration lane fails
+  // here, by name, before any artifact is written.
+  assertCertifiable(activeLane());
+  const root = resolve(laneDir("verdict"));
   if (process.argv.includes("--begin")) await beginVisualRun(root);
   else await verifyVisualRun(root);
 }

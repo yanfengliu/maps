@@ -28,18 +28,32 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
+import { HERO_CAPTURE_COUNT, HERO_TEST_BUDGET_MS } from "./budget.js";
+import { laneDir } from "./lane.js";
 import { OrbitDriver } from "./orbit.js";
 import { decodePng, measureFrame, signatureDistance } from "./png.js";
+import { captureLedger } from "./progress.js";
 import { CAPTURE_VIEWPORT, HERO_AZIMUTH, HERO_POSES, HERO_TIMES } from "./shots.js";
 
-const OUTPUT_DIR = path.resolve("artifacts/visual/hero");
-const STYLE_RETURN_DIR = path.resolve("artifacts/visual/style-return");
+const OUTPUT_DIR = path.resolve(laneDir(), "hero");
+const STYLE_RETURN_DIR = path.resolve(laneDir(), "style-return");
 
 test.describe("hero frames", () => {
-  // First default-software run: 6m20 to crossing, 4m11 to approach, including
-  // 30–33s screenshots. Ten images and six strict switch baselines need a
-  // measured software budget; this says nothing about hardware frame rate.
-  test.setTimeout(60 * 60_000);
+  // Ten captures — eight hero views and the two style returns. The budget is
+  // derived from that count rather than rounded: `tools/visual/budget.ts` carries
+  // the derivation and the measurements, and the number it produces is the
+  // per-capture allowance times ten plus setup and margin.
+  //
+  // The 60-minute ceiling this replaces was the measurement, not a budget. On
+  // 2026-09-15 the same ten captures took 50.4 minutes (first frame 20:28:02,
+  // last 21:18:26) and the ceiling fired at 21:18:18, eight seconds before the
+  // run finished; the run before it took 49.3 minutes. A wall-clock round number
+  // was deciding whether a complete capture set counted.
+  //
+  // The ceiling is now a backstop rather than the deciding vote: every capture
+  // appends to `captures.json` in the lane's own directory as it lands, so a run
+  // that is cut off names the capture it died in and the pace it was running at.
+  test.setTimeout(HERO_TEST_BUDGET_MS);
 
   test("captures the crossing at dusk and in daylight through the real controls", async ({
     page,
@@ -65,6 +79,8 @@ test.describe("hero frames", () => {
     }[] = [];
     const report: Record<string, unknown>[] = [];
     const styleReturns: Record<string, unknown>[] = [];
+    // The spec's own progress, on disk after every capture. See `progress.ts`.
+    const ledger = captureLedger(OUTPUT_DIR, HERO_CAPTURE_COUNT);
 
     for (const time of HERO_TIMES) {
       // The query parameter is the input path a person has. Nothing here sets a
@@ -155,6 +171,9 @@ test.describe("hero frames", () => {
         await page.screenshot({ path: file, animations: "disabled" });
         const bytes = new Uint8Array(await readFile(file));
         const stats = measureFrame(decodePng(bytes));
+        // Recorded straight after the bytes land, so the ledger counts frames on
+        // disk rather than steps the spec believes it took.
+        await ledger.record(`hero-${style}-${time.id}-${pose.name}`);
         captured.push({
           time: time.id,
           style,
@@ -253,11 +272,12 @@ test.describe("hero frames", () => {
       await page.screenshot({ path: returnFile, animations: "disabled" });
       const returnBytes = new Uint8Array(await readFile(returnFile));
       const returnStats = measureFrame(decodePng(returnBytes));
+      await ledger.record(`return-satellite-${time.id}`);
       expect(returnStats.width).toBe(CAPTURE_VIEWPORT.width);
       expect(returnStats.height).toBe(CAPTURE_VIEWPORT.height);
       styleReturns.push({
         time: time.id, before: beforeReturn, after: afterReturn,
-        file: path.relative(path.resolve("artifacts/visual"), returnFile),
+        file: path.relative(path.resolve(laneDir()), returnFile),
         sha256: createHash("sha256").update(returnBytes).digest("hex"), stats: returnStats,
       });
     }
@@ -291,9 +311,25 @@ test.describe("hero frames", () => {
 
     expect(consoleErrors, `the page logged errors:\n${consoleErrors.join("\n")}`).toEqual([]);
 
+    // Every capture the ledger promised, in the report as well as on disk. The
+    // manifest is the artifact a reviewer reads, so a partial run must not be
+    // able to leave a manifest that looks complete.
+    expect(
+      ledger.entries().length,
+      `only ${ledger.entries().length} of ${HERO_CAPTURE_COUNT} captures reached disk; see ${ledger.file()}`,
+    ).toBe(HERO_CAPTURE_COUNT);
+
     await writeFile(
       path.join(OUTPUT_DIR, "hero.json"),
-      `${JSON.stringify({ capturedAt: new Date().toISOString(), frames: report, styleReturns }, null, 2)}\n`,
+      `${JSON.stringify({
+        capturedAt: new Date().toISOString(),
+        requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+        lane: process.env["MAPS_VISUAL_LANE"] ?? "verdict",
+        budgetMs: HERO_TEST_BUDGET_MS,
+        captures: ledger.entries(),
+        frames: report,
+        styleReturns,
+      }, null, 2)}\n`,
       "utf8",
     );
 

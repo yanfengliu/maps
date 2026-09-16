@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { test, expect } from "@playwright/test";
+import { LIFECYCLE_TEST_BUDGET_MS } from "./budget.js";
 import { OrbitDriver } from "./orbit.js";
 import { HERO_POSES, HERO_AZIMUTH } from "./shots.js";
 
@@ -17,7 +18,6 @@ import { HERO_POSES, HERO_AZIMUTH } from "./shots.js";
  * backend is a software rasteriser.
  */
 const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|basic render driver|\bwarp\b/i;
-
 /** Each run records its own timings, renderer and build hashes here. */
 const RECORD_DIR = "artifacts/visual/lifecycle";
 
@@ -39,8 +39,11 @@ async function buildFingerprint(): Promise<{ file: string; sha256: string }[]> {
 test("navigates away from a refined city without blocking page cleanup", async ({ page }) => {
   // The first software run spent 95s refining before zoom and hit 120s during
   // setup. Give that setup its own finite budget; navigation still has 15s.
-  // 30m setup + 15s navigation + 60s loaded check fits inside this 32m total.
-  test.setTimeout(32 * 60_000);
+  // 10m setup + 30m preparation + 60s loaded check + 5m margin fits inside this
+  // 45m total. The total is in `tools/visual/budget.ts` with the other lanes'
+  // budgets, because it runs three times inside the wrapper and the three together
+  // have to fit the wrapper's declared deadline.
+  test.setTimeout(LIFECYCLE_TEST_BUDGET_MS);
   const driver = new OrbitDriver(page);
   const startedAt = new Date();
   let renderer = "";

@@ -18,8 +18,11 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
+import { laneDir } from "./lane.js";
+import { SWEEP_CAPTURE_COUNT, SWEEP_TEST_BUDGET_MS } from "./budget.js";
 import { OrbitDriver, shortestAngle, type CameraSnapshot, type TileStatus } from "./orbit.js";
 import { decodePng, measureFrame, signatureDistance, type FrameStats } from "./png.js";
+import { captureLedger } from "./progress.js";
 import { AZIMUTHS, CAPTURE_VIEWPORT, FRAME_FLOORS, SHOTS, frameName } from "./shots.js";
 
 
@@ -36,19 +39,31 @@ interface CapturedFrame {
 test.describe("visual sweep", () => {
   // Eighteen poses, each waiting for damped controls to come to rest *and* for
   // the building tileset to stop refining, on a software renderer drawing half a
-  // million triangles and 4096x4096 texture atlases. The wall-clock cost is the
-  // price of not photographing a moving camera or a half-loaded city.
-  // The first final software run measured 2m52, 2m52 and 3m17 between plaza
-  // captures. Eighteen views project to 52–59m before initial refinement.
-  test.setTimeout(70 * 60_000);
+  // million triangles and 4096x4096 texture atlases.
+  //
+  // The budget is derived from those eighteen captures rather than rounded:
+  // `tools/visual/budget.ts` carries the derivation and the measurements. The
+  // 70-minute ceiling this replaces was the measurement, not a budget — the sweep
+  // shares the defect fixed in `hero.spec.ts`, where a round wall-clock number
+  // decided whether a complete capture set counted. The recorded pace was 2m52,
+  // 2m52 and 3m17 between plaza captures, so the per-view allowance is 7 minutes.
+  //
+  // The ceiling is a backstop rather than the deciding vote: every capture appends
+  // to `captures.json` in this style's own directory as it lands, so a run that is
+  // cut off names the view it died in and the pace it was running at.
+  test.setTimeout(SWEEP_TEST_BUDGET_MS);
 
   for (const style of ["satellite", "cartographic"] as const) {
   test(`${style}: orbits the scene through the real controls and writes every frame`, async ({ page }) => {
-    const OUTPUT_DIR = path.resolve(`artifacts/visual/sweep/${style}`);
+    // The lane's own root: the verdict lane writes `artifacts/visual/`, the
+    // hardware iteration lane `artifacts/visual-hardware/`. Resolved per test
+    // rather than at module load, so the run's own lane governs.
+    const OUTPUT_DIR = path.resolve(laneDir(), "sweep", style);
     // Wipe first. A stale frame from an earlier run is worse than no frame: it
     // makes a run that never captured anything look like a run that passed.
     await rm(OUTPUT_DIR, { recursive: true, force: true });
     await mkdir(OUTPUT_DIR, { recursive: true });
+    const ledger = captureLedger(OUTPUT_DIR, SWEEP_CAPTURE_COUNT);
 
     const consoleErrors: string[] = [];
     page.on("console", (message) => {
@@ -99,6 +114,9 @@ test.describe("visual sweep", () => {
 
         const bytes = new Uint8Array(await readFile(file));
         const stats = measureFrame(decodePng(bytes));
+        // Recorded straight after the bytes land, so the ledger counts frames on
+        // disk rather than steps the spec believes it took.
+        await ledger.record(frameName(shot, azimuth));
         frames.push({
           file,
           shot: shot.name,
@@ -283,10 +301,21 @@ test.describe("visual sweep", () => {
       ).toBeGreaterThan(FRAME_FLOORS.signatureDistance);
     }
 
+    // Every capture the ledger promised, in the report as well as on disk. The
+    // manifest is the artifact the wrapper reads, so a partial run must not be
+    // able to leave a manifest that looks complete.
+    expect(
+      ledger.entries().length,
+      `only ${ledger.entries().length} of ${SWEEP_CAPTURE_COUNT} captures reached disk; see ${ledger.file()}`,
+    ).toBe(SWEEP_CAPTURE_COUNT);
+
     const manifest = {
       capturedAt: new Date().toISOString(),
       style,
       requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+      lane: process.env["MAPS_VISUAL_LANE"] ?? "verdict",
+      budgetMs: SWEEP_TEST_BUDGET_MS,
+      captures: ledger.entries(),
       viewport: CAPTURE_VIEWPORT,
       glRenderer: status.glRenderer,
       frames: frames.map((frame) => ({

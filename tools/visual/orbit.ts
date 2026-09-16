@@ -48,9 +48,77 @@ const APP_ID = "maps-shibuya-1km";
 
 const POLL_MS = 60;
 const MAX_POLLS = 400;
-/** Bounded wall time; evaluate calls can take seconds on the software renderer. */
-const SETTLE_TIMEOUT_MS = 5 * 60_000;
-const STALLED_FRAME_TIMEOUT_MS = 15_000;
+
+/**
+ * What the settle wait is allowed to spend, and why it is counted in frames.
+ *
+ * The predicate in `CameraSettling` is frame-counted: `advancedFrames >= 12`
+ * plus three quiet intervals. The frame count it needs is therefore a property
+ * of the camera and the predicate, not of the renderer — only the price of a
+ * frame changes between lanes. Measured 2026-09-15/16 (`artifacts/gate-timing`):
+ * the same predicate, pose and build need 12 frames / 200 ms on the RTX 4090
+ * over D3D11 and 58 frames / 134.6 s on SwiftShader, where the frame interval
+ * ranged 16.6 ms to 6,150 ms **within one run**.
+ *
+ * A wall-clock deadline cannot track a per-frame cost that moves 370x. The
+ * previous 5-minute deadline did exactly that and failed a real gate run at
+ * 301,660 ms with 71 frames advanced and 0 quiet intervals — 71 frames of
+ * progress reported as if the renderer had stopped. The budget's unit is
+ * therefore the unit the predicate consumes.
+ *
+ * Three bounds, and a failure names the one it hit:
+ *
+ * - `SETTLE_FRAME_BUDGET` (320 frames) — the real bound. Hardware needs 12
+ *   frames for a correction and 76 for the longest measured `orbitTo`
+ *   correction, so this is about 4x the worst observed need, and it is more
+ *   than 4x the 71 frames the failing run reached. A pose that cannot settle in
+ *   320 frames is not being failed by the machine's speed. Its limit: 320 frames
+ *   is 22.7 minutes at the failing run's 4.25 s per frame, so at any cost below
+ *   about 5.6 s per frame the frame budget is the one that expires first.
+ * - `SETTLE_WALL_BACKSTOP_MS` (30 min) — a loose safety valve for the one case a
+ *   frame ceiling cannot bound: frames that do advance, but so slowly that
+ *   waiting is pointless. It is 6x the deadline it replaces, on purpose, so that
+ *   the frame budget rather than the clock is what a real run hits.
+ * - `STALLED_FRAME_FLOOR_MS` (15 s) and `STALL_MULTIPLE` (8x) — the renderer
+ *   stopped, which is a different defect with a different fix and must never be
+ *   reported as a budget failure. Silence is called a stall only after 8x the
+ *   longest gap actually measured between two advances, floored at 15 s. Both
+ *   numbers come from the measured spread rather than from taste: the software
+ *   lane's largest observed frame gap was 6,150 ms and its p90 was 4,317 ms, so
+ *   the floor clears the worst frame a real run has produced by 2.4x, and at the
+ *   failing run's pace the measured bound is about 49 s.
+ *
+ * The floor's real constraint is not its margin but its position: a gap longer
+ * than the floor can never complete, because the detector fires first. A floor
+ * above a renderer's own gap therefore replaces the measured bound with a
+ * constant exactly where the measurement is wanted, which is why this value is
+ * 15 s and not the 30 s or 60 s tried first.
+ */
+const SETTLE_FRAME_BUDGET = 320;
+const SETTLE_WALL_BACKSTOP_MS = 30 * 60_000;
+const STALLED_FRAME_FLOOR_MS = 15_000;
+const STALL_MULTIPLE = 8;
+
+/**
+ * The bounds above, as data.
+ *
+ * Exported so a test can state the shape of a failure without restating a
+ * number that lives here. A unit case that hardcodes 60,000 is a second copy of
+ * the constant, and the two can disagree while both look correct.
+ */
+export const SETTLE_BUDGET = Object.freeze({
+  frames: SETTLE_FRAME_BUDGET,
+  wallBackstopMs: SETTLE_WALL_BACKSTOP_MS,
+  stalledFrameFloorMs: STALLED_FRAME_FLOOR_MS,
+  stallMultiple: STALL_MULTIPLE,
+});
+
+function describeSettle(mode: SettleMode, elapsedMs: number, advancedFrames: number, quietIntervals: number, polls: number, maxFrameIntervalMs: number): string {
+  return (
+    `mode ${mode}, ${elapsedMs} ms elapsed, ${advancedFrames} frames advanced, ` +
+    `${quietIntervals} quiet intervals, ${polls} polls, longest measured frame interval ${maxFrameIntervalMs} ms`
+  );
+}
 
 export class OrbitDriver {
   private readonly page: Page;
@@ -307,25 +375,104 @@ ${tiles.error}`);
    * glide every run. Two conditions, not one: the pose has to stop changing, and
    * the frame counter has to keep advancing. Without the second, a frozen loop
    * reads as a perfectly still camera.
+   *
+   * **The bar for settled is unchanged**: three quiet fresh intervals and at
+   * least twelve advanced frames, exactly as `CameraSettling` computes it. What
+   * changed is the deadline's unit. It used to be wall-clock alone, which is the
+   * one quantity this lane cannot control, and which reported a 71-frame budget
+   * failure as though the renderer had stalled. The bounds are now the frame
+   * budget, the wall-clock backstop and the adaptive stall bound documented on
+   * `SETTLE_FRAME_BUDGET` above, and each failure says which one it was.
    */
   async settle(mode: SettleMode = "capture"): Promise<CameraSnapshot> {
     const started = Date.now();
-    let lastFreshAt = started;
     let observation = await this.readCameraObservation();
     const tracker = new CameraSettling(observation, mode);
     let measured = tracker.observe(observation);
-    while (Date.now() - started < SETTLE_TIMEOUT_MS) {
-      await this.page.waitForTimeout(POLL_MS);
-      observation = await this.readCameraObservation();
-      measured = tracker.observe(observation);
-      if (measured.fresh) lastFreshAt = Date.now();
-      if (Date.now() - lastFreshAt >= STALLED_FRAME_TIMEOUT_MS) {
-        throw new Error(`The render loop stopped: frame ${observation.status.frameCount} did not advance for ${Date.now() - lastFreshAt} ms during ${mode} settling. A still buffer is not a completed capture.`);
+
+    let polls = 0;
+    let previousFrameAt = started;
+    let lastFrameAt = started;
+    let lastFrameCount = observation.status.frameCount;
+    let maxFrameIntervalMs = 0;
+
+    const verdict = (elapsedMs: number): Error => {
+      const situation = describeSettle(
+        mode, elapsedMs, measured.advancedFrames, measured.quietIntervals, polls, maxFrameIntervalMs,
+      );
+      if (measured.advancedFrames >= SETTLE_FRAME_BUDGET) {
+        return new Error(
+          `Settle budget exhausted for ${mode} at ${SETTLE_FRAME_BUDGET} frames advanced over ` +
+            `${elapsedMs} ms (${situation}). The renderer kept drawing, so this is a budget ` +
+            "failure under load, not a stall: the frames advanced and the predicate's own bar " +
+            "(three quiet intervals and twelve advanced frames) was still not met. Raise " +
+            "SETTLE_FRAME_BUDGET only with a measurement that says how many frames the pose " +
+            "needs. Capturing now would record a moving baseline.",
+        );
       }
-      if (Date.now() - started >= SETTLE_TIMEOUT_MS) break;
+      return new Error(
+        `Settle wall-clock backstop of ${SETTLE_WALL_BACKSTOP_MS} ms expired for ${mode} before ` +
+          `the ${SETTLE_FRAME_BUDGET}-frame budget was reached (${situation}). Frames did advance, ` +
+          "so this is a budget failure under a renderer this slow, not a stall. Capturing now " +
+          "would record a moving baseline.",
+      );
+    };
+
+    for (;;) {
+      await this.page.waitForTimeout(POLL_MS);
+      polls += 1;
+      observation = await this.readCameraObservation();
+
+      const now = Date.now();
+      if (observation.status.frameCount > lastFrameCount) {
+        // The gap between two advances, which is the only honest measure of this
+        // renderer's pace. The wait from `started` to the first advance is not one
+        // — it is the same quantity that grows when the renderer dies — so
+        // counting it would let a renderer's own first slow frame set its own
+        // bound, and a renderer that never draws a second frame would raise its
+        // bound instead of tripping it.
+        const gap = now - previousFrameAt;
+        if (gap > maxFrameIntervalMs) maxFrameIntervalMs = gap;
+        previousFrameAt = now;
+        lastFrameAt = now;
+        lastFrameCount = observation.status.frameCount;
+      }
+
+      measured = tracker.observe(observation);
+
+      // The predicate is consulted first. A capture this wait has already earned
+      // must not be failed by a stall that happens afterwards: the frames it
+      // needed were drawn, the pose was still, and the buffer it would return is
+      // the one that was asked for.
       if (measured.done) return observation.camera;
+
+      // The stall bound follows the renderer rather than a constant: a frame
+      // interval that has already been observed at 6,150 ms makes a 15 s deadline
+      // a coin toss on the next frame, and calling a still-drawing renderer
+      // stalled is exactly the confusion this file exists to end. On the failing
+      // run's measured pace this bound is about 49 s, more forgiving than any
+      // constant that machine could have been given. Until one gap has been
+      // measured the floor is all there is, and the floor is the right answer
+      // then: a renderer that has drawn one frame and then nothing for 15 s has
+      // shown nothing to scale a bound from.
+      const stalledAfterMs = Math.max(STALLED_FRAME_FLOOR_MS, maxFrameIntervalMs * STALL_MULTIPLE);
+      const silentMs = now - lastFrameAt;
+      if (silentMs >= stalledAfterMs) {
+        throw new Error(
+          `The renderer stopped advancing frames during ${mode} settling: frame ` +
+            `${observation.status.frameCount} did not advance for ${silentMs} ms, against a ` +
+            `stall bound of ${stalledAfterMs} ms (${describeSettle(
+              mode, now - started, measured.advancedFrames, measured.quietIntervals, polls, maxFrameIntervalMs,
+            )}). Nothing was drawn, so the camera may be perfectly still and the buffer is stale ` +
+            "either way — a still buffer is not a completed capture. This is a stall, not a " +
+            "budget failure: the frame counter, not the clock, is what stopped.",
+        );
+      }
+
+      if (measured.advancedFrames >= SETTLE_FRAME_BUDGET || now - started >= SETTLE_WALL_BACKSTOP_MS) {
+        throw verdict(now - started);
+      }
     }
-    throw new Error(`The camera never settled for ${mode} after ${Date.now() - started} ms: ${measured.advancedFrames} frames advanced, last world movement ${measured.worldM} m, ${measured.quietIntervals} quiet intervals. Capturing now would record a moving baseline.`);
   }
 
   /**
