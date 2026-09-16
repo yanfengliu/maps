@@ -167,12 +167,25 @@ export function populationSettings(overrides: Partial<PopulationSettings> = {}):
  * what it rendered before this module existed and the existing appearance
  * evidence is not invalidated. `?agents=0` is the population-free appearance
  * sweep and `?agents=1` is the default populated run.
+ *
+ * **`?seed=` reaches the population too.** It used to not: this function read only
+ * `?agents=`, so a page at `?seed=9137` rendered a world seeded 9137 over a
+ * population seeded `DEFAULT_POPULATION_SETTINGS.seed`, and an offline probe told
+ * `--seed 9137` measured a population the browser was not showing. Measured, at
+ * tick 1,206: the app drew 2,512 distinct positions with a 51-body stack, the probe
+ * at the population's real seed 5,970,698 gave 2,518 and 51, while the same probe at
+ * 9137 gave 2,487 and 95. Two lanes reasoned from that mismatch before it was found,
+ * so the seed is now read from the same query the scene reads it from, with the same
+ * fallback: an unparseable value falls back rather than seeding with NaN.
  */
-export function populationFromQuery(query: string): PopulationSettings {
-  const requested = new URLSearchParams(query).get("agents");
+export function populationFromQuery(query: string, sceneSeed: number): PopulationSettings {
+  const parameters = new URLSearchParams(query);
+  const requested = parameters.get("agents");
   if (requested === null) return populationSettings({ pedestrians: 0, vehicles: 0 });
   if (requested !== "0" && requested !== "1") {
     throw new Error(`"${requested}" is not a population setting this scene knows. ?agents= takes 0 (population off, the appearance sweep) or 1 (the default populated run).`);
   }
-  return populationSettings(requested === "0" ? { pedestrians: 0, vehicles: 0 } : {});
+  const parsedSeed = Number(parameters.get("seed"));
+  const seed = Number.isFinite(parsedSeed) && parameters.get("seed") !== null ? parsedSeed : sceneSeed;
+  return populationSettings(requested === "0" ? { pedestrians: 0, vehicles: 0 } : { seed });
 }

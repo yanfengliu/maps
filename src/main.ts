@@ -59,7 +59,7 @@ function boot(): void {
   // is the population-free appearance sweep and `?agents=1` the default
   // populated run. An unknown value is refused by name rather than silently
   // rendering an unpopulated city that a review would read as a populated one.
-  const population = populationFromQuery(window.location.search);
+  const population = populationFromQuery(window.location.search, seed);
 
   // Before the scene, not after: PLATEAU, OpenStreetMap and GSI all require a
   // credit, so a run that draws the city without one is the wrong failure to
