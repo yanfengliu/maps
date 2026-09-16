@@ -142,8 +142,8 @@ Each of these is checked by looking at a rendered result or watching the scene r
 
 - [x] The AOI renders end to end — terrain, buildings and road surfaces across the full 1 km box — inspected from several angles and zoom levels, each frame at native resolution. (Phases 1–3)
 - [x] The ground is not flat: the Shibuya valley and the Dōgenzaka slope are visible in the rendered terrain, and building footprints sit on it without floating or sinking. (Phases 2–3)
-- [ ] Buildings hold up close: window grids follow floor counts and the PBR materials respond to light, checked at street level and from above. (Phase 4)
-- [ ] A dusk frame of the crossing reads as Shibuya rather than as a generic Japanese city, because the emissive signage and neon are there. (Phases 4–5)
+- [x] Buildings hold up close: window grids follow floor counts and the PBR materials respond to light, checked at street level and from above. (Phase 4)
+- [x] A dusk frame of the crossing reads as Shibuya rather than as a generic Japanese city, because the emissive signage and neon are there. (Phases 4–5)
 - [ ] Road markings match reference imagery, including the scramble's diagonals, with signals, guardrails and street furniture in place. (Phase 4)
 - [ ] The dusk preset renders with ACES tone mapping, bloom carrying the neon, SSAO and TAA, and holds still — no flicker or crawl over a moving sequence. (Phase 5)
 - [ ] Vehicles hold their lanes, obey the signals, turn, and spawn and despawn at the boundary, watched over a run rather than sampled in one frame. (Phase 7)
@@ -154,6 +154,18 @@ Each of these is checked by looking at a rendered result or watching the scene r
 - [x] The running app shows its attribution: PLATEAU (PDL 1.0, with CC BY 4.0 permitted — the licence name here was imprecise and is corrected), OpenStreetMap (ODbL) and GSI. (Phase 1)
 - [ ] A multi-angle, multi-zoom sweep and a flythrough driven through the real controls both come back clean, an independent review passes, and the work is merged to main. (Phase 10)
 - [ ] Cartographic and Satellite each hold up at street, block and aerial distances. The actual World style dropdown switches both ways with pointer and keyboard input, preserves camera and simulation progress, and takes its options from a registry that can accept later styles. (Phases 4–5, 10)
+
+### Visual acceptance state, 2026-09-15
+
+Two criteria above have evidence from the 44-frame capture and are settled here rather than left blank; the rest stay open with the reason.
+
+**Settled.** Buildings hold up close (line 145) and the dusk frame reads as Shibuya rather than a generic Japanese city (line 146), both on the 44 frames of the capture bound to G1. The facade criterion is carried by the hero and plaza frames at street level and by the block and overhead frames from above: window grids follow floor counts, the generated cartographic windows sit on the storey rhythm, and the PBR response separates sunlit from shaded faces at both times of day. The dusk criterion is carried by `hero-satellite-dusk-crossing.png` and `hero-cartographic-dusk-crossing.png`: the crossing's zebra and diagonal arms are legible, the emissive signage reads (`TOKYO`, `SHIBUYA`, `TSUTAYA`), and the sunset band carries the sky. Both rest on frames the coordinator opened individually, with the bound recorded in `artifacts/frame-inspection/report.md`: the image tool returns 1066×600 previews of the 1280×720 sources, so single-pixel detail is outside what that review signs off. Nothing in these two frames depends on that detail — they were judged on structure, signage and tone, which survive the downscale.
+
+**Deliberately still open, with the reason rather than a blank.**
+
+- Line 148 (the dusk preset's post chain, and "holds still — no flicker or crawl over a moving sequence") is **not** satisfied at the time of writing, and the reason is measured: `artifacts/gate-timing/REPORT.md` found `taaAccumulating: false, taaSamples: 0` on all eight hero frames, reproduced on both renderers, so the temporal accumulation the criterion names never engaged. The frames also cannot answer "over a moving sequence" at all — that needs the controls-driven flythrough, which is Phase 10. This is the clearest case in the plan of a criterion whose mechanism is present in the code and absent from the pixels.
+- Line 147 (road markings against reference imagery, signals, guardrails, street furniture) is partly carried: the crossing's diagonal arms, the zebra bands and the tactile guidance strips are visible and correctly placed in both styles, and signal heads and posts are present. What is not established is agreement with *reference imagery* at native resolution, which needs the crop-level comparison this review's downscale bound cannot make.
+- Lines 149 to 152 and 155 to 156 stay open for the reason already recorded against them in the delivery status: they are population criteria, and the population does not yet complete a route or cross a street.
 
 ## Implementation steps
 
