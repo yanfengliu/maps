@@ -39,8 +39,38 @@ function buildPassage(network:Pick<NetworkData,"lanes"|"walks">&Partial<Pick<Net
   for(let i=1;i<edges.length;i++)if(!edges[i-1]!.nextIds.includes(edges[i]!.id))throw new Error(`Route passage cannot jump from ${edges[i-1]!.id} to ${edges[i]!.id}; use legal nextIds.`);
   const junctionId=boundary?.owner.id??edges[entryIndex]!.junctionId;
   if(!junctionId)throw new Error(`Route passage entry ${edges[entryIndex]!.id} is outside every conflict authority.`);
+  // The window ends where this visit to the compound ends, not at the last
+  // occurrence anywhere later on the route. A walking plan can cross a compound,
+  // walk a few hundred metres of sidewalk and cross the same compound again on the
+  // way back: measured on the delivered graph, `junction:walk:1009982019` is
+  // re-entered 300.294 m later, `junction:walk:1464521698` 206.311 m,
+  // `junction:walk:622021124` 181.661 m later, each across two to eight ungoverned
+  // sections that reach 62 to 97 m clear of the compound's own disks. Counting the
+  // return as the last conflict occurrence held one lease for the whole round trip:
+  // `pedestrian:308` held that compound from tick 4,649 to 21,600 — 282.7 s for an
+  // 8.6 m crossing — and every other ask at it was refused for 16,952 ticks.
+  //
+  // What separates the compound's own interior from that round trip is the shape
+  // the graph gives each. The contract's internal-gap clause names "a null edge
+  // between two primitives of one compound", and that is the shape the delivered
+  // graph leaves inside a compound: of the 118 ungoverned stretches that separate
+  // two visits of one compound, 66 are no stretch at all (adjacent sections of the
+  // compound) and 33 are exactly one ungoverned section, 23 of them within 9.1 m of
+  // straight line and none past 28.5 m. The 19 that are a run of two or more
+  // ungoverned sections are the outside the route walks through to leave and come
+  // back; every departure past 50 m is one of them, and the visit ends before it.
+  //
+  // This only ever ends the window earlier than the shipped scan did, so the exit
+  // requirement below is checked against the section that really follows this
+  // visit. The admission policy, the conservative disks, the 0.5 m stop gap and
+  // every footprint bound are untouched.
   let lastConflictIndex=boundary?-1:entryIndex;
-  for(let i=boundary?entryIndex:entryIndex+1;i<edges.length;i++){const owner=edges[i]!.junctionId;if(owner&&owner!==junctionId)break;if(owner===junctionId)lastConflictIndex=i;}
+  for(let i=boundary?entryIndex:entryIndex+1;i<edges.length;i++){
+    const edge=edges[i]!,owner=edge.junctionId;
+    if(owner===junctionId){lastConflictIndex=i;continue;}
+    if(owner)break;
+    if(edges[i+1]?.junctionId!==junctionId)break;
+  }
   const boundaryExit=boundaryProfile(network,kind,edges.at(-1)!);
   if((lastConflictIndex+1>=edges.length&&!boundaryExit)||(lastConflictIndex+1<edges.length&&edges[lastConflictIndex+1]!.junctionId))throw new Error(`Route passage for ${junctionId} needs an outside exit section or a true AOI terminal with explicit boundary retirement.`);
   const starts:number[]=[],controls:RouteControl[]=[];let total=0;
