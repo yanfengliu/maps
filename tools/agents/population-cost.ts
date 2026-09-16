@@ -59,17 +59,76 @@
  *
  * RUN IT:
  *
- *   node tools/agents/population-cost.ts
+ *   node tools/agents/population-cost.ts                 # writes artifacts/population-cost
+ *   node tools/agents/population-cost.ts --out <dir>     # writes <dir> instead
+ *   POPULATION_COST_OUT=<dir> node tools/agents/population-cost.ts
+ *   POPULATION_COST_SEED=<n> node tools/agents/population-cost.ts --out <dir>
  *
  * Plain Node 24 runs it: type stripping covers the probe and `pose.ts`, and the
  * resolve hook exists only because nothing in `src/agents/render/**` can be
  * reached otherwise. `--experimental-transform-types` is not required and adding
- * it does not change the measurement. Set POPULATION_COST_SEED to measure
- * another seed.
+ * it does not change the measurement. A relative `--out` resolves against the
+ * repository root, not the working directory, so the probe reads the same files
+ * and writes the same place from any directory. An unknown argument is an error
+ * rather than being ignored.
  *
- * OUTPUT: artifacts/population-cost/raw.json, plus a summary on stdout. The
- * probe fails loudly on a missing module or a missing input file and never
- * substitutes a fixture.
+ * OUTPUT: `raw.json`, `summary.json` and `probe-output.txt` in the output
+ * directory, plus a summary on stdout. The probe fails loudly on a missing
+ * module or a missing input file and never substitutes a fixture.
+ *
+ * A RUN NEVER CLOBBERS EVIDENCE. Before it measures anything, the probe checks
+ * the three output files and refuses to run at all if any of them already
+ * exists, naming them and the override that would send this run elsewhere. A
+ * refused run measures nothing and writes nothing, so the existing evidence is
+ * left byte-identical. The three writes are `wx` as well, so a collision that
+ * appears after the check still fails instead of overwriting. To measure twice,
+ * name two directories.
+ *
+ * WHAT A RE-RUN PROVES, AND WHAT ONLY A FIRST RUN PROVES
+ *
+ * The numbers in `summary.json` are two kinds of thing, and a re-run answers
+ * them differently.
+ *
+ * A re-run with the same seed over the same inputs, on a tree that did not
+ * move, must reproduce these EXACTLY: `digest.finalMeasuredState`, every field
+ * of `totals` and `measuredTickCounts`, `graph`, `drawSet`, `composition`,
+ * `inputSha256`, the instance counts in `nearBudgetControl`, and
+ * `lastCompleteTick`. Any difference is a defect — nondeterminism somewhere in
+ * the probe, the graph, the admission authority or the pose path — and it is
+ * checkable only because a second run can write to a directory of its own. That
+ * is what `--out` is for.
+ *
+ * A re-run CANNOT reproduce `statistics`, `elapsedMs`, `runWindowMs`, the
+ * `passMs` of `nearBudgetControl`, or `startedAtUtc`, and those fields are not
+ * claims about determinism. They are wall-clock times on a shared machine;
+ * another process on the box moves them. A re-run that reports faster numbers
+ * than a first run does not show the code got faster, and a re-run reporting
+ * slower ones does not show a regression. Compare the timing fields only as
+ * orders of magnitude against the 16.667 ms frame interval, and never across
+ * machines.
+ *
+ * What only a first run proves is that the measurement exists at all: the
+ * inputs were on disk, the graph planned a route, the authority granted
+ * something, and 120 measured ticks ran over a population that moved. `advanced`
+ * is that claim, and the tick count and the positive totals are the clauses that
+ * carry it — its `finalDigest !== sha256 of nothing` clause is close to a
+ * tautology, because the digest always absorbs at least one byte. A first run is
+ * the only run that can establish that liveness, because a re-run inherits a
+ * tree the first run already bootstrapped. What a re-run adds is the one claim a
+ * first run cannot make for itself: that the same inputs produce the same
+ * measured state.
+ *
+ * The digest is a weaker instrument than it looks, and its bound is worth
+ * knowing: it hashes pedestrian pose buffers only, never the 200 vehicle slots,
+ * and it hashes them as float32 bytes, so it proves float32-level equality of
+ * those buffers rather than bit-exact equality of the simulation. It is also
+ * mostly gate positions by the end of the window, because a slot that has
+ * reached its gate is clamped there; the seed-sensitive content is the moving
+ * minority. The counts, not the digest, are what show the population was alive.
+ *
+ * What no run of this probe proves is listed above under the exclusions: it says
+ * nothing about pixels, GPU cost, driver behaviour or whether the population
+ * behaves like traffic.
  */
 
 import assert from "node:assert/strict";
@@ -103,13 +162,69 @@ const MEDIUM_INSTANCES = 640;
 const NEAR_THRESHOLD_M = 18;
 const MEDIUM_THRESHOLD_M = 60;
 const SEED = Number(process.env.POPULATION_COST_SEED ?? DEFAULT_SEED);
-const OUT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../artifacts/population-cost");
 /** Measured walk cadence: 1.1 m stride over a 1.0 s clip. Not a motion model, a constant. */
 const PEDESTRIAN_SPEED_MPS = 1.1;
 /** A constant, not a car-following law: the vehicle class speed limit is never consulted here. */
 const VEHICLE_SPEED_MPS = 8;
 
 const round = (value: number): number => Math.round(value * 1000) / 1000;
+
+/* ------------------------------------------------- where the evidence goes */
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const PROBE_PATH = "tools/agents/population-cost.ts";
+const DEFAULT_OUT_DIR = resolve(ROOT, "artifacts/population-cost");
+/** The three files one run owns. Nothing here is ever written twice. */
+const OUTPUT_FILES = ["raw.json", "summary.json", "probe-output.txt"] as const;
+
+/**
+ * `--out <dir>` beats `POPULATION_COST_OUT` beats the default documented path.
+ * A relative directory is resolved against the repository root rather than the
+ * working directory, so the documented command writes the documented place from
+ * anywhere. An argument this probe does not know is an error: a silently ignored
+ * flag measures something other than what the caller asked for.
+ */
+function resolveOutDir(argv: readonly string[]): { dir: string; source: string } {
+  let fromArg: string | null = null;
+  for (let index = 0; index < argv.length; index++) {
+    const arg = argv[index]!;
+    if (arg === "--out" || arg.startsWith("--out=")) {
+      const value = arg === "--out" ? argv[index + 1] : arg.slice("--out=".length);
+      if (!value || value.startsWith("--")) {
+        throw new Error(`Population cost probe was given ${arg} with no directory after it, so it would have written into the repository root. Usage: node ${PROBE_PATH} --out <dir>, where a relative <dir> is resolved against ${ROOT}.`);
+      }
+      if (fromArg !== null) {
+        throw new Error(`Population cost probe was given the output directory twice (${fromArg} and ${value}); name one. Usage: node ${PROBE_PATH} --out <dir>.`);
+      }
+      fromArg = value;
+      if (arg === "--out") index += 1;
+    } else {
+      throw new Error(`Population cost probe does not know the argument ${arg}. Usage: node ${PROBE_PATH} [--out <dir>]. The seed comes from POPULATION_COST_SEED, not from a flag, and there is no other option.`);
+    }
+  }
+  if (fromArg !== null) return { dir: resolve(ROOT, fromArg), source: "--out" };
+  const fromEnv = process.env.POPULATION_COST_OUT;
+  if (fromEnv) return { dir: resolve(ROOT, fromEnv), source: "POPULATION_COST_OUT" };
+  return { dir: DEFAULT_OUT_DIR, source: "default" };
+}
+
+const OUT = resolveOutDir(process.argv.slice(2));
+const OUT_DIR = OUT.dir;
+const command = ["node", PROBE_PATH, ...process.argv.slice(2)].join(" ");
+
+/**
+ * Refuse before measuring, not after: a run that finds evidence in its way must
+ * leave that evidence exactly as it found it, and a run that dies on EEXIST at
+ * the end has already spent a minute of CPU and may already have overwritten
+ * part of what it found. This probe once wrote `raw.json` unconditionally and
+ * then threw on the exclusive `summary.json`, so a re-run destroyed the retained
+ * `raw.json` and still exited non-zero: it is only checkable, never re-runnable.
+ */
+const existing = OUTPUT_FILES.filter(name => existsSync(resolve(OUT_DIR, name)));
+if (existing.length) {
+  throw new Error(`Population cost probe will not write into ${OUT_DIR} (from ${OUT.source}) because ${existing.join(", ")} ${existing.length === 1 ? "is" : "are"} already there. A run owns the files it creates and never overwrites evidence from another run, so this one stops now, having measured nothing and written nothing. Point it at an empty or new directory with "node ${PROBE_PATH} --out <dir>" (or POPULATION_COST_OUT=<dir>), or move the existing evidence first.`);
+}
+mkdirSync(OUT_DIR, { recursive: true });
 
 /* ------------------------------------------- the `.js` specifier resolve hook */
 
@@ -147,7 +262,6 @@ function readRequired(path: string, label: string): Buffer {
   return readFileSync(path);
 }
 const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const networkBytes = readRequired(resolve(ROOT, "data/network/network.json"), "the delivered movement network");
 const network = JSON.parse(networkBytes.toString("utf8")) as NetworkData;
@@ -929,8 +1043,9 @@ const advanced = failures.length === 0
 const result = {
   probe: "tools/agents/population-cost.ts",
   startedAtUtc, elapsedMs: Math.round(performance.now() - processStarted), runWindowMs: round(runWindowMs),
-  command: "node tools/agents/population-cost.ts",
+  command, outDir: OUT_DIR, outDirSource: OUT.source,
   seed: SEED,
+  seedSource: process.env.POPULATION_COST_SEED === undefined ? `DEFAULT_SEED (${DEFAULT_SEED})` : "POPULATION_COST_SEED",
   bound: {
     pedestrians: PEDESTRIANS, vehicles: VEHICLES, stepSeconds: STEP_SECONDS, warmupTicks: WARMUP_TICKS, measuredTicks: MEASURED_TICKS,
     nearInstances: NEAR_INSTANCES, mediumInstances: MEDIUM_INSTANCES, nearThresholdM: NEAR_THRESHOLD_M, mediumThresholdM: MEDIUM_THRESHOLD_M,
@@ -980,8 +1095,7 @@ const result = {
   measuredTicks: measured.map((tick, index) => ({ ...tick, requests: measuredTotals[index]!.requests, grants: measuredTotals[index]!.grants, observations: measuredTotals[index]!.observations, releases: measuredTotals[index]!.releases })),
 };
 
-mkdirSync(OUT_DIR, { recursive: true });
-writeFileSync(resolve(OUT_DIR, "raw.json"), `${JSON.stringify(result, null, 2)}\n`);
+writeFileSync(resolve(OUT_DIR, "raw.json"), `${JSON.stringify(result, null, 2)}\n`, { flag: "wx" });
 
 const line = (label: string, stats: Stats | null): string =>
   stats ? `${label} median=${round(stats.median)}ms p95=${round(stats.p95)}ms max=${round(stats.max)}ms n=${stats.n}` : `${label} none`;
@@ -989,11 +1103,13 @@ const line = (label: string, stats: Stats | null): string =>
 /**
  * The retained evidence: a human-readable log and a machine-readable summary,
  * written by `fs` rather than shell redirection so the run cannot lose its own
- * output. Both are created exclusively, so this probe never overwrites a
- * previous run's evidence.
+ * output. All three files are created exclusively, so this probe never
+ * overwrites a previous run's evidence even if one appears after the pre-flight
+ * check above; the check is what turns that collision into a message before a
+ * minute of measurement rather than an `EEXIST` after it.
  */
 const summary = {
-  probe: result.probe, command: result.command, startedAtUtc, seed: SEED,
+  probe: result.probe, command, outDir: OUT_DIR, outDirSource: OUT.source, startedAtUtc, seed: SEED, seedSource: result.seedSource,
   frameIntervalMs: round(STEP_SECONDS * 1000),
   machine: result.machine, bound: result.bound,
   inputSha256: { network: sha256(networkBytes), vehicleManifest: sha256(vehicleManifestBytes), humanManifests: humanManifests.map(({ id, sha256: sha }) => ({ id, sha256: sha })) },
@@ -1008,9 +1124,10 @@ writeFileSync(resolve(OUT_DIR, "summary.json"), `${JSON.stringify(summary, null,
 
 const log = [
   `Population cost probe - ${result.probe}`,
-  `command: ${result.command}`,
+  `command: ${command}`,
+  `output: ${OUT_DIR} (from ${OUT.source})`,
   `started: ${startedAtUtc}`,
-  `seed: ${SEED}   frame interval: ${round(STEP_SECONDS * 1000)} ms   warmup ticks: ${WARMUP_TICKS}   measured ticks: ${MEASURED_TICKS}`,
+  `seed: ${SEED} (${result.seedSource})   frame interval: ${round(STEP_SECONDS * 1000)} ms   warmup ticks: ${WARMUP_TICKS}   measured ticks: ${MEASURED_TICKS}`,
   `machine: ${result.machine.cpuModels.join(", ")}; ${result.machine.logicalCpus} logical CPUs; ${result.machine.platform} ${result.machine.release} ${result.machine.arch}; Node ${result.machine.node}; ${result.machine.totalMemoryBytes} bytes memory`,
   `inputs: network.json ${sha256(networkBytes)}; vehicles.json ${sha256(vehicleManifestBytes)}`,
   `bound: ${PEDESTRIANS} pedestrian slots + ${VEHICLES} vehicle slots at exactly 1/${Math.round(1 / STEP_SECONDS)} s per tick`,
@@ -1036,7 +1153,7 @@ writeFileSync(resolve(OUT_DIR, "probe-output.txt"), log, { flag: "wx" });
 
 console.log(log);
 console.log(JSON.stringify({
-  seed: SEED, completedTicks: lastCompleteTick, elapsedMs: result.elapsedMs, failures,
+  seed: SEED, outDir: OUT_DIR, command, completedTicks: lastCompleteTick, elapsedMs: result.elapsedMs, failures,
   simulation: line("simulation", statistics.simulationMs),
   admission: line("admission", statistics.admissionMs),
   poseComposition: line("poseComposition", statistics.poseCompositionMs),
