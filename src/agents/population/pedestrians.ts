@@ -327,68 +327,60 @@ export function orcaHalfPlane(agent: OrcaAgent, other: OrcaAgent, timeHorizon: n
   const combinedRadiusSquared = combinedRadius * combinedRadius;
   const distanceSquared = relativeX * relativeX + relativeZ * relativeZ;
   const inverseTimeHorizon = 1 / timeHorizon;
+  // `w` is the relative velocity seen from the apex of the truncated velocity
+  // obstacle: the point `relativePosition / timeHorizon` in relative-velocity space.
   const wX = relativeVelocityX - inverseTimeHorizon * relativeX;
   const wZ = relativeVelocityZ - inverseTimeHorizon * relativeZ;
-  const dotProduct = wX * relativeX + wZ * relativeZ;
-  if (dotProduct < 0 && dotProduct * dotProduct > combinedRadiusSquared * distanceSquared) {
-    const wLength = Math.hypot(wX, wZ);
+  const wSquared = wX * wX + wZ * wZ;
+  // A body this walker already overlaps is not an obstacle it can steer around;
+  // this population resolves a stack of bodies at one point by leaving them be,
+  // and the walking step's own overlap rule is the same one.
+  if (distanceSquared <= combinedRadiusSquared) return { pointX: 0, pointZ: 0, w: 0 };
+  const cutOffSquared = combinedRadiusSquared * inverseTimeHorizon * inverseTimeHorizon;
+  if (wSquared <= cutOffSquared) {
+    // Inside the disc of velocities that can no longer avoid contact within the
+    // horizon. The shortest way out is radial, and a body at rest inside its own
+    // cut-off disc is the one case where a walker must be told to move at all.
+    const wLength = Math.sqrt(wSquared);
     if (wLength <= 1e-12) return { pointX: 0, pointZ: 0, w: 0 };
     const unitX = wX / wLength;
     const unitZ = wZ / wLength;
-    const dot = unitX * relativeX + unitZ * relativeZ;
-    const distance = Math.sqrt(distanceSquared);
-    const factor = dot > 0 ? combinedRadius / distance - 1 : -1;
-    const uX = factor * (unitX - inverseTimeHorizon * relativeX);
-    const uZ = factor * (unitZ - inverseTimeHorizon * relativeZ);
-    const length = Math.hypot(uX, uZ);
-    if (length <= 1e-12) return { pointX: 0, pointZ: 0, w: 0 };
-    const pointX = uX / length;
-    const pointZ = uZ / length;
-    return { pointX, pointZ, w: pointX * uX + pointZ * uZ };
+    return {
+      pointX: unitX,
+      pointZ: unitZ,
+      w: combinedRadius * inverseTimeHorizon - wLength + other.velocityX * unitX + other.velocityZ * unitZ,
+    };
   }
-  const distance = Math.sqrt(distanceSquared);
-  if (distance <= combinedRadius + 1e-9) return { pointX: 0, pointZ: 0, w: 0 };
-  const directionX = relativeX / distance;
-  const directionZ = relativeZ / distance;
+  // Otherwise only the cone itself can contain the relative velocity. The cone is
+  // spanned by the two tangents from the origin of relative-velocity space to the
+  // disc of radius `combinedRadius` about `relativePosition`, and a velocity
+  // outside it is not a collision course at all: two bodies at rest relative to
+  // one another never touch, however close they stand.
+  const along = wX * relativeX + wZ * relativeZ;
+  const cross = wX * relativeZ - wZ * relativeX;
+  if (along <= 0 || cross * cross >= combinedRadiusSquared * wSquared) return { pointX: 0, pointZ: 0, w: 0 };
   const leg = Math.sqrt(Math.max(0, distanceSquared - combinedRadiusSquared));
-  const dot = wX * directionX + wZ * directionZ;
-  let leftX: number;
-  let leftZ: number;
-  let rightX: number;
-  let rightZ: number;
-  if (dot < 0) {
-    const square = dot * dot;
-    const speedSquared = wX * wX + wZ * wZ;
-    if (square > combinedRadiusSquared * speedSquared + 1e-9) return { pointX: 0, pointZ: 0, w: 0 };
-    const wLength = Math.hypot(wX, wZ);
-    if (wLength <= 1e-12) return { pointX: 0, pointZ: 0, w: 0 };
-    const tangent = Math.sqrt(Math.max(0, combinedRadiusSquared - square / speedSquared));
-    const unitX = -wZ / wLength;
-    const unitZ = wX / wLength;
-    const scale = tangent / wLength;
-    leftX = wX - (unitX * tangent - scale * wZ);
-    leftZ = wZ - (unitZ * tangent + scale * wX);
-    rightX = wX - (unitX * tangent + scale * wZ);
-    rightZ = wZ - (unitZ * tangent - scale * wX);
-  } else {
-    const leftDirection = (dot + leg) / distance;
-    const leftLeg = Math.sqrt(Math.max(0, 1 - leftDirection * leftDirection));
-    leftX = leftDirection * directionX - leftLeg * directionZ;
-    leftZ = leftDirection * directionZ + leftLeg * directionX;
-    const rightDirection = (dot - leg) / distance;
-    const rightLeg = Math.sqrt(Math.max(0, 1 - rightDirection * rightDirection));
-    rightX = rightDirection * directionX + rightLeg * directionZ;
-    rightZ = rightDirection * directionZ - rightLeg * directionX;
+  const side = cross >= 0 ? 1 : -1;
+  // Unit direction of the nearer tangent; the outward normal is perpendicular to
+  // it, on the far side from the cone's axis.
+  const tangentX = (leg * relativeX - side * combinedRadius * relativeZ) / distanceSquared;
+  const tangentZ = (leg * relativeZ + side * combinedRadius * relativeX) / distanceSquared;
+  let normalX = tangentZ;
+  let normalZ = -tangentX;
+  if (normalX * relativeX + normalZ * relativeZ > 0) {
+    normalX = -normalX;
+    normalZ = -normalZ;
   }
-  const leftDot = relativeVelocityX * leftX + relativeVelocityZ * leftZ;
-  const rightDot = relativeVelocityX * rightX + relativeVelocityZ * rightZ;
-  const choiceX = leftDot < rightDot ? leftX - relativeVelocityX : rightX - relativeVelocityX;
-  const choiceZ = leftDot < rightDot ? leftZ - relativeVelocityZ : rightZ - relativeVelocityZ;
-  const length = Math.hypot(choiceX, choiceZ);
-  if (length <= 1e-12) return { pointX: 0, pointZ: 0, w: 0 };
-  const pointX = choiceX / length;
-  const pointZ = choiceZ / length;
-  return { pointX, pointZ, w: pointX * choiceX + pointZ * choiceZ };
+  // The smallest change projects the relative velocity onto that leg, so the
+  // half-plane's boundary is the leg itself and its right-hand side is the
+  // projection the change lands on, carried into the walker's own velocity space.
+  const projection = wX * normalX + wZ * normalZ;
+  if (projection >= 0) return { pointX: 0, pointZ: 0, w: 0 };
+  return {
+    pointX: normalX,
+    pointZ: normalZ,
+    w: -projection + other.velocityX * normalX + other.velocityZ * normalZ,
+  };
 }
 
 /**
