@@ -10,17 +10,91 @@ export function pathLength(points: readonly WorldPoint[]): number {
   return result;
 }
 
+/**
+ * Per-edge segment lengths and their prefix sums, derived once from point lists
+ * that never change after the network is loaded. `segmentLengths[i]` is exactly
+ * the `distance(points[i], points[i + 1])` the walk below would have computed,
+ * so a sample neither recomputes a length nor recovers one by subtraction.
+ */
+interface EdgeArcTable {
+  readonly pointCount: number;
+  readonly segmentLengths: Float64Array;
+  readonly cumulative: Float64Array;
+}
+
+const arcTables = new WeakMap<object, EdgeArcTable>();
+
+function arcTable(edge: Pick<NetworkEdge, "points">): EdgeArcTable {
+  const cached = arcTables.get(edge);
+  if (cached) return cached;
+  const points = edge.points;
+  const count = points.length;
+  const segmentLengths = new Float64Array(Math.max(0, count - 1));
+  const cumulative = new Float64Array(Math.max(1, count));
+  for (let i = 1; i < count; i += 1) {
+    const length = distance(points[i - 1]!, points[i]!);
+    segmentLengths[i - 1] = length;
+    cumulative[i] = cumulative[i - 1]! + length;
+  }
+  const table: EdgeArcTable = { pointCount: count, segmentLengths, cumulative };
+  arcTables.set(edge, table);
+  return table;
+}
+
+/**
+ * The furthest point the walk reaches: the first `i` with
+ * `cumulative[i] >= remaining` whose segment `i - 1` has positive length, or
+ * `points.length - 1` when no segment carries `remaining`. Those are the linear
+ * walk's two exits, and `cumulative` is non-decreasing, so the predicate is
+ * false over a prefix of the indices and true after it.
+ */
+function arcPointIndex(table: EdgeArcTable, remaining: number): number {
+  const count = table.pointCount;
+  let low = 0;
+  let high = count;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (middle > 0 && remaining <= table.cumulative[middle]! && table.segmentLengths[middle - 1]! > 0) high = middle;
+    else low = middle + 1;
+  }
+  return low >= count ? count - 1 : low;
+}
+
 /** Arc-length sampling shared by the simulation and its unit tests. */
 export function sampleEdge(edge: Pick<NetworkEdge, "points" | "lengthM">, distanceM: number): WorldPoint {
-  let remaining = Math.max(0, Math.min(edge.lengthM, distanceM));
-  for (let i = 1; i < edge.points.length; i += 1) {
-    const a = edge.points[i - 1]!, b = edge.points[i]!;
-    const length = distance(a, b);
-    if (remaining <= length && length > 0) {
-      const t = remaining / length;
+  const remaining = Math.max(0, Math.min(edge.lengthM, distanceM));
+  const table = arcTable(edge);
+  const index = arcPointIndex(table, remaining);
+  if (index <= 0) return { ...edge.points[0]! };
+  if (index < table.pointCount - 1) {
+    // The residual is recovered by the walk's own subtractions, in the walk's own
+    // order: subtracting one prefix sum instead rounds differently and moves the
+    // pose by an ulp, which is enough to change a digest even though it changes
+    // nothing visible.
+    let residual = remaining;
+    for (let i = 1; i < index; i += 1) residual -= table.segmentLengths[i - 1]!;
+    const length = table.segmentLengths[index - 1]!;
+    if (residual <= length) {
+      const t = residual / length;
+      const a = edge.points[index - 1]!, b = edge.points[index]!;
       return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
     }
-    remaining -= length;
+  }
+  // Either the last segment carries the arc length, or the residual landed just
+  // past its segment because the walk's own rounding drift is comparable to the
+  // arc left inside it — which is exactly when the walk stops early and returns
+  // the final point. The binary search cannot tell those two apart from prefix
+  // sums alone, so this last stretch is walked. It costs one `distance` per
+  // segment once per call at worst, which is the walk it replaces.
+  let walked = remaining;
+  for (let i = 1; i < edge.points.length; i += 1) {
+    const a = edge.points[i - 1]!, b = edge.points[i]!;
+    const length = table.segmentLengths[i - 1]!;
+    if (walked <= length && length > 0) {
+      const t = walked / length;
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
+    }
+    walked -= length;
   }
   return { ...edge.points[edge.points.length - 1]! };
 }

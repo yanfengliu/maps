@@ -24,7 +24,7 @@
  * anybody, so it cannot be used to smuggle a position write past admission.
  */
 
-import { type AdmissionRequest, type JunctionAdmissions, type BoundaryActorBinding } from "../../network/admissions.ts";
+import { type AdmissionRequest, type AdmissionSnapshot, type JunctionAdmissions, type BoundaryActorBinding } from "../../network/admissions.ts";
 import { createBoundaryEntryPassage, type RoutePassage } from "../../network/passages.ts";
 import { boundaryProfile, boundaryProgress } from "../../network/boundaries.ts";
 import { MAX_BOUNDARY_EGRESS_M } from "../../network/admission-bounds.ts";
@@ -35,7 +35,7 @@ import type { WorldAgentPoses } from "../../world/agent-poses.ts";
 import { PEDESTRIAN_DYNAMICS, VEHICLE_DYNAMICS, populationSettings, type PopulationSettings } from "./config.ts";
 import {
   buildVehicleFrame, considerLaneChange, hasReceivingSpace as hasSpace, JunctionIndex, placeVehicle,
-  stepLateral, vehicleAcceleration, vehicleFootprint, type VehicleFrame,
+  stepLateral, vehicleAcceleration, vehicleFootprint, type Leader, type VehicleFrame,
 } from "./vehicles.ts";
 import {
   createPedestrianCrowd, occurrenceAt, orcaVelocity, pedestrianFootprint, placePedestrian,
@@ -98,12 +98,107 @@ export interface PopulationOptions {
   readonly settings: PopulationSettings;
 }
 
+/**
+ * What one slot is doing, for a diagnostic that has to say *why* a body is not
+ * moving. Deliberately a fresh plain object built on demand: nothing in `update`
+ * reads it, so it cannot move a body or change a tick's arithmetic.
+ */
+export interface ActorDiagnostic {
+  readonly slot: number;
+  readonly generation: number;
+  readonly active: boolean;
+  /** True while the slot holds a plan but no active body: prepared at its portal. */
+  readonly pending: boolean;
+  readonly position: readonly [number, number, number];
+  readonly speedMps: number;
+  readonly travelledM: number;
+  readonly stoppedSeconds: number;
+  readonly routeEntryEdgeId: string | null;
+  readonly routeEdges: number;
+  readonly routeLengthM: number;
+  readonly routeIndex: number;
+  readonly junctionId: string | null;
+  /** Delivered class index and its drawn scale, for a reader that needs the hull. */
+  readonly variant: number;
+  readonly scale: number;
+  /** The projected collision hull the authority compares, when one is held. */
+  readonly footprint: ActorFootprint | null;
+  readonly committed: boolean;
+  readonly egressing: boolean;
+  readonly egressOffsetM: number;
+  readonly retryTick: number;
+}
+
+export interface PopulationDiagnostics {
+  readonly vehicles: readonly ActorDiagnostic[];
+  readonly pedestrians: readonly ActorDiagnostic[];
+  /** The authority's own snapshot, so a reader can attribute a wait to a junction. */
+  readonly commitments: readonly AdmissionSnapshot[];
+}
+
+/** One tick's decision for one vehicle, from `traceVehicle`. */
+export interface VehicleTickTrace {
+  tick: number;
+  seconds: number;
+  active: boolean;
+  pending: boolean;
+  travelledM: number;
+  speedMps: number;
+  stoppedSeconds: number;
+  committed: boolean;
+  egressing: boolean;
+  routeEdges: number;
+  routeLengthM: number;
+  routeIndex: number;
+  junctionId: string | null;
+  /** The halt the plan phase capped this body at, or null when nothing caps it. */
+  stopDistanceM: number | null;
+  requested: boolean;
+  requestedRouteIndex: number | null;
+  requestedJunctionId: string | null;
+  requestedEntryGroup: string | null;
+  holdsPrefix: boolean;
+  leaseJunctionId: string | null;
+  leaseRouteIndex: number | null;
+  leaseEntered: boolean | null;
+  entryEdgeId: string | null;
+  /** The IDM leader gap the plan phase used this tick, or null when it had none. */
+  leaderGapM: number | null;
+  /** That leader's speed, as the car-following model saw it. */
+  leaderSpeedMps: number | null;
+  /** The acceleration the plan phase handed the integrator. */
+  acceleration: number;
+  /** IDM's free term for this body this tick, before any leader or halt cap. */
+  freeAcceleration: number;
+  /** Distance to the plan phase's own halt, as it saw it. */
+  stoppingShortM: number | null;
+}
+
 export interface Population {
   readonly poses: WorldAgentPoses;
   update(step: number, simulatedSeconds: number): void;
   status(): PopulationStatus;
   /** True while any active actor is moving, which is what the still predicate needs. */
   moving(): boolean;
+  /**
+   * Per-slot state at the current tick. Read-only by construction: it builds a
+   * description of the population and keeps no reference into it, so a diagnostic
+   * cannot steer a body. It exists because "no vehicle is moving" is a symptom and
+   * the cause is always in the slot's own route, gate and lease.
+   */
+  diagnostics(): PopulationDiagnostics;
+  /**
+   * Record one vehicle's tick-by-tick decisions from the next tick onward. A
+   * diagnostic hook, off unless a caller asks for it: `update` writes to it only
+   * when a slot is registered, and reads nothing from it.
+   */
+  traceVehicle(slot: number): VehicleTickTrace[];
+  /**
+   * The plan one vehicle slot is driving, or null when it holds none. Read-only:
+   * the returned object is the frozen plan the population itself drives, so a
+   * diagnostic can read a gate's own hold point rather than re-deriving it.
+   */
+  vehicleRoute(slot: number): PlannedRoute | null;
   dispose(): void;
 }
 
@@ -199,6 +294,10 @@ export function createPopulation(options: PopulationOptions): Population {
   const planQueue: { kind: PopulationKind; slot: number }[] = [];
   const intents: Intent[] = Array.from({ length: settings.vehicles }, () => ({ acceleration: 0, stopDistanceM: Number.POSITIVE_INFINITY, committed: false }));
   let frame: VehicleFrame | null = null;
+  /** Slots a caller asked to trace, and the records for them. Empty unless asked. */
+  const trace = new Map<number, VehicleTickTrace[]>();
+  /** Last plan-phase decision per slot, read only by `traceTick`. */
+  const planDecision = new Array<{ freeAcceleration: number; stoppingShortM: number | null } | undefined>(settings.vehicles);
 
   /** Entry portals that start on a sidewalk: a crossing entry would stage a body on the roadway. */
   const vehiclePortals = [...network.portals.vehicleEntry].sort();
@@ -501,15 +600,17 @@ export function createPopulation(options: PopulationOptions): Population {
       bindings[slot] = undefined;
       entryPassages[slot] = null;
       heldPassages[slot + settings.pedestrians] = undefined;
-      // The leak mutation covers *every* retirement path, not only `finishVehicle`.
-      //
+      // The leak mutation covers *every* retirement path, not only `finishVehicle`:
+      // a mutation that only guards one of them is a gate that cannot see the other.
+      // Measured on the delivered network, every vehicle retirement inside this
+      // gate's fixture goes through the boundary envelope, so the earlier guard in
+      // `finishVehicle` alone left the mutation with nothing to leak and the gate
+      // green while proving nothing.
       // `retireSlot` alone cannot carry it here: `JunctionAdmissions.retireBoundary`
-      // clears this slot's active byte itself (`admissions.ts:161`), so the call
-      // below is already a no-op on the shipped path and guarding it changes
-      // nothing. Measured: 24 vehicle retirements through this envelope in a
-      // 4,800-tick window with the mutation on behaved exactly like the control's 24,
-      // and the gate never fired. The mutation therefore restores the presence the
-      // authority just cleared, which is the state it exists to represent.
+      // clears the slot's active byte itself, so guarding only that call is inert.
+      // The mutation has to restore the presence the authority cleared for the leak
+      // to exist at all, and the plan queue below must not re-plan the slot in the
+      // same phase or the leak heals before any reading sees it.
       if (populationInvariants.leakRetiredBody) table.poses.vehicles.active[slot] = 1;
       else retireSlot(table.poses.vehicles, slot);
       state.committed = false;
@@ -521,13 +622,7 @@ export function createPopulation(options: PopulationOptions): Population {
       gateFootprints[slot + settings.pedestrians] = undefined;
       counters.retired.vehicle += 1;
       counters.completed.vehicle += 1;
-      // The same rule `finishVehicle` and `retirePedestrian` already carry: a
-      // leaked slot keeps its active byte *and* gets no live plan. Replanning it in
-      // this same phase would heal the leak before any conservation reading could
-      // see it — measured: with only `retireSlot` guarded here, the 24 vehicle
-      // retirements in a 4,800-tick window still leaked nothing, because step two of
-      // this phase re-planned each retired slot in the tick it retired.
-      if (!populationInvariants.leakRetiredBody) planQueue.push({ kind: "vehicle", slot });
+      planQueue.push({ kind: "vehicle", slot });
     }
     for (const state of table.pedestrians) {
       const slot = state.slot;
@@ -685,27 +780,19 @@ export function createPopulation(options: PopulationOptions): Population {
       if (!table.poses.vehicles.active[slot]) continue;
       const route = table.vehicleRoutes[slot]!;
       const edge = route.edges[state.routeIndex]! as LaneEdge;
+      const intent = intents[slot]!;
+      // Route metres left before the halt the plan phase chose, this tick.
+      const stopping = intent.stopDistanceM - state.travelledM;
       const desired = Math.max(0.5, edge.speedMps * state.speedFactor);
       considerLaneChange(network, table, frame, slot, edge, desired);
-      let acceleration = vehicleAcceleration(state.speedMps, desired, frame.ahead[slot] ?? null);
-      const intent = intents[slot]!;
-      const stopping = intent.stopDistanceM - state.travelledM;
-      if (Number.isFinite(intent.stopDistanceM) && stopping < 2.5) {
-        // The deceleration that *just* stops the body at its halt, floored at
-        // standstill so a stationary vehicle is not held down by a zero-speed
-        // braking term, and capped by the fleet's emergency braking.
-        const limit = stopping <= 0
-          ? -VEHICLE_DYNAMICS.idm.emergencyBrakingMps2
-          : -Math.min(VEHICLE_DYNAMICS.idm.emergencyBrakingMps2, (state.speedMps * state.speedMps) / (2 * Math.max(0.05, stopping)));
-        // A body already standing still short of its halt is not braked at all:
-        // at zero speed that term is exactly zero, and forcing the acceleration
-        // down to it froze every vehicle whose first stop line lay within the 2.5 m
-        // window of its own portal. Measured: travelled 0.00 m, halt 1.40 m,
-        // stationary for the whole run, asking nothing because it had not reached
-        // the line it must ask at.
-        acceleration = state.speedMps <= 0 && stopping > 0 ? acceleration : Math.min(acceleration, limit);
-      }
+      const haltLeader: Leader | null = Number.isFinite(intent.stopDistanceM) ? { gapM: Math.max(0, stopping), speedMps: 0 } : null;
+      const aheadLeader = frame.ahead[slot] ?? null;
+      // The nearest obstacle wins, and the halt is one of them.
+      const obstacle = aheadLeader === null ? haltLeader : haltLeader === null ? aheadLeader : aheadLeader.gapM <= haltLeader.gapM ? aheadLeader : haltLeader;
+      let acceleration = vehicleAcceleration(state.speedMps, desired, obstacle);
+      const freeAcceleration = vehicleAcceleration(state.speedMps, desired, null);
       intent.acceleration = acceleration;
+      planDecision[slot] = { freeAcceleration: Number(freeAcceleration.toFixed(4)), stoppingShortM: Number.isFinite(intent.stopDistanceM) ? Number(stopping.toFixed(3)) : null };
     }
     void step;
   }
@@ -1146,24 +1233,37 @@ export function createPopulation(options: PopulationOptions): Population {
        * body sheds speed in proportion to the gap and never closes the last
        * centimetres. The request window opens `GATE_SEEK_TOLERANCE_M` short of the
        * halt, and the shortfall left by the creep is a property of the braking
-       * curve, not a bounded quantity. Measured at the acceptance bound (3,000
-       * pedestrians, 200 vehicles, 3,600 ticks): 42 of the 65 active vehicles had
-       * never asked the authority once, slot 20 among them with zero requests, and
-       * 12 of those had moved less than a centimetre in the last ten simulated
-       * seconds — parked short of a stop line they could not reach. The same bound
-       * with this capture in place builds 147,420 vehicle requests against 28,035,
-       * leaves 2 active bodies that never asked, and parks 75 of 84 at their lines.
-       * Snapping the origin onto the halt it was already
-       * given takes nothing back: the body still never passes `holdDistanceM`, which
-       * is itself a whole footprint radius short of the gate, and a body that has
-       * already crossed its halt is never pulled backwards.
+       * curve, not a bounded quantity — measured on the delivered network, a body
+       * that halted 0.44 m short of `holdDistanceM` never built a single request in
+       * 5400 ticks, and 55 of 56 active vehicles queued behind leaders in exactly
+       * that state. Snapping the origin onto the halt it was already given takes
+       * nothing back: the body still never passes `holdDistanceM`, which is itself a
+       * whole footprint radius short of the gate, and a body that has already
+       * crossed its halt is never pulled backwards.
        */
       const stoppingShortM = allowed - state.travelledM;
+      // The capture closes IDM's asymptotic creep, and it may not do anything
+      // else. It moves the origin onto the halt it was already given, so it must
+      // not move the body into the space its own car-following model reserves for
+      // the body in front of it: the halt is only captured while at least the
+      // model's own standstill spacing would remain after the move. Without this
+      // the capture teleported a body up to `HALT_CAPTURE_M` forward through
+      // whatever stood between it and its halt. Measured on the delivered network
+      // at 200 vehicles: slot 78 moved 1.493 m in one tick at 0.86 m/s and landed
+      // 0.044 m *past* slot 46, which was already halted at its own hold point for
+      // the same gate; the pair then sat at an origin gap of 0.044 m with IDM's
+      // acceleration exactly zero at standstill, and the junction slot 46 held was
+      // never served again for the remaining 170 s of the run. The halt does not
+      // disappear when it is not captured — the body approaches it under IDM and
+      // reaches the request window on its own once the body ahead has gone.
+      const leader = frame?.ahead[slot] ?? null;
+      const leaderRoomM = leader === null ? Number.POSITIVE_INFINITY : leader.gapM - VEHICLE_DYNAMICS.idm.minimumSpacingM;
       const reached = !populationInvariants.driveWithoutGrant
         && Number.isFinite(allowed)
         && stoppingShortM > 0
         && stoppingShortM <= HALT_CAPTURE_M
-        && state.speedMps <= HALT_CAPTURE_SPEED_MPS;
+        && state.speedMps <= HALT_CAPTURE_SPEED_MPS
+        && stoppingShortM < leaderRoomM;
       const moved = reached ? allowed : Math.min(state.travelledM + speed * step, route.totalLengthM - 1e-9, allowed);
       const actual = Math.max(0, moved - state.travelledM);
       // A captured arrival is a standstill at the stop line, not a 3 m/s blip: the
@@ -1618,7 +1718,7 @@ export function createPopulation(options: PopulationOptions): Population {
       else if (name === "request") { counters.requestsLastTick = assembleRequests(); }
       else if (name === "resolve") resolve(step);
       else if (name === "integrate") integrate(step);
-      else if (name === "close") close();
+      else if (name === "close") { close(); traceTick(counters.ticks); }
       else throw new Error(`Population tick order names an unknown phase ${String(name)}.`);
     }
     phaseIndex = 0;
@@ -1646,6 +1746,66 @@ export function createPopulation(options: PopulationOptions): Population {
   function stageAll(): void {
     for (const state of table.vehicles) stageVehicleSlots(table.poses.vehicles, state.slot);
     for (const state of table.pedestrians) stageSlot(table.poses.pedestrians, state.slot);
+  }
+
+  /* ----------------------------------------------------------------- trace */
+
+  /**
+   * A per-slot, per-tick record of what the tick decided for one vehicle.
+   *
+   * Off by default and read by nothing in `update`, so a traced run and an
+   * untraced run make the same decisions. It exists because a body that never
+   * moves is a symptom whose cause is spread over four phases — whether the tick
+   * built a request for it, whether the authority granted it, what the plan phase
+   * capped it at, and what the integrate phase actually moved — and no post-hoc
+   * reading of the pose buffers can separate those.
+   */
+  function traceTick(tick: number): void {
+    const leases = new Map<string, AdmissionSnapshot>();
+    for (const commitment of admissions.snapshot()) leases.set(commitment.actorId, commitment);
+    for (const state of table.vehicles) {
+      const slot = state.slot;
+      if (!trace.has(slot)) continue;
+      const index = slot + settings.pedestrians;
+      const route = table.vehicleRoutes[slot];
+      const gate = route && table.poses.vehicles.active[slot] ? gateStop(route, state.travelledM, heldPassages[index]) : undefined;
+      const lease = leases.get(actorId("vehicle", slot));
+      const request = requests[index];
+      const passage = request?.passage;
+      trace.get(slot)!.push({
+        tick,
+        seconds: Number((tick / 60).toFixed(3)),
+        active: table.poses.vehicles.active[slot] === 1,
+        pending: pending.has(slot),
+        travelledM: Number(state.travelledM.toFixed(3)),
+        speedMps: Number(state.speedMps.toFixed(4)),
+        stoppedSeconds: Number(state.stoppedSeconds.toFixed(2)),
+        committed: state.committed,
+        egressing: state.egressing,
+        routeEdges: route ? route.edges.length : 0,
+        routeLengthM: route ? Number(route.totalLengthM.toFixed(2)) : 0,
+        routeIndex: route ? occurrenceAtDistance(route, state.travelledM) : 0,
+        junctionId: route ? (route.edges[occurrenceAtDistance(route, state.travelledM)]!.junctionId ?? null) : null,
+        stopDistanceM: gate && Number.isFinite(gate.distanceM) ? Number(gate.distanceM.toFixed(3)) : null,
+        requested: request !== undefined,
+        requestedRouteIndex: request?.routeIndex ?? null,
+        requestedJunctionId: passage ? passage.junctionId : null,
+        requestedEntryGroup: passage ? passage.entrySignalGroupId : null,
+        holdsPrefix: heldPassages[index] !== undefined && heldPassages[index] === entryPassages[slot],
+        leaseJunctionId: lease ? lease.junctionId : null,
+        leaseRouteIndex: lease ? lease.routeIndex : null,
+        leaseEntered: lease ? lease.entered : null,
+        entryEdgeId: route ? route.entryEdgeId : null,
+        // The car-following decision, so a body stopped with no halt and no
+        // neighbour can be attributed to the leader the model actually used
+        // rather than to a geometric scan that does not share its arithmetic.
+        leaderGapM: frame?.ahead[slot] ? Number(frame.ahead[slot]!.gapM.toFixed(4)) : null,
+        leaderSpeedMps: frame?.ahead[slot] ? Number(frame.ahead[slot]!.speedMps.toFixed(4)) : null,
+        acceleration: Number((intents[slot]?.acceleration ?? 0).toFixed(4)),
+        freeAcceleration: planDecision[slot]?.freeAcceleration ?? 0,
+        stoppingShortM: planDecision[slot]?.stoppingShortM ?? null,
+      });
+    }
   }
 
   /* ---------------------------------------------------------------- status */
@@ -1767,6 +1927,56 @@ export function createPopulation(options: PopulationOptions): Population {
     dispose(): void {
       planQueue.length = 0;
       pending.clear();
+    },
+    traceVehicle(slot: number): VehicleTickTrace[] {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= settings.vehicles) {
+        throw new Error(`traceVehicle needs a vehicle slot in [0, ${settings.vehicles}); received ${slot}.`);
+      }
+      let records = trace.get(slot);
+      if (!records) { records = []; trace.set(slot, records); }
+      return records;
+    },
+    vehicleRoute(slot: number): PlannedRoute | null {
+      if (!Number.isInteger(slot) || slot < 0 || slot >= settings.vehicles) {
+        throw new Error(`vehicleRoute needs a vehicle slot in [0, ${settings.vehicles}); received ${slot}.`);
+      }
+      return table.vehicleRoutes[slot] ?? null;
+    },
+    diagnostics(): PopulationDiagnostics {
+      const describe = (kind: PopulationKind, slot: number): ActorDiagnostic => {
+        const state = kind === "vehicle" ? table.vehicles[slot]! : table.pedestrians[slot]!;
+        const poses = kind === "vehicle" ? table.poses.vehicles : table.poses.pedestrians;
+        const route = kind === "vehicle" ? table.vehicleRoutes[slot] : table.pedestrianRoutes[slot];
+        const index = route ? occurrenceAtDistance(route, state.travelledM) : 0;
+        const at = slot * 3;
+        return Object.freeze({
+          slot,
+          generation: poses.current.generation[slot]!,
+          active: poses.active[slot] === 1,
+          pending: kind === "vehicle" && pending.has(slot),
+          position: Object.freeze([poses.current.position[at]!, poses.current.position[at + 1]!, poses.current.position[at + 2]!] as const),
+          speedMps: poses.speedMps[slot]!,
+          travelledM: state.travelledM,
+          stoppedSeconds: state.stoppedSeconds,
+          routeEntryEdgeId: route ? route.entryEdgeId : null,
+          routeEdges: route ? route.edges.length : 0,
+          routeLengthM: route ? route.totalLengthM : 0,
+          routeIndex: index,
+          junctionId: route ? (route.edges[index]!.junctionId ?? null) : null,
+          variant: poses.variant[slot]!,
+          scale: poses.scale[slot]!,
+          footprint: kind === "vehicle" && poses.active[slot] ? vehicleFootprint(fleet, table, slot) : null,
+          committed: state.committed,
+          egressing: kind === "vehicle" ? table.vehicles[slot]!.egressing : false,
+          egressOffsetM: kind === "vehicle" ? table.vehicles[slot]!.egressOffsetM : 0,
+          retryTick: state.retryTick,
+        });
+      };
+      return Object.freeze({
+        vehicles: Object.freeze(table.vehicles.map((state) => describe("vehicle", state.slot))),
+        pedestrians: Object.freeze(table.pedestrians.map((state) => describe("pedestrian", state.slot))),
+        commitments: Object.freeze(admissions.snapshot()),
+      });
     },
   };
 

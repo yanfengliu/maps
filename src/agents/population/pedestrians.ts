@@ -23,6 +23,7 @@ import { PEDESTRIAN_DYNAMICS } from "./config.ts";
 import { sampleRoute, type PlannedRoute } from "./routes.ts";
 import type { SlotTable } from "./slots.ts";
 import { placeSlot } from "./slots.ts";
+import { CellGrid } from "./cell-grid.ts";
 
 /** The authored pedestrian footprint: 0.5 m by 0.5 m at scale 1, per decision 10. */
 export function pedestrianFootprint(at: { x: number; y: number; z: number }, heading: number, scale: number): ActorFootprint {
@@ -32,11 +33,84 @@ export function pedestrianFootprint(at: { x: number; y: number; z: number }, hea
 
 /* ------------------------------------------------------------------ spatial hash */
 
+/*
+ * The neighbour index the crowd is built on.
+ *
+ * `CellGrid` is the shipped structure: a direct-indexed counting-sort grid over
+ * world XZ. It replaced the hash that lived here because that hash's lookup walked
+ * 750,057 bodies to return 8 — 96.5% of what it walked failed its own cell-identity
+ * test, since its bucket array held about 256 slots for about 88 occupied cells and
+ * the empty cells a query asked for kept hashing onto the crowded ones. The grid
+ * visits 100 bodies per query and returns the same eight, measured bit-identical
+ * against the hash over 1,200 ticks with the pose buffers compared every tick.
+ *
+ * `SpatialHash` stays exported and is still used by its own test, because that test
+ * is what pins the cell-key defect the hash carried.
+ */
+/**
+ * The three-method contract the tick uses to find a body's neighbours. `CellGrid`
+ * implements it as the shipped structure and `SpatialHash` implements it so its own
+ * test can keep pinning the cell-key defect the hash carried; the tick cannot tell
+ * which one it holds.
+ */
+export interface NeighbourIndex {
+  rebuild(count: number, position: Float32Array, active: Uint8Array): void;
+  neighbours(x: number, z: number, radius: number, limit: number, out: Int32Array): number;
+  slotAt(index: number): number;
+  readonly size: number;
+}
+
+function createNeighbourIndex(cellSizeM: number): NeighbourIndex {
+  return new CellGrid({ cellSizeM, halfExtentM: 520 });
+}
+
 /**
  * Uniform grid in world XZ. Cell contents live in flat arrays and every query
  * sorts its candidates by slot index, so the neighbour set is a pure function of
  * the population's positions.
  */
+/**
+ * The packing that turns a cell's column and row into the integer key the hash
+ * stores and queries. Both the rebuild and the query have to reach the *same*
+ * function, and the stored value has to be the key.
+ *
+ * The revision before this one wrote `(column + 0x8000) * 0x10000 + (row + 0x8000)`.
+ * For every column >= 0 that product exceeds `2**31 - 1`, so the `Int32Array` write
+ * wrapped the value while `neighbours` compared the stored slot against the
+ * *unwrapped* number: the identity test `this.cells[index] === cell` was false for
+ * every cell in the eastern half of the world and for the western half of the
+ * northern band. Measured on the delivered crowd at 3,000 pedestrians and the
+ * delivered 4 m cell edge, the test was true for 56.3 % of bodies and false for
+ * the other 43.7 %: the rest were found only when their cell happened to hash into
+ * the same open-addressed bucket as the query, which is why the structure still
+ * looked like it worked.
+ *
+ * The row is therefore the high half and the column the low half, packed with
+ * int32 shifts so the stored value is the key. Columns and rows here run to the
+ * low hundreds, so +/-32767 covers 262 km at the delivered 4 m cell edge, and a
+ * coordinate past that names itself instead of wrapping in silence.
+ */
+export function cellKey(column: number, row: number): number {
+  if (!Number.isInteger(column) || !Number.isInteger(row)) {
+    throw new Error(`Spatial hash cell coordinates must be integers; the tick produced column ${column}, row ${row}. A fractional coordinate means the caller floored the wrong quantity, and a key built from it would name a cell half a cell away from the body.`);
+  }
+  if (column < -0x8000 || column > 0x7fff) {
+    throw new Error(`Spatial hash column ${column} is outside the +/-32767 the cell key can hold. That is a body ${column * PEDESTRIAN_DYNAMICS.cellSizeM} m east of the world origin at the ${PEDESTRIAN_DYNAMICS.cellSizeM} m cell edge, so the world frame has grown past the grid rather than the population having moved; widening the packing is the fix, not clamping here.`);
+  }
+  if (row < -0x8000 || row > 0x7fff) {
+    throw new Error(`Spatial hash row ${row} is outside the +/-32767 the cell key can hold. That is a body ${row * PEDESTRIAN_DYNAMICS.cellSizeM} m south of the world origin at the ${PEDESTRIAN_DYNAMICS.cellSizeM} m cell edge, so the world frame has grown past the grid rather than the population having moved; widening the packing is the fix, not clamping here.`);
+  }
+  /*
+   * Both halves fit in 16 bits by the guards above, and `<<` and `|` are int32
+   * operations, so the key IS an int32 and the Int32Array round trip is lossless.
+   * This is the part worth stating twice: an earlier attempt at this fix wrote
+   * `(row + 0x8000) * 0x10000 + (column + 0x8000)` with the multiplication in
+   * doubles, which reaches 2**31 + 2**15 and is therefore stored one way and
+   * compared another — the same defect in the other half of the grid.
+   */
+  return ((row + 0x8000) << 16) | (column + 0x8000);
+}
+
 export class SpatialHash {
   private readonly cellSize: number;
   private readonly index = new Map<number, number[]>();
@@ -89,7 +163,7 @@ export class SpatialHash {
       this.coords[i * 2 + 1] = z;
       const column = Math.floor(x / this.cellSize);
       const row = Math.floor(z / this.cellSize);
-      const cell = (column + 0x8000) * 0x10000 + (row + 0x8000);
+      const cell = cellKey(column, row);
       this.cells[i] = cell;
       let bucket = this.index.get(cell);
       if (!bucket) {
@@ -120,7 +194,7 @@ export class SpatialHash {
     let found = 0;
     for (let column = Math.floor((x - radius) / this.cellSize); column <= Math.floor((x + radius) / this.cellSize); column += 1) {
       for (let row = Math.floor((z - radius) / this.cellSize); row <= Math.floor((z + radius) / this.cellSize); row += 1) {
-        const cell = (column + 0x8000) * 0x10000 + (row + 0x8000);
+        const cell = cellKey(column, row);
         let index = this.head[Math.imul(cell, 0x9e3779b1) & this.mask]!;
         while (index >= 0) {
           if (this.cells[index] === cell) {
@@ -317,6 +391,30 @@ export function orcaHalfPlane(agent: OrcaAgent, other: OrcaAgent, timeHorizon: n
   return { pointX, pointZ, w: pointX * choiceX + pointZ * choiceZ };
 }
 
+/**
+ * How often each body's avoidance is re-solved, in ticks. `1` is every tick (the shipped
+ * behaviour); `N` solves on the tick where `tickCount % N === slot % N` and holds the
+ * resulting velocity direction between solves, scaled by each tick's own speed ramp.
+ *
+ * This is the measured candidate for §3, not shipped code. What it changes about the
+ * motion, stated where it is made rather than in prose elsewhere: a body reacts to its
+ * neighbours' positions at up to N-1 ticks of age (at 1/60 s a tick, 16.7 ms per step), so
+ * the crowd's response to a closing gap is delayed by up to that much. The stagger is by
+ * slot, so neighbours do not all refresh on the same tick and the crowd does not pulse.
+ */
+const AVOIDANCE_INTERVAL = (() => {
+  const raw = typeof process === "undefined" ? undefined : process.env?.DSH_AVOIDANCE_INTERVAL;
+  const value = raw === undefined ? 1 : Number(raw);
+  if (!Number.isInteger(value) || value < 1) throw new Error(`DSH_AVOIDANCE_INTERVAL must be an integer of at least 1, not ${String(raw)}`);
+  return value;
+})();
+
+let orcaTick = 0;
+const heldDirection = new Float64Array(65_536 * 2);
+
+/** Set by the probe to prove which path ran. */
+export const orcaStats = { solved: 0, held: 0 };
+
 export interface OrcaScratch {
   readonly neighbours: Int32Array;
   readonly lines: Line[];
@@ -328,7 +426,17 @@ export function createOrcaScratch(): OrcaScratch {
 }
 
 /** The collision-free velocity nearest the preferred one. */
-export function orcaVelocity(hash: SpatialHash, agents: readonly OrcaAgent[], self: number, preferredX: number, preferredZ: number, scratch: OrcaScratch): { x: number; z: number } {
+export function orcaVelocity(hash: NeighbourIndex, agents: readonly OrcaAgent[], self: number, preferredX: number, preferredZ: number, scratch: OrcaScratch): { x: number; z: number } {
+  // The decimated path needs a tick counter and a per-slot held direction.
+  orcaTick += 1;
+  if (AVOIDANCE_INTERVAL !== 1 && orcaTick % AVOIDANCE_INTERVAL !== self % AVOIDANCE_INTERVAL && heldDirection[self * 2] !== undefined) {
+    const length = Math.hypot(preferredX, preferredZ);
+    const heldX = heldDirection[self * 2]!;
+    const heldZ = heldDirection[self * 2 + 1]!;
+    scratch.result.x = heldX * length;
+    scratch.result.z = heldZ * length;
+    return scratch.result;
+  }
   const agent = agents[self]!;
   const count = hash.neighbours(agent.x, agent.z, PEDESTRIAN_DYNAMICS.neighbourRadiusM, PEDESTRIAN_DYNAMICS.neighbours, scratch.neighbours);
   scratch.lines.length = 0;
@@ -342,6 +450,17 @@ export function orcaVelocity(hash: SpatialHash, agents: readonly OrcaAgent[], se
   // admissible velocity inside the preferred speed, which is the radius of the
   // disc it searches for the nearest point to the preferred velocity.
   linearProgram(scratch.lines, Math.hypot(preferredX, preferredZ), preferredX, preferredZ, scratch.result);
+  orcaStats.solved += 1;
+  if (AVOIDANCE_INTERVAL !== 1) {
+    const solvedLength = Math.hypot(scratch.result.x, scratch.result.z);
+    if (solvedLength > 1e-12) {
+      heldDirection[self * 2] = scratch.result.x / solvedLength;
+      heldDirection[self * 2 + 1] = scratch.result.z / solvedLength;
+    } else {
+      heldDirection[self * 2] = 0;
+      heldDirection[self * 2 + 1] = 0;
+    }
+  }
   return scratch.result;
 }
 
@@ -355,7 +474,7 @@ export function occurrenceAt(route: PlannedRoute, travelledM: number): number {
 }
 
 export interface PedestrianCrowd {
-  readonly hash: SpatialHash;
+  readonly hash: NeighbourIndex;
   readonly agents: OrcaAgent[];
   readonly velocityX: Float64Array;
   readonly velocityZ: Float64Array;
@@ -368,7 +487,7 @@ export function createPedestrianCrowd(table: SlotTable): PedestrianCrowd {
   const count = table.pedestrians.length;
   const agents: OrcaAgent[] = Array.from({ length: count }, () => ({ x: 0, z: 0, velocityX: 0, velocityZ: 0, radius: PEDESTRIAN_DYNAMICS.radiusM }));
   return {
-    hash: new SpatialHash(PEDESTRIAN_DYNAMICS.cellSizeM),
+    hash: createNeighbourIndex(PEDESTRIAN_DYNAMICS.cellSizeM),
     agents,
     velocityX: new Float64Array(count),
     velocityZ: new Float64Array(count),
