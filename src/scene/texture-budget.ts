@@ -34,15 +34,22 @@
  * where every one of the 1,740 buildings is present from every framing on a
  * software rasteriser, which is what Phases 2 and 3 are for.
  *
- * Phase 4 owns facades — item 15 rebuilds them and item 35 de-lights them — and
- * Phase 9 owns the memory budget. Either may raise `MAX_TEXTURE_SIZE`; the table
- * above says what it will cost.
+ * The fixed Phase 4 priority policy retains 2048px atlases for tile bounds within
+ * 160m of the crossing and 1024px elsewhere, with one geographically selected
+ * final-detail frontage leaf at its native 4096px. The 67-input audit selects
+ * 17 priority tiles including that leaf: 561,075,583 decoded texture bytes with
+ * mipmaps plus 73,324,734 geometry bytes. These are allocation estimates.
+ * This is geographic priority, not a camera-dependent upgrade. Original source
+ * ImageBitmaps are released after capping; style toggles reuse the capped atlas.
+ *
+ * The pass that applies this cap lives in `src/scene/facade-textures.ts`, because
+ * capping, de-lighting (item 35) and deriving the sign mask (item 16) all touch
+ * every pixel of the same atlas and reading it three times would be three times
+ * the cost. This file is the cap and its evidence; that file is the work.
  */
 
-import type { Object3D, Texture } from "three";
-
 /**
- * The longest side any tile texture may have, in pixels.
+ * The longest side for a tile outside the crossing priority area, in pixels.
  *
  * 1024 puts the whole area of interest at leaf detail inside 335 MB. A desktop
  * GPU could afford 2048 and 1,199 MB; the visual gate runs on SwiftShader, where
@@ -50,87 +57,26 @@ import type { Object3D, Texture } from "three";
  */
 export const MAX_TEXTURE_SIZE = 1024;
 
-interface TileLike {
-  [key: string]: unknown;
-}
-
-/**
- * A `3d-tiles-renderer` plugin that shrinks oversized textures before the tile is used.
- *
- * `processTileModel` is the hook that runs after the glTF is parsed and **before**
- * the library measures the tile's memory, so the LRU cache's byte accounting sees
- * the capped size rather than the published one. Doing this in the `load-model`
- * event instead would leave the cache budgeting for textures that are no longer
- * there, and the budget is the thing keeping the scene inside memory.
+/** Fixed geographic priority, independent of camera and world style. The capped
+ * atlas remains cached across toggles; this does not promise reversible dynamic
+ * resolution after an original ImageBitmap has been released.
  */
-export class TextureBudgetPlugin {
-  readonly name = "MAPS_TEXTURE_BUDGET";
+export const PRIORITY_TEXTURE_SIZE = 2048;
+export const PRIORITY_TEXTURE_RADIUS_M = 160;
+/** The observed source facade facing the crossing. Geographic metadata chooses
+ * its final-detail leaf; tools/visual/texture-budget.ts requires exactly one.
+ */
+export const HERO_FRONTAGE_M = Object.freeze({ x: -38.58, z: 21.58 });
+export const HERO_TEXTURE_SIZE = 4096;
 
-  /** Textures shrunk this session, and the pixels that saved. */
-  shrunk = 0;
-  savedPixels = 0;
-
-  async processTileModel(scene: Object3D, _tile: TileLike): Promise<void> {
-    const textures = new Set<Texture>();
-    scene.traverse((object) => {
-      const material = (object as { material?: unknown }).material;
-      for (const entry of Array.isArray(material) ? material : [material]) {
-        if (entry === undefined || entry === null) continue;
-        for (const value of Object.values(entry as Record<string, unknown>)) {
-          const texture = value as Texture | null;
-          if (texture !== null && typeof texture === "object" && "isTexture" in texture) {
-            textures.add(texture);
-          }
-        }
-      }
-    });
-
-    for (const texture of textures) await this.shrink(texture);
-  }
-
-  private async shrink(texture: Texture): Promise<void> {
-    const image = texture.image as
-      | (ImageBitmap | HTMLImageElement | HTMLCanvasElement) & { width?: number; height?: number }
-      | undefined;
-    if (image === undefined || image === null) return;
-    const width = image.width ?? 0;
-    const height = image.height ?? 0;
-    if (width === 0 || height === 0) return;
-
-    const longest = Math.max(width, height);
-    if (longest <= MAX_TEXTURE_SIZE) return;
-
-    const scale = MAX_TEXTURE_SIZE / longest;
-    const target = {
-      width: Math.max(1, Math.round(width * scale)),
-      height: Math.max(1, Math.round(height * scale)),
-    };
-
-    let resized: ImageBitmap;
-    try {
-      resized = await createImageBitmap(image as ImageBitmapSource, {
-        resizeWidth: target.width,
-        resizeHeight: target.height,
-        resizeQuality: "high",
-      });
-    } catch (cause) {
-      // A failure here is not fatal — the tile still draws at full resolution —
-      // but it is exactly the kind of thing that silently blows the memory budget
-      // later, so it is said out loud rather than swallowed.
-      console.warn(
-        `Could not shrink a ${width}x${height} tile texture to ${target.width}x${target.height}; ` +
-          `it stays at full size and the memory budget is that much tighter. ${String(cause)}`,
-      );
-      return;
-    }
-
-    texture.image = resized;
-    texture.needsUpdate = true;
-    this.shrunk += 1;
-    this.savedPixels += width * height - target.width * target.height;
-
-    // The source bitmap is a separate copy of the decoded pixels and holding on
-    // to it would double the saving away.
-    if (typeof (image as ImageBitmap).close === "function") (image as ImageBitmap).close();
-  }
+export function textureLimitForTile(tile: unknown): number {
+  const box = (tile as { boundingVolume?: { box?: number[] } } | null)?.boundingVolume?.box;
+  if (!box || box.length !== 12 || box.some((value) => !Number.isFinite(value))) return MAX_TEXTURE_SIZE;
+  const halfX = Math.abs(box[3]!) + Math.abs(box[6]!) + Math.abs(box[9]!);
+  const halfZ = Math.abs(box[5]!) + Math.abs(box[8]!) + Math.abs(box[11]!);
+  const detail = tile as { geometricError?: number; children?: unknown[] };
+  if (detail.geometricError === 0 && !detail.children?.length && Math.abs(box[0]! - HERO_FRONTAGE_M.x) <= halfX && Math.abs(box[2]! - HERO_FRONTAGE_M.z) <= halfZ) return HERO_TEXTURE_SIZE;
+  const dx = Math.max(0, Math.abs(box[0]!) - halfX);
+  const dz = Math.max(0, Math.abs(box[2]!) - halfZ);
+  return Math.hypot(dx, dz) <= PRIORITY_TEXTURE_RADIUS_M ? PRIORITY_TEXTURE_SIZE : MAX_TEXTURE_SIZE;
 }

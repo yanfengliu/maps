@@ -28,22 +28,27 @@
  * hand would be a few thousand lines to arrive at the same place with worse
  * eviction.
  *
- * ## What is deliberately not done here
- *
- * The materials are the ones MLIT's atlases give. That is Phase 4's work and
- * touching it now would mean judging the data through a treatment rather than
- * seeing it. The per-building batch table is loaded and left alone; Phase 4's
- * window grids and Phase 5's signage are what read it.
+ * The facade plugin keeps the source atlas cached while applying the selected
+ * world treatment. Per-building batch attributes supply real floor information
+ * without replacing the surveyed geometry.
  */
 
-import type { Camera, Mesh, WebGLRenderer } from "three";
-import { Box3, Group, Vector3 } from "three";
+import type { Camera, Mesh, MeshStandardMaterial, Object3D, WebGLRenderer } from "three";
+import { Box3, Group, Matrix3, Raycaster, Vector2, Vector3 } from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { TilesRenderer } from "3d-tiles-renderer";
 import { GLTFExtensionsPlugin, UnloadTilesPlugin } from "3d-tiles-renderer/plugins";
 
 import { SCENE_FILES } from "../world/scene-data.js";
-import { MAX_TEXTURE_SIZE, TextureBudgetPlugin } from "./texture-budget.js";
+import type { AlbedoStats } from "./delight.js";
+import {
+  DEFAULT_FACADE_OPTIONS,
+  FacadeTexturePlugin,
+  type FacadeTextureOptions,
+  type FacadeTextureStats,
+} from "./facade-textures.js";
+import type { SignageUniform, FacadeStyleUniforms } from "./tile-materials.js";
+import { wholeByteAccounting } from "./tile-memory.js";
 
 /**
  * Screen-space error target, in pixels.
@@ -75,16 +80,16 @@ const ERROR_TARGET = 16;
  * roads were still there and every pixel floor passed on a map of Shibuya with no
  * buildings on it.
  *
- * With `MAX_TEXTURE_SIZE` capping atlases at 1024 pixels, all 67 tiles resident
- * at once measure 335 MB, so 448 MB holds the entire area of interest at leaf
- * detail from every framing and never has to evict at all. The ceiling is there
- * for a framing that reaches past the box, not for this one. `minBytesSize` is
- * the floor eviction stops at, so a busy frame does not throw away what it is
- * about to draw.
+ * The fixed geographic policy selects 17 near-crossing tiles: one observed
+ * frontage leaf at native 4096 pixels, the others at 2048; outside tiles use
+ * 1024. The full-source audit estimates 561,075,583 texture bytes
+ * with mipmaps plus 73,324,734 geometry bytes. A 640 MiB floor holds that bounded
+ * population; 768 MiB is the eviction ceiling. Neither budget promises measured
+ * GPU allocation or camera-dependent upgrades.
  */
 const CACHE_BYTES = Object.freeze({
-  minimum: 448 * 1024 * 1024,
-  maximum: 512 * 1024 * 1024,
+  minimum: 640 * 1024 * 1024,
+  maximum: 768 * 1024 * 1024,
 });
 
 /** How long a tile stays resident after it stops being visible, milliseconds. */
@@ -118,10 +123,23 @@ export interface BuildingsStatus {
   loaded: number;
   /** Tiles this session has unloaded, cumulative. */
   unloaded: number;
-  /** Texture atlases shrunk to the size cap this session. */
-  texturesShrunk: number;
-  /** The cap that was applied, longest side in pixels. */
-  maxTextureSize: number;
+  /**
+   * What the facade pass did: the size cap, the de-lighting of item 35 and the
+   * derived sign mask of item 16, all in one read of each atlas.
+   */
+  facade: FacadeTextureStats;
+  /** Albedo statistics over every atlas, as PLATEAU shipped it. */
+  albedoBefore: AlbedoStats;
+  /** The same statistics after the de-lighting operator ran. */
+  albedoAfter: AlbedoStats;
+  /**
+   * Bumped whenever a tile model arrives or leaves.
+   *
+   * The post chain's temporal accumulation needs to know the picture changed, and
+   * a tileset refining behind a still camera changes it. Comparing this between
+   * frames is cheaper than measuring the scene.
+   */
+  revision: number;
   /** The first load failure, or null. */
   error: string | null;
   /** Meshes currently in the buildings group and drawn. */
@@ -145,13 +163,55 @@ export interface Buildings {
   root: Group;
   /** Called once per frame with the camera that is about to draw. */
   update(): void;
+  /**
+   * Has the tileset stopped changing the picture since the last call?
+   *
+   * Cheap on purpose: `status()` walks every drawn mesh and is far too heavy to
+   * call once a frame, and this is asked once a frame by the post chain's
+   * temporal accumulation. False on the frame a tile arrives or leaves and on the
+   * one after it, true from then until something else moves.
+   */
+  settled(): boolean;
   status(): BuildingsStatus;
+  facadeSamples(rays?: readonly FacadeRay[]): FacadeSample[];
   /** Resolves once the root tileset is up; rejects with a named failure. */
   ready: Promise<void>;
   dispose(): void;
 }
 
-export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildings {
+/** Observed atlas behind fixed screen rays, tied to the current control-driven
+ * camera. Reports the live texture image dimensions, not the configured cap.
+ */
+export interface FacadeRay { x: number; y: number }
+export interface FacadeSample {
+  ndc: { x: number; y: number };
+  position: { x: number; y: number; z: number };
+  tileUri: string;
+  tileBounds: number[] | null;
+  limit: number;
+  sourceWidth: number;
+  sourceHeight: number;
+  width: number;
+  height: number;
+  /** Source-map nearest texel, sRGB RGB and linear mask alpha; not a framebuffer read. */
+  rgba: [number, number, number, number] | null;
+  uv: { x: number; y: number } | null;
+  worldNormal: { x: number; y: number; z: number } | null;
+}
+
+export interface BuildingsOptions {
+  style: FacadeStyleUniforms;
+  /** The shared uniform the patched tile materials read their signage level from. */
+  signageIntensity: SignageUniform;
+  /** Overrides for the facade pass; the gate proofs are the reason this exists. */
+  facade?: Partial<Omit<FacadeTextureOptions, "signageIntensity">> | undefined;
+}
+
+export function createBuildings(
+  camera: Camera,
+  renderer: WebGLRenderer,
+  options: BuildingsOptions,
+): Buildings {
   const group = new Group();
   group.name = "buildings";
 
@@ -162,12 +222,24 @@ export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildi
   draco.setDecoderPath("/draco/");
 
   const tiles = new TilesRenderer(SCENE_FILES.buildingsTileset);
+  // Upstream mipmap estimates include fractional bytes. Its zero-budget LRU
+  // disposal loop compares differently ordered floating sums without an item
+  // bound. Whole bytes keep those sums exact and conservatively budget memory.
+  const accounting = tiles as TilesRenderer & { calculateBytesUsed(tile: unknown, scene: Object3D): number };
+  const calculateBytesUsed = accounting.calculateBytesUsed.bind(tiles);
+  accounting.calculateBytesUsed = wholeByteAccounting(calculateBytesUsed);
   tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader: draco }));
   // Before the unload plugin, and before anything measures a tile: the texture
   // cap has to be applied where the library still counts the bytes it will hold,
-  // not after. See `src/scene/texture-budget.ts`.
-  const textureBudget = new TextureBudgetPlugin();
-  tiles.registerPlugin(textureBudget);
+  // not after. The same pass de-lights the albedo and derives the sign mask, so
+  // each atlas is read once. See `src/scene/facade-textures.ts`.
+  const facade = new FacadeTexturePlugin({
+    ...DEFAULT_FACADE_OPTIONS,
+    ...options.facade,
+    signageIntensity: options.signageIntensity,
+    style: options.style,
+  });
+  tiles.registerPlugin(facade);
   const unloader = new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS });
   tiles.registerPlugin(unloader);
   tiles.errorTarget = ERROR_TARGET;
@@ -178,6 +250,7 @@ export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildi
 
   let loaded = 0;
   let unloaded = 0;
+  let revision = 0;
   let rootUp = false;
   let error: string | null = null;
 
@@ -199,6 +272,7 @@ export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildi
 
   tiles.addEventListener("load-model", (event) => {
     loaded += 1;
+    revision += 1;
     const scene = (event as unknown as { scene: { traverse(cb: (o: unknown) => void): void } }).scene;
     scene.traverse((object) => {
       const mesh = object as { isMesh?: boolean; castShadow?: boolean; receiveShadow?: boolean };
@@ -210,12 +284,41 @@ export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildi
   });
   tiles.addEventListener("dispose-model", () => {
     unloaded += 1;
+    revision += 1;
   });
 
   group.add(tiles.group);
 
+  let settledRevision = -1;
+
   return {
     root: group,
+    facadeSamples(rays = [-0.82, -0.28, 0.18, 0.65].map((x) => ({ x, y: 0.48 }))): FacadeSample[] {
+      if (rays.length > 64 || rays.some((ray) => !Number.isFinite(ray.x) || !Number.isFinite(ray.y) || Math.abs(ray.x) > 1 || Math.abs(ray.y) > 1)) throw new Error("Facade observations need at most 64 finite screen rays with x/y between -1 and 1.");
+      const visible: Object3D[] = []; group.traverseVisible((object) => { if ((object as Mesh).isMesh) visible.push(object); });
+      const ray = new Raycaster(); const result: FacadeSample[] = [];
+      for (const point of rays) {
+        const ndc = { x: point.x, y: point.y }; ray.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+        const hit = ray.intersectObjects(visible, false)[0]; if (!hit) continue;
+        const mesh = hit.object as Mesh; const material = Array.isArray(mesh.material) ? mesh.material[hit.face?.materialIndex ?? 0] : mesh.material;
+        const map = (material as MeshStandardMaterial).map;
+        const info = map?.userData.mapsAtlas as Pick<FacadeSample, "tileUri" | "tileBounds" | "limit" | "sourceWidth" | "sourceHeight"> | undefined; if (!map || !info) continue;
+        const image = map.image as { width: number; height: number; data?: Uint8Array | Uint8ClampedArray };
+        const uv = hit.uv?.clone(); if (uv) map.transformUv(uv);
+        const offset = uv ? (Math.min(image.height - 1, Math.floor(uv.y * image.height)) * image.width + Math.min(image.width - 1, Math.floor(uv.x * image.width))) * 4 : -1;
+        const rgba: FacadeSample["rgba"] = image.data && offset >= 0 ? [image.data[offset]!, image.data[offset + 1]!, image.data[offset + 2]!, image.data[offset + 3]!] : null;
+        const normal = hit.normal?.clone() ?? hit.face?.normal.clone(); normal?.applyNormalMatrix(new Matrix3().getNormalMatrix(mesh.matrixWorld));
+        result.push({ ...info, tileBounds: info.tileBounds?.slice() ?? null, ndc, position: { x: hit.point.x, y: hit.point.y, z: hit.point.z }, width: image.width, height: image.height, rgba, uv: uv ? { x: uv.x, y: uv.y } : null, worldNormal: normal ? { x: normal.x, y: normal.y, z: normal.z } : null });
+      }
+      return result;
+    },
+    settled(): boolean {
+      const stats = statsOf(tiles);
+      const pending = stats.queued + stats.downloading + stats.parsing;
+      const steady = rootUp && pending === 0 && revision === settledRevision;
+      settledRevision = revision;
+      return steady;
+    },
     update(): void {
       // The camera moved and the canvas may have resized, so both are restated
       // before the traversal decides what to load. Cheap, and skipping it is how
@@ -238,8 +341,10 @@ export function createBuildings(camera: Camera, renderer: WebGLRenderer): Buildi
         gpuBytes: (unloader as unknown as { estimatedGpuBytes?: number }).estimatedGpuBytes ?? 0,
         loaded,
         unloaded,
-        texturesShrunk: textureBudget.shrunk,
-        maxTextureSize: MAX_TEXTURE_SIZE,
+        facade: facade.stats(),
+        albedoBefore: facade.before.stats(),
+        albedoAfter: facade.after.stats(),
+        revision,
         error,
       };
     },

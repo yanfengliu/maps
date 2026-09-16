@@ -24,7 +24,7 @@
  *   buildings.
  */
 
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,6 +47,9 @@ import { geographicToPlaneRectangular } from "../geo/plane-rectangular.ts";
 import { buildBuildings } from "./build-buildings.ts";
 import { buildRoads } from "./build-roads.ts";
 import { buildTerrain } from "./build-terrain.ts";
+import { cleanSceneGeometry } from "./clean-geometry.ts";
+import { writeMarkings } from "./build-markings.ts";
+import { buildPavementPresentation, writePavementPresentation } from "./pavement-recipe.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DATA_ROOT = join(REPO_ROOT, "data");
@@ -91,8 +94,7 @@ function log(line: string): void {
 
 async function main(): Promise<void> {
   console.log(`Scene root: ${SCENE_ROOT} (gitignored, rebuilt by this command)\n`);
-  await rm(SCENE_ROOT, { recursive: true, force: true });
-  await mkdir(SCENE_ROOT, { recursive: true });
+  await cleanSceneGeometry(SCENE_ROOT);
 
   log("terrain — PLATEAU dem:TINRelief");
   const terrain = await buildTerrain(
@@ -136,6 +138,9 @@ async function main(): Promise<void> {
     log,
   );
   await writeFile(join(SCENE_ROOT, "roads.mesh"), roads.bytes);
+  const pavements = await buildPavementPresentation(terrain.bytes, roads.bytes, log);
+  await writePavementPresentation(SCENE_ROOT, pavements);
+  await writeMarkings();
 
   // Nothing at sea level. PLATEAU's sub-LOD3 road polygons are flat at z = 0, so
   // a road that failed to drape does not disappear — it lies fifteen metres under

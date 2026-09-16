@@ -19,10 +19,14 @@
  * onto the terrain rather than drawn as published.
  */
 
-import { Group, Mesh, MeshStandardMaterial } from "three";
+import { Color, Group, Mesh, MeshStandardMaterial } from "three";
+import { DEFAULT_WORLD_STYLE_ID, worldStyle, type WorldStyle } from "../world/styles.js";
+import { createSurfaceMaterial } from "./surface-materials.js";
 
 import { SCENE_FILES } from "../world/scene-data.js";
-import { loadMesh, toGeometry } from "./mesh-loader.js";
+import { loadMesh, loadMeshWithDigest, toGeometry } from "./mesh-loader.js";
+import { surfaceSampler } from "../world/surface-sampler.js";
+import { createPaintSupport, type PaintSupport } from "./paint-support.js";
 
 export interface RoadsInfo {
   triangleCount: number;
@@ -32,26 +36,26 @@ export interface RoadsInfo {
 export interface Roads {
   root: Group;
   info: RoadsInfo;
+  inputDigests: { roads: string; pavements: string };
+  heightAt(x: number, z: number): number | undefined;
+  paintHeightAt: PaintSupport;
+  setStyle(style: WorldStyle): void;
   dispose(): void;
 }
 
-export async function createRoads(): Promise<Roads> {
-  const mesh = await loadMesh(SCENE_FILES.roads);
+export async function createRoads(style: WorldStyle = worldStyle(DEFAULT_WORLD_STYLE_ID)): Promise<Roads> {
+  const [roadInput, pavementInput, markingMesh] = await Promise.all([loadMeshWithDigest(SCENE_FILES.roads), loadMeshWithDigest(SCENE_FILES.pavements), loadMesh(SCENE_FILES.markings)]);
+  const mesh = roadInput.mesh, pavementMesh = pavementInput.mesh;
   const geometry = toGeometry(mesh);
+  const roadAt = surfaceSampler(mesh, true); const pavementAt = surfaceSampler(pavementMesh, true);
 
-  const material = new MeshStandardMaterial({
-    color: 0x3f4247,
-    roughness: 0.88,
-    metalness: 0.0,
+  const treatment = createSurfaceMaterial("road", style);
+  const material = treatment.material;
     // The offline build already lifts every road vertex 0.2 m clear of the
     // ground. This is the second defence, and it is the one that works at any
     // camera distance: the lift is a fixed number of metres and the depth
     // buffer's resolution is not, so at the 950 m the overhead sweep sits at the
     // two surfaces are within a few centimetres of each other in depth.
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -4,
-  });
 
   const surface = new Mesh(geometry, material);
   surface.name = "roads:plateau-tran";
@@ -61,13 +65,33 @@ export async function createRoads(): Promise<Roads> {
   const group = new Group();
   group.name = "roads";
   group.add(surface);
+  const paving = createSurfaceMaterial("sidewalk", style);
+  const pavementGeometry = toGeometry(pavementMesh);
+  const pavement = new Mesh(pavementGeometry, paving.material);
+  pavement.name = "roads:plateau-semantic-pavement";
+  pavement.receiveShadow = true;
+  group.add(pavement);
+  const markingGeometry = toGeometry(markingMesh);
+  const markingMaterial = new MeshStandardMaterial({ color: new Color(style.palette.sidewalk).lerp(new Color(0xffffff), 0.88), roughness: 0.74, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
+  const markings = new Mesh(markingGeometry, markingMaterial);
+  markings.name = "roads:plateau-source-markings";
+  markings.receiveShadow = true;
+  group.add(markings);
 
   return {
     root: group,
+    inputDigests: { roads: roadInput.sha256, pavements: pavementInput.sha256 },
+    paintHeightAt: createPaintSupport(mesh, pavementMesh),
+    heightAt(x, z): number | undefined { const road = roadAt(x, z); const pavement = pavementAt(x, z); return road === undefined ? pavement : pavement === undefined ? road : Math.max(road, pavement); },
     info: { triangleCount: mesh.header.triangleCount, vertexCount: mesh.header.vertexCount },
+    setStyle(next): void { treatment.apply(next); paving.apply(next); markingMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); },
     dispose(): void {
       geometry.dispose();
       material.dispose();
+      pavementGeometry.dispose();
+      paving.material.dispose();
+      markingGeometry.dispose();
+      markingMaterial.dispose();
     },
   };
 }

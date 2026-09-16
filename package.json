@@ -18,10 +18,19 @@
     "data:fetch": "node tools/data/fetch.ts",
     "data:tiles": "node tools/data/fetch-tiles.ts",
     "data:scene": "node tools/scene/build.ts",
+    "data:pavements": "node tools/scene/build-pavements.ts",
+    "data:markings": "node tools/scene/build-markings.ts",
+    "data:decorations": "node tools/data/fetch-decorations.ts && node tools/scene/build-decorations.ts",
+    "data:hardware": "node tools/scene/build-control-hardware.ts",
+    "data:textures:verify": "node tools/visual/texture-budget.ts",
+    "data:paint-reference": "node tools/data/fetch-paint-reference.ts",
+    "data:setup": "npm run data:fetch && npm run data:scene && npm run data:textures:verify && npm run data:network && npm run data:paint-reference && npm run data:markings && npm run data:decorations && npm run data:vehicles && npm run data:hardware",
     "data:network": "node tools/network/build.ts",
-    "visual": "npm run build && playwright test",
+    "visual": "npm run build && node tools/visual/verify-output.ts --begin && playwright test --config playwright.config.ts && playwright test --config playwright.lifecycle.config.ts --repeat-each=3 && node tools/visual/verify-output.ts",
     "visual:install": "playwright install chromium",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "data:vehicles": "node tools/agents/build-vehicles.ts",
+    "data:vehicles:verify": "node tools/agents/verify-vehicles.ts"
   },
   "dependencies": {
     "3d-tiles-renderer": "^0.5.2",

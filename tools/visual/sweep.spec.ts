@@ -22,7 +22,6 @@ import { OrbitDriver, shortestAngle, type CameraSnapshot, type TileStatus } from
 import { decodePng, measureFrame, signatureDistance, type FrameStats } from "./png.js";
 import { AZIMUTHS, CAPTURE_VIEWPORT, FRAME_FLOORS, SHOTS, frameName } from "./shots.js";
 
-const OUTPUT_DIR = path.resolve("artifacts/visual");
 
 interface CapturedFrame {
   file: string;
@@ -39,9 +38,13 @@ test.describe("visual sweep", () => {
   // the building tileset to stop refining, on a software renderer drawing half a
   // million triangles and 4096x4096 texture atlases. The wall-clock cost is the
   // price of not photographing a moving camera or a half-loaded city.
-  test.setTimeout(45 * 60_000);
+  // The first final software run measured 2m52, 2m52 and 3m17 between plaza
+  // captures. Eighteen views project to 52–59m before initial refinement.
+  test.setTimeout(70 * 60_000);
 
-  test("orbits the scene through the real controls and writes every frame", async ({ page }) => {
+  for (const style of ["satellite", "cartographic"] as const) {
+  test(`${style}: orbits the scene through the real controls and writes every frame`, async ({ page }) => {
+    const OUTPUT_DIR = path.resolve(`artifacts/visual/sweep/${style}`);
     // Wipe first. A stale frame from an earlier run is worse than no frame: it
     // makes a run that never captured anything look like a run that passed.
     await rm(OUTPUT_DIR, { recursive: true, force: true });
@@ -53,7 +56,7 @@ test.describe("visual sweep", () => {
     });
     page.on("pageerror", (error) => consoleErrors.push(`uncaught: ${error.message}`));
 
-    await page.goto("/");
+    await page.goto(`/?style=${style}`);
 
     const driver = new OrbitDriver(page);
     const status = await driver.waitForFirstFrame();
@@ -282,6 +285,8 @@ test.describe("visual sweep", () => {
 
     const manifest = {
       capturedAt: new Date().toISOString(),
+      style,
+      requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
       viewport: CAPTURE_VIEWPORT,
       glRenderer: status.glRenderer,
       frames: frames.map((frame) => ({
@@ -300,7 +305,7 @@ test.describe("visual sweep", () => {
         tilesUnloadedSoFar: frame.tiles.unloaded,
         tileCacheBytes: Math.round(frame.tiles.cachedBytes),
         tileGpuBytes: Math.round(frame.tiles.gpuBytes),
-        tileTexturesShrunk: frame.tiles.texturesShrunk,
+        tileTexturesShrunk: frame.tiles.facade.shrunk,
         buildingTrianglesDrawn: frame.tiles.drawnTriangles,
         buildingBounds: frame.tiles.drawnBounds,
         sha256: frame.sha256,
@@ -336,4 +341,5 @@ test.describe("visual sweep", () => {
       ].join("\n"),
     );
   });
+  }
 });

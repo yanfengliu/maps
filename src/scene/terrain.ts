@@ -17,10 +17,13 @@
  * this is enough to see the shape of it honestly.
  */
 
-import { Group, Mesh, MeshStandardMaterial } from "three";
+import { Group, Mesh } from "three";
+import { DEFAULT_WORLD_STYLE_ID, worldStyle, type WorldStyle } from "../world/styles.js";
+import { createSurfaceMaterial } from "./surface-materials.js";
 
 import { SCENE_FILES } from "../world/scene-data.js";
 import { loadMesh, toGeometry } from "./mesh-loader.js";
+import { surfaceSampler } from "../world/surface-sampler.js";
 
 export interface TerrainInfo {
   triangleCount: number;
@@ -33,18 +36,17 @@ export interface TerrainInfo {
 export interface Terrain {
   root: Group;
   info: TerrainInfo;
+  heightAt(x: number, z: number): number | undefined;
+  setStyle(style: WorldStyle): void;
   dispose(): void;
 }
 
-export async function createTerrain(): Promise<Terrain> {
+export async function createTerrain(style: WorldStyle = worldStyle(DEFAULT_WORLD_STYLE_ID)): Promise<Terrain> {
   const mesh = await loadMesh(SCENE_FILES.terrain);
   const geometry = toGeometry(mesh);
 
-  const material = new MeshStandardMaterial({
-    color: 0x8d8b82,
-    roughness: 0.96,
-    metalness: 0.0,
-  });
+  const treatment = createSurfaceMaterial("ground", style);
+  const material = treatment.material;
 
   const ground = new Mesh(geometry, material);
   ground.name = "terrain:plateau-tin";
@@ -59,6 +61,8 @@ export async function createTerrain(): Promise<Terrain> {
 
   return {
     root: group,
+    heightAt: surfaceSampler(mesh),
+    setStyle: treatment.apply,
     info: {
       triangleCount: mesh.header.triangleCount,
       vertexCount: mesh.header.vertexCount,

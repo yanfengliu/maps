@@ -656,7 +656,7 @@ function texturesOf(glb: Glb): { pixels: number; largest: { width: number; heigh
 }
 
 /** Width and height out of a WebP header, whichever of the three forms it takes. */
-function webpSize(bytes: Uint8Array): { width: number; height: number } | undefined {
+export function webpSize(bytes: Uint8Array): { width: number; height: number } | undefined {
   if (bytes.byteLength < 30) return undefined;
   const fourcc = new TextDecoder().decode(bytes.subarray(12, 16));
   if (fourcc === "VP8X") {

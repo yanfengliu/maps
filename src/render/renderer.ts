@@ -37,8 +37,10 @@ export function createRenderer(canvas: HTMLCanvasElement): WebGLRenderer {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFSoftShadowMap;
 
-  // Tone mapping and the rest of the output stage belong to Phase 5. The default
-  // is left alone here so that pass has nothing to unpick.
+  // The output stage belongs to `src/render/post.ts`, which sets ACES filmic tone
+  // mapping and the exposure for the time of day on this same renderer —
+  // `OutputPass` reads both from here rather than holding its own. It is set
+  // there and not here so the two cannot disagree.
   return renderer;
 }
 

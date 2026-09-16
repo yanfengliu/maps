@@ -23,6 +23,8 @@
  */
 
 import type { Page } from "@playwright/test";
+import { CameraSettling, shortestAngle, type CameraObservation, type SettleMode } from "./settling.js";
+export { shortestAngle } from "./settling.js";
 
 // Types only. The import also brings in the `window.__mapsHarness` declaration
 // so this file sees the same read-only shape the app publishes rather than a
@@ -46,12 +48,9 @@ const APP_ID = "maps-shibuya-1km";
 
 const POLL_MS = 60;
 const MAX_POLLS = 400;
-/** Per-poll pose change under which the camera counts as still. */
-const STILL_EPSILON = 2e-4;
-/** Consecutive still polls required before a frame is captured. */
-const STILL_POLLS = 3;
-/** Frames that must be drawn after an input before the camera can count as still. */
-const MIN_FRAMES_AFTER_INPUT = 12;
+/** Bounded wall time; evaluate calls can take seconds on the software renderer. */
+const SETTLE_TIMEOUT_MS = 5 * 60_000;
+const STALLED_FRAME_TIMEOUT_MS = 15_000;
 
 export class OrbitDriver {
   private readonly page: Page;
@@ -100,6 +99,10 @@ export class OrbitDriver {
           );
         }
         if (status.ready && status.frameCount > 0) {
+          if (process.env["MAPS_VISUAL_GPU"] === "hardware" &&
+            (!/NVIDIA|GeForce|RTX/i.test(status.glRenderer) || /SwiftShader|llvmpipe|software/i.test(status.glRenderer))) {
+            throw new Error(`Hardware rendering was requested, but Chromium reports ${status.glRenderer}. This lane requires the NVIDIA GPU; software fallback is not a performance measurement.`);
+          }
           await this.readCanvasBox();
           return status;
         }
@@ -166,6 +169,16 @@ export class OrbitDriver {
       throw new Error("The harness bridge vanished from window mid-run; the page was replaced.");
     }
     return camera;
+  }
+
+  /** The pose and frame count must come from the same browser task. */
+  async readCameraObservation(): Promise<CameraObservation> {
+    const observation = await this.page.evaluate(() => {
+      const harness = window.__mapsHarness;
+      return harness ? { epoch: performance.timeOrigin, status: harness.status(), camera: harness.camera() } : null;
+    });
+    if (observation === null) throw new Error("The harness bridge vanished from window mid-run; the page was replaced.");
+    return observation;
   }
 
   async readTiles(): Promise<TileStatus> {
@@ -295,56 +308,24 @@ ${tiles.error}`);
    * the frame counter has to keep advancing. Without the second, a frozen loop
    * reads as a perfectly still camera.
    */
-  async settle(): Promise<CameraSnapshot> {
-    const framesAtStart = (await this.readStatus()).frameCount;
-    let previous = await this.readCamera();
-    let stillPolls = 0;
-    let lastFrameCount = framesAtStart;
-    let stalledPolls = 0;
-
-    for (let poll = 0; poll < MAX_POLLS; poll += 1) {
+  async settle(mode: SettleMode = "capture"): Promise<CameraSnapshot> {
+    const started = Date.now();
+    let lastFreshAt = started;
+    let observation = await this.readCameraObservation();
+    const tracker = new CameraSettling(observation, mode);
+    let measured = tracker.observe(observation);
+    while (Date.now() - started < SETTLE_TIMEOUT_MS) {
       await this.page.waitForTimeout(POLL_MS);
-      const status = await this.readStatus();
-      const camera = await this.readCamera();
-
-      if (status.contextLost) {
-        throw new Error("The WebGL context was lost while waiting for the camera to settle.");
+      observation = await this.readCameraObservation();
+      measured = tracker.observe(observation);
+      if (measured.fresh) lastFreshAt = Date.now();
+      if (Date.now() - lastFreshAt >= STALLED_FRAME_TIMEOUT_MS) {
+        throw new Error(`The render loop stopped: frame ${observation.status.frameCount} did not advance for ${Date.now() - lastFreshAt} ms during ${mode} settling. A still buffer is not a completed capture.`);
       }
-
-      if (status.frameCount === lastFrameCount) {
-        stalledPolls += 1;
-        if (stalledPolls > 8) {
-          throw new Error(
-            `The render loop stopped: the frame count has been stuck at ${status.frameCount} for ` +
-              `${stalledPolls * POLL_MS} ms. A still camera and a stopped renderer look identical ` +
-              "in a screenshot, so this is failed rather than captured.",
-          );
-        }
-      } else {
-        stalledPolls = 0;
-      }
-      lastFrameCount = status.frameCount;
-
-      const moved = Math.max(
-        Math.abs(shortestAngle(camera.azimuth - previous.azimuth)),
-        Math.abs(camera.polar - previous.polar),
-        Math.abs(camera.distance - previous.distance) / Math.max(camera.distance, 1),
-      );
-      previous = camera;
-
-      stillPolls = moved < STILL_EPSILON ? stillPolls + 1 : 0;
-      if (
-        stillPolls >= STILL_POLLS &&
-        status.frameCount - framesAtStart >= MIN_FRAMES_AFTER_INPUT
-      ) {
-        return camera;
-      }
+      if (Date.now() - started >= SETTLE_TIMEOUT_MS) break;
+      if (measured.done) return observation.camera;
     }
-
-    throw new Error(
-      `The camera never settled: it was still moving after ${MAX_POLLS * POLL_MS} ms. ` +
-        "Capturing now would record a different point of the glide on every run.",
-    );
+    throw new Error(`The camera never settled for ${mode} after ${Date.now() - started} ms: ${measured.advancedFrames} frames advanced, last world movement ${measured.worldM} m, ${measured.quietIntervals} quiet intervals. Capturing now would record a moving baseline.`);
   }
 
   /**
@@ -425,10 +406,4 @@ function portOf(url: string): string {
   }
   if (parsed.port !== "") return parsed.port;
   return parsed.protocol === "https:" ? "443" : "80";
-}
-
-/** Wrap an angle difference into [-PI, PI] so 359 degrees is a step of one. */
-export function shortestAngle(radians: number): number {
-  const wrapped = ((radians % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI);
-  return wrapped - Math.PI;
 }

@@ -66,7 +66,19 @@ This rule fixes this repo's exposure only. Every other visual gate in the fleet 
 
 ## Gate artifacts live in `artifacts/`
 
-That directory ignores itself. `npm run visual` wipes and rewrites it, so nothing in it is ever evidence for a run other than the last one. Promoting a frame to a fixture or a golden moves it out of there; it does not get un-ignored in place.
+That directory ignores itself. Each visual specification replaces only its own output directory: `visual/hero`, `visual/sweep/satellite` or `visual/sweep/cartographic`. Retained recovery evidence and sibling specifications are outside that cleanup scope. The wrapper requires 44 fresh native 1280×720 frames, checks their hashes and unchanged build bytes after the complete run, and writes `visual/complete.json`. This verifies the evidence set exists; every frame still needs native inspection. Promoting a frame to a fixture or golden moves it out of there; it does not get un-ignored in place.
+
+## The visual gate is two lanes, and each one names its renderer
+
+`npm run visual` builds once, pins those build bytes, runs the software pixel lane, runs the hardware lifecycle lane, then verifies the complete 44-frame set. The split is by renderer, not by requirement.
+
+The pixel lane (`playwright.config.ts`, which runs `hero.spec.ts`, `style-picker.spec.ts` and `sweep.spec.ts`) stays on SwiftShader, because the 44-frame set is compared across machines and a pixel set captured on one renderer cannot inherit a review written for another. There is no switch that can move it: the former `MAPS_VISUAL_GPU` launch-arg switch is gone, and `lifecycle.spec.ts` is excluded here.
+
+The lifecycle lane (`playwright.lifecycle.config.ts`, `lifecycle.spec.ts` only, repeated three times in the gate) runs on the hardware renderer with the same URL, preparation, viewport and 15-second navigation / 60-second replacement bounds. The spec records the unmasked `glRenderer` from the frozen harness before the expensive preparation and fails by name when that string names a software rasteriser, so the lane can neither fall back silently nor pass on a machine that only has SwiftShader.
+
+Why: measured 2026-09-15, under SwiftShader the fifteen-second bound is spent inside Chromium destroying the outgoing page's WebGL resources rather than in the application, whose own `pagehide` work finishes in 2.1-4.3 ms while the replacement document's first script does not run until about +27.87 s. The red baseline, the three attribution arms and their hashes are in `docs/learning/gate-proofs.md`; the user-visible version of the bound is in the defect register.
+
+A machine with no usable GPU reports the lifecycle check unavailable: non-zero exit, no `complete.json`, and a message naming the missing prerequisite. It is never skipped and never a pass. Every capture run deletes any earlier `complete.json` before it starts, so a failed run cannot leave a previous run's success artifact behind. Re-measure the SwiftShader bound when the scene changes materially, such as populated agents or larger atlases.
 
 ## The scene is built offline and served from `data/`, not bundled
 
@@ -89,8 +101,28 @@ MLIT's `.b3dm` tiles state their position as a `CESIUM_RTC` centre in ECEF metre
 
 The 67 building tiles carry 551.9 megapixels — **2,943 MB decoded to RGBA with mipmaps**. The tile cache counts decoded bytes, not downloaded ones, and a cache too small to hold a leaf tile does not degrade: a `REPLACE` parent waits for all its children, so the traversal deadlocks at the root and the app draws seventeen decimated buildings while reporting itself loaded and idle.
 
-Letting the hierarchy stop higher up is not an answer either, because PLATEAU's coarse levels are decimated to **255 buildings of 1,740** at depth 4. So textures are capped at 1024 pixels on the longest side at load time, which puts the whole area of interest at leaf detail inside 335 MB. `src/scene/texture-budget.ts` holds the cap, the measured cost of each alternative, and the reason it is one constant.
+Letting the hierarchy stop higher up is not an answer either, because PLATEAU's coarse levels are decimated to **255 buildings of 1,740** at depth 4. The fixed geographic policy uses 1024 pixels generally, 2048 for tile bounds within 160 m of the crossing, and native 4096 for the single final-detail leaf containing the observed frontage at world `(-38.58,21.58)`. `npm run data:textures:verify` requires that frontage policy to select exactly one leaf and one atlas; current source resolves to `data518.b3dm`. Runtime selection uses geographic metadata rather than that filename.
+
+The full-source audit selects 17 priority tiles including the native leaf: 561,075,583 estimated decoded texture bytes with mipmaps plus 73,324,734 geometry and facade attribute bytes. The native leaf adds 67,108,864 bytes over the otherwise identical 2048 policy. A frozen 1280×720 controls-driven comparison recovered TSUTAYA lettering and glazing detail; it did not materially improve the distant approach view. These are allocation estimates and scoped visual evidence, not whole-process GPU measurements or proof of the population performance target. The tile cache uses a 640 MiB floor and 768 MiB ceiling, with each tile's byte estimate rounded upward to an integer because fractional residue can prevent the upstream LRU from terminating disposal.
+
+Both styles reuse the same cached capped atlases. Source ImageBitmaps are released after processing, so this is fixed geographic priority and does not promise camera-dependent resolution upgrades. `src/scene/texture-budget.ts` holds the policy; actual processed dimensions and per-view ray-hit atlas dimensions are observed through the read-only harness.
+
+## Traffic hardware is separately authored presentation
+
+OSM traffic-control coordinates retain their logical meaning in the network; they do not establish surveyed pole or head positions. `npm run data:hardware` writes separate `/scene/control-hardware.json` records after network, final pavement and vehicle assets exist. Every source control is placed with disclosed local support/clearance evidence or explicitly unplaced. Runtime rejects missing, malformed or stale geometry/network inputs with the rebuild command. Unplaced hardware must not delete its source control or change signal authority.
+
+The current hardware proof uses the actual generated fleet manifest at displayed scale 1. Before populated integration, the shared actor factory must assert the exact displayed manifest digest equals `hardware.inputs.vehicles` and that its display scales fit the recorded bound. A new fleet or larger scale must regenerate and recheck hardware clearance; city-only startup does not load the fleet solely to perform this future assertion. Discrete supported pose checks do not establish continuous traffic collision safety or accepted whole-city pavement contact.
 
 ## PLATEAU road polygons below LOD3 are flat at sea level, and the edge is the worst part
 
 `tran` LOD1 and LOD2 are flat at z = 0 — every vertex, measured — so they must be draped onto the terrain. What `design.md` did not warn about is what happens to a road ring that reaches past the terrain: there is nothing to drape it onto, it keeps its own height of zero, and a sheet of asphalt appears fifteen metres under the valley extending past the edge of the ground. `tools/scene/build-roads.ts` drops any ring with a vertex off the terrain, and `npm run data:scene` refuses a road mesh whose lowest vertex is more than 5 m below the lowest ground.
+
+## Physical paint is a bounded presentation overlay
+
+Crossing and tactile paint reads source path elevation to select nearby road/pavement support; it must not choose an unrelated highest X/Z layer or fall back blindly to terrain. The current finite checks and explicitly omitted parts are documented in `docs/reference/pavement-recipe.md`. The maximum 10 mm opposed-edge seam allowance belongs only to paint presentation; it does not alter source meshes or authorize vehicle/pedestrian contact. Ordinary graphics setup uses reviewed `data:vehicles` before `data:hardware`; the human baker is a separate unfinished population dependency.
+
+## Software visual verification budgets
+
+The first final SwiftShader attempt measured 6m20 to the first hero capture, 4m11 to the next, and 2m52, 2m52 and 3m17 between plaza sweep captures. These are costs of the 1280×720 software verification lane, not measurements against the separate 1080p hardware performance target. The reviewed finite budgets are sixty minutes for eight hero plus two return images, seventy minutes per eighteen-view style sweep, and thirty-two minutes for lifecycle. Lifecycle reserves thirty minutes total setup, three minutes initial refinement and eight minutes per pose while retaining its fifteen-second navigation and sixty-second loaded-page checks. The owned full-run wrapper receives an explicit 14,400-second deadline; no retry or backend substitution is implied. Playwright stops after its first failed test and preserves that failure's trace.
+
+The camera observer reads frame count, document epoch and full pose in one browser task. Only fresh rendered frames count toward quiet intervals. Ordinary capture settling uses angular/relative movement; the stricter 80 micrometre world-path baseline applies only before dropdown preservation comparisons. The pinned no-input OrbitControls damping is enabled at 0.08; three qualifying fresh intervals and at least twelve advanced frames leave a bounded sub-millimetre residual in that path. The independent five-millimetre post-switch assertions stay unchanged. Between completed browser observations, camera waits check five-minute elapsed and fifteen-second no-new-frame limits, with contextual errors and real observed elapsed time. These polling checks do not cancel an unresolved browser RPC; outer Playwright test/stage and owned-runner timeouts bound that case. CPU fixtures do not replace the actual software dropdown and native image gate.

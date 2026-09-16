@@ -1,5 +1,7 @@
 # Devlog Summary
 
+- 2026-09-15: **The lifecycle check was split by renderer after attribution showed the fifteen-second bound was measuring SwiftShader, not the application.** Three arms put the application's own `pagehide` work at 2.1-4.3 ms while the replacement document's first script waits about 27.87 s; the pixel lane stays on SwiftShader and the lifecycle check now runs on the hardware renderer, repeated three times, failing by name on a software rasteriser. Both red controls are recorded, and the 2026-09-08 "36.5 seconds" claim is annotated as unverified. Native inspection of the 44 frames and the merge remain open. See [the detailed entry](detailed/2026-09-15_lifecycle-gate-split.md).
+
 - 2026-09-13: **Independent review accepted bounded facade preparation and B0 witness repairs, while confirming the evaluator slowdown.** F17–F20 now have finite repair evidence; native facade/city acceptance was not supplied. The ABBA kernel comparison is 263.45 versus 103.10 ms, with correctness retained and no cause diagnosis. See [the detailed entry](detailed/2026-09-13_facade-witness-cost.md).
 
 - 2026-09-13: Preserved separate evaluator, retirement, tiny witness and ABBA preparation reviews, including original F15/F16 failures, their focused repair and open B0 F17/F18/F19. Exact pose correspondence did not establish a speedup; tiny loss delivery did not establish city cleanup, and its failed outer report remains evidence. See [the detailed entry](detailed/2026-09-13_retirement-pose-evaluation.md).
@@ -7,6 +9,8 @@
 - 2026-09-13: Preserved independent gait progression, sampled cadence and 3,000-agent cost reviews, plus the visibility observer's original F13/F14 failures and bounded CPU repair. Complete finite gait traces do not establish naturalness or affordable production poses; passing vehicle response records did not make occluded frames acceptable. See [the detailed entry](detailed/2026-09-13_gait-visibility.md).
 
 - 2026-09-13: Review 15 records accepted R2 response-completion verification. A same-collector capacity comparison reproduced both large-body inspector evictions with default buffers and verified the exact three responses with expanded buffers. The 44-view graphics gate and eighteen vehicle executions remain incomplete; the walk initialization experiment remains rejected. See `detailed/2026-09-13_completion-evidence.md`.
+
+- 2026-09-12: The first default software visual run exposed a still-damping camera baseline and a lifecycle setup timeout. Exact traces, six native frames and owned cleanup are preserved. Atomic fresh-frame observation, a strict pre-dropdown baseline and measured setup budgets pass focused CPU controls; the repaired full visual gate remains pending. See `detailed/2026-09-12_graphics-diagnostics.md`.
 
 - 2026-09-12: Review 10 caught full-plugin UV validation bypass and paint jumping 7.55 m between stacked surfaces. Source-bound regressions, measured paint-only seam repair and eight native hero views now verify the bounded fixes; V4 vehicle-only setup and unchanged hardware placements are rebound. Canonical contracts moved to `docs/reference`. The isolated graphics candidate still awaits all five gates and 44 native frames. See `detailed/2026-09-12_graphics-diagnostics.md`.
 

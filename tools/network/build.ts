@@ -26,6 +26,7 @@ const groundHeight = surfaceSampler(decodeMesh(terrainBytes));
 const roadHeight = surfaceSampler(decodeMesh(roadBytes), true);
 const data = generateNetwork(osm, { groundHeight, roadHeight, provenance: {
   osmTimestamp: osm.osm3s.timestamp_osm_base, osmSha256: hash(osmBytes), terrainSha256: hash(terrainBytes), roadsSha256: hash(roadBytes),
+  // Keep this historical provenance text byte-stable: its original contract is recoverable at commit 1ca4552; the current contract lives at docs/reference/network-contract.md.
   method: "OSM surface-only topology; AOI clipping; left-hand lanes with documented defaults; conservative turn restrictions; OSM crossing conflict envelopes and authored NE-SW scramble diagonal; PLATEAU mesh height sampling. See docs/work/0_shibuya-1km/network-contract.md."
 } });
 validateShibuyaNetwork(data);

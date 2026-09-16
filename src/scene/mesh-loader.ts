@@ -16,6 +16,17 @@ import { BufferAttribute, BufferGeometry } from "three";
 import { decodeMesh, type MeshData } from "../world/mesh.js";
 
 export async function loadMesh(url: string): Promise<MeshData> {
+  return decodeMesh(await loadMeshBytes(url));
+}
+
+/** Bind presentation recipes to the exact decoded input, without refetching it. */
+export async function loadMeshWithDigest(url: string): Promise<{ mesh: MeshData; sha256: string }> {
+  const bytes = await loadMeshBytes(url);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return { mesh: decodeMesh(bytes), sha256: Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("") };
+}
+
+async function loadMeshBytes(url: string): Promise<Uint8Array<ArrayBuffer>> {
   let response: Response;
   try {
     response = await fetch(url);
@@ -33,7 +44,7 @@ export async function loadMesh(url: string): Promise<MeshData> {
         "fresh checkout has none of it.",
     );
   }
-  return decodeMesh(new Uint8Array(await response.arrayBuffer()));
+  return new Uint8Array(await response.arrayBuffer());
 }
 
 /** A `MeshData` as three.js geometry, with its bounds taken from the header. */

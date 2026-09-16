@@ -18,6 +18,13 @@ const PREVIEW_URL = "http://127.0.0.1:4319";
 export default defineConfig({
   testDir: "./tools/visual",
   outputDir: "./artifacts/playwright",
+  // This is the pixel lane: the 44-frame sweep and hero capture, on SwiftShader,
+  // where a frame is comparable across machines. The lifecycle check is a
+  // different question on a different renderer and runs in its own invocation
+  // (playwright.lifecycle.config.ts), so it is excluded here. There is
+  // deliberately no switch that could move this lane to hardware: a pixel set
+  // captured on one renderer cannot inherit a review written for another.
+  testIgnore: ["lifecycle.spec.ts"],
   // The sweep is one continuous camera path through one page. Splitting it
   // across workers would mean several browsers fighting for a software
   // rasteriser and would not make it faster.
@@ -26,6 +33,9 @@ export default defineConfig({
   // No retries. A visual gate that passes on the second attempt has told you
   // something is unstable, and hiding that is the whole problem.
   retries: 0,
+  // Keep the first failed trace and stop: later screenshots cannot complete a
+  // rejected evidence set, and the software sweep is expensive.
+  maxFailures: 1,
   forbidOnly: Boolean(process.env["CI"]),
   reporter: [["list"], ["html", { outputFolder: "./artifacts/playwright-report", open: "never" }]],
 

@@ -60,3 +60,20 @@ await writeFile('test/fixtures/plateau-batch-table.b3dm', serialiseB3dm(tile, gl
 「3D都市モデル（Project PLATEAU）渋谷区（2025年度）」（国土交通省）（https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025）を加工して作成
 
 MLIT Japan, PDL 1.0 with CC BY 4.0 permitted. Modified: pre-converted to 3D Tiles by MLIT, then cut here to its batch table.
+
+## `pavement-source-conflicts.json` — 13,560 bytes, SHA-256 `aa7eb9c1739f6a486a7249d729fc245eb3fa248b08978e76220d74feb92c24ca`
+
+Thirteen semantic pavement rings from the four Shibuya FY2025 PLATEAU `tran` CityGML files. The JSON preserves source parent-road, area, polygon and LOD identity, full original coordinate rings, aliases and the four source-file hashes. Its three named target points cover the crossing overlap and both extreme elevation conflicts from the pavement recovery. `test/pavement-source.test.ts` uses it to check exact same-level deduplication, same-parent LOD coverage and retained source elevations. It is not a complete pavement support fixture. Review 4 pins these exact bytes.
+
+出典：国土交通省 PLATEAUウェブサイト（https://www.mlit.go.jp/plateau/）
+
+「3D都市モデル（Project PLATEAU）渋谷区（2025年度）」（国土交通省）（https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025）を加工して作成
+
+MLIT Japan, PDL 1.0 with CC BY 4.0 permitted. Modified: selected raw rings and source identities are represented in JSON; projected comparison coordinates are also recorded. The raw sources and rejected generated meshes remain outside Git.
+# Source-visible emission coordinates
+
+`facade-emission.json` contains nine small observations and three authored sign-region coordinate records derived from the already attributed PLATEAU building source. It binds the selected GML buildings, placed tile bytes, normalized glTF UV0, observed planes and native frame digests. Raw photographs stay ignored. PDL 1.0 / CC BY 4.0; coordinates were reprojected and sign interiors manually selected. Full provenance, omitted regions and the corrected provisional fixture label are in `docs/reference/facade-emission.md`.
+
+## `paint-road-seams.json` — measured paint-only seam controls
+
+Eleven exact failed hero paint queries retain expected source elevation, nearest road triangle/edge IDs and gap widths. They were measured against the SHA-bound PLATEAU roads mesh after the initial F10 finite-support renderer omitted central diagonal stripes. The raw road mesh remains ignored. PLATEAU Shibuya FY2025, PDL 1.0 with CC BY 4.0 permitted; modified by local-frame projection and selection of these geometric observations. Existing PLATEAU source and processing credits above apply. The JSON is 4,458 bytes; `test/paint-support.test.ts` uses its named probes with the full pinned cached mesh. It does not authorize bridging arbitrary roads or actor support.

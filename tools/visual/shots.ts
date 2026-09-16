@@ -58,6 +58,71 @@ export const SHOTS: readonly Shot[] = Object.freeze([
   }),
 ]);
 
+/**
+ * The two poses the hero frames are taken from, and the two times of day.
+ *
+ * Azimuth 45 degrees puts the camera south-east of the crossing looking
+ * north-west across it, which is the framing every photograph of this place is
+ * taken from: the tall block on the north side fills the top of the frame,
+ * Centre Gai runs away behind it, and the station is at the camera's back. The
+ * compass comes out of the building index — `渋谷駅` sits 93 m east and 126 m
+ * south of the crossing and the Hachikō-mae police box 64 m east and 48 m south —
+ * so this is not a guess about which way is which.
+ */
+export const HERO_POSES: readonly Shot[] = Object.freeze([
+  Object.freeze({
+    name: "crossing",
+    // The same pose as the sweep's `plaza` shot, on purpose: 3.2 m above the
+    // crossing at 45 m out, a person's eye level, and directly comparable with
+    // the eighteen frames of the sweep.
+    //
+    // A first attempt put the polar angle at 1.545 to lift the horizon towards
+    // the middle of the frame — the target is the crossing at ground level and
+    // the polar angle is the only thing that decides where the horizon sits. It
+    // works geometrically and it is wrong: at 1.545 the camera is 1.4 m above the
+    // crossing, which at 45 m out is **inside the building on that corner**. The
+    // frame came back as a wall filling the screen. Where the horizon sits in
+    // these frames is a property of the camera rig, and moving it is item 14's
+    // business, not this wave's.
+    polar: 1.5,
+    distance: 45,
+    description: "on the crossing at eye level, looking north-west",
+  }),
+  Object.freeze({
+    name: "approach",
+    // The sweep's `block` shot: 65 m up and 220 m back, above the roofs around
+    // the crossing and well under the towers. Anything nearer the horizontal at
+    // this distance puts the camera inside a building, as above.
+    polar: 1.28,
+    distance: 220,
+    description: "a block back and above the roofline, the whole crossing in frame",
+  }),
+]);
+
+/** Azimuth for the hero poses, radians. 45 degrees is south-east of the crossing. */
+export const HERO_AZIMUTH = Math.PI / 4;
+
+export interface HeroTime {
+  /** What `?time=` takes. */
+  id: string;
+  /**
+   * The band the sun's elevation must fall in, degrees, for this preset to be
+   * the hour it claims. Checked against the real solar position, so a mistake in
+   * the time zone — nine hours, and every frame still renders — is caught here.
+   */
+  elevationRange: readonly [number, number];
+  /** The same for azimuth, degrees clockwise from north. */
+  azimuthRange: readonly [number, number];
+}
+
+export const HERO_TIMES: readonly HeroTime[] = Object.freeze([
+  // 2026-10-15 17:20 JST. Sunset at this latitude is 17:08, so the sun is under
+  // the horizon and just north of due west.
+  Object.freeze({ id: "dusk", elevationRange: [-8, -1] as const, azimuthRange: [255, 270] as const }),
+  // 2026-10-15 11:27 JST, solar noon: 45.9 degrees up and due south.
+  Object.freeze({ id: "noon", elevationRange: [40, 50] as const, azimuthRange: [175, 185] as const }),
+]);
+
 /** Six azimuths, 60 degrees apart, in radians. */
 export const AZIMUTHS: readonly number[] = Object.freeze(
   [0, 60, 120, 180, 240, 300].map((degrees) => (degrees * Math.PI) / 180),

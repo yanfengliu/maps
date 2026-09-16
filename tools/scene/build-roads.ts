@@ -31,6 +31,7 @@ import { planeRectangularToWorld } from "../../src/world/frame.ts";
 import { encodeMesh, type MeshData } from "../../src/world/mesh.ts";
 import { geographicToPlaneRectangular } from "../geo/plane-rectangular.ts";
 import type { TerrainSampler } from "./build-terrain.ts";
+import { drapeSurface } from "./drape-surface.ts";
 
 import { readFile } from "node:fs/promises";
 
@@ -80,6 +81,8 @@ export async function buildRoads(
   paths: readonly string[],
   terrain: TerrainSampler,
   log: (line: string) => void = () => {},
+  surfaceKind: "road" | "pavement" = "road",
+  pavementSupport?: (x: number, z: number) => number | undefined,
 ): Promise<RoadsBuild> {
   const keep = {
     south: AOI_BOUNDS_WGS84.south - MARGIN_DEGREES,
@@ -110,11 +113,12 @@ export async function buildRoads(
 
       // One level per road, never two: a road drawn at LOD3 and again from its
       // LOD1 outline is the same asphalt twice, flickering against itself.
-      const surfaces =
+      const roadSurfaces =
         surfacesOf(block, "lod3MultiSurface") ??
         surfacesOf(block, "lod2MultiSurface") ??
         surfacesOf(block, "lod1MultiSurface");
-      if (surfaces === undefined) continue;
+      const groups = surfaceKind === "pavement" ? pavementSurfacesOf(block) : roadSurfaces ? [roadSurfaces] : [];
+      for (const surfaces of groups) {
       if (surfaces.level === 3) lod3RoadCount += 1;
       else drapedRoadCount += 1;
 
@@ -149,7 +153,7 @@ export async function buildRoads(
             offEdge = true;
             break;
           }
-          projected.push({ x: world.x, y: Math.max(world.y, ground) + ROAD_LIFT_M, z: world.z });
+          projected.push({ x: world.x, y: Math.max(world.y, ground) + ROAD_LIFT_M + (surfaceKind === "pavement" ? 0.035 : 0), z: world.z });
         }
         if (offEdge) {
           offTerrain += 1;
@@ -174,6 +178,7 @@ export async function buildRoads(
         }
         polygonCount += 1;
       }
+      }
     }
   }
 
@@ -195,12 +200,12 @@ export async function buildRoads(
   const mesh: MeshData = {
     header: {
       version: 1,
-      name: "roads",
+      name: surfaceKind === "road" ? "roads" : "pavements",
       vertexCount: positionArray.length / 3,
       triangleCount: indexArray.length / 3,
       bounds: boundsOf(positionArray),
       note:
-        "PLATEAU tran road surfaces. LOD3 where published, LOD1 or LOD2 outlines draped onto the " +
+        (surfaceKind === "road" ? "PLATEAU tran road surfaces. " : "PLATEAU TrafficArea 2000/2010/2020/2030 sidewalks and AuxiliaryTrafficArea 3000/3010/3020 islands. ") + "LOD3 where published, LOD1 or LOD2 outlines draped onto the " +
         `terrain otherwise, every vertex lifted ${ROAD_LIFT_M} m clear of the ground.`,
     },
     positions: positionArray,
@@ -211,7 +216,8 @@ export async function buildRoads(
     indices: indexArray,
   };
 
-  const bytes = encodeMesh(mesh);
+  const finalMesh = surfaceKind === "pavement" && pavementSupport ? drapeSurface(mesh, pavementSupport) : mesh;
+  const bytes = encodeMesh(finalMesh);
   return {
     bytes,
     result: {
@@ -219,11 +225,11 @@ export async function buildRoads(
       lod3RoadCount,
       drapedRoadCount,
       polygonCount,
-      triangleCount: indexArray.length / 3,
-      vertexCount: positionArray.length / 3,
+      triangleCount: finalMesh.header.triangleCount,
+      vertexCount: finalMesh.header.vertexCount,
       offTerrainPolygonCount: offTerrain,
-      lowestVertexM: mesh.header.bounds.min[1],
-      highestVertexM: mesh.header.bounds.max[1],
+      lowestVertexM: finalMesh.header.bounds.min[1],
+      highestVertexM: finalMesh.header.bounds.max[1],
       bytes: bytes.byteLength,
     },
   };
@@ -233,6 +239,23 @@ interface Surfaces {
   level: 1 | 2 | 3;
   /** Exterior rings, latitude-first as PLATEAU writes them, closing vertex dropped. */
   rings: [number, number, number][][];
+}
+
+/** Each semantic area's highest published LOD, once. Codes come from the
+ * fetched TrafficArea_function.xml and AuxiliaryTrafficArea_function.xml.
+ */
+export function pavementSurfacesOf(block: string): Surfaces[] {
+  const groups: Surfaces[] = [];
+  for (const match of block.matchAll(/<tran:(TrafficArea|AuxiliaryTrafficArea)\b[^>]*>([\s\S]*?)<\/tran:\1>/g)) {
+    const area = match[2]!;
+    const code = Number(/<tran:function\b[^>]*>(\d+)<\/tran:function>/.exec(area)?.[1]);
+    const allowed = match[1] === "TrafficArea" ? [2000, 2010, 2020, 2030] : [3000, 3010, 3020];
+    if (!allowed.includes(code)) continue;
+    if (area.includes("<gml:interior>")) throw new Error(`PLATEAU pavement function ${code} has an interior ring; preserve that hole before creating this surface.`);
+    const surface = surfacesOf(area, "lod3MultiSurface") ?? surfacesOf(area, "lod2MultiSurface");
+    if (surface) groups.push(surface);
+  }
+  return groups;
 }
 
 function surfacesOf(block: string, tag: string): Surfaces | undefined {

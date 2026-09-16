@@ -19,8 +19,10 @@ export interface VehiclePoseSnapshot extends AgentPoseSnapshot {
   readonly wheelOffsets: Float32Array;
 }
 
-/** Current fleet openings have 75 mm radial clearance and liners 55 mm. */
+/** Shared per-wheel travel bound: ±0.05 model metres along the support normal. */
 export const VEHICLE_WHEEL_OFFSET_LIMIT_METRES = 0.05;
+/** Shared bound for current parallel front-wheel steering: ±35 degrees. */
+export const VEHICLE_FRONT_STEERING_LIMIT_RADIANS = 35 * Math.PI / 180;
 
 export interface AgentPoseBuffers<T extends AgentPoseSnapshot = AgentPoseSnapshot> {
   readonly count: number;

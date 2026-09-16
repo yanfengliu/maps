@@ -1,0 +1,205 @@
+{
+  "source": "Derived test coordinates from the authored scramble path and pinned PLATEAU road triangles; presentation-only seam allowance, no movement support authority.",
+  "evidenceSha256": "91f98cf9ee34ff20d0c614a36803c1f543b6b4bc8d77e47eebd0aaf589d76a75",
+  "roadsSha256": "3fe126cd675949daf4b337b890c99478c730a4f956c7f4241e7fe883cf967490",
+  "probes": [
+    {
+      "x": -9.6966761662623,
+      "z": 5.068289216123089,
+      "expectedY": 15.424022449708598,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.00922070071268712
+    },
+    {
+      "x": -8.592773151609595,
+      "z": 4.53921042349522,
+      "expectedY": 15.424659935789538,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        }
+      ],
+      "gapWidthM": 0.00886910031427633
+    },
+    {
+      "x": -7.488870136956889,
+      "z": 4.010131630867346,
+      "expectedY": 15.423576870671184,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        }
+      ],
+      "gapWidthM": 0.008517499915863884
+    },
+    {
+      "x": -6.518746679116793,
+      "z": 3.5369926697276206,
+      "expectedY": 15.422219169101732,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.008207489889708796
+    },
+    {
+      "x": -4.77668167292784,
+      "z": 2.699539183632796,
+      "expectedY": 15.41774692010263,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.00765231705297151
+    },
+    {
+      "x": -1.9307136520861778,
+      "z": 1.333006904910098,
+      "expectedY": 15.41532637821754,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        }
+      ],
+      "gapWidthM": 0.006745543817819581
+    },
+    {
+      "x": -0.9605901942460824,
+      "z": 0.8598679437703726,
+      "expectedY": 15.41799651957312,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.006435533791666893
+    },
+    {
+      "x": 0.14331282040662524,
+      "z": 0.33078915114249907,
+      "expectedY": 15.4191710092532,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.006083933393252875
+    },
+    {
+      "x": 1.8853778265955774,
+      "z": -0.5066643349523235,
+      "expectedY": 15.428783667491869,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        }
+      ],
+      "gapWidthM": 0.005528760556514788
+    },
+    {
+      "x": 3.321242307552137,
+      "z": -1.2005073952529708,
+      "expectedY": 15.437672738213585,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        }
+      ],
+      "gapWidthM": 0.0050707225702768385
+    },
+    {
+      "x": 5.856716312982826,
+      "z": -2.4199036078683895,
+      "expectedY": 15.433030255586894,
+      "edges": [
+        {
+          "mesh": "roads",
+          "triangle": 54526,
+          "edge": 2
+        },
+        {
+          "mesh": "roads",
+          "triangle": 54518,
+          "edge": 0
+        }
+      ],
+      "gapWidthM": 0.004262634641848102
+    }
+  ]
+}

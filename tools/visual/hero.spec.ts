@@ -1,0 +1,318 @@
+/**
+ * The hero frame, and the same view in daylight.
+ *
+ * The plan's acceptance criterion for Phases 4 and 5 is not a number: *"a dusk
+ * frame of the crossing reads as Shibuya rather than as a generic Japanese city,
+ * because the emissive signage and neon are there."* That is judged by opening
+ * the file, so this test's job is to produce the file from the same input path a
+ * person uses — the `?time=` query parameter and real pointer input — and to
+ * check the things around it that a picture cannot show.
+ *
+ * It captures the same two poses at two times of day. A post chain tuned only for
+ * dusk falls apart in sun, and a chain tuned only for sun leaves dusk black; the
+ * pair is the check, and both are written at capture resolution for review.
+ *
+ * What it asserts beyond the pixels:
+ *
+ * - the preset the page actually rendered, and the sun's real azimuth and
+ *   elevation at that instant — a screenshot cannot say which hour it is, and a
+ *   sweep captured at the wrong preset is a different sweep;
+ * - that the post chain is live rather than silently fallen back;
+ * - that the facade pass de-lit the albedo, and by how much;
+ * - that the two times of day are different pictures.
+ */
+
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import path from "node:path";
+
+import { expect, test } from "@playwright/test";
+
+import { OrbitDriver } from "./orbit.js";
+import { decodePng, measureFrame, signatureDistance } from "./png.js";
+import { CAPTURE_VIEWPORT, HERO_AZIMUTH, HERO_POSES, HERO_TIMES } from "./shots.js";
+
+const OUTPUT_DIR = path.resolve("artifacts/visual/hero");
+const STYLE_RETURN_DIR = path.resolve("artifacts/visual/style-return");
+
+test.describe("hero frames", () => {
+  // First default-software run: 6m20 to crossing, 4m11 to approach, including
+  // 30–33s screenshots. Ten images and six strict switch baselines need a
+  // measured software budget; this says nothing about hardware frame rate.
+  test.setTimeout(60 * 60_000);
+
+  test("captures the crossing at dusk and in daylight through the real controls", async ({
+    page,
+  }) => {
+    await rm(OUTPUT_DIR, { recursive: true, force: true });
+    await mkdir(OUTPUT_DIR, { recursive: true });
+    await rm(STYLE_RETURN_DIR, { recursive: true, force: true });
+    await mkdir(STYLE_RETURN_DIR, { recursive: true });
+
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => consoleErrors.push(`uncaught: ${error.message}`));
+
+    const captured: {
+      time: string;
+      style: string;
+      pose: string;
+      file: string;
+      stats: ReturnType<typeof measureFrame>;
+      sha256: string;
+    }[] = [];
+    const report: Record<string, unknown>[] = [];
+    const styleReturns: Record<string, unknown>[] = [];
+
+    for (const time of HERO_TIMES) {
+      // The query parameter is the input path a person has. Nothing here sets a
+      // preset on the app.
+      await page.goto(`/?time=${time.id}&seed=9137&style=satellite`, { timeout: 60_000 });
+
+      const driver = new OrbitDriver(page);
+      await driver.waitForFirstFrame();
+
+      const lighting = await page.evaluate(() => window.__mapsHarness?.lighting() ?? null);
+      const post = await page.evaluate(() => window.__mapsHarness?.post() ?? null);
+      expect(lighting, "the harness published no lighting state").not.toBeNull();
+      expect(post, "the harness published no post-chain state").not.toBeNull();
+      if (lighting === null || post === null) return;
+
+      // The page rendered the hour that was asked for. Without this the review is
+      // of an unknown time of day.
+      expect(
+        lighting.preset,
+        `?time=${time.id} rendered the "${lighting.preset}" preset instead`,
+      ).toBe(time.id);
+      expect(
+        lighting.sunElevationDegrees,
+        `at ${lighting.tokyoClock} the sun should be ${time.elevationRange[0]} to ` +
+          `${time.elevationRange[1]} degrees above the horizon at 35.66 N, and the scene put it ` +
+          `at ${lighting.sunElevationDegrees}`,
+      ).toBeGreaterThan(time.elevationRange[0]);
+      expect(lighting.sunElevationDegrees).toBeLessThan(time.elevationRange[1]);
+      expect(
+        lighting.sunAzimuthDegrees,
+        `the sun's azimuth at ${lighting.tokyoClock} should be ${time.azimuthRange[0]} to ` +
+          `${time.azimuthRange[1]} degrees clockwise from north`,
+      ).toBeGreaterThan(time.azimuthRange[0]);
+      expect(lighting.sunAzimuthDegrees).toBeLessThan(time.azimuthRange[1]);
+
+      // The post chain is doing the output stage, not the fallback.
+      expect(
+        post.active,
+        `the post chain fell back to a direct render, so this frame has no bloom, no ambient ` +
+          `occlusion and no temporal anti-aliasing: ${String(post.error)}`,
+      ).toBe(true);
+      expect(post.passes).toEqual([
+        "TAARenderPass",
+        "GTAOPass",
+        "UnrealBloomPass",
+        "OutputPass",
+      ]);
+
+      const styleSelect = page.getByRole("combobox", { name: "World style" });
+      expect(await styleSelect.locator("option").allTextContents()).toContain("Cartographic");
+      expect(await styleSelect.locator("option").allTextContents()).toContain("Satellite");
+      for (const style of ["satellite", "cartographic"] as const) {
+      await driver.settle("preservation");
+      const before = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount }));
+      await styleSelect.click();
+      await page.keyboard.press(style === "cartographic" ? "Home" : "End");
+      await page.keyboard.press("Enter");
+      await expect(styleSelect).toHaveValue(style);
+      await page.waitForFunction((id) => window.__mapsHarness?.style().id === id, style);
+      const after = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount, search: location.search }));
+      expect(after.frames).toBeGreaterThanOrEqual(before.frames);
+      expect(after.camera.distance).toBeCloseTo(before.camera.distance, 2);
+      expect(after.camera.azimuth).toBeCloseTo(before.camera.azimuth, 2);
+      expect(after.camera.polar).toBeCloseTo(before.camera.polar, 2);
+      for (const axis of ["x", "y", "z"] as const) {
+        expect(after.camera.position[axis]).toBeCloseTo(before.camera.position[axis], 2);
+        expect(after.camera.target[axis]).toBeCloseTo(before.camera.target[axis], 2);
+      }
+      expect(after.search).toContain(`time=${time.id}`);
+      expect(after.search).toContain("seed=9137");
+      for (const pose of HERO_POSES) {
+        await driver.zoomTo(pose.distance);
+        await driver.orbitTo(HERO_AZIMUTH, pose.polar);
+        const tiles = await driver.waitForTilesIdle();
+        const observed = await page.evaluate(() => ({ lighting: window.__mapsHarness!.lighting(), post: window.__mapsHarness!.post(), style: window.__mapsHarness!.style(), camera: window.__mapsHarness!.camera(), facadeSamples: window.__mapsHarness!.facadeSamples(), paint: window.__mapsHarness!.paint(), paintSeams: window.__mapsHarness!.paintSeams() }));
+        if (pose.name === "crossing") {
+          expect(observed.facadeSamples.length, "No actual crossing facade atlas was observed").toBeGreaterThanOrEqual(2);
+          for (const sample of observed.facadeSamples) {
+            expect(sample.limit, `Hero facade at ${sample.position.x},${sample.position.z} used ${sample.tileUri} without native frontage priority`).toBe(4096);
+            expect(Math.max(sample.width, sample.height), `Observed atlas ${sample.tileUri} stayed below its bounded priority dimensions`).toBe(Math.min(4096, Math.max(sample.sourceWidth, sample.sourceHeight)));
+          }
+        }
+        const lighting = observed.lighting;
+        const post = observed.post;
+        expect(observed.style.id).toBe(style);
+
+        const file = path.join(OUTPUT_DIR, `hero-${style}-${time.id}-${pose.name}.png`);
+        await page.screenshot({ path: file, animations: "disabled" });
+        const bytes = new Uint8Array(await readFile(file));
+        const stats = measureFrame(decodePng(bytes));
+        captured.push({
+          time: time.id,
+          style,
+          pose: pose.name,
+          file,
+          stats,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        });
+
+        report.push({
+          facadeSamples: observed.facadeSamples,
+          paint: observed.paint,
+          paintSeams: observed.paintSeams,
+          file: path.basename(file),
+          time: time.id,
+          style,
+          camera: observed.camera,
+          tokyoClock: lighting.tokyoClock,
+          pose: pose.name,
+          sunAzimuthDegrees: lighting.sunAzimuthDegrees,
+          sunElevationDegrees: lighting.sunElevationDegrees,
+          keyIntensity: lighting.keyIntensity,
+          keyColour: lighting.keyColour,
+          shadowsEnabled: lighting.shadowsEnabled,
+          twilightStandIn: lighting.twilightStandIn,
+          exposure: lighting.exposure,
+          signageIntensity: lighting.signageIntensity,
+          authoredBoards: lighting.authoredBoards,
+          authoredLights: lighting.authoredLights,
+          bloom: post.bloom,
+          ambientOcclusion: post.ambientOcclusion,
+          postBufferBytes: post.bufferBytes,
+          postObservation: "before screenshot; not a convergence assertion",
+          taaAccumulating: post.taaAccumulating,
+          taaSamples: post.taaSamples,
+          facade: tiles.facade,
+          tileMemory: { cachedBytes: tiles.cachedBytes, estimatedGpuBytes: tiles.gpuBytes },
+          requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+          glRenderer: (await driver.readStatus()).glRenderer,
+          albedoBefore: tiles.albedoBefore,
+          albedoAfter: tiles.albedoAfter,
+          meanLuminance: Number(stats.meanLuminance.toFixed(2)),
+          luminanceSpread: Number(stats.luminanceSpread.toFixed(2)),
+          distinctColours: stats.distinctColours,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        });
+      }
+      }
+
+      // Return through the real dropdown in the same document. A fresh page
+      // would hide a disposed texture/cache or a camera reset on this direction.
+      // Actor identity is outside this static-city gate until population exists.
+      await driver.waitForTilesIdle();
+      await driver.settle("preservation");
+      const beforeReturn = await page.evaluate(() => ({
+        camera: window.__mapsHarness!.camera(), status: window.__mapsHarness!.status(),
+        tiles: window.__mapsHarness!.tiles(), style: window.__mapsHarness!.style(),
+        href: location.href, timeOrigin: performance.timeOrigin,
+      }));
+      expect(beforeReturn.style.id).toBe("cartographic");
+      await styleSelect.click();
+      await page.keyboard.press("End");
+      await page.keyboard.press("Enter");
+      await expect(styleSelect).toHaveValue("satellite");
+      await page.waitForFunction((frames) => window.__mapsHarness?.style().id === "satellite" && window.__mapsHarness.status().frameCount > frames, beforeReturn.status.frameCount);
+      await driver.waitForTilesIdle();
+      const afterReturn = await page.evaluate(() => ({
+        camera: window.__mapsHarness!.camera(), status: window.__mapsHarness!.status(),
+        tiles: window.__mapsHarness!.tiles(), style: window.__mapsHarness!.style(),
+        href: location.href, timeOrigin: performance.timeOrigin,
+      }));
+      expect(afterReturn.timeOrigin, "Style return reloaded the document").toBe(beforeReturn.timeOrigin);
+      expect(afterReturn.style.id).toBe("satellite");
+      expect(afterReturn.status.frameCount).toBeGreaterThan(beforeReturn.status.frameCount);
+      expect(afterReturn.status.ready).toBe(true);
+      expect(afterReturn.status.error).toBeNull();
+      expect(afterReturn.status.contextLost).toBe(false);
+      for (const component of ["distance", "azimuth", "polar"] as const) expect(afterReturn.camera[component]).toBeCloseTo(beforeReturn.camera[component], 2);
+      for (const axis of ["x", "y", "z"] as const) {
+        expect(afterReturn.camera.position[axis]).toBeCloseTo(beforeReturn.camera.position[axis], 2);
+        expect(afterReturn.camera.target[axis]).toBeCloseTo(beforeReturn.camera.target[axis], 2);
+      }
+      const expectedUrl = new URL(beforeReturn.href);
+      expectedUrl.searchParams.set("style", "satellite");
+      expect(afterReturn.href).toBe(expectedUrl.href);
+      expect(afterReturn.tiles.error).toBeNull();
+      expect(afterReturn.tiles.failed).toBe(0);
+      expect(afterReturn.tiles.drawnMeshes).toBeGreaterThan(0);
+      expect(afterReturn.tiles.drawnTriangles).toBeGreaterThan(10_000);
+      expect(afterReturn.tiles.drawnTriangles).toBe(beforeReturn.tiles.drawnTriangles);
+      expect(afterReturn.tiles.drawnBounds).toEqual(beforeReturn.tiles.drawnBounds);
+      expect(afterReturn.tiles.cachedBytes).toBeGreaterThan(0);
+      // Extra flow evidence stays outside the formal eight hero/44 total frames.
+      // Live geometry alone cannot prove that photographic materials returned.
+      const returnFile = path.join(STYLE_RETURN_DIR, `return-satellite-${time.id}.png`);
+      await page.screenshot({ path: returnFile, animations: "disabled" });
+      const returnBytes = new Uint8Array(await readFile(returnFile));
+      const returnStats = measureFrame(decodePng(returnBytes));
+      expect(returnStats.width).toBe(CAPTURE_VIEWPORT.width);
+      expect(returnStats.height).toBe(CAPTURE_VIEWPORT.height);
+      styleReturns.push({
+        time: time.id, before: beforeReturn, after: afterReturn,
+        file: path.relative(path.resolve("artifacts/visual"), returnFile),
+        sha256: createHash("sha256").update(returnBytes).digest("hex"), stats: returnStats,
+      });
+    }
+
+    // Dusk and daylight are different pictures. If they are not, `?time=` did
+    // nothing and both frames are the same review.
+    for (const pose of HERO_POSES) {
+      for (const style of ["satellite", "cartographic"] as const) {
+      const atPose = captured.filter((frame) => frame.pose === pose.name && frame.style === style);
+      expect(atPose, `pose ${pose.name} was not captured at every time of day`).toHaveLength(
+        HERO_TIMES.length,
+      );
+      const distance = signatureDistance(atPose[0]!.stats, atPose[1]!.stats);
+      expect(
+        distance,
+        `the dusk and daylight frames at ${pose.name} are the same picture (signature distance ` +
+          `${distance.toFixed(2)}), so the time of day changed nothing`,
+      ).toBeGreaterThan(8);
+      }
+    }
+
+    for (const frame of captured) {
+      expect(frame.stats.width).toBe(CAPTURE_VIEWPORT.width);
+      expect(frame.stats.height).toBe(CAPTURE_VIEWPORT.height);
+    }
+    for (const time of HERO_TIMES) for (const pose of HERO_POSES) {
+      const pair = captured.filter((frame) => frame.time === time.id && frame.pose === pose.name);
+      expect(pair).toHaveLength(2);
+      expect(signatureDistance(pair[0]!.stats, pair[1]!.stats), `The dropdown produced the same ${pose.name} picture for both world styles at ${time.id}.`).toBeGreaterThan(5);
+    }
+
+    expect(consoleErrors, `the page logged errors:\n${consoleErrors.join("\n")}`).toEqual([]);
+
+    await writeFile(
+      path.join(OUTPUT_DIR, "hero.json"),
+      `${JSON.stringify({ capturedAt: new Date().toISOString(), frames: report, styleReturns }, null, 2)}\n`,
+      "utf8",
+    );
+
+    // eslint-disable-next-line no-console -- the list a reviewer opens.
+    console.log(
+      [
+        "",
+        `${captured.length} hero frames written to ${OUTPUT_DIR}`,
+        ...report.map(
+          (frame) =>
+            `  ${String(frame.file).padEnd(30)} ${String(frame.tokyoClock).padEnd(22)} ` +
+            `sun az ${String(frame.sunAzimuthDegrees).padStart(7)} el ` +
+            `${String(frame.sunElevationDegrees).padStart(6)}  ` +
+            `mean ${String(frame.meanLuminance).padStart(6)} spread ` +
+            `${String(frame.luminanceSpread).padStart(6)} colours ` +
+            `${String(frame.distinctColours).padStart(6)}`,
+        ),
+        "",
+      ].join("\n"),
+    );
+  });
+});

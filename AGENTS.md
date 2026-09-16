@@ -120,22 +120,24 @@ Run all five before any commit that touches code. A dependency change re-runs th
 | Build | `npm run build` | Vite production build into `dist/`. |
 | Types | `npm run typecheck` | `tsc --noEmit` over `src`, `test`, `tools` and the configs. |
 | Unit tests | `npm test` | Vitest, `test/**/*.test.ts`. |
-| Visual | `npm run visual` | Builds, then the Playwright sweep. Takes a few minutes on a software rasteriser. |
+| Visual | `npm run visual` | Builds once, then two lanes: the 44-frame software pixel sweep (SwiftShader) and the lifecycle check on the hardware renderer, repeated three times, before the wrapper verifies the complete frame set. The software lane can take several hours; measured finite budgets are in the local rules. |
 | Audit | `npm run audit` | `npm audit --audit-level=high`. |
 
 `npm run visual:install` fetches the browser the visual gate needs. Run it once per machine; the gate fails with Playwright's own install message if you skip it.
+
+The complete-plugin UV unit cases in `test/facade-emission.test.ts` require the cached `data/scene/buildings/data/data488.b3dm` produced by `npm run data:fetch` and `npm run data:scene`. They verify its actual SHA-256 through the tile plugin while mocking only image decoding. Missing data fails with those preparation commands; the test never downloads implicitly or reports a skipped source as a pass. This prerequisite is distinct from a code regression.
 
 `npm run data:fetch` gets the map data and `npm run data:scene` builds the scene from it, into a gitignored `data/`. Neither runs from `npm run build`; both are needed once before anything renders. `npm run data:scene` is itself a check — it decodes all 67 building tiles, reconciles every building against PLATEAU's own CityGML, and refuses to write a scene whose ground, landmarks, road heights or attributes disagree with what they should be.
 
 ### The visual gate is only half a gate
 
-`npm run visual` boots the production build, drives OrbitControls with synthesised pointer and wheel input, and writes eighteen frames to `artifacts/visual/` — six azimuths at each of three distances, eye level on the crossing, above the rooftops a block back, and high enough to hold the whole square kilometre — plus a `manifest.json` naming each frame's camera pose, tile counts, memory and SHA-256. It waits for the building tileset to stop refining before every capture, so a frame is not a picture of a city still loading.
+`npm run visual` boots the production build and drives OrbitControls with synthesised pointer and wheel input. It writes 44 frames under `artifacts/visual/`: eighteen sweep views per style (six azimuths at three distances) plus eight hero views (both styles, dusk/noon and crossing/approach). Per-specification manifests record camera poses and SHA-256; the final wrapper checks every expected frame, fresh timestamps and unchanged build bytes before writing `complete.json`. It waits for tiles to stop refining before every capture. The complete 44-frame wrapper is implemented; final integrated capture and native inspection remain pending in the active plan.
 
 What it proves on its own: the app rendered, the input path moved the camera, each frame is a distinct non-blank 1280x720 image, and the building geometry that is actually in the scene sits on the ground near the crossing in the right quantity.
 
 Six of its failure paths have been made to go red, with the mutation and the message recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a camera that does not respond to input, a scene that renders nothing, a page that fails to boot, another app answering on the preview port, a tileset that loads and draws nothing, and one that draws in the wrong orientation. Three more are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, and the camera never settling. Treat those three as code, not as evidence.
 
-What it cannot prove is that any of those frames looks right. Open all eighteen at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
+What it cannot prove is that any of those frames looks right. Open all 44 at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
 
 ### The harness drives the controls and never sets state
 
@@ -159,10 +161,14 @@ What it cannot prove is that any of those frames looks right. Open all eighteen 
 
 **The scene is data on disk, not bytes in the bundle.** `npm run data:scene` writes about 148 MB into a gitignored `data/scene/` — the terrain mesh, the road mesh, and 67 building tiles already placed in the world frame — and a Vite plugin serves that directory at `/scene/`. `dist/` is therefore not self-contained, which is the price of not copying 148 MB into it on every build.
 
-**Building texture is capped at 1024 pixels at load.** The 67 tiles carry 2,943 MB of texture decoded, which no browser holds, and PLATEAU's coarse levels are decimated to 255 buildings of 1,740, so stopping the hierarchy higher up is not an answer either. `src/scene/texture-budget.ts` holds the cap and the table of what each alternative costs.
+**Building texture uses a bounded geographic policy at load.** Atlases are capped at 1024 pixels generally, 2048 within 160 m of the crossing, and native 4096 for one final-detail leaf containing the observed crossing frontage. The source audit requires exactly one native tile and atlas. Current full-source estimates are 561,075,583 texture bytes with mipmaps plus 73,324,734 geometry bytes; these are not measured whole-process GPU allocation. Both styles reuse the capped textures. `src/scene/texture-budget.ts`, `npm run data:textures:verify` and `docs/policies/local-rules.md` carry the policy and evidence.
 
 **The performance budget.** 60 fps at 1080p with 3,000 animated pedestrians and 200 vehicles, recorded as `PERFORMANCE_TARGET` in `src/world/frame.ts`. Nothing enforces it yet; Phase 9 owns measuring it.
 
 ## Conventions
 
 The fleet canon above, the documents it asks for, and `docs/policies/local-rules.md`, which now carries the stack, the world frame, the harness rule, and the port and host settings the gate depends on.
+
+### Cached source for paint regression checks
+
+`test/paint-support.test.ts` checks the actual pinned network, road, pavement and terrain bytes produced by the reviewed data pipeline. Prepare `npm run data:fetch`, `npm run data:scene` and `npm run data:network` before the source-dependent unit gate. Missing or changed inputs fail with their names; the test never fetches or skips them. Fresh OSM data may differ from the reviewed fixture and requires source review. Final capture reproducibility binds the exact cached inputs and is distinct from successful fresh remote `data:setup`.

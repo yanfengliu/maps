@@ -20,6 +20,8 @@ export const SCENE_FILES = Object.freeze({
   manifest: `${SCENE_DATA_BASE}/manifest.json`,
   terrain: `${SCENE_DATA_BASE}/terrain.mesh`,
   roads: `${SCENE_DATA_BASE}/roads.mesh`,
+  pavements: `${SCENE_DATA_BASE}/pavements.mesh`,
+  markings: `${SCENE_DATA_BASE}/markings.mesh`,
   buildingsTileset: `${SCENE_DATA_BASE}/buildings/tileset.json`,
   buildingIndex: `${SCENE_DATA_BASE}/buildings/buildings.json`,
 });
