@@ -8,6 +8,7 @@ import {
 } from "./scene/time-of-day.js";
 import { installAttribution } from "./ui/attribution.js";
 import { DEFAULT_SEED } from "./world/rng.js";
+import { populationFromQuery } from "./agents/population/config.js";
 import { DEFAULT_WORLD_STYLE_ID, WORLD_STYLES, worldStyle } from "./world/styles.js";
 import { createStylePicker } from "./ui/style-picker.js";
 
@@ -51,6 +52,14 @@ function boot(): void {
     time = requestedTime;
   }
 
+  // `?agents=` is the population switch, on the same path as `?time=` and
+  // `?seed=`. An absent parameter means no population, so a run without it
+  // renders exactly what it rendered before the population existed; `?agents=0`
+  // is the population-free appearance sweep and `?agents=1` the default
+  // populated run. An unknown value is refused by name rather than silently
+  // rendering an unpopulated city that a review would read as a populated one.
+  const population = populationFromQuery(window.location.search);
+
   // Before the scene, not after: PLATEAU, OpenStreetMap and GSI all require a
   // credit, so a run that draws the city without one is the wrong failure to
   // tolerate. It throws if the element is missing, and the handler below turns
@@ -58,7 +67,7 @@ function boot(): void {
   installAttribution(document);
 
   const initialStyle = worldStyle(query.get("style") ?? DEFAULT_WORLD_STYLE_ID).id;
-  const app = createApp(canvas, { seed, time, style: initialStyle });
+  const app = createApp(canvas, { seed, time, style: initialStyle, population });
   const picker = createStylePicker({
     styles: WORLD_STYLES,
     initialStyle,

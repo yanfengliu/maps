@@ -29,6 +29,10 @@ export async function createAgentRenderer(poses: WorldAgentPoses, style: WorldSt
     setStyle(next: WorldStyle): void { humans.setStyle(next); vehicles.setStyle(next); },
     get renderedPedestrians(): number { return humans.renderedCount; },
     get renderedVehicles(): number { return vehicles.renderedCount; },
+    /** Instances actually drawn at each human level, for the read-only status surface. */
+    get renderedByLevel(): { near: number; medium: number; far: number } {
+      return humans.renderedByLevel;
+    },
     dispose(): void { humans.dispose(); vehicles.dispose(); group.clear(); group.removeFromParent(); },
   };
 }

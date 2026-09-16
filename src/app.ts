@@ -31,6 +31,10 @@
 import { FogExp2, Scene, type WebGLRenderTarget } from "three";
 
 import { createAgents, type AgentSystem } from "./agents/agents.js";
+import { createAgentRenderer } from "./agents/render/agents.js";
+import { loadManifest } from "./agents/render/assets.js";
+import type { PopulationSettings } from "./agents/population/config.js";
+import { VEHICLE_ASSET_URL, type VehicleAssetManifest } from "./world/agent-assets.js";
 import { installBridge } from "./harness/bridge.js";
 import { createCameraRig } from "./render/camera.js";
 import { RenderLoop } from "./render/loop.js";
@@ -77,6 +81,11 @@ export interface AppOptions {
   post?: boolean;
   /** Overrides for the facade pass. Only the item 35 and 16 gate proofs do this. */
   facade?: Partial<Omit<FacadeTextureOptions, "signageIntensity" | "style">> | undefined;
+  /**
+   * Population settings, from `?agents=`. Absent means no population at all,
+   * which is the behaviour every run without the parameter has always had.
+   */
+  population?: Partial<PopulationSettings> | undefined;
 }
 
 export interface App {
@@ -163,7 +172,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     controls.update();
   });
 
-  const agents = createAgents(loop);
+  const agents = createAgents(loop, options.population ?? { pedestrians: 0, vehicles: 0 });
   scene.add(agents.root);
 
   // The tiles renderer needs the camera's world matrix as it will be *this*
@@ -192,7 +201,10 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     const tilesStill = buildings.settled();
     if (tilesStill && !tilesWereStill) signage.mount(buildings.root);
     tilesWereStill = tilesStill;
-    post.setStill(cameraStill && tilesStill && agents.root.children.length === 0);
+    // A populated scene is never still: thousands of pedestrians walking means the
+    // picture changes every frame, so temporal accumulation stays off in populated
+    // lanes by construction. A population-free run keeps the original predicate.
+    post.setStill(cameraStill && tilesStill && (agents.root.children.length === 0 || !agents.moving()));
   });
 
   let sceneLoaded = false;
@@ -228,6 +240,31 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
       buildings.ready,
     ]);
     if (disposed) return;
+    // The population is built here and nowhere else: it cannot exist before its
+    // graph does, and it must not be rebuilt while actors hold admission
+    // commitments against the graph they were planned on. The renderer is loaded
+    // after the population so it can read the pose buffers the population writes.
+    const populationWanted = (options.population?.pedestrians ?? 0) + (options.population?.vehicles ?? 0) > 0;
+    if (populationWanted) {
+      const fleet = await loadManifest<VehicleAssetManifest>(VEHICLE_ASSET_URL);
+      if (disposed) return;
+      agents.attach(network, fleet, options.population);
+      const poses = agents.poses;
+      if (poses !== null) {
+        const renderer = await createAgentRenderer(poses, style);
+        if (disposed) {
+          renderer.dispose();
+          return;
+        }
+        agents.mountRenderer(renderer);
+        agents.root.add(renderer.group);
+        styleConsumers.push((next) => renderer.setStyle(next));
+        disposers.push(() => agents.mountRenderer(null));
+        // The renderer runs on the frame step, with the loop's real interpolation
+        // alpha: the simulation is a fixed step and the picture is not.
+        loop.onFrame((_delta, elapsed, alpha) => renderer.update(alpha, camera, elapsed));
+      }
+    }
     const hardware = await loadControlHardware(network, roads.inputDigests);
     if (disposed) return;
     hardwareObservation = hardware.records;
@@ -301,6 +338,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     hardware: () => hardwareObservation,
     paint: () => paintObservation,
     paintSeams: () => paintSeamObservation,
+    population: () => agents.status(),
   });
 
   loop.start();

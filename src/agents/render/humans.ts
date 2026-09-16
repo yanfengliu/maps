@@ -11,6 +11,7 @@ import { writePoseMatrix } from "./pose.js";
 import { deleteAgentNormalMaterial, setAgentNormalMaterial } from "./pass-materials.js";
 import { applyAgentVat, createAgentNormalMaterial } from "./vat.js";
 import { admitHumanDraws } from "./human-admission.js";
+import { POPULATION_LIMITS } from "../population/config.js";
 
 
 interface Part {
@@ -139,6 +140,7 @@ export class HumanRenderer {
     camera.getWorldPosition(this.cameraPosition);
     for (const levels of this.lods) for (const level of levels) level.count = 0;
     this.renderedCount = 0;
+    this.drawn = { near: 0, medium: 0, far: 0 };
     for (let slot = 0; slot < this.poses.count; slot++) {
       if (!this.poses.active[slot]) continue;
       const variant = this.poses.variant[slot]!;
@@ -147,13 +149,25 @@ export class HumanRenderer {
       const travelled = writePoseMatrix(this.poses, slot, alpha, this.matrix);
       const elements = this.matrix.elements;
       const distanceSquared = (elements[12]! - this.cameraPosition.x) ** 2 + (elements[13]! - this.cameraPosition.y) ** 2 + (elements[14]! - this.cameraPosition.z) ** 2;
-      const level = levels[distanceSquared < 18 ** 2 ? 0 : distanceSquared < 60 ** 2 ? 1 : 2]!;
+      let level = levels[distanceSquared < POPULATION_LIMITS.nearThresholdM ** 2 ? 0 : distanceSquared < POPULATION_LIMITS.mediumThresholdM ** 2 ? 1 : 2]!;
+      // Per-level instance budgets, by demotion and never by dropping: the surge
+      // puts hundreds of pedestrians inside 18 m at once and the near level is
+      // about 35,000 triangles each. A dropped instance would make the drawn
+      // count disagree with the active population, which is exactly the number
+      // the harness reads to decide whether the population is there at all.
+      if (level === levels[0] && level.count >= POPULATION_LIMITS.nearInstances) level = levels[1]!;
+      if (level === levels[1] && level.count >= POPULATION_LIMITS.mediumInstances) level = levels[2]!;
       if (level.parts.length !== level.lod.drawParts.length || level.parts.length === 0) throw new Error(`Pedestrian slot ${slot} cannot render ${level.manifest.id}/${level.lod.id}: its required drawable parts are missing.`);
       const instance = level.count++;
       const stride = level.strideMetres * this.poses.scale[slot]!;
       level.motion.setXYZ(instance, (travelled / stride) % 1, (elapsedSeconds / level.idleDuration + slot * 0.61803398875) % 1, Math.min(1, this.poses.speedMps[slot]! / 0.2));
       for (const part of level.parts) part.mesh.setMatrixAt(instance, this.matrix);
       this.renderedCount++;
+      if (distanceSquared < POPULATION_LIMITS.shadowRadiusM ** 2) {
+        // Shadows follow the same distance policy the level selection uses; a
+        // crowd is the one place where shadow casting is worth bounding by name.
+        for (const part of level.parts) part.mesh.castShadow = level === levels[0];
+      }
     }
     for (const levels of this.lods) for (const level of levels) {
       level.motion.needsUpdate = true;
@@ -161,7 +175,18 @@ export class HumanRenderer {
         part.mesh.count = level.count;
         part.mesh.instanceMatrix.needsUpdate = true;
       }
+      const at = levels.indexOf(level);
+      if (at === 0) this.drawn.near = level.count;
+      else if (at === 1) this.drawn.medium = level.count;
+      else this.drawn.far = level.count;
     }
+  }
+
+  private drawn = { near: 0, medium: 0, far: 0 };
+
+  /** Drawn instance counts per level in the last frame. */
+  get renderedByLevel(): { near: number; medium: number; far: number } {
+    return { ...this.drawn };
   }
 
   setStyle(style: WorldStyle): void {

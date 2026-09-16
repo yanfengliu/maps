@@ -25,6 +25,7 @@ import type { LightingState } from "../scene/lighting.js";
 import type { ControlHardwarePlacement } from "../world/control-hardware.js";
 import type { PaintPlacement } from "../scene/street-details.js";
 import type { PaintSeamUse } from "../scene/paint-support.js";
+import { emptyPopulationStatus, type PopulationStatus } from "../agents/population/status.js";
 
 /** The property the harness reads off `window`. */
 export const HARNESS_KEY = "__mapsHarness";
@@ -129,6 +130,7 @@ export interface BridgeSources {
   hardware: () => readonly ControlHardwarePlacement[];
   paint: () => readonly PaintPlacement[];
   paintSeams: () => readonly PaintSeamUse[];
+  population: () => PopulationStatus;
 }
 
 export function installBridge(sources: BridgeSources): HarnessBridge {
@@ -174,6 +176,7 @@ export function installBridge(sources: BridgeSources): HarnessBridge {
     hardware(): ControlHardwarePlacement[] { return structuredClone(sources.hardware()) as ControlHardwarePlacement[]; },
     paint(): PaintPlacement[] { return structuredClone(sources.paint()) as PaintPlacement[]; },
     paintSeams(): PaintSeamUse[] { return structuredClone(sources.paintSeams()) as PaintSeamUse[]; },
+    population(): PopulationStatus { return structuredClone(sources.population()); },
   });
 
   window[HARNESS_KEY] = bridge;
@@ -280,6 +283,7 @@ export function installFailedBridge(error: unknown): void {
     hardware(): ControlHardwarePlacement[] { return []; },
     paint(): PaintPlacement[] { return []; },
     paintSeams(): PaintSeamUse[] { return []; },
+    population(): PopulationStatus { return emptyPopulationStatus(); },
   });
 }
 
