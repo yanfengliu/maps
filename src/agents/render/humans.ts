@@ -7,7 +7,7 @@ import { HUMAN_ASSET_URLS, type AgentAssetLod, type AgentAssetManifest } from ".
 import type { AgentPoseBuffers } from "../../world/agent-poses.js";
 import type { WorldStyle } from "../../world/styles.js";
 import { disposeTextures, loadManifest, loadModel, loadVat } from "./assets.js";
-import { writePoseMatrix } from "./pose.js";
+import { writeInstanceMatrix, writePoseMatrix } from "./pose.js";
 import { deleteAgentNormalMaterial, setAgentNormalMaterial } from "./pass-materials.js";
 import { applyAgentVat, createAgentNormalMaterial } from "./vat.js";
 import { admitHumanDraws } from "./human-admission.js";
@@ -28,6 +28,17 @@ export interface HumanLod {
   lod: AgentAssetLod;
   parts: Part[];
   motion: InstancedBufferAttribute;
+  /**
+   * The level's instance transforms, one buffer for every drawable part of the level.
+   *
+   * A level's six parts draw the same person in the same place, so a private
+   * `instanceMatrix` per part is six copies of sixteen identical floats: six writes of the
+   * same numbers on the CPU a frame and six uploads of the same bytes to the GPU. The level
+   * already shares `motion` across all six parts; this is the same arrangement for the
+   * transform, and it keeps three's own instancing path — `USE_INSTANCING`,
+   * `instanceMatrix * mvPosition` — so nothing about what is drawn changes.
+   */
+  instances: InstancedBufferAttribute;
   textures: DataTexture[];
   strideMetres: number;
   idleDuration: number;
@@ -81,7 +92,8 @@ export class HumanRenderer {
           });
           const draws = admitHumanDraws(gltf, lod, `${manifest.id}/${id}`);
           const motion = new InstancedBufferAttribute(new Float32Array(this.poses.count * 3), 3).setUsage(DynamicDrawUsage);
-          const level: HumanLod = { manifest, lod, motion, textures: [positions, normals], parts: [], count: 0,
+          const instances = new InstancedBufferAttribute(new Float32Array(this.poses.count * 16), 16).setUsage(DynamicDrawUsage);
+          const level: HumanLod = { manifest, lod, motion, instances, textures: [positions, normals], parts: [], count: 0,
             strideMetres: manifest.clips.find((clip) => clip.id === "walk")!.strideMetres,
             idleDuration: manifest.clips.find((clip) => clip.id === "idle")!.durationSeconds };
           levels.push(level);
@@ -119,7 +131,11 @@ export class HumanRenderer {
             this.materials.add(normal);
             const mesh = new InstancedMesh(geometry, material, this.poses.count);
             mesh.name = `${manifest.id}-${id}-${object.name}`;
-            mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+            // The level's shared transform, not a private array per part. three binds and
+            // uploads `instanceMatrix` from this object, so this is the built-in path and
+            // not a parallel one; what changes is how many times the same sixteen floats are
+            // written and how many times the same bytes are uploaded.
+            mesh.instanceMatrix = instances;
             mesh.count = 0;
             mesh.frustumCulled = false;
             mesh.castShadow = id === "near";
@@ -162,7 +178,11 @@ export class HumanRenderer {
       const instance = level.count++;
       const stride = level.strideMetres * this.poses.scale[slot]!;
       level.motion.setXYZ(instance, (travelled / stride) % 1, (elapsedSeconds / level.idleDuration + slot * 0.61803398875) % 1, Math.min(1, this.poses.speedMps[slot]! / 0.2));
-      for (const part of level.parts) part.mesh.setMatrixAt(instance, this.matrix);
+      // One write for the level rather than one per drawable part. All six parts read this
+      // buffer, so the six writes that used to happen here were the same sixteen floats
+      // written six times, and they were the frame's largest single CPU term at 3,000
+      // pedestrians: 18,000 `setMatrixAt` calls, 11.7 ms of a 44 ms frame.
+      writeInstanceMatrix(this.matrix, level.instances.array as Float32Array, instance * 16);
       this.renderedCount++;
       if (distanceSquared < POPULATION_LIMITS.shadowRadiusM ** 2) {
         // Shadows follow the same distance policy the level selection uses; a
@@ -171,11 +191,11 @@ export class HumanRenderer {
       }
     }
     for (const levels of this.lods) for (const [at, level] of levels.entries()) {
-      level.motion.needsUpdate = true;
-      for (const part of level.parts) {
-        part.mesh.count = level.count;
-        part.mesh.instanceMatrix.needsUpdate = true;
-      }
+      for (const part of level.parts) part.mesh.count = level.count;
+      // One buffer per level, flagged once. Flagging it per part would bump its version six
+      // times and hand the same bytes to the uploader six times.
+      level.instances.needsUpdate = level.count > 0;
+      level.motion.needsUpdate = level.count > 0;
       // Added up over the variants, not assigned: `near`, `medium` and `far` are
       // the population's counts at each level, and every variant has its own
       // level of the same name. Assigning here reported the last variant alone,

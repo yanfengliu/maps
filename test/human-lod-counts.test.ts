@@ -61,6 +61,12 @@ function population(slots: readonly { at: number; variant: number }[]): AgentPos
 function level(variant: number, id: "near" | "medium" | "far", capacity: number): HumanLod {
   const mesh = new InstancedMesh(new BufferGeometry(), new MeshBasicMaterial(), capacity);
   mesh.count = 0;
+  // The level's one shared transform buffer, built the way `load` builds it and handed to
+  // the part's mesh the way `load` hands it over. `update` writes the level's transforms
+  // here rather than once per part, so the fixture has to carry the same object or it is
+  // testing a renderer that no longer exists.
+  const instances = new InstancedBufferAttribute(new Float32Array(capacity * 16), 16);
+  mesh.instanceMatrix = instances;
   return {
     manifest: { id: `variant-${variant}` },
     lod: { id, drawParts: [{}] },
@@ -73,6 +79,7 @@ function level(variant: number, id: "near" | "medium" | "far", capacity: number)
       flatUniform: { value: 0 },
     }],
     motion: new InstancedBufferAttribute(new Float32Array(capacity * 3), 3),
+    instances,
     textures: [],
     strideMetres: 1.1,
     idleDuration: 1,
