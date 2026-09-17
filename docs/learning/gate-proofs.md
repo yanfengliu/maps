@@ -722,3 +722,85 @@ Human agent set INCOMPLETE: 30 of 33 files on disk, 3 named problems above; fail
 Two of those reds are defects in the check rather than in the tree, and both were found by running it rather than by reading it. `bytes` is written by `bake-human.py` as the three files added together and was first compared with each file's own size, which produced **27 findings across all 9 LODs of a correct bake** — a false red that would have buried every real finding; it is now checked against the sum. A digest field that was present but not 64 hex characters was read as "nothing recorded" and skipped, so a manifest carrying `"not-a-digest"` **passed**; the field is now three-valued and the malformed case is a finding. The first is the report inventing failures, the second is the report printing "did not run" as "passed".
 
 **Bound.** The inventory is the whole claim: it proves the 33 files exist, are non-empty, parse, and that every file a manifest names sits beside it at the digest the manifest records. It does not decode a GLB, read a half float, or measure a silhouette, a gait, a frame rate or a source blend's contents — a truncated `.blend` passes. The stronger contract on a populated directory is `tools/agents/verify.ts` (VAT half floats, stance contact, the shipping admission gate) and `tools/agents/manifests.ts` (`drawParts` re-derived from the delivered GLBs); neither is subsumed here, and this check exists to refuse an incomplete set before either of them loads one. It requires the `near`/`medium`/`far` ids and the three variant ids the bake writes, while the file each manifest names is what gets checked, so a set that renames an asset without renaming it in the manifest fails and a set using another naming convention passes. Files it does not name are listed and do not fail the set, because the vehicle fleet is published into the same directory; a file named the way the bake names its output but absent from the set is a finding. It reads nothing under `data/agents/source` and runs no bake, so a complete output set passes with its sources deleted.
+
+## The unit gate's bounds describe the work, and one case was starving its own runner
+
+**Gate:** `npm test` — `test/visual-evidence.test.ts` (its two work-carrying cases, and the third case that derives and checks their ceilings), the four groups of `test/visual-instrument.test.ts` that build a 44-frame run, and the tick loop of `test/pedestrian-overlap.test.ts`.
+
+**Landed:** 2026-09-16 on branch `worker/flake-unit-gate` at `240bc38`, off `ee112fd`. Not merged: the coordinator lands the branch. The six final runs below were all taken on `240bc38` — the last three after the docs-only commit `d73ef9c`, with the code identical across all six.
+
+**Why.** This machine sits at a measured 100% of its 32 logical cores (24 physical) because a sibling `3d-maker` checkout runs its own Vite server and browser suite, and that load is not this repository's to remove. `npm test` failed on it in two independent ways, and neither was the product.
+
+**(1) The bounds did not describe the work.** On `main` at `7329dec`, the same tree and no edit between the runs: `test/visual-evidence.test.ts` costs **1.09 s alone** and **10.06 s inside the loaded 59-file suite**, where both cases died as `Error: Test timed out in 5000ms.` A phase probe (`node artifacts/flake-probes/phase-timing-probe.ts`, a worktree at `7f44b2f`, run under the same load) attributed the file's own work: **2,185 ms** for `sceneTreeDigest` over the served scene — 84 files, **214,114,015 bytes** (`data/scene` 83 / 203,874,605 plus `data/network` 1 / 10,239,410) — **91 ms** for `harnessTreeDigest` over 22 files, **21 ms** for one `decodePng` of a native 1280x720 frame and **956 ms** for the 44 a single accepted pass decodes, and **818 ms** to write the 44-frame fixture. None of it is removable from this file: the digest is inside `beginVisualRun`, whose mounts are module constants rather than a parameter, and the 88 decodes are what `verifyVisualRun` does over two accepted passes. Both live in `tools/visual/**`, frozen while a capture may start.
+
+So each case names its ceiling — `BEGIN_RUN_BUDGET_MS` and `EVIDENCE_BUDGET_MS`, 60 s each, derived in `test/visual-evidence.test.ts` from those measurements times the 9.2x contention this suite has shown — and a third case checks the derivation: each ceiling must be more than twice and less than four times the worst cost its own case's work has shown, and no case may fall back to the suite default. `test/visual-instrument.test.ts`'s four frame-set groups carry `FRAME_SET_BUDGET_MS` for the same work: they write and decode the same 44 frames, and two of them died at the 5000 ms default in the same run (`Test timed out in 5000ms`, `test/visual-instrument.test.ts`).
+
+Red controls, each run from the worktree and restored byte-for-byte:
+
+```
+M5  EVIDENCE_BUDGET_MS = 5_000
+    AssertionError: "rejects deleted sibling frames, stale runs, changed build bytes and changed frame
+    bytes" is bounded too tightly to survive the load this suite runs under: its own work costs 17056 ms
+    at the contention measured, so 5000 ms is less than twice that.: expected 5000 to be greater than
+    34111.70642201835
+M6  { timeout: EVIDENCE_BUDGET_MS } deleted from the second case
+    AssertionError: the second case does not run on EVIDENCE_BUDGET_MS: expected +0 to be 1
+M7  BEGIN_RUN_BUDGET_MS = 600_000
+    AssertionError: "clears the previous complete.json when a new capture run begins" carries a ceiling
+    that no longer describes its own work: its own work costs 21006 ms at the contention measured, so
+    600000 ms is more than four times that.: expected 600000 to be less than 84024.07339449541
+M8  FRAME_SET_BUDGET_MS = 5, in test/visual-instrument.test.ts
+    → Test timed out in 5ms.   (10 cases, exit 1 — the groups' ceiling reaches their cases)
+```
+
+**The first version of the wiring assertion was self-satisfying, and the mutation is what caught it.** It searched the file's own source for the literal `{ timeout: EVIDENCE_BUDGET_MS }`, a string that appears in the check's own body, so M6 left it **green** with the option deleted from the case. It now builds the needle (`option(ceiling)`) and asserts the occurrence count is 1, and M6 fails as quoted above. This is the same class the human-set lane found twice in the same session (`bytes` read per file, a malformed digest read as "nothing recorded"): a check that can satisfy itself.
+
+**(2) One case starved the runner's own RPC, and the gate called green runs red.** Concurrently, `npm test` exited 1 on runs in which every test passed, with `Errors 1 error`:
+
+```
+Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+ ❯ Object.onTimeoutError ../../../node_modules/vitest/dist/chunks/rpc.-pEldfrD.js:53:10
+ ❯ Timeout._onTimeout ../../../node_modules/vitest/dist/chunks/index.B521nVV-.js:59:62
+ ❯ listOnTimeout node:internal/timers:605:17
+ ❯ processTimers node:internal/timers:541:7
+```
+
+Vitest's worker-to-runner RPC arms a 60,000 ms `setTimeout` on every `onTaskUpdate` call (`const DEFAULT_TIMEOUT = 6e4`, `node_modules/vitest/dist/chunks/index.B521nVV-.js:3`; the worker side that raises it is `chunks/rpc.-pEldfrD.js:48`). It fired in **three of three runs** at the default worker count — 19:53, 20:02 and 20:12 — each time in the log's own seconds after `test/pedestrian-overlap.test.ts` finished, and that case is one synchronous `it()` running 60,000 ticks, measured at **92.9 s** (20:12), **57.1 s** (20:15) and **47.6 s** (20:17). The worker never reaches Node's poll phase while it runs, so the runner's reply to an outstanding call sits in its queue until the loop turns — and the overdue watchdog then fires first.
+
+Bounding worker concurrency was tried first and **rejected on measurement**: `maxWorkers` at half the logical cores (16) still let the watchdog fire in the 20:12 run, right after the same 92.9 s case, and peak node processes only fell from 100 to 48; `vitest.config.ts` is therefore unchanged. The fix is in the case: the tick loop turns the event loop every `YIELD_EVERY_TICKS` (2,000) ticks, which is a turn every 1.6-3.1 s at the pace measured. The population is stepped with a fixed `STEP` and the tick's own simulated time, so no number this gate reports can change.
+
+```
+run   tree                                            Test Files              Tests            Errors  watchdog  exit
+19:53 7f44b2f, default workers                         59 passed               427 passed       1 error  1 firing  1
+20:02 7f44b2f + file fix, default workers              1 failed | 58 passed    2 failed | 425   1 error  1 firing  1
+20:12 + 16-worker bound                                60 passed               442 passed       1 error  1 firing  1
+20:15 same tree                                        60 passed               442 passed       —        0         0
+20:17 same tree                                        60 passed               442 passed       —        0         0
+20:16 240bc38, tick loop yields, default workers        60 passed               442 passed       —        0         0
+20:17 same tree                                        1 failed | 59 passed    1 failed | 441   —        0         1
+20:19 same tree                                        60 passed               442 passed       —        0         0
+20:22 d73ef9c, same code, default workers               60 passed               442 passed       —        0         0
+20:22 same tree, CPU median 70%                         60 passed               442 passed       —        0         0
+20:23 same tree, CPU median 100%                        60 passed               442 passed       —        0         0
+```
+
+Six runs on the final code revision, in three load states (CPU median 35%, 70% and 100%, node processes 29-66 against 32 logical cores), and the watchdog fired in none of them; `test/visual-evidence.test.ts` measured 6,143, 13,940, 3,779, 3,021, 3,955 and 3,211 ms across them, all green.
+
+The 20:17 exit 1 is a different defect, found by these runs and **not fixed here**: `test/tile-memory.test.ts` failed with `SyntaxError: Unexpected end of JSON input` at `JSON.parse(repaired.stdout…)`, its LRU child having produced no stdout inside the `spawnSync` budget of 2,000 ms. Measured on the same machine minutes later, that child takes **66-87 ms** over six runs, so the budget is not tight in steady state; what the run shows is that a stall on this box can miss it, and that the failure then surfaces as a JSON parse error rather than as the timeout it is. It is the same class as this entry's second finding and belongs to its own lane.
+
+**The four evidence classes this file carries still refuse, re-measured on this revision** (the same four the earlier entry, "The complete visual evidence check catches erased or changed captures", records as red controls). `node artifacts/flake-probes/defect-probe.ts` builds the synthetic 44-frame run, certifies it — `All 44 fresh native-resolution frames survived the complete visual gate with matching hashes.` — then reintroduces each defect in the evidence and prints `verifyVisualRun`'s own message:
+
+```
+a sibling frame deleted      ENOENT: no such file or directory, open '…\hero\hero-satellite-dusk-crossing.png'
+one byte changed in a frame  hero\hero-satellite-dusk-crossing.png changed after capture; its review
+                             cannot transfer to different bytes.
+a manifest dated before the
+run                          Stale visual manifest: hero/hero.json. This complete run must capture every
+                             required frame.
+a byte changed in dist/      Visual build changed during capture: …\build.js. Rebuild and recapture
+                             before reviewing this run.
+```
+
+Restoring each one certifies again, and `4 of 4 defects refused by name`.
+
+**Bound.** The ceilings cover the two cases' own work at the contention this suite has produced on this machine, and the six final runs on `240bc38` are the sample: five green, one red for the `tile-memory` defect above, and no watchdog firing in any of them. Six runs cannot prove a race is gone; what is proved is the mechanism and that the case that triggered it no longer holds the loop. The `visual-instrument` groups carry one ceiling for four groups, so a case inside one that pays none of that cost is bounded loosely — it finishes in milliseconds either way. The tick loop's yield assumes the population's own update is time-independent, which is the property `src/agents/population/tick.ts` is built on and which no assertion here checks; a future edit that reads a wall clock inside the loop would make the turn a behaviour change rather than a courtesy. Nothing here touches `src/**`, `tools/visual/**`, the Playwright configs or `data/**`, and the certificate's own digests are unaffected: no test file is in the harness closure.
