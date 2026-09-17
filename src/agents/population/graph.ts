@@ -22,6 +22,18 @@ import type { LaneEdge, NetworkData, NetworkEdge, WalkEdge } from "../../world/n
  */
 export const CENTRAL_RADIUS_M = 60;
 
+/**
+ * The authored Shibuya Scramble diagonal, matched by the name the network
+ * builder writes rather than by proximity.
+ *
+ * It is matched by name because proximity aims at the wrong crossing, silently:
+ * 48 walking sections come within 60 m of the world origin and exactly two of
+ * them are this diagonal, which are the two directions of one 49.061 m crossing.
+ * `tools/agents/crowd-occupancy.ts` finds the same geometry the same way, so this
+ * field and that instrument cannot disagree about which sections they mean.
+ */
+export const SCRAMBLE_DIAGONAL_MARKER = ":scramble-diagonal:";
+
 export class MovementGraph {
   readonly kind: "vehicle" | "pedestrian";
   readonly edges: ReadonlyMap<string, NetworkEdge>;
@@ -30,6 +42,7 @@ export class MovementGraph {
   private readonly exitDistance: ReadonlyMap<string, number>;
   private readonly crossingDistance: ReadonlyMap<string, number>;
   private readonly centralDistance: ReadonlyMap<string, number>;
+  private readonly diagonalDistance: ReadonlyMap<string, number>;
   private readonly boundaryNodes: ReadonlySet<string>;
 
   constructor(network: NetworkData, kind: "vehicle" | "pedestrian") {
@@ -104,6 +117,28 @@ export class MovementGraph {
     this.centralDistance = kind === "pedestrian"
       ? this.shortestLengthsTo(edges.filter((edge) => edge.junctionId === null && this.withinCentralRadius(edge)).map((edge) => edge.id))
       : new Map<string, number>();
+    // The crossing field: exact walking metres from a section to the authored
+    // scramble diagonal, by the same Dijkstra over the reversed successor graph.
+    // Its seed set is the diagonal itself, so `0` means "standing on the crossing"
+    // and a monotone descent of this field is a walk that arrives at the crossing
+    // and then traverses all 49.061 m of it — sections are atomic here, so landing
+    // on the diagonal cannot leave halfway across.
+    //
+    // Why a field rather than a preference: the descent to a legal terminus already
+    // exists and already refuses the crossing, because crossing costs a detour and
+    // the terminus field is seeded on ungoverned sidewalk. Measured with
+    // `tools/agents/centre-route-census.ts` on the revision before this, no planned
+    // centre route came nearer the origin than 31.228 m, so nobody was ever on the
+    // crossing at all. Aiming at the crossing first is what puts them there.
+    if (kind === "pedestrian") {
+      const diagonal = edges.filter((edge) => edge.id.includes(SCRAMBLE_DIAGONAL_MARKER)).map((edge) => edge.id);
+      if (!diagonal.length) {
+        throw new Error(`The pedestrian graph has no section whose id contains "${SCRAMBLE_DIAGONAL_MARKER}", so no walking route can be planned across the Shibuya Scramble diagonal. The network's authored crossing geometry changed; rebuild the network before planning a population.`);
+      }
+      this.diagonalDistance = this.shortestLengthsTo(diagonal);
+    } else {
+      this.diagonalDistance = new Map<string, number>();
+    }
   }
 
   /** Whether an edge's closest sample lies inside the central block. */
@@ -126,6 +161,17 @@ export class MovementGraph {
   /** Sections from this edge to the nearest mapped crossing, walking forward. */
   distanceToCrossing(id: string): number | undefined {
     return this.crossingDistance.get(id);
+  }
+
+  /**
+   * Metres of the shortest legal walk from this section to the authored scramble
+   * diagonal. `0` means this section *is* the diagonal, so a descent of this field
+   * that reaches zero has arrived at the crossing and will traverse all of it.
+   * Exported because a census has to be able to ask what the crossing costs a
+   * portal without planning the whole route.
+   */
+  distanceToDiagonal(id: string): number | undefined {
+    return this.diagonalDistance.get(id);
   }
 
   /**
