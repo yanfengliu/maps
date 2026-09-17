@@ -312,7 +312,7 @@ Error: promise resolved "undefined" instead of rejecting
 
 Exit status 1. **CLI red control** (`node probe/gate-chain.mjs p3-scene`), same build bytes in both arms, one served scene file changed between them: digest `519a5e65f4a8…` becomes `89db4ac9f585…` over 137 files, with `dist/index.html` hashing `bc09c00c…` in both runs.
 
-**Bound.** The digest is over file names, sizes and modification times, not contents: it cannot see a byte rewritten in place with both its length and its mtime preserved. It sees every added, removed, renamed or resized file and every ordinary rewrite. It also covers exactly the two mounts `tools/vite/serve-scene-data.ts` answers, so data the app does not serve is outside it by construction.
+**Bound.** The digest is now over the path each file is served at and the SHA-256 of its bytes (`f4e96f0`, 2026-09-16), so it sees a byte rewritten in place with both its length and its mtime preserved; the two digest values above were taken with the pre-`f4e96f0` metadata digest, which could not, and they do not reproduce. What it cannot report is a file changed and changed back between its two calls, which is a difference no digest taken at two instants can see. It covers exactly the two mounts `tools/vite/serve-scene-data.ts` answers, so data the app does not serve is outside it by construction. The red control for the byte binding is "The scene digest sees a served file rewritten in place" below.
 
 **(4) The lifecycle lane asserted elapsed time only.** No console or pageerror assertion, so a page whose cleanup throws — and therefore finishes *faster* — passed.
 
@@ -353,7 +353,7 @@ Visual gate refused: sweep/satellite/manifest.json reports the renderer "ANGLE (
 
 **Bound.** The predicate is only as strong as what Chromium reports: the unmasked `WEBGL_debug_renderer_info` string, or the masked fallback (`WebKit WebGL`) when the extension is withheld. The fallback is refused rather than passed, but it fails as "wrong renderer" rather than as "identity unavailable". The specs' own assertion fails fast and has not been watched to fire against a browser that actually drew on another renderer — what has been executed is the shipped predicate accepting the real first frame's SwiftShader string and refusing the hardware string in the same page (`probe/capture.spec.ts`), plus the wrapper's refusal above.
 
-**Not yet proved red.** The three paths in "Not yet proved red" above are unchanged by this unit, and one is added: the scene digest is re-derived at certification and has been watched to fire only against a file changed between the two hashes inside one synthetic run, not against `npm run data:scene` running during a real capture.
+**Not yet proved red.** The three paths in "Not yet proved red" above are unchanged by this unit, and one is added: the scene digest is re-derived at certification and has been watched to fire against a file changed between the two hashes inside one synthetic run only — that firing was a movement of names, sizes or mtimes, which is all the pre-`f4e96f0` digest could see, and since `f4e96f0` the firing comes from the bytes themselves ("The scene digest sees a served file rewritten in place" below) — and not against `npm run data:scene` running during a real capture.
 
 
 
@@ -474,3 +474,65 @@ Exit status 1, in 6.6 s. The two cases above it stayed green, which is the findi
 **What the rendered check is bound by.** One junction (the scramble), one pose (45 m east of the crossing at 6 m above the ground, where `scramble:vehicle:3`'s head is 16 m away and faces the camera), one build, one hardware renderer (ANGLE/D3D11 on an RTX 4090), `?agents=1&seed=9137&style=satellite&time=noon`. At the hero pose the three scramble heads in frame are edge-on with facing numbers -0.14, -0.92 and 0.19, so a lens change there is five pixels and the green and amber lenses are not visible at all; that pose is corroboration, not the primary evidence. No pedestrian signal lens exists in this city to check: none of the 78 `traffic_signals` controls carries `traffic_signals=pedestrian`, so `head(..., pedestrian: true)` never runs and the 35 pedestrian groups have nothing on screen. Records: `artifacts/render-defects/after/frames.json` (3 digests, attach tick 11), `before/frames.json` (1 digest, attach tick 1,075), `before-hero/`, `after-hero/` (5 changed pixels at x 222-223, y 285-287) and `no-agents/` for the population-free path.
 
 **A population-free run is unchanged.** `no-agents/frames.json` records 0 pedestrians and 0 vehicles drawn, 1,667 distinct colours and mean luminance 80.6, with the head in the same no-group state as before this work (crop luminance 42.56 against the frozen arm's 42.56). The `updateSignals` cache now starts at `undefined`, so the app's per-frame call rewrites the lenses once rather than every frame of a `?agents=`-free run, which is what makes that call affordable in the lane whose frames carry the review.
+
+## The scene digest sees a served file rewritten in place
+
+**Gate:** `npm run visual` — `sceneTreeDigest` in `tools/visual/verify-output.ts`, pinned by `beginVisualRun` into `run.json` and re-derived by `certifyVisualRun` through `assertSceneUnchanged` before it reads a frame. The unit case carrying the same claim is `test/visual-instrument.test.ts`, "changes the digest when a served file changes", unedited by this landing.
+
+**Landed:** 2026-09-16 in `f4e96f0`, off `40c873c`.
+
+**Mutation:** the pre-`f4e96f0` algorithm put back verbatim — the block that reads every served file and folds in its bytes replaced by the two metadata lines it replaced:
+
+```
+      entries.push(`${relative}${name}\u0000${info.size}\u0000${Math.floor(info.mtimeMs)}`);
+      bytes += info.size;
+```
+
+Nothing else in the file changed, and `node probe/reinstate-defect.mjs restore` writes the saved bytes back before the worktree is measured again. The two module hashes printed below are of the worktree's own bytes, which are CRLF on Windows; the committed blob at `f4e96f0` is `ed0df73329d0…`, and the shipped arm's `8875f863…` is those bytes, not the blob.
+
+**Red control** (`node probe/scene-digest-blind-spot.mjs`, run from `artifacts/digest-proof/wt`): a synthetic 44-frame run the probe builds itself, over two scene mounts; `sceneTreeDigest` taken the way `--begin` takes it, then `tiles/a.b3dm` rewritten from `one` to `two` — three bytes either way — with its modification time put back to the instant both arms share; then `certifyVisualRun`, which is the gate's `--end` step. Under the shipped digest:
+
+```
+arm: shipped content digest (f4e96f0: path + SHA-256 of the bytes)
+module: tools/visual/verify-output.ts sha256 8875f863458073e91fb7095d9f328cda33ae6b14941a2a6c601178971d02c4e5
+served file: C:\Users\38909\AppData\Local\Temp\maps-digest-proof-DSALhG\data\scene\tiles\a.b3dm
+  before: 3 bytes, mtimeMs 1789516800000, sha256 7692c3ad3540bb803c020b3aee66cd8887123234ea0c6e7143c0add73ff431ed
+  after:  3 bytes, mtimeMs 1789516800000, sha256 3fc4ccfe745870e2c0d99f71f30ff0656c8dedd41cc1d7d3d376b0dbe685e2f3
+  bytes changed: yes; length changed: no; floored mtime changed: no
+digest pinned by run.json:     99e2bf99377fd6c7f912b341e9c9b85f9fb78300e6caf1b5047563dd7bb76061 (3 files, 18 bytes)
+  mtime moved to 2026-09-16T01:00:00.000Z with the bytes unchanged: digest moved: no
+digest re-derived at --end:    bc69cbe8d7d868717af74c495f7f9f5e3202c69312c4a516be1270072ee3f58b (3 files, 18 bytes)
+digest moved: yes
+certificate: refused
+refusal: The served scene data changed during capture, so these frames are not all pictures of the same city: 3 files digested 99e2bf99377f when the run began and 3 files digest bc69cbe8d7d8 now. `npm run data:scene` (or `npm run data:network`) ran while the gate was capturing. Rebuild and recapture before reviewing this run.
+VERDICT: the scene-unchanged check SEES the byte swap
+```
+
+Under the mutation, with the same command and the same probe:
+
+```
+arm: pre-f4e96f0 metadata digest (path + size + floored mtime), reinstated verbatim
+module: tools/visual/verify-output.ts sha256 54ac44a4334b4ac9fcabb4d947d481e029e213a865e38d21e913db9d01df4c90
+served file: C:\Users\38909\AppData\Local\Temp\maps-digest-proof-W70ZDC\data\scene\tiles\a.b3dm
+  before: 3 bytes, mtimeMs 1789516800000, sha256 7692c3ad3540bb803c020b3aee66cd8887123234ea0c6e7143c0add73ff431ed
+  after:  3 bytes, mtimeMs 1789516800000, sha256 3fc4ccfe745870e2c0d99f71f30ff0656c8dedd41cc1d7d3d376b0dbe685e2f3
+  bytes changed: yes; length changed: no; floored mtime changed: no
+digest pinned by run.json:     e77e3c7eaf497e0b6fd114bd44dbafb97a2ef095067bdf6654f7b5fa768c4f8a (3 files, 18 bytes)
+  mtime moved to 2026-09-16T01:00:00.000Z with the bytes unchanged: digest moved: yes
+digest re-derived at --end:    e77e3c7eaf497e0b6fd114bd44dbafb97a2ef095067bdf6654f7b5fa768c4f8a (3 files, 18 bytes)
+digest moved: no
+certificate: ISSUED
+VERDICT: the scene-unchanged check STAYS GREEN while the bytes changed
+```
+
+and the certified line above it reads `All 44 fresh native-resolution frames survived the complete visual gate with matching hashes.` followed by `Certified run digest-proof: pixel lane on "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)", lifecycle lane on "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)"`. The gate issued its certificate for a run whose served bytes moved, which is the failure the content digest exists to prevent.
+
+**The same defect from the other side: the unit case was intermittent.** With the metadata digest in place and nothing else changed, `npx vitest run test/visual-instrument.test.ts -t "changes the digest when a served file changes"` was run 24 times from the same worktree: **4 red, 20 green, 38.5 s total**. A red run fails on the digest agreeing with itself:
+
+```
+AssertionError: expected 'c212f092a9346771a9856c3e82988439fbc72…' not to be 'c212f092a9346771a9856c3e82988439fbc72…'
+```
+
+The two writes straddled an OS clock tick in the green runs and shared one in the red ones. `f4e96f0`'s message records 1 of 12 on `main`; this run measured 4 of 24, which is the same race at a different rate rather than a different result. So the old check was neither a gate that could be trusted nor one that was broken: it was a clock race that the meter-moved condition won between 1 run in 12 and 1 in 6. Under the shipped digest the same case is deterministic and passes in 9 ms because the bytes differ.
+
+**Bound.** Only the path a file is served at and the SHA-256 of its bytes enter the digest, so the same tree gives the same value on every run — three calls over this machine's served payload each return `0222c0566d507e4b…` over 137 files and 371,228,426 bytes — and no timestamp, size or inode is covered, which the same probe measures from the other side: moving a file's bytes to a new mtime leaves the digest where it was under the shipped algorithm and moves it under the old one. What it cannot report is a file changed and changed back between its two calls, which is a difference no digest taken at two instants can see. It covers exactly the two mounts `tools/vite/serve-scene-data.ts` answers — `data/scene` served as `/scene/` and `data/network` as `/network/` — so data the app does not serve is outside it by construction. Its cost is paid twice per gate run: 425-447 ms per call measured here, about 0.9 s of the three-hour run, before the build and again after the capture.
