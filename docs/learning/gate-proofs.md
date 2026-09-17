@@ -536,3 +536,39 @@ AssertionError: expected 'c212f092a9346771a9856c3e82988439fbc72…' not to be 'c
 The two writes straddled an OS clock tick in the green runs and shared one in the red ones. `f4e96f0`'s message records 1 of 12 on `main`; this run measured 4 of 24, which is the same race at a different rate rather than a different result. So the old check was neither a gate that could be trusted nor one that was broken: it was a clock race that the meter-moved condition won between 1 run in 12 and 1 in 6. Under the shipped digest the same case is deterministic and passes in 9 ms because the bytes differ.
 
 **Bound.** Only the path a file is served at and the SHA-256 of its bytes enter the digest, so the same tree gives the same value on every run — three calls over this machine's served payload each return `0222c0566d507e4b…` over 137 files and 371,228,426 bytes — and no timestamp, size or inode is covered, which the same probe measures from the other side: moving a file's bytes to a new mtime leaves the digest where it was under the shipped algorithm and moves it under the old one. What it cannot report is a file changed and changed back between its two calls, which is a difference no digest taken at two instants can see. It covers exactly the two mounts `tools/vite/serve-scene-data.ts` answers — `data/scene` served as `/scene/` and `data/network` as `/network/` — so data the app does not serve is outside it by construction. Its cost is paid twice per gate run: 425-447 ms per call measured here, about 0.9 s of the three-hour run, before the build and again after the capture.
+
+## The vehicle spacing gate catches bodies that interpenetrate
+
+**Gate:** `test/vehicle-spacing.test.ts`, one case over the delivered network and fleet, driving `createPopulation` and measuring with `vehicleBoxes` and `overlappingPairs` from `tools/agents/spacing-metrics.ts`: oriented collision boxes projected from the published pose buffers, not a distance between origins.
+
+**Landed:** 2026-09-16 in `5e8c266`, off `a281281`.
+
+**Why the gate had to exist before the fix.** No run of the population measured the space between two bodies: `tools/agents/population-run.ts` at `5e8c266^` publishes the lifecycle counts, the admission counters, the longest waits and the same-tick cost, and a grep of it for overlap, spacing, gap or collision terms returns nothing — which is why three lanes reported the vehicle population as working while every counter they read was honest and none of them was about space. `test/vehicle-trajectory.test.ts` does drive `sweepsOverlap` on the authored fleet, and it is not this: its subject is a planned path's swept footprint at the planner level, not two bodies in the running simulation. The independent review's first blocking finding, measured on the shipped simulation at 200 vehicles and 3,600 ticks, was **120 oriented-box overlapping pairs among 71 active bodies, deepest longitudinal overlap 4.147 m at a 0.500 m origin gap**. The cause was structural rather than a slip: the car-following law read the network contract's 0.5 m stop gap — a gap between a body and a stop line — as if it separated two bodies, and measured its gap origin to origin, so a queue's equilibrium was 0.5 m between origins and every class in the fleet overlapped itself by roughly its own length.
+
+**Mutation:** the origin-to-origin separation restored in `buildVehicleFrame`'s clearance — `return delta > 0 ? delta : null;` and `return ahead > 0 ? ahead : null;` in place of the two `- halfLengths` forms. Two lines in `src/agents/population/vehicles.ts`, nothing else changed, and the file restored byte-for-byte afterwards.
+
+**Failure:** `npx vitest run test/vehicle-spacing.test.ts` on this revision (`f4e96f0`), exit status 1, in 2.96 s:
+
+```
+ × test/vehicle-spacing.test.ts > vehicle spacing > never overlaps two vehicles travelling the same direction 2156ms
+   → expected [ …(5) ] to deeply equal []
+
+AssertionError: expected [ …(5) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "tick 475: kei#15 into taxi#17, 0.120 m of oriented-box overlap at a -4.009 m origin gap, headings 0.0 deg apart",
++   "tick 480: kei#15 into taxi#17, 0.303 m of oriented-box overlap at a -3.825 m origin gap, headings 0.0 deg apart",
++   "tick 485: kei#15 into taxi#17, 0.479 m of oriented-box overlap at a -3.649 m origin gap, headings 0.0 deg apart",
++   "tick 490: kei#15 into taxi#17, 0.648 m of oriented-box overlap at a -3.480 m origin gap, headings 0.0 deg apart",
++   "tick 495: kei#15 into taxi#17, 0.809 m of oriented-box overlap at a -3.319 m origin gap, headings 0.0 deg apart",
++ ]
+```
+
+Restoring the two terms: `1 passed`, in 2.56 s. The same mutation driven through the run-level instrument, `node tools/agents/vehicle-spacing.ts --vehicles 200 --pedestrians 0 --ticks 3600`, exits 1 with `31 overlapping oriented-box pairs between bodies travelling the same direction at tick 2925` and `deepest same-direction oriented-box penetration 2.224 m (taxi#27 into taxi#98)`, against `"maxOverlapPairs": 0`, `"maxPenetrationM": 0` and `"verdict": "pass"` on the fixed revision. That is the defect class at reduced magnitude rather than the original 120 pairs: the rest of `5e8c266` — the lateral filter that stops a body braking for the one beside it, the spawn clearance, and `HALT_CAPTURE_M` — is still in place, so the two half-length terms are the smallest mutation that still makes the gate fire.
+
+**Bound.** One delivered network at seed `0x5b1b0a`, 120 vehicles and no pedestrians, 1,200 ticks at 1/60 s — 20 simulated seconds — sampled every 5 ticks. That window is long enough for queues to form at the portals and at the first gates and for two bodies to be placed at one portal, and it is not a full signal cycle; it says nothing about pedestrian spacing, about lane changes at junctions, about the 3,000-pedestrian acceptance load or about route completion. It also permits head-on overlaps by construction, where two bodies are drawn on the same folded lane centreline: the test requires such a pair's centrelines to come within the two bodies' own half lengths, and fails any other head-on overlap as a different defect. The pedestrian half of the same review finding (46,615 overlapping pairs at t = 60 s) is **not** gated on this revision: `test/pedestrian-overlap.test.ts` is untracked and lives unlanded in `artifacts/spacing/wt`, so the crowd's spacing has no gate here.
+
