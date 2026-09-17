@@ -9,6 +9,19 @@
  * this gate says nothing about that load, about route completion, or about what a
  * frame looks like.
  *
+ * The tick loop hands the event loop back every `YIELD_EVERY_TICKS` ticks. That is
+ * not about this gate's verdict — the population is stepped with a fixed `STEP` and
+ * the tick's own simulated time, never the wall clock, so a turn of the loop cannot
+ * change a number below. It is about the runner this case runs under: one
+ * synchronous case occupies its worker for 47-93 s, and Vitest's worker-to-runner RPC
+ * arms a 60,000 ms `setTimeout` on every `onTaskUpdate` call
+ * (`DEFAULT_TIMEOUT = 6e4`, `node_modules/vitest/dist/chunks/index.B521nVV-.js:3`). A
+ * worker that holds its event loop past that deadline throws `[vitest-worker]:
+ * Timeout calling "onTaskUpdate"`, which Vitest reports under `Errors` and turns
+ * into exit 1 — so `npm test` reported failure for three full runs in which every
+ * test passed (2026-09-16 at 19:53, 20:02 and 20:12), each time in the seconds after
+ * this case finished.
+ *
  * Claim: over the run the crowd keeps itself in distinct places and surges across
  * the Shibuya Scramble. No three bodies ever occupy one centimetre of ground, no
  * more than a twentieth of the active crowd shares a one-centimetre position with
@@ -66,6 +79,25 @@ const SAMPLE_EVERY = 60;
 const PEDESTRIANS = 150;
 const VEHICLES = 0;
 const SEED = 0x5b1b0a;
+
+/**
+ * How often the tick loop turns the event loop, in ticks.
+ *
+ * 60,000 ticks cost 47.6-92.9 s in the three full runs on 2026-09-16, so a turn
+ * every 2,000 ticks is a turn every 1.6-3.1 s: a nineteen-fold margin against
+ * Vitest's 60,000 ms worker-RPC deadline even if this machine ran ten times slower.
+ * What matters is reaching Node's poll phase before the deadline, because the
+ * runner's reply to an outstanding `onTaskUpdate` sits in this worker's queue until
+ * the loop gets there, and the watchdog fires whether or not the reply ever came.
+ */
+const YIELD_EVERY_TICKS = 2_000;
+
+/** Hand the event loop back, so the runner's outstanding RPC to this worker lands. */
+function turnTheEventLoop(): Promise<void> {
+  return new Promise((resolve) => {
+    setImmediate(resolve);
+  });
+}
 
 /** The authored collision circle's radius, shared by ORCA and the admission footprint. */
 const CONTACT_RADIUS_M = PEDESTRIAN_DYNAMICS.radiusM;
@@ -128,7 +160,7 @@ function diagonalSections(network: NetworkData): WalkEdge[] {
 afterEach(resetInvariants);
 
 describe("pedestrian overlap", () => {
-  it("keeps the crowd in distinct places and puts it on the scramble diagonal", { timeout: 300_000 }, () => {
+  it("keeps the crowd in distinct places and puts it on the scramble diagonal", { timeout: 300_000 }, async () => {
     const network = deliveredNetwork();
     const diagonal = diagonalSections(network);
     const population = createPopulation({
@@ -155,6 +187,7 @@ describe("pedestrian overlap", () => {
     let nearestDiagonalTick = 0;
 
     for (let tick = 1; tick <= TICKS; tick += 1) {
+      if (tick % YIELD_EVERY_TICKS === 0) await turnTheEventLoop();
       population.update(STEP, tick * STEP);
       if (tick % SAMPLE_EVERY !== 0 && tick !== TICKS) continue;
 

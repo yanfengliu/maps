@@ -16,6 +16,11 @@
  * conforming records is a fact about `lifecycle.spec.ts` and the gate's chain,
  * which `test/visual-instrument.test.ts` shares with the source-level checks in
  * the same file.
+ *
+ * Timing bound: the cases here that build a 44-frame run carry
+ * `FRAME_SET_BUDGET_MS` instead of Vitest's 5000 ms default, because that work is
+ * real and this machine is shared. Which ceiling applies to what, and the
+ * measurements behind it, are in that constant's own comment below the imports.
  */
 import { expect, it, describe } from "vitest";
 import { createHash } from "node:crypto";
@@ -45,6 +50,27 @@ import {
   recordTeardown,
   teardownRecordRefusal,
 } from "../src/harness/teardown.js";
+
+/**
+ * What a case that builds a synthetic 44-frame run may spend.
+ *
+ * Every case in the groups below that calls `withRun` writes 44 native 1280x720
+ * frames, three manifests, three lifecycle records and a `run.json`, then has the
+ * set read back and decoded at least once. Measured on this machine on
+ * 2026-09-16: 1.77 s of local work for that write and that decode, 1.47 s for the
+ * heaviest case with the box otherwise quiet, and — in the 20:02 full run — 3.83 s
+ * passing and 5.05 s failing against the 5000 ms default, where two of these cases
+ * died as `Test timed out in 5000ms` while every other test in the suite passed.
+ * The work is 1.77 s and this suite's contention has been measured at 9.2x for its
+ * sibling file, so the worst this case's own work has cost is about 16 s; 60 s is
+ * under four times that, on the same rule `test/visual-evidence.test.ts` states for
+ * its own two accepted passes over 44 frames.
+ *
+ * The ceiling is set on the groups rather than on each case because every case that
+ * pays this cost lives in one of them, and a case in one of them that does not pay
+ * it finishes in milliseconds either way.
+ */
+const FRAME_SET_BUDGET_MS = 60_000;
 
 const SWIFTSHADER =
   "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)";
@@ -230,7 +256,7 @@ async function amendLifecycleRecord(
   await writeFile(file, JSON.stringify(record));
 }
 
-describe("the pixel lane's renderer is asserted, not recorded", () => {
+describe("the pixel lane's renderer is asserted, not recorded", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("accepts the SwiftShader string the 2026-09-16 run recorded", () => {
     expect(pixelLaneRefusal(SWIFTSHADER, "sweep/satellite/manifest.json")).toBeNull();
     expect(PIXEL_LANE_RENDERER.test(SWIFTSHADER)).toBe(true);
@@ -277,7 +303,7 @@ describe("the pixel lane's renderer is asserted, not recorded", () => {
   });
 });
 
-describe("certification requires the hardware lifecycle lane's own evidence", () => {
+describe("certification requires the hardware lifecycle lane's own evidence", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("certifies a complete run and records both renderers, the scene digest and the harness digest", async () => {
     await withRun({}, async (run) => {
       await certify(run);
@@ -379,7 +405,7 @@ describe("certification requires the hardware lifecycle lane's own evidence", ()
   });
 });
 
-describe("the certificate refuses a run this chain did not open", () => {
+describe("the certificate refuses a run this chain did not open", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("refuses when no run was begun, rather than certifying what is on disk", async () => {
     await withRun({}, async (run) => {
       await rm(join(run.root, "run.json"));
@@ -414,7 +440,7 @@ describe("the certificate refuses a run this chain did not open", () => {
   });
 });
 
-describe("the scene data's identity is bound into the certificate", () => {
+describe("the scene data's identity is bound into the certificate", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("changes the digest when a served file changes", async () => {
     const root = await mkdtemp(join(tmpdir(), "maps-scene-digest-"));
     try {
@@ -448,7 +474,7 @@ describe("the scene data's identity is bound into the certificate", () => {
   });
 });
 
-describe("the harness that drives the browser is bound into the certificate", () => {
+describe("the harness that drives the browser is bound into the certificate", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("covers every config the gate's own chain runs", async () => {
     // Read from the chain rather than restated: adding a lane config to
     // `npm run visual` and forgetting it here is exactly how the closure would
@@ -563,7 +589,7 @@ describe("the harness that drives the browser is bound into the certificate", ()
   });
 });
 
-describe("lifecycleEvidence reads only this run's records", () => {
+describe("lifecycleEvidence reads only this run's records", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("returns the three fresh records with their renderer and timings", async () => {
     await withRun({}, async (run) => {
       const record = JSON.parse(await readFile(join(run.root, "run.json"), "utf8")) as {
@@ -635,7 +661,7 @@ describe("the gate's chain claims the run before the build", () => {
   });
 });
 
-describe("the page's own cleanup outcome is read, not assumed", () => {
+describe("the page's own cleanup outcome is read, not assumed", { timeout: FRAME_SET_BUDGET_MS }, () => {
   it("records completed when the cleanup returns", () => {
     const written = new Map<string, string>();
     recordTeardown(() => undefined, { setItem: (key, value) => void written.set(key, value) });
