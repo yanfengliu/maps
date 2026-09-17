@@ -24,7 +24,13 @@ export default defineConfig({
   // (playwright.lifecycle.config.ts), so it is excluded here. There is
   // deliberately no switch that could move this lane to hardware: a pixel set
   // captured on one renderer cannot inherit a review written for another.
-  testIgnore: ["lifecycle.spec.ts"],
+  //
+  // `smoke.spec.ts` is excluded for a third reason, and this was a real defect
+  // when it was missing: it lives in this directory, so without this line the
+  // pixel lane collects it and a three-hour evidence run silently gains a fourth,
+  // unplanned spec. It asserts preconditions and captures nothing, and it belongs
+  // to `playwright.smoke.config.ts` alone. Measured by round 31's review, 2026-09-16.
+  testIgnore: ["lifecycle.spec.ts", "smoke.spec.ts"],
   // The sweep is one continuous camera path through one page. Splitting it
   // across workers would mean several browsers fighting for a software
   // rasteriser and would not make it faster.

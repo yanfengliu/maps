@@ -39,5 +39,5 @@ The positive controls fire and the question arm is silent across all three chann
 
 - `tools/visual/verify-output.ts`: 61 lines → 613.
 - `test/visual-instrument.test.ts`: new, 31 cases. Full suite 52 files / 383 tests, green, with `test/visual-evidence.test.ts` and `test/visual-budget.test.ts` unedited.
-- Scene payload digest covers 137 files, 371,228,426 bytes across the two served mounts.
+- Scene payload digest covers 137 files, 371,228,426 bytes across the two served mounts, **as the payload stood before that day's rebuild of `data/`; it is now 84 files and 214,114,015 bytes, digest `ddd21ee1b4feb7f7…`, because the human agent set is missing (round 31's review).**
 - The probe's first frame on SwiftShader: drawing buffer 1280x720, the crossing pose at 45 m drawing 146,576 building triangles from 18 visible tiles; the plaza zoom at 620 m drew 418,062 from 41.
