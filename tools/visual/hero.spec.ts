@@ -148,8 +148,13 @@ test.describe("hero frames", () => {
       // CSS selector rather than `getByRole` because a closed listbox is hidden
       // and stays out of the accessibility tree.
       const styleOptions = page.locator('[role="option"]');
-      expect(await styleOptions.allTextContents()).toContain("Cartographic");
-      expect(await styleOptions.allTextContents()).toContain("Satellite");
+      // Joined before matching, because `allTextContents` returns one string per
+      // row and a row carries its label and its description together. `toContain`
+      // on the array would ask whether some row is exactly "Cartographic", which
+      // no row is.
+      const styleOptionText = (await styleOptions.allTextContents()).join("\n");
+      expect(styleOptionText).toContain("Cartographic");
+      expect(styleOptionText).toContain("Satellite");
       for (const style of ["satellite", "cartographic"] as const) {
       await driver.settle("preservation");
       const before = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount }));
