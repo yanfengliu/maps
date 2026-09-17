@@ -912,7 +912,15 @@ export function createPopulation(options: PopulationOptions): Population {
    */
   function gateAtOrAhead(route: PlannedRoute, travelledM: number) {
     const occurrence = occurrenceAtDistance(route, travelledM);
-    return route.gates.find((gate) => gate.entryIndex === occurrence) ?? route.gates.find((gate) => gate.entryIndex > occurrence);
+    // `gates` is built by `assemble` in ascending occurrence order, so the gate the two
+    // `find`s used to return is the first one at or past this occurrence: one loop and no
+    // closure per call.
+    const gates = route.gates;
+    for (let i = 0; i < gates.length; i += 1) {
+      const gate = gates[i]!;
+      if (gate.entryIndex >= occurrence) return gate;
+    }
+    return undefined;
   }
 
   /**
@@ -931,9 +939,16 @@ export function createPopulation(options: PopulationOptions): Population {
    * authority.
    */
   function gateBeyond(route: PlannedRoute, travelledM: number, lease: RoutePassage | undefined) {
-    return route.gates.find(
-      (gate) => gate.gateDistanceM >= travelledM - 1e-6 && (lease === undefined || gate.junctionId !== lease.junctionId),
-    );
+    // `gates` is built in ascending occurrence order and `gateDistanceM` is that
+    // occurrence's route-absolute start, so the first gate meeting both clauses is the one
+    // this loop meets first: the `find` and its closure become a plain scan.
+    const gates = route.gates;
+    const floor = travelledM - 1e-6;
+    for (let i = 0; i < gates.length; i += 1) {
+      const gate = gates[i]!;
+      if (gate.gateDistanceM >= floor && (lease === undefined || gate.junctionId !== lease.junctionId)) return gate;
+    }
+    return undefined;
   }
 
   /**
@@ -1620,11 +1635,26 @@ export function createPopulation(options: PopulationOptions): Population {
   /**
    * A route-relative distance to the occurrence it falls on. One definition,
    * shared by the planner's gate arithmetic and the population's progress report.
+   *
+   * The walk this replaces advanced one edge at a time from the route's first
+   * occurrence: `while (index + 1 < edges.length && travelledM >= starts[index + 1])`.
+   * `starts` is built by `assemble` as a running sum of `edge.lengthM`, so it is
+   * non-decreasing, which makes that loop's answer the **last** index whose `starts`
+   * entry is at or below `travelledM` — the same thing a binary search returns, with the
+   * same answer on a zero-length edge and for a negative or NaN distance, both of which
+   * give 0. It was one of the tick's largest sampled terms because it is called several
+   * times per body per tick, twice of them from the gate searches.
    */
   function occurrenceAtDistance(route: PlannedRoute, travelledM: number): number {
-    let index = 0;
-    while (index + 1 < route.edges.length && travelledM >= route.starts[index + 1]!) index += 1;
-    return index;
+    const starts = route.starts;
+    let low = 0;
+    let high = starts.length - 1;
+    while (low < high) {
+      const middle = (low + high + 1) >>> 1;
+      if (starts[middle]! <= travelledM) low = middle;
+      else high = middle - 1;
+    }
+    return low;
   }
 
   /**

@@ -14,6 +14,23 @@ export interface RoutePassage {
   readonly boundaryEntry:boolean;readonly entrySignalGroupId:string|null;
 }
 const passages=new WeakSet<object>();
+/**
+ * An edge lookup table per delivered edge array.
+ *
+ * `buildPassage` used to build this `Map` from scratch on every call — the whole lane or
+ * walk set, thousands of entries, to resolve the handful of ids one route names. The tick
+ * plans routes as it spawns, so that rebuild was 8.9% of the fixed step's sampled self
+ * time, the third-largest term in the tick behind the neighbour walk and the gate search.
+ * The edge arrays are delivered once and never mutated, so the table is a function of the
+ * array identity and a `WeakMap` is the whole cache; a hit resolves the same edge object
+ * the rebuild would have.
+ */
+const edgeTables=new WeakMap<readonly NetworkEdge[],Map<string,NetworkEdge>>();
+function edgeTable(edges:readonly NetworkEdge[]):Map<string,NetworkEdge>{
+  let table=edgeTables.get(edges);
+  if(!table){table=new Map(edges.map(e=>[e.id,e]));edgeTables.set(edges,table);}
+  return table;
+}
 /** Use the actual complete planned route. Repeated edge IDs are allowed; occurrence indices distinguish a later lap. */
 export function createRoutePassage(network:Pick<NetworkData,"lanes"|"walks">&Partial<Pick<NetworkData,"physical">&BoundaryNetwork>,kind:ActorKind,routeEdgeIds:readonly string[],entryIndex:number):RoutePassage {
   return buildPassage(network,kind,routeEdgeIds,entryIndex);
@@ -33,7 +50,7 @@ export function createBoundaryEntryPassage(network:Pick<NetworkData,"lanes"|"wal
   return buildPassage(network,kind,routeEdgeIds,0,{owner,group:owner.controlKind==="signal"?group:null});
 }
 function buildPassage(network:Pick<NetworkData,"lanes"|"walks">&Partial<Pick<NetworkData,"physical">&BoundaryNetwork>,kind:ActorKind,routeEdgeIds:readonly string[],entryIndex:number,boundary?:{owner:Junction;group:string|null}):RoutePassage {
-  const byId=new Map((kind==="vehicle"?network.lanes:network.walks).map(e=>[e.id,e]));
+  const byId=edgeTable(kind==="vehicle"?network.lanes:network.walks);
   if(!Array.isArray(routeEdgeIds)||!routeEdgeIds.length||!Number.isInteger(entryIndex)||entryIndex<0||entryIndex>=routeEdgeIds.length)throw new Error("Route passage needs a complete directed route and a valid conflict entry index.");
   const edges=routeEdgeIds.map(id=>{const edge=byId.get(id);if(!edge)throw new Error(`Route passage ${kind} edge ${id} is missing from the network.`);return edge;});
   for(let i=1;i<edges.length;i++)if(!edges[i-1]!.nextIds.includes(edges[i]!.id))throw new Error(`Route passage cannot jump from ${edges[i-1]!.id} to ${edges[i]!.id}; use legal nextIds.`);

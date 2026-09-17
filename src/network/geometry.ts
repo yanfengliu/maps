@@ -24,20 +24,37 @@ interface EdgeArcTable {
 
 const arcTables = new WeakMap<object, EdgeArcTable>();
 
+/**
+ * A one-entry memo in front of the `WeakMap`.
+ *
+ * `sampleRoute` samples one edge three times in a row — its own position and the two
+ * `headingAt` probes — and a `WeakMap.get` per call was measurable in the tick's own CPU
+ * profile, where `sampleEdge` is about an eighth of the fixed step. The memo caches the
+ * last edge looked up, so calls that share an edge share one lookup. It caches an
+ * identity and not a value: a hit returns the very table the `WeakMap` holds, so no
+ * sample changes.
+ */
+let memoEdge: object | null = null;
+let memoTable: EdgeArcTable | null = null;
+
 function arcTable(edge: Pick<NetworkEdge, "points">): EdgeArcTable {
-  const cached = arcTables.get(edge);
-  if (cached) return cached;
-  const points = edge.points;
-  const count = points.length;
-  const segmentLengths = new Float64Array(Math.max(0, count - 1));
-  const cumulative = new Float64Array(Math.max(1, count));
-  for (let i = 1; i < count; i += 1) {
-    const length = distance(points[i - 1]!, points[i]!);
-    segmentLengths[i - 1] = length;
-    cumulative[i] = cumulative[i - 1]! + length;
+  if (edge === memoEdge) return memoTable!;
+  let table = arcTables.get(edge);
+  if (!table) {
+    const points = edge.points;
+    const count = points.length;
+    const segmentLengths = new Float64Array(Math.max(0, count - 1));
+    const cumulative = new Float64Array(Math.max(1, count));
+    for (let i = 1; i < count; i += 1) {
+      const length = distance(points[i - 1]!, points[i]!);
+      segmentLengths[i - 1] = length;
+      cumulative[i] = cumulative[i - 1]! + length;
+    }
+    table = { pointCount: count, segmentLengths, cumulative };
+    arcTables.set(edge, table);
   }
-  const table: EdgeArcTable = { pointCount: count, segmentLengths, cumulative };
-  arcTables.set(edge, table);
+  memoEdge = edge;
+  memoTable = table;
   return table;
 }
 

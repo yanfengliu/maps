@@ -9,8 +9,8 @@
  *  - Speed is locked to the baked cadence times the actor's scale, so planted
  *    feet are a property of the speed. Variety comes from scale and from the
  *    surge, not from a per-actor speed that would trade slide for it.
- *  - Avoidance is ORCA over a four-metre-grid spatial hash with a neighbour cap,
- *    and the neighbour set is ordered by slot index, so it never depends on hash
+ *  - Avoidance is ORCA over a uniform grid with a neighbour cap, and the neighbour
+ *    set is ordered by distance and then by slot index, so it never depends on grid
  *    iteration order or insertion order.
  *  - A crossing is a released queue, not a per-actor decision. The actor stops
  *    at the curb with a real footprint and a continuously measured dwell, asks
@@ -37,18 +37,26 @@ export function pedestrianFootprint(at: { x: number; y: number; z: number }, hea
  * The neighbour index the crowd is built on.
  *
  * `CellGrid` is the shipped structure: a direct-indexed counting-sort grid over
- * world XZ. It replaced the hash that lived here because that hash's lookup walked
- * 750,057 bodies to return 8 — 96.5% of what it walked failed its own cell-identity
- * test, since its bucket array held about 256 slots for about 88 occupied cells and
- * the empty cells a query asked for kept hashing onto the crowded ones. The grid
- * visits 100 bodies per query and returns the same eight, measured bit-identical
- * against the hash over 1,200 ticks with the pose buffers compared every tick.
+ * world XZ, queried by ring. It replaced the hash that lived here because that
+ * hash's lookup walked 750,057 bodies to return 8 — 96.5% of what it walked failed
+ * its own cell-identity test, since its bucket array held about 256 slots for
+ * about 88 occupied cells and the empty cells a query asked for kept hashing onto
+ * the crowded ones. The grid visits 100 bodies per query and returns the same
+ * eight, measured bit-identical against the hash over 1,200 ticks with the pose
+ * buffers compared every tick.
+ *
+ * The set the grid returns is now the `limit` **nearest** bodies within the radius
+ * rather than the `limit` lowest slot indices. The lowest-slot rule is a property of
+ * the index's own numbering rather than of the crowd, and it cannot stop early: at
+ * the acceptance population about 99 bodies sit inside the 8 m radius and ORCA reads
+ * 8 of them. `tools/frame-budget/nearest-k.ts` measures the two policies on the real
+ * crowd and reports 0.9-1.2% agreement over the eight bodies they return.
  *
  * `SpatialHash` stays exported and is still used by its own test, because that test
  * is what pins the cell-key defect the hash carried.
  */
 /**
- * The three-method contract the tick uses to find a body's neighbours. `CellGrid`
+ * The four-member contract the tick uses to find a body's neighbours. `CellGrid`
  * implements it as the shipped structure and `SpatialHash` implements it so its own
  * test can keep pinning the cell-key defect the hash carried; the tick cannot tell
  * which one it holds.
@@ -527,11 +535,25 @@ export function orcaVelocity(hash: NeighbourIndex, agents: readonly OrcaAgent[],
 
 /* ------------------------------------------------------------ the walking step */
 
-/** The occurrence index an actor at `travelledM` is on. */
+/**
+ * The occurrence index an actor at `travelledM` is on.
+ *
+ * `route.starts` is a running sum of the edges' own lengths, so it is non-decreasing and
+ * the linear walk this replaces — `while (index + 1 < edges.length && travelledM >=
+ * starts[index + 1])` — returns the last index whose start is at or below `travelledM`.
+ * The binary search returns the same index, including for a zero-length edge and for a
+ * negative or NaN distance, which both give 0.
+ */
 export function occurrenceAt(route: PlannedRoute, travelledM: number): number {
-  let index = 0;
-  while (index + 1 < route.edges.length && travelledM >= route.starts[index + 1]!) index += 1;
-  return index;
+  const starts = route.starts;
+  let low = 0;
+  let high = starts.length - 1;
+  while (low < high) {
+    const middle = (low + high + 1) >>> 1;
+    if (starts[middle]! <= travelledM) low = middle;
+    else high = middle - 1;
+  }
+  return low;
 }
 
 export interface PedestrianCrowd {

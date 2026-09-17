@@ -166,6 +166,14 @@ const summary = {
     p05: round(percentile(totals, 0.05)),
     p95: round(percentile(totals, 0.95)),
     max: round(Math.max(...totals)),
+    /**
+     * The least-contended tick in the window, and the reading two arms are compared on
+     * when the machine is shared: contention can only ever add time to a tick, never
+     * remove it, so the minimum is the closest estimate of the tick on a quiet machine.
+     * The median beside it is the number to quote for a frame budget; this one is the
+     * number to compare two revisions on.
+     */
+    min: round(Math.min(...totals)),
   },
   /** The sum of the observed phases. It should track `tickMs` closely; a gap is the observer's own cost. */
   phaseSumMs: { median: round(percentile(phaseSum, 0.5)), p95: round(percentile(phaseSum, 0.95)) },
