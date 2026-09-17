@@ -94,9 +94,10 @@ function finite(value: number): number {
  * placed on the portal's outward line rather than on its last lane — **the widest
  * offset anywhere in the gate's window is 0.0216 m, in every band from within 0.5 m
  * of an end out to past 4 m**. The band that appeared to need excluding contained
- * 2,897 perfectly lane-holding samples and no deviating ones, so excluding it would
- * have removed evidence and earned nothing. The number is reported beside the
- * tolerance so that claim stays checkable instead of becoming folklore.
+ * 2,865 samples holding their lane to under 0.1 mm and no deviating ones, so
+ * excluding it would have removed evidence and earned nothing. The number is
+ * reported beside the tolerance so that claim stays checkable instead of becoming
+ * folklore.
  */
 export function distanceFromSectionEndM(distanceAlongSectionM: number, sectionLengthM: number): number {
   return Math.min(distanceAlongSectionM, sectionLengthM - distanceAlongSectionM);

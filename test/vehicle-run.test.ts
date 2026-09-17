@@ -52,6 +52,17 @@
  *     that forced the index to zero was a no-op and its arm passed green while
  *     proving nothing. That was this gate's first defect and it is why the seam
  *     takes an offset.
+ *     The arm is not purely presentational, and this gate says so rather than
+ *     implying otherwise. `placeVehicle` writes the drawn pose, and
+ *     `vehicleFootprint` reads that same pose back for the authority comparison,
+ *     so displacing the pose displaces collision envelopes too. Measured with each
+ *     arm run first in its own module, so neither inherits the other's state: the
+ *     arm draws **33 entries against the clean run's 34** — one body fewer reaches
+ *     the network — and reports **28,594 lane samples against 28,923**, which is
+ *     that one body's missing 329 ticks. Its envelope median moves from −0.4393 m
+ *     to +0.9046 m and its grants from 2,755 to 3,510. The control still fires on
+ *     the clause it is for, but the arm moves the run as well as the reading, so
+ *     its sample count is not a second observation of the unmutated window.
  *  2. Reading the entry-portal set from the *exit* portal list reddens the entry
  *     half of the boundary clause without touching the run:
  *     `34 of 34 vehicles appeared somewhere other than a vehicle entry portal's own
@@ -72,7 +83,7 @@
  * control is therefore the guard on an absent measurement, and the header says so
  * rather than implying a fourth arm exists.
  *
- * Measured on this window: 28,594 lane samples with a largest offset from the lane
+ * Measured on this window: 28,923 lane samples with a largest offset from the lane
  * centreline of 0.0216 m, in every band from within half a metre of a section end
  * out past four metres; the drawn envelope never nearer than 0.3899 m inside its
  * lane edge; 14 lane-section changes at junctions, all 14 completed turns, widest
@@ -100,9 +111,9 @@ const TICKS = 1_200;
 /**
  * How far a drawn body may sit from the centreline of the lane it is on, metres.
  *
- * Measured on this window: 20,610 of 28,923 samples sit exactly on the
- * centreline and the largest offset anywhere is 0.0216 m, so 0.05 m is more than
- * twice the worst the delivered placement produces. It is a tolerance and not a
+ * Measured on this window: 28,923 lane samples, of which 28,704 sit within 0.1 mm
+ * of the centreline and the largest offset anywhere is 0.0216 m, so 0.05 m is more
+ * than twice the worst the delivered placement produces. It is a tolerance and not a
  * derivation: the body is placed by `placeVehicle` and this gate re-derives the
  * distance from the published pose and the delivered polyline rather than
  * restating `sampleRoute`.
@@ -612,7 +623,7 @@ describe("vehicles over a run", () => {
     expect(report.lanes.samples).toBeGreaterThan(20_000);
     expect(report.lanes.egressSamplesExcluded).toBeGreaterThan(0);
     expect(report.lanes.offsetM.maximum).toBeLessThan(LANE_TOLERANCE_M);
-    // Every band of a lane section, not just the wide ones. Measured: 2,897 samples
+    // Every band of a lane section, not just the wide ones. Measured: 2,865 samples
     // within half a metre of an end, widest 0.0000 m; 15,705 past four metres,
     // widest 0.0216 m. No band is excluded from the clause above.
     expect(report.lanes.offsetByDistanceFromASectionEndM.every((entry) => entry.samples > 0)).toBe(true);
@@ -687,9 +698,11 @@ describe("vehicles over a run", () => {
     const failures = controlFailures(mutated);
     expect(failures.length).toBeGreaterThan(0);
     expect(failures.join("\n")).toContain("from the centreline of the lane it is on");
-    // The mutation moves bodies sideways and changes nothing else: the run still
-    // draws, still turns and still retires, so the reading that moved is the lane
-    // offset rather than the whole report.
+    // The mutation moves bodies sideways and changes nothing about the clauses
+    // below: the run still draws, still turns, still retires, and every entry is
+    // still at an entry portal. It is not a no-op on the run, though — the arm
+    // draws 33 entries against the clean window's 34, which is where its lower
+    // sample count comes from. See the header.
     expect(mutated.lanes.samples).toBeGreaterThan(20_000);
     expect(mutated.lanes.offsetM.maximum).toBeGreaterThan(LANE_TOLERANCE_M);
     expect(mutated.turns.turnsCompleted).toBeGreaterThanOrEqual(10);
