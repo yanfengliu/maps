@@ -20,8 +20,16 @@
   font-weight: 600;
 }
 
-.world-style-picker__select {
-  display: block;
+/*
+  The control is a button rather than a native select on purpose — see the
+  module comment in `style-picker.ts`. It keeps the select's shape and its 44 px
+  minimum target so the swap is not a visual regression.
+*/
+.world-style-picker__control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   box-sizing: border-box;
   width: 100%;
   min-height: 44px;
@@ -31,14 +39,63 @@
   border-radius: 5px;
   background: #263445;
   color: #fff;
-  color-scheme: dark;
   font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.world-style-picker__select:focus-visible {
+.world-style-picker__control--open {
+  border-color: #a5d2ff;
+}
+
+.world-style-picker__control:focus-visible {
   outline: 3px solid #a5d2ff;
   outline-offset: 3px;
+}
+
+.world-style-picker__caret {
+  flex: none;
+  color: #c5d1df;
+  font-size: 10px;
+}
+
+.world-style-picker__listbox {
+  box-sizing: border-box;
+  max-height: 240px;
+  margin: 6px 0 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #7b8a9e;
+  border-radius: 5px;
+  background: #1b2632;
+}
+
+.world-style-picker__option {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.world-style-picker__option-label {
+  display: block;
+  font-weight: 600;
+}
+
+.world-style-picker__option-description {
+  display: block;
+  color: #c5d1df;
+  font-size: 12px;
+}
+
+.world-style-picker__option--active {
+  background: #33475e;
+}
+
+.world-style-picker__option--selected .world-style-picker__option-label::after {
+  content: " \2713";
 }
 
 .world-style-picker__description {
