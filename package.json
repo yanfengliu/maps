@@ -30,6 +30,7 @@
     "visual:hardware": "npm run build && playwright test --config playwright.hardware.config.ts",
     "visual:populated": "playwright test --config playwright.populated.config.ts",
     "visual:populated:aim": "node tools/populated/probe.ts --ticks 5400",
+    "visual:flythrough": "playwright test --config playwright.flythrough.config.ts",
     "capture:render-defects": "playwright test --config playwright.render-defects.config.ts",
     "visual:smoke": "playwright test --config playwright.smoke.config.ts",
     "visual:post-chain": "playwright test --config tools/post-chain/playwright.config.ts",

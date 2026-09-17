@@ -1,0 +1,330 @@
+{
+  "tool": "tools/flythrough/aim.ts",
+  "bound": "Aiming aid, not evidence. It scores candidate poses against an offline dump of the population's positions, which is the same simulation the browser runs from the same seed and the same fixed step, and it says nothing about what any frame looks like.",
+  "fovYDegrees": 55,
+  "standM": 3,
+  "targetY": 15.2,
+  "dumps": [
+    {
+      "file": "..\\..\\..\\artifacts\\flythrough\\dump-t5400.json",
+      "tick": 5400,
+      "bodies": 3000,
+      "distinctPositions": 2150,
+      "movingPositions": 1881,
+      "vehicles": 56,
+      "candidateCameras": 3187,
+      "bestOverall": [
+        {
+          "camera": {
+            "x": 344.12158274355704,
+            "z": 396.46670362583427
+          },
+          "way": "walk:1086844875:0:0:ground0:f",
+          "azimuth": 2.2252947962927703,
+          "distance": 26,
+          "people": 395,
+          "moving": 395,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 364.74876959112913,
+            "z": 380.6389064716075
+          }
+        },
+        {
+          "camera": {
+            "x": 310.3255414663872,
+            "z": 378.65556803608587
+          },
+          "way": "walk:1086844871:1:0:ground0:f",
+          "azimuth": 2.0943951023931953,
+          "distance": 26,
+          "people": 395,
+          "moving": 395,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 332.84220196478265,
+            "z": 365.65556803608587
+          }
+        },
+        {
+          "camera": {
+            "x": 307.83349123230647,
+            "z": 374.9938458931311
+          },
+          "way": "walk:1086844871:1:0:ground0:r",
+          "azimuth": 2.0943951023931953,
+          "distance": 26,
+          "people": 395,
+          "moving": 395,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 330.3501517307019,
+            "z": 361.9938458931311
+          }
+        },
+        {
+          "camera": {
+            "x": 349.1175950705774,
+            "z": 389.158227402555
+          },
+          "way": "walk:1086844875:0:0:ground0:f",
+          "azimuth": 2.2252947962927703,
+          "distance": 26,
+          "people": 395,
+          "moving": 395,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 369.7447819181495,
+            "z": 373.33043024832824
+          }
+        },
+        {
+          "camera": {
+            "x": 316.1164971792239,
+            "z": 368.24543021717943
+          },
+          "way": "walk:1086844875:2:0:ground0:f",
+          "azimuth": 2.0943951023931953,
+          "distance": 26,
+          "people": 395,
+          "moving": 395,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 338.63315767761935,
+            "z": 355.24543021717943
+          }
+        },
+        {
+          "camera": {
+            "x": 372.97045494299704,
+            "z": 374.6671220710855
+          },
+          "way": "walk:1086844872:2:0:ground0:f",
+          "azimuth": 2.356194490192345,
+          "distance": 26,
+          "people": 394,
+          "moving": 394,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 391.35523125384725,
+            "z": 356.2823457602353
+          }
+        },
+        {
+          "camera": {
+            "x": 375.46721407709083,
+            "z": 371.0565539946256
+          },
+          "way": "walk:1086844872:2:0:ground0:f",
+          "azimuth": 2.356194490192345,
+          "distance": 26,
+          "people": 394,
+          "moving": 394,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 393.85199038794104,
+            "z": 352.67177768377536
+          }
+        },
+        {
+          "camera": {
+            "x": 399.9405625108013,
+            "z": 373.70505402019626
+          },
+          "way": "walk:1317354769:0:0:ground0:f",
+          "azimuth": 2.4870941840919194,
+          "distance": 26,
+          "people": 394,
+          "moving": 394,
+          "vehicles": 12,
+          "standM": 3,
+          "target": {
+            "x": 415.7683596650281,
+            "z": 353.07786717262417
+          }
+        }
+      ],
+      "mostMoving": [
+        {
+          "camera": {
+            "x": -386.19752547698874,
+            "z": -496.29658876921684
+          },
+          "way": "walk:665322366:0:0:ground0:f",
+          "azimuth": 5.3668874498825625,
+          "distance": 26,
+          "people": 487,
+          "moving": 415,
+          "vehicles": 0,
+          "standM": 3,
+          "target": {
+            "x": -406.8247123245609,
+            "z": -480.4687916149901
+          }
+        },
+        {
+          "camera": {
+            "x": -390.86348204828784,
+            "z": -492.830619877513
+          },
+          "way": "walk:665322366:0:0:ground0:f",
+          "azimuth": 5.3668874498825625,
+          "distance": 26,
+          "people": 487,
+          "moving": 415,
+          "vehicles": 0,
+          "standM": 3,
+          "target": {
+            "x": -411.49066889586,
+            "z": -477.0028227232863
+          }
+        },
+        {
+          "camera": {
+            "x": -382.6980580485145,
+            "z": -498.89606543799476
+          },
+          "way": "walk:665322366:0:0:ground0:r",
+          "azimuth": 5.3668874498825625,
+          "distance": 32,
+          "people": 487,
+          "moving": 415,
+          "vehicles": 0,
+          "standM": 3,
+          "target": {
+            "x": -408.085364937834,
+            "z": -479.41569970971574
+          }
+        },
+        {
+          "camera": {
+            "x": -382.6980580485145,
+            "z": -498.89606543799476
+          },
+          "way": "walk:665322366:0:0:ground0:r",
+          "azimuth": 5.497787143782138,
+          "distance": 32,
+          "people": 487,
+          "moving": 415,
+          "vehicles": 0,
+          "standM": 3,
+          "target": {
+            "x": -405.32547504648403,
+            "z": -476.26864844002523
+          }
+        },
+        {
+          "camera": {
+            "x": -386.19752547698874,
+            "z": -496.29658876921684
+          },
+          "way": "walk:665322366:0:0:ground0:f",
+          "azimuth": 5.497787143782138,
+          "distance": 26,
+          "people": 486,
+          "moving": 414,
+          "vehicles": 0,
+          "standM": 3,
+          "target": {
+            "x": -404.58230178783896,
+            "z": -477.9118124583666
+          }
+        }
+      ],
+      "mostVehicles": [
+        {
+          "camera": {
+            "x": 292.81757848309826,
+            "z": 426.3745019052949
+          },
+          "way": "walk:1228977019:0:0:ground0:f",
+          "azimuth": 1.5707963267948966,
+          "distance": 26,
+          "people": 405,
+          "moving": 313,
+          "vehicles": 22,
+          "standM": 3,
+          "target": {
+            "x": 318.81757848309826,
+            "z": 426.3745019052949
+          }
+        },
+        {
+          "camera": {
+            "x": 295.4316132574644,
+            "z": 427.06578573288715
+          },
+          "way": "walk:1228977019:0:0:ground0:f",
+          "azimuth": 1.5707963267948966,
+          "distance": 26,
+          "people": 405,
+          "moving": 313,
+          "vehicles": 22,
+          "standM": 3,
+          "target": {
+            "x": 321.4316132574644,
+            "z": 427.06578573288715
+          }
+        },
+        {
+          "camera": {
+            "x": 295.4316132574644,
+            "z": 427.06578573288715
+          },
+          "way": "walk:1228977019:0:0:ground0:f",
+          "azimuth": 1.7016960206944713,
+          "distance": 26,
+          "people": 405,
+          "moving": 313,
+          "vehicles": 22,
+          "standM": 3,
+          "target": {
+            "x": 321.20917965318347,
+            "z": 423.6721047351658
+          }
+        },
+        {
+          "camera": {
+            "x": 305.88775235492903,
+            "z": 429.83092104325624
+          },
+          "way": "walk:1228977019:0:0:ground0:f",
+          "azimuth": 1.7016960206944713,
+          "distance": 26,
+          "people": 405,
+          "moving": 313,
+          "vehicles": 22,
+          "standM": 3,
+          "target": {
+            "x": 331.6653187506481,
+            "z": 426.4372400455349
+          }
+        },
+        {
+          "camera": {
+            "x": 325.0647249301601,
+            "z": 416.44329016262054
+          },
+          "way": "walk:1228977020:0:0:ground0:f",
+          "azimuth": 1.7016960206944713,
+          "distance": 26,
+          "people": 399,
+          "moving": 307,
+          "vehicles": 22,
+          "standM": 3,
+          "target": {
+            "x": 350.84229132587916,
+            "z": 413.0496091648992
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -30,7 +30,7 @@
  * population and is the only lane whose frames can show a pedestrian.
  */
 
-export const LANES = ["verdict", "hardware-iteration", "populated-iteration"] as const;
+export const LANES = ["verdict", "hardware-iteration", "populated-iteration", "flythrough-iteration"] as const;
 
 export type Lane = (typeof LANES)[number];
 
@@ -80,6 +80,27 @@ export const POPULATED_ITERATION_ENV: Readonly<Record<string, string>> = Object.
 });
 
 /**
+ * The environment `playwright.flythrough.config.ts` pins for its own run.
+ *
+ * A fourth lane, because its subject is not a pose but a *sequence*: what
+ * changes between adjacent frames. A still frame cannot contain flicker, crawl,
+ * or a figure interpenetrating the one in front of it, so a flythrough cannot
+ * inherit a review written about the populated lane's stills and those stills
+ * cannot inherit a judgement written about motion. The directory is separate on
+ * the same terms as the other two: a moving sequence written beside the reviewed
+ * 44-frame set is indistinguishable from it to a later reader.
+ *
+ * Hardware, for the populated lane's reason and one more. A moving sequence is
+ * judged between adjacent pairs, so the wall clock is not only a cost here, it
+ * is a bound on the simulated window the frames cover: on SwiftShader these
+ * frames would take an hour and would land on a different simulation.
+ */
+export const FLYTHROUGH_ITERATION_ENV: Readonly<Record<string, string>> = Object.freeze({
+  MAPS_VISUAL_LANE: "flythrough-iteration",
+  MAPS_VISUAL_GPU: "hardware",
+});
+
+/**
  * The ignored directory each lane writes into.
  *
  * Deliberately not a full path: all are resolved against the working directory
@@ -89,6 +110,7 @@ const LANE_ROOT: Readonly<Record<Lane, string>> = Object.freeze({
   verdict: "artifacts/visual",
   "hardware-iteration": "artifacts/visual-hardware",
   "populated-iteration": "artifacts/populated-capture",
+  "flythrough-iteration": "artifacts/flythrough2",
 });
 
 function isLane(value: string): value is Lane {
@@ -140,6 +162,10 @@ const LANE_REFUSAL: Readonly<Record<Exclude<Lane, typeof VERDICT_LANE>, string>>
     "its frames come from a different renderer than the reviewed 44-frame set and from a " +
     "populated scene the reviewed 44-frame set never contained, since the appearance sweep " +
     "runs with the population switched off by design",
+  "flythrough-iteration":
+    "its frames are a moving sequence on a different renderer than the reviewed 44-frame set, " +
+    "from a populated scene the reviewed set never contained, and its subject is what changes " +
+    "between adjacent frames, which no still frame of the reviewed set can show",
 });
 
 /**
