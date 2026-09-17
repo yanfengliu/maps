@@ -7,8 +7,10 @@
  * Chromium 153.0.8010.12, a throw inside a `pagehide` handler reaches neither
  * `page.on("pageerror")`, nor `page.on("console")`, nor CDP
  * `Runtime.exceptionThrown`/`Log.entryAdded`, over an http navigation, while the
- * same throw from a click handler is reported normally
- * (`artifacts/gate-integrity/wt/probe/pagehide-visibility.mjs`). So a
+ * same throw from a click handler is reported normally. The probe that measured
+ * it lived at `artifacts/gate-integrity/wt/probe/pagehide-visibility.mjs`, which
+ * the reclamation pass removed on 2026-09-16; the measurement is quoted here and
+ * the probe is rebuildable from this paragraph. So a
  * console/pageerror assertion alone would report the exact failure it exists for
  * as a pass — the cleanup that throws finishes faster, and the lane's elapsed
  * time bounds cannot tell the two apart.
