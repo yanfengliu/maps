@@ -41,7 +41,6 @@
  */
 
 import {
-  BoxGeometry,
   CanvasTexture,
   Color,
   FrontSide,
@@ -411,9 +410,18 @@ export function createAuthoredSignage(seed: number = DEFAULT_SEED): AuthoredSign
     const mesh = new Mesh(new PlaneGeometry(board.widthM, board.heightM), material);
     mesh.name = `signage:board:${board.name}`;
     const mount = new Group();
-    const back = new Mesh(new BoxGeometry(board.widthM + 0.25, board.heightM + 0.25, 0.22), new MeshBasicMaterial({ color: 0x161a20 }));
-    back.position.z = -0.13;
-    mount.add(back, mesh);
+    // A framed panel, and only its front. The frame used to be a 0.22 m box, and
+    // a box draws from every side: a board mounted 0.26 m proud of a facade and
+    // seen from the far side of that wall showed an 11 x 8 m unlit `0x161a20`
+    // slab instead of its face. The crossing frames carried exactly that as an
+    // unattributed black surface over the northern half of the crossing, because
+    // board 2 sits 28.5 m from the signature camera and the camera is on the back
+    // side of the wall it is fitted to. One sided geometry is culled with the
+    // panel, so a mount draws nothing at all from behind.
+    const frame = new Mesh(new PlaneGeometry(board.widthM + 0.25, board.heightM + 0.25), new MeshBasicMaterial({ color: 0x161a20 }));
+    frame.name = `signage:frame:${board.name}`;
+    frame.position.z = -0.02;
+    mount.add(frame, mesh);
     mount.position.set(board.x, board.y, board.z);
     // A plane's normal is +Z before rotation, and +Z is south, so a board facing
     // due south needs no turn at all. Azimuth grows clockwise from north, which
@@ -582,3 +590,5 @@ function boardTexture(style: BoardStyle, rng: () => number): CanvasTexture {
   texture.anisotropy = 4;
   return texture;
 }
+
+
