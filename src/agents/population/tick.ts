@@ -96,6 +96,30 @@ export interface PopulationOptions {
   readonly fleet: VehicleAssetManifest;
   readonly admissions: JunctionAdmissions;
   readonly settings: PopulationSettings;
+  /**
+   * Optional observer of one tick's phase costs, in milliseconds.
+   *
+   * A diagnostic seam and nothing else: `update` calls it once per tick, after the
+   * tick has run, and reads nothing from it. It exists because "the tick is slow"
+   * is a symptom with at least five candidate causes inside this closure — the
+   * neighbour index, avoidance, request assembly, the admission authority, the
+   * pose writes — and the only way to fix the right one is to measure them apart.
+   * The shipped app passes nothing, so an absent observer costs one `undefined`
+   * test per tick.
+   *
+   * The order is the design's own phase order, and every phase the tick ran is
+   * reported, so a reader can see that the sum is the tick rather than a subset of
+   * it. `staging` and `avoidance` are sub-phases of `plan`: the design's phase list
+   * names neither, and separating them is what says whether the tick's cost is the
+   * crowd's neighbour search or the route bookkeeping around it.
+   */
+  readonly observeTick?: (costs: readonly TickPhaseCost[]) => void;
+}
+
+/** One phase's share of one tick, in milliseconds. */
+export interface TickPhaseCost {
+  readonly phase: string;
+  readonly milliseconds: number;
 }
 
 /**
@@ -199,6 +223,19 @@ export interface Population {
    * diagnostic can read a gate's own hold point rather than re-deriving it.
    */
   vehicleRoute(slot: number): PlannedRoute | null;
+  /**
+   * The crowd's own neighbour index and agent array, as the tick last left them.
+   *
+   * Present so a cost instrument can put the crowd's real positions through the
+   * real index instead of rebuilding an approximation of it: the index is a
+   * `CellGrid` over the population's own `AgentPoseBuffers` at the population's own
+   * cell size, and a probe that reconstructed it from the pose buffers with its own
+   * stride would be measuring a different object and could report a defect the tick
+   * does not have. Read-only in the same sense `poses` is: `update` neither reads
+   * nor writes anything a caller does here, and an instrument that mutated it would
+   * be steering the crowd rather than observing it.
+   */
+  pedestrianCrowd(): PedestrianCrowd;
   /**
    * The plan one walking slot is driving, or null when it holds none. The walking
    * half of `vehicleRoute`, added so a trace of one walker's journey can name the
@@ -1681,7 +1718,7 @@ export function createPopulation(options: PopulationOptions): Population {
    * An actor without a grant is capped at the curb, so a pedestrian can never be
    * in a conflict section on a movement the authority did not grant.
    */
-  function stepPedestrians(step: number): void {
+  function stepPedestrians(step: number, mark?: (phase: string) => void): void {
     requirePhase("plan");
     const pedestrianPoses = table.poses.pedestrians;
     const position = pedestrianPoses.current.position;
@@ -1696,7 +1733,15 @@ export function createPopulation(options: PopulationOptions): Population {
       agent.velocityX = crowd.velocityX[slot]!;
       agent.velocityZ = crowd.velocityZ[slot]!;
     }
+    mark?.("plan.pedestrians.stage");
     refreshPedestrianHash(crowd, table);
+    mark?.("plan.pedestrians.index");
+    // Three passes over the same slots, so the phase observer can say which part of
+    // the crowd's step the tick spends its time in. The work and its order are
+    // unchanged — pass one decides the halt, pass two solves avoidance with the
+    // neighbour index built above, pass three shapes the speed and places the body —
+    // and the only difference from one fused loop is that each slot's `ramp` and
+    // route heading are held in an array instead of a local.
     for (const state of table.pedestrians) {
       const slot = state.slot;
       crowd.velocityX[slot] = 0;
@@ -1711,7 +1756,6 @@ export function createPopulation(options: PopulationOptions): Population {
         // it. A body without one is a leak, and it fails here by name.
         throw new Error(`Population lifecycle conservation failed: pedestrian slot ${slot} is present in the pose buffers with no planned route. A body was retired without clearing its slot.`);
       }
-      const occurrence = occurrenceAt(route, state.travelledM);
       // A committed walk is capped only at the next *different* authority's gate: a
       // body clearing a compound has to be free to cross it at its own pace, and its
       // hull leaving that compound's disks is what releases the lease.
@@ -1727,27 +1771,86 @@ export function createPopulation(options: PopulationOptions): Population {
         // single-authority defect.
         blocked = false;
       }
-      const heading = pedestrianPoses.current.yaw[slot]!;
-      const directionX = Math.sin(heading);
-      const directionZ = Math.cos(heading);
-      const reach = blocked ? 0 : Math.max(0, Math.min(state.cadenceMps, (allowed - state.travelledM) / step));
-      const ramp = blocked ? 0 : state.speedMps + (reach - state.speedMps) * Math.min(1, step / PEDESTRIAN_DYNAMICS.accelerationSeconds);
-      const agent = crowd.agents[slot]!;
-      const avoided = ramp <= 0
-        ? { x: 0, z: 0 }
-        : orcaVelocity(crowd.hash, crowd.agents, slot, directionX * ramp, directionZ * ramp, crowd.scratch);
-      // Project the collision-free velocity back onto the route, so avoidance
-      // never pushes a body out of its corridor; shape only the speed.
-      const forward = blocked ? 0 : Math.max(0, Math.min(state.cadenceMps, avoided.x * directionX + avoided.z * directionZ));
-      crowd.velocityX[slot] = directionX * forward;
-      crowd.velocityZ[slot] = directionZ * forward;
       state.queued = blocked;
-      void agent;
+      const heading = pedestrianPoses.current.yaw[slot]!;
+      directionX[slot] = Math.sin(heading);
+      directionZ[slot] = Math.cos(heading);
+      const reach = blocked ? 0 : Math.max(0, Math.min(state.cadenceMps, (allowed - state.travelledM) / step));
+      ramp[slot] = blocked ? 0 : state.speedMps + (reach - state.speedMps) * Math.min(1, step / PEDESTRIAN_DYNAMICS.accelerationSeconds);
+      if (blocked) blockedCount += 1;
+    }
+    mark?.("plan.pedestrians.gate");
+    // The avoidance solve, and the only part of this step that depends on the
+    // neighbour index. `mark` is tested once per tick rather than once per slot, so
+    // an unobserved tick is the plain loop with no branch inside it.
+    if (mark) {
+      for (const state of table.pedestrians) {
+        const slot = state.slot;
+        if (!pedestrianPoses.active[slot]) continue;
+        solvedSlots += avoid(slot) ? 1 : 0;
+      }
+    } else {
+      for (const state of table.pedestrians) {
+        const slot = state.slot;
+        if (!pedestrianPoses.active[slot]) continue;
+        avoid(slot);
+      }
+    }
+    mark?.("plan.pedestrians.avoid");
+    for (const state of table.pedestrians) {
+      const slot = state.slot;
+      if (!pedestrianPoses.active[slot]) continue;
+      const route = table.pedestrianRoutes[slot]!;
+      const forward = state.queued ? 0 : Math.max(0, Math.min(state.cadenceMps, avoidedX[slot]! * directionX[slot]! + avoidedZ[slot]! * directionZ[slot]!));
+      crowd.velocityX[slot] = directionX[slot]! * forward;
+      crowd.velocityZ[slot] = directionZ[slot]! * forward;
+      const occurrence = occurrenceAt(route, state.travelledM);
       const local = Math.max(0, Math.min(route.edges[occurrence]!.lengthM, state.travelledM - route.starts[occurrence]!));
       const at = sampleRoute(route, occurrence, local);
       pedestrianFootprints[slot] = pedestrianFootprint(at, at.heading, state.scale);
     }
+    mark?.("plan.pedestrians.place");
+    // Measurement-only readings of this step: how many bodies it held at a gate and
+    // how many it ran the avoidance solver for. They are what lets a reader turn
+    // the two costs above into a per-body cost, and nothing in the tick branches on
+    // either. `void` because a value kept only to be read by a profile is a value
+    // the type checker is right to call unused.
+    void blockedCount;
+    void solvedSlots;
   }
+
+  /**
+   * One body's collision-free velocity, written into the two arrays the placing
+   * pass reads. Reports whether it actually ran the solver: a halted body needs no
+   * avoidance, and the count is what tells a reader how much of the population was
+   * moving.
+   *
+   * `orcaVelocity` returns its own scratch object, which the next slot overwrites,
+   * so the two components are copied out here rather than a reference being kept.
+   */
+  function avoid(slot: number): boolean {
+    const reach = ramp[slot]!;
+    if (reach <= 0) {
+      avoidedX[slot] = 0;
+      avoidedZ[slot] = 0;
+      return false;
+    }
+    const solved = orcaVelocity(crowd.hash, crowd.agents, slot, directionX[slot]! * reach, directionZ[slot]! * reach, crowd.scratch);
+    avoidedX[slot] = solved.x;
+    avoidedZ[slot] = solved.z;
+    return true;
+  }
+
+  /** Per-slot holdings of one pedestrian step, allocated once with the population. */
+  const directionX = new Float64Array(settings.pedestrians);
+  const directionZ = new Float64Array(settings.pedestrians);
+  const ramp = new Float64Array(settings.pedestrians);
+  const avoidedX = new Float64Array(settings.pedestrians);
+  const avoidedZ = new Float64Array(settings.pedestrians);
+  /** Bodies this step judged blocked at a gate. Diagnostic only. */
+  let blockedCount = 0;
+  /** Bodies this step ran the avoidance solver for. Diagnostic only. */
+  let solvedSlots = 0;
 
   /* ---------------------------------------------------------------- update */
 
@@ -1764,18 +1867,69 @@ export function createPopulation(options: PopulationOptions): Population {
     if (tickOrder.phases.length !== TICK_PHASES.length || tickOrder.phases.some((name, index) => name !== TICK_PHASES[index])) {
       throw new Error(`Population tick order violation: the tick is running ${tickOrder.phases.join(" -> ")}, not the design's order ${TICK_PHASES.join(" -> ")}. Admission resolve must complete before any position is integrated.`);
     }
+    const observer = options.observeTick;
+    if (!observer) {
+      for (let index = 0; index < tickOrder.phases.length; index += 1) {
+        phaseIndex = index;
+        const name = tickOrder.phases[index]!;
+        if (name === "lifecycle") { stageAll(); lifecycle(); }
+        else if (name === "plan") { plan(step); stepPedestrians(step); }
+        else if (name === "request") { counters.requestsLastTick = assembleRequests(); }
+        else if (name === "resolve") resolve(step);
+        else if (name === "integrate") integrate(step);
+        else if (name === "close") { close(); traceTick(counters.ticks); }
+        else throw new Error(`Population tick order names an unknown phase ${String(name)}.`);
+      }
+      phaseIndex = 0;
+      return;
+    }
+    // The observed path. Its only difference from the path above is the clock: a
+    // reader comparing a measured tick against a shipped one is comparing two
+    // `performance.now()` reads per phase against none, which is below the clock's
+    // own resolution over a tick of this size. The design's `plan` phase is split,
+    // because the vehicles' car-following and the crowd's avoidance are different
+    // costs with different fixes.
+    phaseCosts.length = 0;
     for (let index = 0; index < tickOrder.phases.length; index += 1) {
       phaseIndex = index;
       const name = tickOrder.phases[index]!;
-      if (name === "lifecycle") { stageAll(); lifecycle(); }
-      else if (name === "plan") { plan(step); stepPedestrians(step); }
-      else if (name === "request") { counters.requestsLastTick = assembleRequests(); }
-      else if (name === "resolve") resolve(step);
-      else if (name === "integrate") integrate(step);
-      else if (name === "close") { close(); traceTick(counters.ticks); }
-      else throw new Error(`Population tick order names an unknown phase ${String(name)}.`);
+      if (name === "plan") {
+        timed("plan.vehicles", () => plan(step));
+        // `stepPedestrians` reports its own sub-phases through `mark`, so the
+        // crowd's staging, its neighbour index, its avoidance solve and its route
+        // sampling are four separate numbers rather than one. A fix aimed at the
+        // wrong one of those is a fix that changes nothing.
+        let last = performance.now();
+        stepPedestrians(step, (phase) => {
+          const now = performance.now();
+          phaseCosts.push({ phase, milliseconds: now - last });
+          last = now;
+        });
+      } else if (name === "lifecycle") {
+        timed(name, () => { stageAll(); lifecycle(); });
+      } else if (name === "request") {
+        timed(name, () => { counters.requestsLastTick = assembleRequests(); });
+      } else if (name === "resolve") {
+        timed(name, () => resolve(step));
+      } else if (name === "integrate") {
+        timed(name, () => integrate(step));
+      } else if (name === "close") {
+        timed(name, () => { close(); traceTick(counters.ticks); });
+      } else {
+        throw new Error(`Population tick order names an unknown phase ${String(name)}.`);
+      }
     }
     phaseIndex = 0;
+    observer(phaseCosts);
+  }
+
+  /** Phase costs for the tick in flight. Reused rather than reallocated per tick. */
+  const phaseCosts: { phase: string; milliseconds: number }[] = [];
+
+  function timed(phase: string, work: () => void): void {
+    const before = performance.now();
+    work();
+    phaseCosts.push({ phase, milliseconds: performance.now() - before });
   }
 
   /** The tick's close: publish what the renderer and the status surface read. */
@@ -1929,6 +2083,7 @@ export function createPopulation(options: PopulationOptions): Population {
 
   return {
     poses: table.poses,
+    pedestrianCrowd: () => crowd,
     update,
     moving: () => counters.moving,
     status(): PopulationStatus {
