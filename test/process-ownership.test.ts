@@ -1,9 +1,23 @@
 /** Bounds: fake CIM snapshots only. Recycled parent PIDs, exited parents and
  * changed executable identities must never produce cleanup eligibility. No test
  * enumerates or terminates real processes; live cleanup requires separate review.
+ *
+ * Every case here shells out to `powershell.exe` to run the checked-in helper, so
+ * the wall clock it needs is a process spawn plus a PowerShell start, not the work
+ * of the assertion. Measured 2026-09-16 by round 31's review while a three-hour
+ * SwiftShader capture held the machine: the whole file took 6.77 s and one case
+ * **timed out at vitest's 5 s default**, then passed alone in 3.1 s on the same
+ * tree. Under two times the margin on a shared machine is a false red waiting for
+ * the worst moment — a landing rush — and a red gate is exactly when nobody should
+ * be deciding whether to trust it. The budget is raised here rather than globally
+ * so a genuine hang elsewhere still fails fast, and no assertion is weakened: the
+ * `execFileSync` call keeps its own 15 s ceiling, so a real hang fails by name.
  */
 import { execFileSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Scoped to this file: six cases, each spawning PowerShell.
+vi.setConfig({ testTimeout: 30_000 });
 
 const launch="2026-09-12T23:22:18Z";
 const node="C:\\runtime\\node.exe",chrome="C:\\playwright\\chrome-headless-shell.exe";
