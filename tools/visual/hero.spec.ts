@@ -302,7 +302,15 @@ test.describe("hero frames", () => {
       // The direction follows the captures above, so this is a real change back
       // rather than a re-selection: Cartographic leaves and Cartographic returns.
       // Driven by the keyboard here, which is the path the criterion names beside
-      // the pointer: Enter opens, End walks to the last row, Enter commits it.
+      // the pointer: Enter opens, Home walks to the first row, Enter commits it.
+      //
+      // It is Home and not End, and that is a defect this block shipped with: the
+      // registry orders cartographic first and satellite second
+      // (`src/world/styles.ts`), and the style being left is satellite, so End
+      // walked to the row already selected and the control correctly did nothing —
+      // a closed listbox commits as the active option moves, and moving onto the
+      // current option is not a move. The assertion below caught it after eight
+      // hero captures and twenty-five minutes of rendering.
       await driver.waitForTilesIdle();
       await driver.settle("preservation");
       const beforeReturn = await page.evaluate(() => ({
@@ -316,7 +324,7 @@ test.describe("hero frames", () => {
         styleSelect,
         "Enter on the World style control must open its listbox for the return switch",
       ).toHaveAttribute("aria-expanded", "true");
-      await styleSelect.press("End");
+      await styleSelect.press("Home");
       await styleSelect.press("Enter");
       await expect(
         styleSelect,
