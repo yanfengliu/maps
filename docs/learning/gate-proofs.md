@@ -358,6 +358,8 @@ Visual gate refused: sweep/satellite/manifest.json reports the renderer "ANGLE (
 
 
 
+## The reviewed network source, admission and boundary contracts hold
+
 **Gate:** `test/network-review.test.ts`, `test/network-compound.test.ts`, `test/network-boundaries.test.ts`, `test/network-mesh.test.ts`, `tools/network/check-admission.ts` and `tools/network/check-boundaries.ts`. These are source/controller and supported-body checks, not populated traffic or visual proof. The promoted fixtures retain their source IDs, real path geometry, declared omitted successors and actual measured asset records.
 
 **Landed:** reviewed Phase 6 network milestone, 2026-09-11. Reviews 0, 1, 3 and 5 and snapshots 0–3 remain permanent. No prior lesson prose is retired by this entry.
