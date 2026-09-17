@@ -488,7 +488,7 @@ Exit status 1, in 6.6 s. The two cases above it stayed green, which is the findi
       bytes += info.size;
 ```
 
-Nothing else in the file changed, and `node probe/reinstate-defect.mjs restore` writes the saved bytes back before the worktree is measured again. The two module hashes printed below are of the worktree's own bytes, which are CRLF on Windows; the committed blob at `f4e96f0` is `ed0df73329d0…`, and the shipped arm's `8875f863…` is those bytes, not the blob.
+Nothing else in the file changed, and `node probe/reinstate-defect.mjs restore` writes the saved bytes back before the worktree is measured again. Both probe scripts were scratch in `artifacts/digest-proof/wt`, which is gone; they are preserved in the ignored `artifacts/unlanded/digest-proof-probes/`, and the mutation is quoted in full above, so this control can be rebuilt from the entry alone. The two module hashes printed below are of the worktree's own bytes, which are CRLF on Windows; the committed blob at `f4e96f0` is `ed0df73329d0…`, and the shipped arm's `8875f863…` is those bytes, not the blob.
 
 **Red control** (`node probe/scene-digest-blind-spot.mjs`, run from `artifacts/digest-proof/wt`): a synthetic 44-frame run the probe builds itself, over two scene mounts; `sceneTreeDigest` taken the way `--begin` takes it, then `tiles/a.b3dm` rewritten from `one` to `two` — three bytes either way — with its modification time put back to the instant both arms share; then `certifyVisualRun`, which is the gate's `--end` step. Under the shipped digest:
 
