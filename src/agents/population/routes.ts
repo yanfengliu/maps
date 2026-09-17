@@ -65,6 +65,17 @@ export const REDUCING_PREFERENCE = 0.45;
  *    is an ungoverned sidewalk of the central block. It needs no boundary
  *    retirement, because a walker retires where it stands.
  *
+ *    **A `centre` route crosses the scramble when the graph lets it.** The shape
+ *    is a descent to the authored diagonal, the diagonal itself, and then the
+ *    delivered descent to a legal terminus, and it is preferred over the direct
+ *    descent whenever crossing costs no more than `MAXIMUM_CROSSING_DETOUR_M`
+ *    beyond it. That preference is the whole reason anybody is on the crossing:
+ *    measured with `tools/agents/crowd-occupancy.ts` on the revision before it, no
+ *    walker in a 3,000-strong population came nearer the origin than 31.228 m,
+ *    because a descent to a terminus is shortest *around* the crossing and the
+ *    terminus field is seeded on ungoverned sidewalk. Both descents are legal, both
+ *    end on the same kind of terminus, and neither is an admission setting.
+ *
  * The distinction is a plan, not an admission setting: both shapes are built by
  * the same passage factory and validated by the same release test.
  */
@@ -72,6 +83,20 @@ export type RouteDestination = "exit" | "centre";
 
 /** A route longer than this buys nothing and costs minutes of walking. */
 export const MAXIMUM_ROUTE_LENGTH_M = 700;
+
+/**
+ * How much longer than the direct central walk a crossing route may be.
+ *
+ * It is metres and not a ratio, measured rather than chosen: over the 16 delivered
+ * portals whose component can reach the diagonal at all, crossing costs between
+ * 62.4 m and 134.0 m of detour, so a ratio would refuse the portal whose walk is
+ * long for a detour that is merely average. 140 m is where that distribution ends,
+ * so this admits every crossing the delivered graph offers and refuses a detour
+ * worse than it has. The cost is real and is why there is a budget at all: the
+ * diagonal is 49.061 m of governed crossing with a gate at each end, and a route
+ * that crosses is a route that spends longer inside the scramble compound.
+ */
+export const MAXIMUM_CROSSING_DETOUR_M = 140;
 
 /**
  * The length cap for a route whose destination IS the centre.
@@ -109,6 +134,43 @@ export const MAXIMUM_CENTRE_ROUTE_LENGTH_M = 1_000;
 export const CENTRE_STEP_WINDOW_FRACTION = 0.08;
 export const CENTRE_STEP_WINDOW_FLOOR_M = 30;
 
+/**
+ * The most walking lanes one corridor is divided into, and the least.
+ *
+ * A lane is a lateral position inside the corridor the section's own `widthM`
+ * describes, and the route carries one per occurrence. The network's walking
+ * sections are 2.5 m of sidewalk, 3 m of crossing or 5 m of scramble, and the
+ * authored body is 0.5 m wide at scale 1, so the delivered graph offers 2 to 5
+ * lanes per side on a sidewalk and up to 10 on the scramble. The cap is what keeps
+ * a wide crossing from being divided into more lanes than a crowd can fill, and the
+ * floor keeps a narrow corridor from being given none.
+ */
+export const MAXIMUM_WALKING_LANES = 10;
+export const MINIMUM_WALKING_LANES = 1;
+
+/**
+ * The lateral position of a body on its route, one entry per occurrence, in metres
+ * from that section's own centreline.
+ *
+ * WHY THE ROUTE CARRIES THIS. A route was a list of sections and nothing else, so
+ * every body on a section shared one polyline and therefore one position at one
+ * arc distance. The measured consequence, on the revision before this: 3,000 active
+ * pedestrians held 1,229 to 1,661 distinct positions between them, in stacks of up
+ * to 108 bodies at one centimetre, and the crossing carried a single-file column
+ * because a corridor with no lateral dimension has one lane. Two independent lanes
+ * named the same missing field for both symptoms.
+ *
+ * It is a *plan-time* quantity and not a per-tick computation: the lanes are drawn
+ * once when the route is built, so a body's tick costs exactly what it cost before
+ * this field existed. Nothing here is written by the tick, and no per-tick work
+ * reads anything but the resulting number.
+ *
+ * Absent means the centreline, which is what a vehicle route is: vehicles carry
+ * their own lane index through `placeVehicle` and are not placed by this field, so
+ * their arithmetic is unchanged.
+ */
+export type LateralOffsets = Float64Array;
+
 /** One governed occurrence of a route: the gate, and where a body must stop for it. */
 export interface RouteGate {
   readonly passageIndex: number;
@@ -141,6 +203,12 @@ export interface PlannedRoute {
   readonly starts: readonly number[];
   /** Per-edge speed limit; walking edges carry the cadence instead. */
   readonly speedLimits: readonly number[];
+  /**
+   * Metres to one side of each occurrence's own centreline. Absent on a vehicle
+   * route, which places its body with its own lane index; a pedestrian route
+   * always carries one entry per occurrence.
+   */
+  readonly lateralOffsetsM?: LateralOffsets;
 }
 
 export interface RouteRequest {
@@ -207,26 +275,47 @@ export class RouteLibrary {
     this.caches.clear();
   }
 
-  /** Build (or reuse) the route one slot drives. */
+  /**
+   * Build (or reuse) the route one slot drives, placed at that slot's own lateral
+   * position.
+   *
+   * The *plan* is cached and shared — every slot drawing the same portal and
+   * destination drives the same sections, the same gates and the same `RoutePassage`
+   * objects, which is what makes the passage bookkeeping an identity across actors.
+   * The *placement* is not: each call returns a view of that plan carrying the
+   * calling slot's lateral offsets, so two walkers on one plan stand in two places.
+   * Sharing the passages is deliberate and load-bearing: `tick.ts` compares a held
+   * lease with `route.passages[i]` by object identity, so a per-slot copy of the
+   * passage objects would break admission rather than spread a crowd.
+   */
   route(kind: ActorKind, slot: number, generation: number, entryEdgeId: string, request: RouteRequest): PlannedRoute | null {
     const destination = request.destination ?? "exit";
     const key = `${destination}\u0000${entryEdgeId}`;
+    const streamSeed = actorSeed(0, kind, slot, generation);
     const cached = this.caches.get(key);
-    if (cached) return cached;
+    if (cached) return placeOnCorridor(cached, kind, streamSeed, request.footprintRadiusM);
     const graph = kind === "vehicle" ? this.vehicleGraph : this.pedestrianGraph;
-    const built = this.plan(graph, kind, entryEdgeId, actorSeed(0, kind, slot, generation), request);
+    const built = this.plan(graph, kind, entryEdgeId, streamSeed, request);
+    if (!built.route) return null;
     // Only a route with no gate-length constraint is reusable across body sizes;
     // a constrained walk depends on the radius it was planned for.
-    if (built.route && !request.viable) this.caches.set(key, built.route);
-    return built.route;
+    if (!request.viable) this.caches.set(key, built.route);
+    return placeOnCorridor(built.route, kind, streamSeed, request.footprintRadiusM);
   }
 
   /**
    * Plan a route without a slot: the shape an offline census or a test wants.
    * `streamSeed` is the whole RNG seed, not the per-actor mix.
+   *
+   * It also places the plan at the lateral position that seed draws, so a census
+   * describes the route a body actually drives rather than the centreline it was
+   * planned on. A census that reported the centreline would report a crowd that
+   * does not exist, which is the defect this field was added for.
    */
   planFrom(graph: MovementGraph, kind: ActorKind, entryEdgeId: string, streamSeed: number, request: RouteRequest): RouteAttempt {
-    return this.plan(graph, kind, entryEdgeId, streamSeed, request);
+    const built = this.plan(graph, kind, entryEdgeId, streamSeed, request);
+    if (!built.route) return built;
+    return { route: placeOnCorridor(built.route, kind, streamSeed, request.footprintRadiusM) };
   }
 
   /**
@@ -321,25 +410,88 @@ export class RouteLibrary {
    * 43.85 m and 57.78 m from the origin, and none of the nearest termini — 13.50 m
    * to 31.23 m out — lies on any portal's shortest walk. The scramble compound is
    * on 4 of the 17 planned routes.
+   *
+   * A `centre` route crosses the scramble when the graph lets it: `descend`
+   * honestly carries out the crossing on `firstField` and the last leg on
+   * `secondField`, and the crossing is taken whenever its detour is inside
+   * `MAXIMUM_CROSSING_DETOUR_M`. When there is no crossing to take — a component
+   * that cannot reach the diagonal — the delivered direct descent is what is
+   * planned, so this preference costs no portal its route.
    */
   private walkToCentre(graph: MovementGraph, entryEdgeId: string, rng: () => number, maxEdges: number, viable?: (edgeId: string) => boolean): string[] | null {
-    const shortest = graph.distanceToCentre(entryEdgeId);
-    if (shortest === undefined) return null;
-    const windowM = Math.max(CENTRE_STEP_WINDOW_FLOOR_M, CENTRE_STEP_WINDOW_FRACTION * shortest);
+    const direct = this.descend(graph, entryEdgeId, rng, maxEdges, viable, (id) => graph.distanceToCentre(id), null);
+    const crossing = this.descend(graph, entryEdgeId, rng, maxEdges, viable, (id) => graph.distanceToDiagonal(id), (id) => graph.distanceToCentre(id));
+    if (!crossing) return direct;
+    if (!direct) return crossing;
+    return this.pathLength(graph, crossing) <= this.pathLength(graph, direct) + MAXIMUM_CROSSING_DETOUR_M ? crossing : direct;
+  }
+
+  /** The walking metres a planned path covers, which is what the detour budget is spent in. */
+  private pathLength(graph: MovementGraph, path: readonly string[]): number {
+    let total = 0;
+    for (const id of path) total += graph.edge(id).lengthM;
+    return total;
+  }
+
+  /**
+   * A monotone descent on an exact walking-distance field, optionally switching
+   * field once at the moment the first field reaches zero.
+   *
+   * The switch is what makes a crossing route: the first field is the distance to
+   * the authored scramble diagonal and the second is the distance to a legal
+   * terminus, so the walk arrives at the crossing, traverses it — sections are
+   * atomic, so landing on the diagonal cannot leave halfway across — and then
+   * continues to the same kind of terminus the delivered descent ends on.
+   *
+   * One `visited` set spans both fields, so the second leg cannot step back onto a
+   * section the first leg used to get here. Each leg gets its own window, because
+   * the window is a fraction of *its own* optimum: the crossing leg's optimum is a
+   * short approach and the terminus leg's is what remains, and one number for both
+   * would either pin the first leg to its shortest path or let the second wander.
+   *
+   * Everything else is the delivered descent, unchanged: strictly decreasing
+   * remaining distance so it cannot spin, an exact distance rather than a section
+   * count, the best step within a window, and the route cap.
+   */
+  private descend(
+    graph: MovementGraph,
+    entryEdgeId: string,
+    rng: () => number,
+    maxEdges: number,
+    viable: ((edgeId: string) => boolean) | undefined,
+    firstField: (id: string) => number | undefined,
+    secondField: ((id: string) => number | undefined) | null,
+  ): string[] | null {
+    let field = firstField;
+    let remaining = field(entryEdgeId);
+    if (remaining === undefined) return null;
+    let windowM = Math.max(CENTRE_STEP_WINDOW_FLOOR_M, CENTRE_STEP_WINDOW_FRACTION * remaining);
     const path = [entryEdgeId];
     const visited = new Set<string>([entryEdgeId]);
     let walkedM = graph.edge(entryEdgeId).lengthM;
     const budget = Math.min(maxEdges, graph.edges.size);
     for (let guard = 0; guard <= budget; guard += 1) {
       const head = path.at(-1)!;
-      const remaining = graph.distanceToCentre(head)!;
-      if (remaining <= 1e-9) return path;
+      if (field(head)! <= 1e-9) {
+        if (secondField !== null && field === firstField) {
+          field = secondField;
+          const switched = field(head);
+          if (switched === undefined) return null;
+          remaining = switched;
+          // The floor keeps the second leg's window at least as wide as the first
+          // leg's, so a short approach cannot shrink the descent to a terminus into
+          // a shortest-path-only walk.
+          windowM = Math.max(CENTRE_STEP_WINDOW_FLOOR_M, windowM, CENTRE_STEP_WINDOW_FRACTION * switched);
+        } else {
+          return path;
+        }
+      }
       if (walkedM > MAXIMUM_CENTRE_ROUTE_LENGTH_M) return null;
       let best = Number.POSITIVE_INFINITY;
       const costs = new Map<string, number>();
       for (const id of graph.next(head)) {
         if (visited.has(id) || (viable !== undefined && !viable(id))) continue;
-        const next = graph.distanceToCentre(id);
+        const next = field(id);
         if (next === undefined || next >= remaining - 1e-9) continue;
         const cost = walkedM + graph.edge(id).lengthM + next;
         costs.set(id, cost);
@@ -351,6 +503,7 @@ export class RouteLibrary {
       path.push(chosen);
       visited.add(chosen);
       walkedM += graph.edge(chosen).lengthM;
+      remaining = field(chosen)!;
     }
     return null;
   }
@@ -529,11 +682,74 @@ export function vehicleScale(rng: () => number, asset?: { collision: { readonly 
   return Math.min(scale, maximum);
 }
 
-/** Position of a slot's support origin along a route occurrence. */
+/**
+ * Position of a slot's support origin along a route occurrence, at that
+ * occurrence's own lateral position.
+ *
+ * The offset is applied on the section's own right axis at the sampled heading,
+ * which is the axis `spacing-metrics.ts` documents and the one `placeVehicle`
+ * offsets lanes along. Because a section is directed, both directions of one
+ * physical corridor take the same sign and therefore land on opposite sides of the
+ * centreline: two streams walking at each other down one sidewalk pass each other
+ * instead of meeting head-on. That is a property of the sign convention and not a
+ * second rule, and it is the reason the deadlock the spacing lane measured — two
+ * walkers facing each other on the two directions of one way — cannot recur once
+ * every walker has a lateral position.
+ *
+ * Height and heading come from the centreline, so a body still faces the way its
+ * route runs and still stands on the route's own ground.
+ */
 export function sampleRoute(route: PlannedRoute, occurrence: number, localM: number): { x: number; y: number; z: number; heading: number } {
   const edge = route.edges[occurrence]!;
   const local = Math.max(0, Math.min(edge.lengthM, localM));
   const at = sampleEdge(edge, local);
   const height = edge.points.length > 1 ? at.y : edge.points[0]!.y;
-  return { x: at.x, y: height, z: at.z, heading: headingAt(edge, local) };
+  const heading = headingAt(edge, local);
+  const lateralM = route.lateralOffsetsM === undefined ? 0 : route.lateralOffsetsM[occurrence] ?? 0;
+  if (lateralM === 0) return { x: at.x, y: height, z: at.z, heading };
+  return { x: at.x + Math.cos(heading) * lateralM, y: height, z: at.z - Math.sin(heading) * lateralM, heading };
+}
+
+/**
+ * Give a planned route this actor's own lateral position on every section it uses.
+ *
+ * The lane is drawn from the actor's own stream, so two walkers that share one
+ * cached plan — every slot drawing the same portal and destination shares one, which
+ * is what keeps planning cheap — still stand in different places. The lane is then
+ * converted to metres against each section's own `widthM`, and the *same* fraction
+ * carries across the whole route, so a walker keeps to its own side of the corridor
+ * as it moves between a 5 m scramble crossing and a 2.5 m sidewalk instead of being
+ * pinned to the edge of the narrower one.
+ *
+ * The fraction is in `[0, 1)` and never negative, which is what puts the two
+ * directions of a section on opposite sides: see `sampleRoute`. The jitter inside
+ * the lane is what makes the positions distinct rather than merely spread — two
+ * walkers sharing a lane and an arc distance, which is exactly the state of a queue
+ * at a kerb, differ by the jitter and not by anything else.
+ *
+ * Measured on the delivered graph, this is 5 lanes a side on a 2.5 m sidewalk and
+ * 10 on the 5 m scramble diagonal, against 1 before it.
+ */
+export function placeOnCorridor(route: PlannedRoute, kind: ActorKind, streamSeed: number, footprintRadiusM: number): PlannedRoute {
+  if (kind !== "pedestrian" || route.edges.length === 0 || !(footprintRadiusM > 0)) return route;
+  const bodyWidthM = 2 * footprintRadiusM;
+  // The room a body has to one side of the centreline, over the widest section of
+  // this route: half the section less the body's own half-width.
+  let halfRoomM = 0;
+  for (const edge of route.edges) {
+    const room = (edge.widthM - bodyWidthM) / 2;
+    if (room > halfRoomM) halfRoomM = room;
+  }
+  if (!(halfRoomM > 0)) return route;
+  const lanes = Math.max(MINIMUM_WALKING_LANES, Math.min(MAXIMUM_WALKING_LANES, Math.floor(halfRoomM / bodyWidthM)));
+  const rng = createStream(streamSeed ^ 0x4c41_4e45);
+  const lane = Math.min(lanes - 1, Math.floor(rng() * lanes));
+  const jitter = rng();
+  const fraction = (lane + jitter) / lanes;
+  const offsets = new Float64Array(route.edges.length);
+  for (let index = 0; index < route.edges.length; index += 1) {
+    const room = (route.edges[index]!.widthM - bodyWidthM) / 2;
+    offsets[index] = room > 0 ? fraction * room : 0;
+  }
+  return Object.freeze({ ...route, lateralOffsetsM: offsets });
 }

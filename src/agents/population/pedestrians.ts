@@ -317,8 +317,15 @@ function linearProgram(lines: readonly Line[], radius: number, preferredX: numbe
  * ORCA(u, v) for equal-time-horizon agents, as the half-plane
  * `dot(v_self, n) >= dot(u, n)` where `u` is the smallest change to the relative
  * velocity that clears the collision cone.
+ *
+ * `overlapTieBreak` is only read for a pair whose centres coincide, and it is a
+ * sign rather than a direction: two bodies at one point have no line of centres to
+ * separate along, and the direction the solver picks must be *opposite* for the two
+ * of them or both are pushed the same way and neither moves. It is optional, so a
+ * caller that has no pair ordering — a test, or a probe calling this for one body —
+ * keeps the three-argument call it had.
  */
-export function orcaHalfPlane(agent: OrcaAgent, other: OrcaAgent, timeHorizon: number): Line {
+export function orcaHalfPlane(agent: OrcaAgent, other: OrcaAgent, timeHorizon: number, overlapTieBreak = 1): Line {
   const relativeX = other.x - agent.x;
   const relativeZ = other.z - agent.z;
   const relativeVelocityX = agent.velocityX - other.velocityX;
@@ -332,10 +339,68 @@ export function orcaHalfPlane(agent: OrcaAgent, other: OrcaAgent, timeHorizon: n
   const wX = relativeVelocityX - inverseTimeHorizon * relativeX;
   const wZ = relativeVelocityZ - inverseTimeHorizon * relativeZ;
   const wSquared = wX * wX + wZ * wZ;
-  // A body this walker already overlaps is not an obstacle it can steer around;
-  // this population resolves a stack of bodies at one point by leaving them be,
-  // and the walking step's own overlap rule is the same one.
-  if (distanceSquared <= combinedRadiusSquared) return { pointX: 0, pointZ: 0, w: 0 };
+  /*
+   * A body this walker already overlaps is still an obstacle, and the constraint it
+   * produces is bounded: the relative velocity along the line of centres must
+   * separate them at a speed that closes the penetration over `separationSeconds`,
+   * and never faster than `maximumSeparationMps`.
+   *
+   * The revision before this returned no constraint at all for an overlapping pair
+   * — "this population resolves a stack of bodies at one point by leaving them be"
+   * — which made overlap a fixed point of the avoidance model: the solver was told
+   * to ignore exactly the pairs it had already failed on. Measured by the spacing
+   * lane on the delivered population, that is 46,615 overlapping pairs among 3,000
+   * pedestrians at t = 60 s, every one of them a pair the solver had been told to
+   * ignore, and measured here on the revision before this change at 3,000
+   * pedestrians and 72,000 ticks, 34,942 pairs at one sample.
+   *
+   * This is a velocity constraint like every other half-plane here, not a positional
+   * push: the body still moves only through the integrator's own `speed * step`,
+   * capped at its cadence, and the walking step projects the result back onto the
+   * route, so a walker is never shoved sideways off its path.
+   *
+   * The spacing lane measured this constraint alone as a deadlock, and the finding
+   * is correct and is why it did not land alone: with no lateral position, a
+   * walker's only freedom is its speed along one polyline, so two walkers facing
+   * each other down one way can satisfy this constraint only by both stopping. The
+   * route now carries a lateral position (`placeOnCorridor` in `routes.ts`), which
+   * puts the two directions of a section on opposite sides of its centreline, so
+   * the head-on pair this constraint deadlocked on is not a pair that occurs.
+   */
+  if (distanceSquared <= combinedRadiusSquared) {
+    const distance = Math.sqrt(distanceSquared);
+    let normalX: number;
+    let normalZ: number;
+    if (distance > 1e-6) {
+      normalX = relativeX / distance;
+      normalZ = relativeZ / distance;
+    } else if (wSquared > 1e-12) {
+      // Exactly coincident, but moving relative to one another: the only direction
+      // that can separate them is the one their relative velocity already has, and
+      // taking it keeps the two bodies' constraints opposite without inventing a
+      // direction from nothing.
+      const wLength = Math.sqrt(wSquared);
+      normalX = wX / wLength;
+      normalZ = wZ / wLength;
+    } else {
+      // Exactly coincident and relatively at rest. There is no line of centres and
+      // no relative motion to read, so the direction is chosen from the pair's own
+      // order: the two bodies then get opposite normals and genuinely part, where
+      // returning "no constraint" leaves them on top of one another for the life of
+      // the run. This is the state a pile of freshly spawned bodies is in, which is
+      // exactly the stack this constraint exists to break.
+      normalX = overlapTieBreak >= 0 ? 1 : -1;
+      normalZ = 0;
+    }
+    const penetration = combinedRadius - distance;
+    const separationSpeed = Math.min(PEDESTRIAN_DYNAMICS.maximumSeparationMps, penetration / PEDESTRIAN_DYNAMICS.separationSeconds);
+    // `dot(v_self, -n) >= dot(v_other, -n) + separationSpeed`.
+    return {
+      pointX: -normalX,
+      pointZ: -normalZ,
+      w: -(other.velocityX * normalX + other.velocityZ * normalZ) + separationSpeed,
+    };
+  }
   const cutOffSquared = combinedRadiusSquared * inverseTimeHorizon * inverseTimeHorizon;
   if (wSquared <= cutOffSquared) {
     // Inside the disc of velocities that can no longer avoid contact within the
@@ -435,7 +500,11 @@ export function orcaVelocity(hash: NeighbourIndex, agents: readonly OrcaAgent[],
   for (let i = 0; i < count; i += 1) {
     const other = scratch.neighbours[i]!;
     if (other === self) continue;
-    const line = orcaHalfPlane(agent, agents[other]!, PEDESTRIAN_DYNAMICS.timeHorizonSeconds);
+    // The pair's own order is the tie-break for two bodies at one point, so the two
+    // of them read opposite normals and part instead of being pushed together. It
+    // is a slot comparison and not a hash or a position, so it is stable across
+    // ticks and identical on two runs of the same seed.
+    const line = orcaHalfPlane(agent, agents[other]!, PEDESTRIAN_DYNAMICS.timeHorizonSeconds, self < other ? 1 : -1);
     if (line.pointX !== 0 || line.pointZ !== 0) scratch.lines.push(line);
   }
   // The half-planes are `dot(v, point) >= w`; the solver also wants the
