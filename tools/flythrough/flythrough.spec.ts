@@ -544,6 +544,13 @@ test.describe("flythrough", () => {
         targetToleranceM: 0.05,
         minimumTravelM: 0.001,
         minimumDistinctFraction: 0.95,
+        // The plan's own hold, read off its `holdsCamera` steps rather than the
+        // records: a held frame is exempt from the travel floor, so the count the
+        // plan wrote is what bounds the exemption. `holdsCamera` marks a step,
+        // and only a held frame after the first in its leg is a held pair.
+        heldPairs: Object.fromEntries(
+          SELECTED.map((leg) => [leg.name, Math.max(0, leg.steps.filter((step) => step.holdsCamera === true).length - 1)]),
+        ),
         redControl: RED_CONTROL,
       },
     );

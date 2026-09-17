@@ -5,14 +5,23 @@
  * leg aimed into a building produces frames of exactly that. The measure is the
  * fraction of a 16x9 grid of cells whose luminance shows structure — not a
  * fraction of the frame's pixels. A cell counts when its luminance standard
- * deviation is above 12 absolute units (the 0-255 Rec.709 scale) or, on a dark
- * frame, above 30% of the cell's own mean: dusk tone mapping compresses
+ * deviation is above 12 absolute units (the 0-255 Rec.709 scale) or, on a frame
+ * dim enough that the absolute leg under-reads it, when it is above 8 mean, above
+ * 2 absolute deviation and above 30% of its own mean: dusk tone mapping compresses
  * absolute contrast, so a purely absolute threshold reads a textured dusk
  * facade as a blank wall — the lane's approach-005 false positive, measured at
  * 4.2% of cells over the absolute leg against 24.3% over a relative one
- * (`artifacts/flythrough2/adjudication-report.md`). The relative leg is guarded
- * by a mean above 2 so a near-black cell cannot qualify on noise, and a
- * genuinely flat dark wall keeps a ratio near zero and still fails.
+ * (`artifacts/flythrough2/adjudication-report.md`).
+ *
+ * Both floors on the relative leg are needed. The absolute deviation floor of 2
+ * is what keeps quantization dither out: one flat surface at mean 3 with ±1 of
+ * dither has a deviation of exactly 1 in every cell, which is 33% of its own
+ * mean, so a pure ratio leg reads the whole frame as structured. The mean floor
+ * is above 8 rather than 2 for the same reason — at mean 3 the ratio leg needed
+ * only 0.9 of an 8-bit level — and it costs nothing real: every cell of the real
+ * approach-005 frame that qualifies through the ratio is above mean 16, and the
+ * ratio still rescues the dark facade the absolute leg cannot see. A flat dark
+ * wall keeps a ratio near zero and still fails.
  *
  * The statistic is the same one `tools/populated/capture.ts` uses to tell a
  * drained scene from a full one, at a finer grid because a 3 m camera sees
@@ -45,7 +54,7 @@ export function structuredFraction(png: DecodedPng): number {
       }
       const mean = sum / count;
       const deviation = Math.sqrt(Math.max(0, sumSquares / count - mean * mean));
-      if (deviation > 12 || (mean > 2 && deviation / mean > 0.3)) structured += 1;
+      if (deviation > 12 || (mean > 8 && deviation > 2 && deviation / mean > 0.3)) structured += 1;
     }
   }
   return structured / (cellsX * cellsY);

@@ -91,6 +91,18 @@ export interface SequenceExpectations {
   minimumTravelM: number;
   /** The least fraction of a leg's frames whose digests must differ. */
   minimumDistinctFraction: number;
+  /**
+   * The held pairs the plan itself wrote, per leg, keyed by leg name.
+   *
+   * A hold exempts a pair from the travel floor, so the exemption has to be
+   * bounded by the plan and not by the record: a set of frames that marked every
+   * one of itself held would exempt the whole route and a camera that never moved
+   * would pass. This is the count the plan's own `holdsCamera` steps imply — one
+   * pair for each held frame after the first in its leg — and a leg whose records
+   * disagree with it fails by name. A leg that is absent is a leg the plan holds
+   * nothing in, so any held frame there is one the plan never wrote.
+   */
+  heldPairs: Readonly<Record<string, number>>;
   /** True when the driver was deliberately raising input that cannot move anything. */
   redControl: boolean;
 }
@@ -140,6 +152,51 @@ export function judgeSequence(
       );
     }
     return failures;
+  }
+
+  // The hold is the plan's, so it is bounded by the plan. Counting the record's
+  // own flags against the plan's `holdsCamera` steps is what keeps the exemption
+  // from being widened by the thing it exempts: without it a set of frames that
+  // marked every one of itself held would take the travel floor off the whole
+  // route, and a camera that never moved would pass as a flythrough.
+  for (const leg of legs) {
+    const thisLeg = frames.filter((frame) => frame.leg === leg.name);
+    if (thisLeg.length === 0) {
+      // Nothing here to hold, and the loop below reports the leg itself.
+      continue;
+    }
+    const expectedPairs = expectations.heldPairs[leg.name] ?? 0;
+    const expectedHeld = expectedPairs === 0 ? 0 : expectedPairs + 1;
+    const heldAt = thisLeg.map((frame, index) => (frame.cameraHeld === true ? index : -1)).filter((index) => index >= 0);
+    const blocks = heldAt.filter((index, position) => position > 0 && index !== heldAt[position - 1]! + 1).length + (heldAt.length > 0 ? 1 : 0);
+    if (heldAt.length !== expectedHeld) {
+      failures.push(
+        `The ${leg.name} leg marks ${heldAt.length} of its frames held and the plan holds ${expectedHeld} of them ` +
+          `(${expectedPairs} held frame ${expectedPairs === 1 ? "pair" : "pairs"}). A held frame is exempt from the ` +
+          `${(expectations.minimumTravelM * 1000).toFixed(0)} mm travel floor, so the plan's own hold is what bounds that exemption: a leg ` +
+          "that marks every frame held has taken the travel floor off itself, and a record that marks every frame of every " +
+          "leg held would exempt the whole route and report a camera that never moved as a flythrough.",
+      );
+    }
+    // The plan's hold is one unbroken run at the end of its leg — six closing
+    // crowd steps with no input — and the same count in another shape is a
+    // different route: every held frame buys back a pair the floor never sees, so
+    // separated holds leave driven stretches unchecked in between, and a run that
+    // does not sit where the plan put it is not the hold the plan wrote.
+    if (blocks > 1) {
+      failures.push(
+        `The ${leg.name} leg marks its held frames in ${blocks} separate runs and the plan's hold is one. A hold exempts ` +
+          "its pair from the travel floor, so holds scattered through a leg exempt the same number of pairs while leaving " +
+          "unchecked stretches between them.",
+      );
+    } else if (expectedHeld > 0 && heldAt[0] !== thisLeg.length - expectedHeld) {
+      failures.push(
+        `The ${leg.name} leg holds ${heldAt[0] === undefined ? "no" : `the ${heldAt.length} starting at index ${heldAt[0]}`} of ` +
+          `its ${thisLeg.length} frames and the plan holds the closing ${expectedHeld}, at indices ` +
+          `${thisLeg.length - expectedHeld} to ${thisLeg.length - 1}. The plan's hold is the tail of the leg — the crowd ` +
+          "leg's closing steps ask the camera for nothing — so a run that starts anywhere else is not that hold.",
+      );
+    }
   }
 
   // A pair the plan held still on purpose is exempt from the travel floor: its
@@ -239,8 +296,8 @@ export function judgeSequence(
     if (empty > 0) {
       failures.push(
         `${empty} of ${legFrames.length} frames in ${leg.name} have under ${(floors.structuredPixels * 100).toFixed(0)}% ` +
-          "of their 144 cells showing structure — per-cell luminance deviation above 12, or above 30% of the cell's " +
-          `own mean — (${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
+          "of their 144 cells showing structure — per-cell luminance deviation above 12, or above 2 with a mean above 8 and a ratio above 30% of the cell's own mean — " +
+          `(${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
           "which is a frame filled by one surface: a wall, a roof or the sky. Those frames were captured but they judged " +
           "nothing, and a leg that is mostly such frames is a leg aimed at the inside of a building.",
       );

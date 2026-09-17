@@ -540,8 +540,8 @@ export const FRAME_FLOORS = Object.freeze({
   vehiclesDrawn: 1,
   /**
    * Fraction of the frame's 16x9 grid of cells whose luminance shows structure:
-   * a standard deviation above 12 absolute units, or above 30% of the cell's
-   * own mean on a dark frame. See `structuredFraction` in
+   * a standard deviation above 12 absolute units, or above 2 with a cell mean
+   * above 8 and a ratio above 30% of that mean. See `structuredFraction` in
    * `tools/flythrough/structure.ts`.
    */
   structuredPixels: 0.05,
