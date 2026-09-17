@@ -1,5 +1,17 @@
 # Defect register
 
+## 2026-09-17 — the flythrough's approach leg swung the long way round, so the crowd leg opened on a hill face
+
+Observed symptom (the flythrough run of 2026-09-16, `artifacts/flythrough2/adjudication-report.md`): `frames/crowd/crowd-000.png was captured with the camera -0.6 m above the highest terrain under it (-383, -479)`. The clearance check that reported it is correct and is untouched.
+
+Investigation: the crowd leg's frames were not the defect. The camera reached the crowd's corner 3.5–4.4 m lower and about 17 m off the scored pose, and one capped stand correction of about 1.1 m plus the 0.3 m hold clearance cannot cover that. The pose is set by the approach leg's last step, and that step's bearing was 0.9381 rad short: the approach interpolated its swing from `OPENING_AZIMUTH` 0.7854 to `CROWD_AZIMUTH` 2.2253 through `+ 2*PI`, which is 7.7231 rad over six steps, 1.2872 rad a step, while the driver buys a bearing with a left-button drag clamped at `maxRotatePx` — 40 px, or 0.3491 rad at this lane's 1280x720 canvas. The driver delivered 0.3491 a step and its `shortestAngle` arithmetic flipped sign twice, so the approach ended at azimuth 1.2872 against the 2.2253 the crowd leg's first frame needed. The plan's comment claimed a "172 degree swing" and that the long way made the driver's shortest-angle arithmetic agree; the swing is 82.5 degrees and the unrolled form is what broke it.
+
+Root cause: a commanded angle written outside the range the control can deliver in one step, with no check that the sequence converges. Nothing in the run reported a shortfall: `turnTo` returns `remainingRad` and the leg drives on, so the failure surfaced two legs later as a terrain clearance, at the wrong end of the route.
+
+Fix: the swing is a monotone interpolation towards `CROWD_AZIMUTH` — 1.4399 rad, 82.5 degrees, 0.2400 rad a step — and the stale arithmetic in the plan and in `turnStepRad`'s own doc is rewritten to the real numbers.
+
+Checked from now on: `test/flythrough-plan.test.ts` flies the plan's own `LEGS` through `rotateStepRadians` and `shortestAngle` from `tools/flythrough/driver.ts` at the capture viewport and requires the approach to end within 0.05 rad of `CROWD_AZIMUTH` and the ascent within 0.05 rad of `OPENING_AZIMUTH`. Restoring the long way round makes it exit 1 with `the approach leg delivers the camera to azimuth 1.2872 rad and the crowd leg's first frame needs 2.2253 ... expected 0.9381162336791848 to be less than 0.05`, which is the delivered bearing the failed run had. The ascent's same unwrapped form was measured and converges at step 10 with one step spare, so it is unchanged. Record: `docs/learning/gate-proofs.md`, "The flythrough's approach swing reaches the crowd's bearing through the drag the driver delivers". Bound: the pure rotate arithmetic and the plan's own azimuth targets at `maxRotatePx` 40 and a 720 px canvas — not the browser's input path, not the damping tail, and not the pose the controls settle at, which only a run of the lane can show.
+
 ## 2026-09-16 — the dusk post chain's temporal accumulation never engaged, because the camera it waits for could never stop
 
 Observed symptom (gate-timing lane, `artifacts/gate-timing/REPORT.md`): every one of the eight hero frames of the 44-frame capture recorded `taaAccumulating: false, taaSamples: 0`, reproduced on both renderers. The plan's acceptance criterion asks the dusk preset to render with TAA and to hold still; the mechanism was present in the code and absent from every pixel, and nothing failed.

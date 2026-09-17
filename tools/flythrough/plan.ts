@@ -31,7 +31,7 @@
  * | Leg | Frames | Target | Camera height | Distance | What moves |
  * | --- | --- | --- | --- | --- | --- |
  * | `overview` | 11 | origin to the crowd's corner | 675 to 60 m | 620 to 170 m | pan 700 m north-west, zoom, bearing held |
- * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 26 m | descent and a 172 degree swing onto the crowd |
+ * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 26 m | descent and an 82.5 degree swing onto the crowd |
  * | `crowd` | 12 | through the crowd | 3 m | 26 to 18.8 m | a slow push, 1.2 m a step, then six frames with no input |
  * | `ascent` | 11 | the crowd, back to the crossing | 18.8 to 110 m | 18.8 to 620 m | climb, swing, and a pan home |
  *
@@ -273,10 +273,27 @@ const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => 
  * Two movements at once, and they have to be ordered. The distance falls from
  * 170 m to 30 m and the height from 60 m to 3 m over the first six steps while
  * the bearing is still held, because a camera 170 m out that swings before it
- * closes would leave the area of interest; then the bearing swings 172 degrees
- * over the last six, where the camera is under 60 m out and the circle it turns
- * on is small. The stand heights are a ladder down the descent, so the camera
- * arrives at the footway rather than over the roofs.
+ * closes would leave the area of interest; then the bearing swings the short way
+ * onto the crowd over the last six, where the camera is under 60 m out and the
+ * circle it turns on is small. The stand heights are a ladder down the descent,
+ * so the camera arrives at the footway rather than over the roofs.
+ *
+ * The swing is 1.4399 rad, 82.5 degrees, from `OPENING_AZIMUTH` 0.7854 to
+ * `CROWD_AZIMUTH` 2.2253. It is written as an interpolation *towards* the
+ * crowd's bearing rather than as an angle that rises past it, and that is what
+ * makes it arrive. The driver buys a bearing with a left-button drag whose
+ * longest gesture is 40 px, which at this lane's 1280x720 canvas is 0.3491 rad,
+ * so 1.4399 rad over six steps — 0.2400 rad a step — is inside the cap and the
+ * last step lands on the crowd's bearing exactly. A swing written the other way
+ * round, from 0.7854 up to 0.7854 + 1.4399 + 2*PI = 8.5085, asks for 1.2872 rad
+ * a step, 3.7 times the cap, and the driver's own shortest-angle arithmetic then
+ * flips sign twice on the way: the approach ended at azimuth 1.2872 rad, 0.9381
+ * rad short of the crowd's, and the crowd leg opened on a hill face about 17 m
+ * from the scored pose instead of at it. The run's clearance check caught that
+ * and the fix is here, not in the check.
+ *
+ * Monotone because the short path is: no step below turns back on itself. That
+ * is the "one direction" the long-way version was written for and did not have.
  *
  * The descent's last two rungs are `CROWD_DISTANCE_M` rather than a number written
  * here again, so the leg lands on the scored pose's own distance and the crowd leg
@@ -291,10 +308,13 @@ const APPROACH_LADDER = ladder(
 );
 const APPROACH_STEPS: readonly LegStep[] = APPROACH_LADDER.map((rung, index) => {
   const previous = index === 0 ? 170 : APPROACH_LADDER[index - 1]!.distance;
-  // The long way round, expressed as a rising angle, so the swing is one
-  // direction and the driver's own shortest-angle arithmetic agrees with it.
+  // The short way onto the crowd's own bearing: `turnTo` targets an absolute
+  // azimuth and takes the shortest signed difference to it, so interpolating
+  // towards `CROWD_AZIMUTH` is the path the driver can actually deliver. Every
+  // step asks for 0.2400 rad against the 0.3491 rad a 40 px drag buys at this
+  // canvas, where the long way round asks for 1.2872.
   const swing = index < 6 ? 0 : (index - 5) / 6;
-  const azimuth = OPENING_AZIMUTH + (CROWD_AZIMUTH + 2 * Math.PI - OPENING_AZIMUTH) * swing;
+  const azimuth = OPENING_AZIMUTH + (CROWD_AZIMUTH - OPENING_AZIMUTH) * swing;
   return {
     panToX: CROWD_TARGET.x,
     panToZ: CROWD_TARGET.z,
@@ -389,6 +409,13 @@ const ASCENT_LADDER = ladder(
 const ASCENT_STEPS: readonly LegStep[] = ASCENT_LADDER.map((rung, index) => {
   const previous = index === 0 ? CROWD_END_DISTANCE_M : ASCENT_LADDER[index - 1]!.distance;
   const t = Math.min(1, Math.max(0, (index - 2) / 8));
+  // An unwrapped angle like the approach's old one, and this one converges, so it
+  // stays. Checked against the driver's cap: the shortest-angle arithmetic
+  // reverses at step 3, after 1.0472 rad the wrong way, and the last eight steps
+  // turn the short way home — 3.538 rad of travel through eleven steps of 0.3491,
+  // which is 3.840. It reaches `OPENING_AZIMUTH` at step 10 with one step spare,
+  // and `test/flythrough-plan.test.ts` asserts it. It is not monotone, unlike the
+  // approach's repaired swing, and a longer route would not fit the cap.
   const azimuth =
     index < 4
       ? CROWD_AZIMUTH + (OPENING_AZIMUTH + 2 * Math.PI - CROWD_AZIMUTH) * ((index + 1) / 4)
@@ -430,7 +457,7 @@ export const LEGS: readonly Leg[] = Object.freeze([
       "the hardest thing in this lane for the tile traversal, the ambient occlusion and the bloom, and the leg where " +
       "a strobing light or a swimming shadow would be most visible.",
     expectation:
-      "170 m to 30 m and 60 m up to 3 m over twelve steps, then a 172 degree swing onto the crowd while the camera " +
+      "170 m to 30 m and 60 m up to 3 m over twelve steps, then an 82.5 degree swing onto the crowd while the camera " +
       "is under 60 m out. The frame should open on the district from 60 m up and close on a footway at eye height, " +
       "with the crowd arriving from a texture into people.",
     captureEvery: 1,
