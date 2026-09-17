@@ -952,3 +952,27 @@ Exit status 1. Under it the floor that fails a leg aimed at the sky is gone.
 **Calibration, measured with the shipped function over the real frame bytes** (`artifacts/flythrough-fix/scratch-calibration.txt`, script beside it): approach-005 scores **15.3%** — 22 of 144 cells, 6 on the absolute leg and 16 more on the relative leg — against the 5% floor, where the absolute leg alone scores 4.2%. The frame's flattest cell, the clear-sky cell (3, 8), measures deviation 0.374 at mean 26.0 (ratio 0.014) and stays structured-free under both legs. The cell arithmetic reproduces the adjudication's published numbers exactly (6 of 144 over 12, 35 of 144 over 0.25 relative contrast, deviation bands 64/63/11/6), so the instrument is the one the adjudication measured with.
 
 **Bound.** The synthetic fixtures pin the rule's two ends; the real-frame calibration pins the 0.3 threshold to the one dark frame this lane has produced, tuned against it and its 45 neighbours from one run at the dusk preset. A bright frame is unaffected by construction — the absolute leg dominates there — but no noon-preset run exists to prove the relative leg stays quiet on one. The metric still cannot tell a textured wall from the city: a close facade passes it, which is a review question rather than a metric one.
+
+## The flythrough's approach swing reaches the crowd's bearing through the drag the driver delivers
+
+**Gate:** `npm test` — `test/flythrough-plan.test.ts`, the case "opens the crowd leg on the crowd's bearing and lands the ascent back on the opening one", flying `LEGS` from `tools/flythrough/plan.ts` through `rotateStepRadians` and `shortestAngle` in `tools/flythrough/driver.ts` at the capture viewport from `tools/visual/shots.ts`.
+
+**Landed:** 2026-09-17 as `67aa9c9` on branch `worker/flythrough-swing-fix` off `f06aaf8`, in the worktree `artifacts/flythrough-swing/wt`. Not merged: the coordinator lands the branch.
+
+**Why.** The 2026-09-16 run failed on `frames/crowd/crowd-000.png` being captured 0.6 m above the highest terrain under it at (-383, -479). The mechanism is arithmetic in the plan: the approach leg interpolated its bearing from `OPENING_AZIMUTH` 0.7854 the long way round to `CROWD_AZIMUTH` 2.2253, `OPENING_AZIMUTH + (CROWD_AZIMUTH + 2*PI - OPENING_AZIMUTH) * swing`, which is 7.7231 rad over steps 6..11 of the leg — 1.2872 rad a step against the 0.3491 rad (40 px at 1280x720) the driver's rotate drag can dispatch in one gesture. The driver delivered 0.3491 a step and `shortestAngle` flipped sign twice, so the approach ended at azimuth **1.2872** where the crowd leg's first frame needed **2.2253** — 0.9381 rad, 53.8 degrees, short. The crowd leg then opened on a hill face about 17 m from the scored pose, and its one capped stand correction of about 1.1 m plus the 0.3 m hold clearance could not cover a 3.5-4.4 m shortfall. The clearance check that caught it is correct and unchanged.
+
+**Mutation — the long way round restored:** in `tools/flythrough/plan.ts`, `OPENING_AZIMUTH + (CROWD_AZIMUTH - OPENING_AZIMUTH) * swing` → `OPENING_AZIMUTH + (CROWD_AZIMUTH + 2 * Math.PI - OPENING_AZIMUTH) * swing`, nothing else changed. `npx vitest run test/flythrough-plan.test.ts`, exit status 1, in 0.8 s:
+
+```
+AssertionError: the approach leg delivers the camera to azimuth 1.2872 rad and the crowd leg's first frame needs
+2.2253. The crowd leg opens wherever the swing stopped, so a swing outside the driver's 0.3491 rad a step cap
+lands it on the wrong side of the knot: expected 0.9381162336791848 to be less than 0.05
+```
+
+The delivered azimuth in that message is the one the run's own failure came from, and it is the number the old plan produced, so the red is the defect rather than a synthetic stand-in for it.
+
+**Green on the restored bytes:** 1 passed in 0.4 s. The repaired swing asks for 1.4399 rad in total — 82.5 degrees, 0.2400 rad a step, inside the cap — and the last step lands on `CROWD_AZIMUTH` with an error of 0.
+
+**The ascent, measured rather than assumed.** `ASCENT_STEPS` carries the same unwrapped form, `CROWD_AZIMUTH + (OPENING_AZIMUTH + 2*PI - CROWD_AZIMUTH) * ((index + 1) / 4)` for its first four steps, and it **converges**: the driver's shortest-angle arithmetic reverses at step 3 after 1.0472 rad the wrong way, and the last eight steps turn the short way home — 3.538 rad of travel through eleven steps of 0.3491, which is 3.840 — reaching `OPENING_AZIMUTH` at step 10 with one step spare. It is not monotone, unlike the repaired approach swing, and it is left unchanged because it arrives; the case asserts the end, not the path. A later `CROWD_AZIMUTH`, a longer ascent or a smaller `maxRotatePx` would spend that one spare step.
+
+**Bound.** The case flies the plan's own azimuth targets through the driver's own rotate arithmetic and the capture viewport's 720 px, so it proves the plan's swings are inside the cap the driver can deliver. It cannot prove the browser's input path dispatches the drag — only a run of the lane can — and it says nothing about the damping tail or the pose the controls actually settle at; the run's own frame records carry those. The cap is `maxRotatePx` 40 and the canvas height 720, both read from the shipping code rather than restated; a run at another viewport would deliver a different cap and this case would not notice.
