@@ -139,15 +139,24 @@ test.describe("hero frames", () => {
       ]);
 
       const styleSelect = page.getByRole("combobox", { name: "World style" });
-      expect(await styleSelect.locator("option").allTextContents()).toContain("Cartographic");
-      expect(await styleSelect.locator("option").allTextContents()).toContain("Satellite");
+      // The control is a button plus an in-page listbox, not a native `<select>`.
+      // The reason is this harness: a native select's popup is drawn by the
+      // browser process, outside the renderer's hit testing, so no synthesised
+      // pointer input can reach one of its options and the pointer half of the
+      // criterion could not be exercised at all. These options are elements in
+      // this document, so they can be read and clicked. `[role="option"]` is a
+      // CSS selector rather than `getByRole` because a closed listbox is hidden
+      // and stays out of the accessibility tree.
+      const styleOptions = page.locator('[role="option"]');
+      expect(await styleOptions.allTextContents()).toContain("Cartographic");
+      expect(await styleOptions.allTextContents()).toContain("Satellite");
       for (const style of ["satellite", "cartographic"] as const) {
       await driver.settle("preservation");
       const before = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount }));
       await styleSelect.click();
       await page.keyboard.press(style === "cartographic" ? "Home" : "End");
       await page.keyboard.press("Enter");
-      await expect(styleSelect).toHaveValue(style);
+      await expect(styleSelect).toHaveAttribute("data-style-id", style);
       await page.waitForFunction((id) => window.__mapsHarness?.style().id === id, style);
       const after = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount, search: location.search }));
       expect(after.frames).toBeGreaterThanOrEqual(before.frames);
@@ -246,7 +255,7 @@ test.describe("hero frames", () => {
       await styleSelect.click();
       await page.keyboard.press("End");
       await page.keyboard.press("Enter");
-      await expect(styleSelect).toHaveValue("satellite");
+      await expect(styleSelect).toHaveAttribute("data-style-id", "satellite");
       await page.waitForFunction((frames) => window.__mapsHarness?.style().id === "satellite" && window.__mapsHarness.status().frameCount > frames, beforeReturn.status.frameCount);
       await driver.waitForTilesIdle();
       const afterReturn = await page.evaluate(() => ({
