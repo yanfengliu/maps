@@ -41,6 +41,7 @@
     "data:vehicles:verify": "node tools/agents/verify-vehicles.ts",
     "data:agents": "node tools/agents/build.ts",
     "data:agents:verify": "node tools/agents/verify.ts",
+    "data:agents:set": "node tools/agents/verify-human-set.ts",
     "data:agents:manifests": "node tools/agents/manifests.ts"
   },
   "dependencies": {
