@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { AOI_HALF_EXTENT_M } from "../world/frame.js";
 import { GROUND_AT_ORIGIN_M } from "../world/scene-data.js";
+import { installControlRest } from "./controls-rest.js";
 
 /**
  * The camera and the controls the user actually drives.
@@ -68,6 +69,15 @@ export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.screenSpacePanning = false;
   controls.update();
+
+  // Damping never terminates on its own, and the app's own stillness test — the
+  // one the post chain's temporal accumulation reads — is strict enough that a
+  // camera gliding by a ten-thousandth of a pixel a frame still counts as
+  // moving. Ending the glide once it can no longer move the picture is what
+  // makes "the camera has stopped" a state the app can actually reach; the
+  // stillness test itself is unchanged. `src/render/controls-rest.ts` carries
+  // the measurement.
+  installControlRest(camera, controls, canvas);
 
   return { camera, controls };
 }
