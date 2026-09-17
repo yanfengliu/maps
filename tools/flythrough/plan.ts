@@ -1,0 +1,428 @@
+/**
+ * The flythrough lane's capture plan: a route through the city, in world metres,
+ * driven through the controls.
+ *
+ * This lane exists for one criterion, from `docs/work/0_shibuya-1km/plan.md`
+ * (Phase 10, item 33): "a multi-angle, multi-zoom sweep **and a flythrough driven
+ * through the real controls** both come back clean". The sweep exists. The
+ * flythrough did not, and neither can the two criteria that are about motion
+ * rather than about a pose:
+ *
+ * - "The dusk preset renders with ACES tone mapping, bloom carrying the neon,
+ *   SSAO and TAA, and holds still — **no flicker or crawl over a moving
+ *   sequence**." Flicker and crawl are properties *between* adjacent frames, so
+ *   no still frame contains them and no contact sheet of stills can answer them.
+ * - The population criteria — vehicles holding lanes, pedestrians surging,
+ *   nothing interpenetrating — are written "watched over a run rather than
+ *   sampled in one frame" for the same reason.
+ *
+ * So the route below is a *flight*: four legs, each a continuous movement of two
+ * to four inputs at once, at four heights from 675 m above the ground to 3 m, with
+ * every frame one step of one movement rather than an unrelated view.
+ *
+ * ## The route, in world metres
+ *
+ * The origin is the Shibuya Scramble Crossing, +X is east and +Z is south, and
+ * every number below is a world position or a height above the terrain in metres.
+ * Nothing here is a pixel count or a camera pose: the pixels a drag buys are the
+ * driver's business and the pose is the controls' answer, which each frame's
+ * record carries.
+ *
+ * | Leg | Frames | Target | Camera height | Distance | What moves |
+ * | --- | --- | --- | --- | --- | --- |
+ * | `overview` | 11 | origin to the crowd's corner | 675 to 60 m | 620 to 170 m | pan 700 m north-west, zoom, bearing held |
+ * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 30 m | descent and a 172 degree swing onto the crowd |
+ * | `crowd` | 12 | through the crowd | 3 m | 30 to 24 m | a slow push, 1.2 m a step, then six frames with no input |
+ * | `ascent` | 11 | the crowd, back to the crossing | 3 to 110 m | 24 to 620 m | climb, swing, and a pan home |
+ *
+ * ## Why the crowd is the far corner, and why that is not a choice
+ *
+ * The population's own distribution decides this, and it is measured rather than
+ * assumed (`artifacts/flythrough2/aim.json`, written by
+ * `node artifacts/flythrough2/aim.ts` against the probe's position dumps). At the
+ * default seed the app draws — 5,970,698, because `populationFromQuery` falls
+ * back to the scene seed unless `?seed=` is present, so this lane captures with
+ * no `?seed=` at all — the crowd is not at the crossing. It stands in knots along
+ * the edges of the area of interest, and the largest of them is 600 m north-west
+ * of the origin. The crossing itself holds almost nobody, and vehicles thin out
+ * with time (59 active at tick 2,400, 45 at 7,200, 14 at 20,000), so the flight
+ * leaves early and aims at a knot rather than at the middle of the map.
+ *
+ * `CROWD_TARGET` and `CROWD_CAMERA` below are that knot and a camera position on
+ * a walking way 30 m from it. They are **aim anchors**: the flight moves the
+ * controls' target to the first and stands the camera at the second, and the
+ * frames say where the camera actually ended up.
+ *
+ * ## The clock
+ *
+ * Frames are captured as the movement runs, so the simulated clock advances at
+ * whatever rate the machine pays for. Nothing here waits on a tick inside a leg:
+ * a leg is a fixed number of steps, each step a small input plus a frame, and the
+ * ticks each frame landed on are recorded beside it. The one tick bound is
+ * `holdToTick`, used once at the start so the first leg does not cross a city
+ * whose crowd has not formed.
+ */
+
+import type { LegStep } from "./driver.js";
+
+export interface Leg {
+  /** Directory under the lane root, and the prefix of every frame in it. */
+  name: string;
+  /** The half of the criterion this leg is here to judge. */
+  purpose: string;
+  /** What the frames should show, from the measurements above. */
+  expectation: string;
+  /**
+   * Capture every step, or only every Nth.
+   *
+   * 1 is the default and is what a flicker judgement needs. A larger stride
+   * keeps a long movement affordable and is recorded in the manifest, because a
+   * frame pair 3 seconds apart answers a different question from one 0.7 seconds
+   * apart and the reader has to know which they are looking at.
+   */
+  captureEvery: number;
+  /** The steps, in order. */
+  steps: readonly LegStep[];
+  /**
+   * The least clearance under the camera this leg will accept, metres.
+   *
+   * A floor and not a target: `holdClearance` only ever raises the camera, and
+   * `standAt` is the aim. The street legs say 2 m because the camera stands 3 m
+   * above the footway — a floor above the aim would fight it.
+   */
+  minClearanceM: number;
+  /** Do not let this leg finish before the population reaches this tick. */
+  holdToTick?: number;
+  /**
+   * The largest right-button drag one step of this leg may emit, CSS pixels.
+   *
+   * What a drag can afford is a property of the pose: at 620 m, 28 px buys 18 m of
+   * target travel and at 28 m it buys 1.4 m. An earlier version of this lane
+   * capped this at 28 px for every leg and recorded the cost — a 120 m crossing
+   * leg became 13 m — so the limit is per leg and the plan says which.
+   */
+  panLimitPx: number;
+  /** A note for the manifest about what this leg's pan is doing. */
+  panNote: string;
+}
+
+/** Where the app opens: `INITIAL_VIEW` in `src/render/camera.ts`, restated. */
+export const OPENING_AZIMUTH = Math.PI * 0.25;
+export const OPENING_DISTANCE_M = 620;
+
+/**
+ * The crowd: the densest knot of moving pedestrians the aim measurement found.
+ *
+ * Measured against the default seed's dump, and re-measurable:
+ * `node artifacts/flythrough2/aim.ts artifacts/probe-seed-default.json` scores
+ * every candidate camera on a walking way by the number of *distinct positions*
+ * in frame and by how many of them are moving, because the population stacks
+ * several bodies on one position and a camera sees positions.
+ */
+export const CROWD_TARGET = Object.freeze({ x: -431, z: -466 });
+/** A walking way 30 m south-east of the knot, where the camera stands. */
+export const CROWD_CAMERA = Object.freeze({ x: -455, z: -412 });
+export const CROWD_AZIMUTH = Math.atan2(CROWD_CAMERA.x - CROWD_TARGET.x, CROWD_CAMERA.z - CROWD_TARGET.z);
+export const CROWD_STAND_M = 3;
+
+/** A point on the way back to the crossing, which the ascent pans through. */
+export const ASCENT_WAYPOINT = Object.freeze({ x: -110, z: -120 });
+
+/**
+ * A ladder of distances and heights that holds one polar angle.
+ *
+ * The controls' target cannot be moved vertically, so the camera's height above
+ * the ground is bought by the polar angle and the distance together: with
+ * `camera.y - target.y = distance * cos(polar)`, a leg that halves its distance
+ * while holding its angle halves the camera's height above the target — and above
+ * a target at 15.2 m over ground that runs from 7 m to 39 m, that is not the
+ * height the plan asked for.
+ *
+ * This ladder is the fix: every rung is computed from the height the leg wants
+ * above the ground, so the polar angle barely changes along it and the vertical
+ * control's corrections stay inside one step instead of fighting a descent.
+ *
+ * `TARGET_Y_M` is the app's own `GROUND_AT_ORIGIN_M` from
+ * `src/world/scene-data.ts`, restated here because a plan written against the
+ * wrong datum aims at the wrong height — and because the spec asserts every
+ * frame's target height against it, which is how a frame whose camera was set
+ * rather than driven is caught.
+ */
+export const TARGET_Y_M = 15.2;
+
+function ladder(distances: readonly number[], heights: readonly number[]): readonly { distance: number; standM: number }[] {
+  if (distances.length !== heights.length) {
+    throw new Error(
+      `A leg's ladder has ${distances.length} distances and ${heights.length} heights, so the two lists describe ` +
+        "different flights. They are written as one rung per step on purpose: a rung missing a height is a step that " +
+        "holds the angle and therefore does not hold the height it claims.",
+    );
+  }
+  return distances.map((distance, index) => ({ distance, standM: heights[index]! }));
+}
+
+/**
+ * Leg 1: the opening aerial travel, from over the crossing to over the crowd.
+ *
+ * The camera starts where the app opens — 620 m out at 45 degrees over the
+ * crossing, 543 m up — and the leg does three things at once: it zooms out to the
+ * whole area of interest and back in to 170 m, it pans the target 700 m
+ * north-west onto the crowd's corner, and it holds the bearing. Holding the
+ * bearing is not laziness: at 620 m the camera stands 543 m from its target on the
+ * 45-degree diagonal, so a target 700 m north-west with a bearing swung towards
+ * it would carry the camera out of the built scene, and a frame of the edge of the
+ * mesh is not a frame of this city. With the bearing held the camera flies the
+ * diagonal over the middle of the map and the crowd arrives from the south-east.
+ *
+ * The first step is the only one that moves nothing in the ground plane: it is the
+ * zoom out to the whole box, 675 m above the ground, and it is the frame that says
+ * whether the district reads as a city from the air before the flight starts.
+ */
+const OVERVIEW_LADDER = ladder(
+  [620, 950, 760, 600, 470, 370, 290, 220, 175, 170, 170],
+  [543, 675, 540, 425, 330, 260, 205, 155, 124, 60, 60],
+);
+const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => {
+  const t = Math.min(1, index / 8);
+  const previous = index === 0 ? OPENING_DISTANCE_M : OVERVIEW_LADDER[index - 1]!.distance;
+  return {
+    panToX: CROWD_TARGET.x * t,
+    panToZ: CROWD_TARGET.z * t,
+    zoom: rung.distance / previous,
+    standAtM: rung.standM,
+    standStepRad: 0.25,
+    turnToAzimuth: OPENING_AZIMUTH,
+    note:
+      index === 0
+        ? `the app's own opening pose, zooming out to ${rung.distance.toFixed(0)} m and ${rung.standM} m up`
+        : `flying north-west: target (${(CROWD_TARGET.x * t).toFixed(0)}, ${(CROWD_TARGET.z * t).toFixed(0)}), ` +
+          `${rung.distance.toFixed(0)} m out, ${rung.standM} m up`,
+  };
+});
+
+/**
+ * Leg 2: the descent and the swing that puts the camera on the crowd's side.
+ *
+ * Two movements at once, and they have to be ordered. The distance falls from
+ * 170 m to 30 m and the height from 60 m to 3 m over the first six steps while
+ * the bearing is still held, because a camera 170 m out that swings before it
+ * closes would leave the area of interest; then the bearing swings 172 degrees
+ * over the last six, where the camera is under 60 m out and the circle it turns
+ * on is small. The stand heights are a ladder down the descent, so the camera
+ * arrives at the footway rather than over the roofs.
+ */
+const APPROACH_LADDER = ladder(
+  [170, 140, 115, 95, 78, 64, 52, 43, 37, 33, 30, 30],
+  [60, 48, 38, 30, 23, 17, 12, 8.5, 6, 4.5, 3.5, 3],
+);
+const APPROACH_STEPS: readonly LegStep[] = APPROACH_LADDER.map((rung, index) => {
+  const previous = index === 0 ? 170 : APPROACH_LADDER[index - 1]!.distance;
+  // The long way round, expressed as a rising angle, so the swing is one
+  // direction and the driver's own shortest-angle arithmetic agrees with it.
+  const swing = index < 6 ? 0 : (index - 5) / 6;
+  const azimuth = OPENING_AZIMUTH + (CROWD_AZIMUTH + 2 * Math.PI - OPENING_AZIMUTH) * swing;
+  return {
+    panToX: CROWD_TARGET.x,
+    panToZ: CROWD_TARGET.z,
+    zoom: rung.distance / previous,
+    turnToAzimuth: azimuth,
+    turnStepRad: 0.5,
+    standAtM: rung.standM,
+    standStepRad: 0.2,
+    note:
+      swing === 0
+        ? `descending to ${rung.distance.toFixed(0)} m and ${rung.standM} m up, bearing still held`
+        : `descending to ${rung.distance.toFixed(0)} m and ${rung.standM} m up, swinging to ` +
+          `${((azimuth * 180) / Math.PI).toFixed(0)} deg`,
+  };
+});
+
+/**
+ * Leg 3: the crowd at three metres, then six frames the camera does not move for.
+ *
+ * The first six steps push the target 1.2 m a step away from the camera along the
+ * line between them, which the camera follows: a slow push from 30 m into 23 m,
+ * about 4 cm of frame per step, which is the closest a 3 m eye height can come
+ * without the crowd's own depth filling the frame with nothing but shoulders.
+ *
+ * The last six ask for nothing at all. That is deliberate and it is a different
+ * measurement inside the same sequence: with the camera at rest and the population
+ * still stepping, every change between those frames is the scene's own, so
+ * flicker there is flicker with the camera's motion ruled out and a figure that
+ * does not hold its shape is visible as itself. The damping tail is bounded and
+ * recorded — `cameraTravelM` per frame — rather than assumed to be zero.
+ */
+const CROWD_PUSH_M = 1.2;
+const CROWD_STEPS: readonly LegStep[] = [
+  ...Array.from({ length: 6 }, (_, index) => {
+    const push = CROWD_PUSH_M * (index + 1);
+    const direction = {
+      x: (CROWD_TARGET.x - CROWD_CAMERA.x) / 30,
+      z: (CROWD_TARGET.z - CROWD_CAMERA.z) / 30,
+    };
+    return {
+      panToX: CROWD_TARGET.x + direction.x * push,
+      panToZ: CROWD_TARGET.z + direction.z * push,
+      zoom: 1,
+      turnToAzimuth: CROWD_AZIMUTH,
+      standAtM: CROWD_STAND_M,
+      note: `pushing in towards the crowd (${index + 1}/6), ${push.toFixed(1)} m`,
+    };
+  }),
+  ...Array.from({ length: 6 }, () => ({
+    zoom: 1,
+    turnToAzimuth: CROWD_AZIMUTH,
+    standAtM: CROWD_STAND_M,
+    note: "held: the camera asks for nothing, the population does not",
+  })),
+];
+
+/**
+ * Leg 4: the climb out, and the pan home.
+ *
+ * The first four steps turn the camera from the crowd back towards the crossing
+ * while it climbs, and the distance grows from 24 m to 620 m over the last seven
+ * with the target panning back across the district. The turn happens first for the
+ * reason leg 2 reverses it: at 24 m a whole turn only moves the camera round a
+ * 24 m circle, so it costs nothing and cannot leave the scene, and at 620 m the
+ * same turn would be a 620 m sweep of the camera's position.
+ *
+ * The camera ends where the app opened — 620 m out at 45 degrees over the
+ * crossing — so the flight is a closed loop and the last frame is comparable with
+ * the first.
+ */
+const ASCENT_LADDER = ladder(
+  [24, 30, 45, 75, 130, 210, 300, 400, 490, 570, 620],
+  [3, 5, 9, 16, 28, 45, 65, 85, 100, 110, 110],
+);
+const ASCENT_STEPS: readonly LegStep[] = ASCENT_LADDER.map((rung, index) => {
+  const previous = index === 0 ? 24 : ASCENT_LADDER[index - 1]!.distance;
+  const t = Math.min(1, Math.max(0, (index - 2) / 8));
+  const azimuth =
+    index < 4
+      ? CROWD_AZIMUTH + (OPENING_AZIMUTH + 2 * Math.PI - CROWD_AZIMUTH) * ((index + 1) / 4)
+      : OPENING_AZIMUTH;
+  return {
+    panToX: CROWD_TARGET.x + (ASCENT_WAYPOINT.x - CROWD_TARGET.x) * t,
+    panToZ: CROWD_TARGET.z + (ASCENT_WAYPOINT.z - CROWD_TARGET.z) * t,
+    zoom: rung.distance / previous,
+    turnToAzimuth: azimuth,
+    turnStepRad: 0.6,
+    standAtM: rung.standM,
+    standStepRad: 0.25,
+    note: `climbing to ${rung.distance.toFixed(0)} m and ${rung.standM} m up, bearing ${((azimuth * 180) / Math.PI).toFixed(0)} deg`,
+  };
+});
+
+export const LEGS: readonly Leg[] = Object.freeze([
+  {
+    name: "overview",
+    purpose:
+      "The aerial half of the flight: a continuous travel across the district with the whole city in frame, where " +
+      "roof lines, facades, the road surface and the bloom are judged as they slide, and where the whole km box " +
+      "appears once at the widest zoom.",
+    expectation:
+      "620 m out over the crossing at 543 m up, zooming out to the whole box at 675 m, then panning 700 m " +
+      "north-west to the crowd's corner while the distance falls to 170 m and the height to 60 m. The crossing and " +
+      "its towers slide out of frame as the boundary knots come in.",
+    captureEvery: 1,
+    minClearanceM: 40,
+    holdToTick: 1_200,
+    panLimitPx: 200,
+    panNote: "one long drag a step, affordable because the camera is 170-950 m from its target",
+    steps: OVERVIEW_STEPS,
+  },
+  {
+    name: "approach",
+    purpose:
+      "The aerial-to-street transition with a vertical axis, and the swing that puts the camera on the crowd's side: " +
+      "the hardest thing in this lane for the tile traversal, the ambient occlusion and the bloom, and the leg where " +
+      "a strobing light or a swimming shadow would be most visible.",
+    expectation:
+      "170 m to 30 m and 60 m up to 3 m over twelve steps, then a 172 degree swing onto the crowd while the camera " +
+      "is under 60 m out. The frame should open on the district from 60 m up and close on a footway at eye height, " +
+      "with the crowd arriving from a texture into people.",
+    captureEvery: 1,
+    minClearanceM: 2,
+    panLimitPx: 60,
+    panNote: "the target is already on the crowd, so the pan only holds it there",
+    steps: APPROACH_STEPS,
+  },
+  {
+    name: "crowd",
+    purpose:
+      "The crowd in motion at 3 m, which is the point of this lane: whether figures hold their shape between frames, " +
+      "whether they interpenetrate, whether feet slide or float, and whether a crowd reads as a crowd rather than as " +
+      "scattered props.",
+    expectation:
+      "Twelve frames from 30 m to 23 m at 3 m above the footway, looking at a knot of moving pedestrians with more " +
+      "behind them. Six steps push the camera 7.2 m in; six ask for nothing, so any change between them is the " +
+      "population's own.",
+    captureEvery: 1,
+    minClearanceM: 2,
+    panLimitPx: 60,
+    panNote: "slow drags: 1.2 m a step at 30 m is about 20 px",
+    steps: CROWD_STEPS,
+  },
+  {
+    name: "ascent",
+    purpose:
+      "Street to aerial in one movement: the turn at close range, then a climb with the vertical control on a rising " +
+      "ladder, so the neon that filled the frame becomes a city of lights and the bloom is judged as the mip chain " +
+      "and the exposure change.",
+    expectation:
+      "24 m to 620 m over eleven steps with the camera standing 3 to 110 m above the ground, the bearing turning " +
+      "home over the first four and the target panning back across the district over the last eight. Roof level " +
+      "about step 5; the whole city in frame from step 8.",
+    captureEvery: 1,
+    minClearanceM: 2,
+    panLimitPx: 200,
+    panNote: "long drags again as the camera climbs: the target travels about 700 m home",
+    steps: ASCENT_STEPS,
+  },
+]);
+
+/**
+ * The URL this lane captures from.
+ *
+ * `?agents=1` is the population switch and this lane is judged with the
+ * population running. **No `?seed=` and that is deliberate**: `populationFromQuery`
+ * falls back to the scene seed unless the query carries one, so a run at
+ * `?seed=9137` seeds the world and the population together and a route aimed at
+ * one of them is aimed at neither. An earlier version of this lane captured at
+ * `?seed=9137` and aimed its close legs at a footway measured at a population the
+ * browser was not drawing.
+ *
+ * `time=dusk` is not a preference: the post-chain criterion this lane feeds is
+ * written against the dusk preset, the one whose bloom carries the neon, and the
+ * frames have to be at that preset for the "holds still over a moving sequence"
+ * half of it to be judgeable at all. `style=satellite` is the style with
+ * photographic materials, which is what a judgement about shimmer and crawl on
+ * facades needs.
+ */
+export const CAPTURE_QUERY = "?agents=1&style=satellite&time=dusk";
+
+/** The values `CAPTURE_QUERY` is expected to produce, checked before capture. */
+export const EXPECTED_LIGHTING_PRESET = "dusk";
+export const EXPECTED_POPULATION = Object.freeze({ pedestrians: 3_000, vehicles: 200 });
+
+/**
+ * The floor every leg's frames are checked against, over and above the pose.
+ *
+ * The city must actually be on screen and it must be inhabited: a frame of a
+ * building wall at 3 m is a frame that judged nothing, and a flight through an
+ * empty city answers nothing about the population criteria this lane feeds. The
+ * numbers are floors and not targets, and they are recorded per frame so a run
+ * that scrapes past one is visible as one.
+ */
+export const FRAME_FLOORS = Object.freeze({
+  /** Drawn pedestrians in the frame's own record, at the far level or nearer. */
+  pedestriansDrawn: 100,
+  /** Drawn vehicles. The fleet is small at the ticks this lane captures. */
+  vehiclesDrawn: 1,
+  /** Fraction of the frame's pixels with a luminance deviation above 12. */
+  structuredPixels: 0.05,
+});
+
+/** Frames the plan intends, which is what the ledger promises. */
+export const TOTAL_STEPS = LEGS.reduce((total, leg) => total + leg.steps.length, 0);
