@@ -177,15 +177,47 @@ export function populationSettings(overrides: Partial<PopulationSettings> = {}):
  * 9137 gave 2,487 and 95. Two lanes reasoned from that mismatch before it was found,
  * so the seed is now read from the same query the scene reads it from, with the same
  * fallback: an unparseable value falls back rather than seeding with NaN.
+ *
+ * **`?pedestrians=` and `?vehicles=` make the population a variable.** The frame
+ * budget is written in two counts — 3,000 pedestrians and 200 vehicles — and until
+ * this seam existed the only population a URL could ask for was all-or-nothing, so
+ * "does 1080p hold 60 fps at 3,000" had no curve under it: a pass or a fail and no
+ * way to say which population is the largest that fits. They default to the shipped
+ * `DEFAULT_POPULATION_SETTINGS`, so `?agents=1` is unchanged, and a value that is
+ * not a whole count is refused by name rather than parsed into a population nobody
+ * asked for. `?agents=0` together with either one is refused too, because the scene
+ * would draw whichever of the two won.
  */
 export function populationFromQuery(query: string, sceneSeed: number): PopulationSettings {
   const parameters = new URLSearchParams(query);
   const requested = parameters.get("agents");
-  if (requested === null) return populationSettings({ pedestrians: 0, vehicles: 0 });
-  if (requested !== "0" && requested !== "1") {
+  const overrides: { pedestrians?: number; vehicles?: number } = {};
+  for (const key of ["pedestrians", "vehicles"] as const) {
+    const raw = parameters.get(key);
+    if (raw === null) continue;
+    const value = Number.parseInt(raw, 10);
+    if (!Number.isFinite(value) || String(value) !== raw.trim() || value < 0) {
+      throw new Error(
+        `?${key}=${raw} is not a population count. It takes a non-negative whole number of actors; ` +
+          `the acceptance population is ?agents=1, which is 3,000 pedestrians and 200 vehicles.`,
+      );
+    }
+    overrides[key] = value;
+  }
+  if (requested === null && Object.keys(overrides).length === 0) return populationSettings({ pedestrians: 0, vehicles: 0 });
+  if (requested !== null && requested !== "0" && requested !== "1") {
     throw new Error(`"${requested}" is not a population setting this scene knows. ?agents= takes 0 (population off, the appearance sweep) or 1 (the default populated run).`);
+  }
+  if (requested === "0") {
+    if (Object.keys(overrides).length > 0) {
+      throw new Error(
+        "?agents=0 switches the population off and ?pedestrians=/&vehicles= ask for one at the same time. " +
+          "The scene would draw whichever of the two won, so the pair is refused here rather than resolved quietly.",
+      );
+    }
+    return populationSettings({ pedestrians: 0, vehicles: 0 });
   }
   const parsedSeed = Number(parameters.get("seed"));
   const seed = Number.isFinite(parsedSeed) && parameters.get("seed") !== null ? parsedSeed : sceneSeed;
-  return populationSettings(requested === "0" ? { pedestrians: 0, vehicles: 0 } : { seed });
+  return populationSettings({ ...overrides, seed });
 }
