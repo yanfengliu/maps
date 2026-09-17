@@ -684,3 +684,41 @@ Restoring the call: `39 passed`, exit status 0, 7.9 s. Two smaller mutations pin
 **Bound.** The digest folds in each file's path under its root and the SHA-256 of its bytes, so a file added, removed or edited under those roots moves it and no timestamp, size or inode is covered. It is taken at two instants, so a file changed and changed back between them is invisible — the same bound the scene digest states. It covers the chain's own instrument and not the app: `src/**` reaches the frames only through `dist/`, which the build hashes bind; `data/**` is the scene digest's; `package.json`'s chain order is pinned by the unit case in this file; the other lanes under `tools/` are never run by this chain; and the Draco decoder served from `node_modules` is bound by nothing here. It is a refusal to certify an unbound run rather than a claim that the frames are wrong: a commit landing mid-capture cannot change specs Playwright already loaded, and the message says so. Its cost is one read of about 191 KB across 22 files per call, twice per gate run. A run begun by a wrapper older than this check carries no `harness` key and is now refused at `--end` rather than certified without it, so this landing must not reach `main` before the capture in flight certifies.
 
 
+## The human bake is checked as a set, and every way it can be wrong is a case
+
+**Gate:** `npm run data:agents:set` — `tools/agents/verify-human-set.ts`, the inventory the post-capture runbook asks for before the delivered set is trusted. Unit cases: `test/agent-human-set.test.ts`, 14 cases over a synthetic 33-file tree built under the system temp directory, with the CLI's two exit codes asserted through a subprocess.
+
+**Landed:** on branch `worker/human-set-verify` off `a5d2047`. It has not been merged and has not been run against a real bake: `data/scene/agents` holds no human set, and nothing may write into a served mount while the verdict capture that owns the machine is running. What is proved here is that the check goes red on every defect class it claims to catch, on a tree built to be correct.
+
+**Why.** The runbook restores the set with `npm run data:agents` and then says "verify the bake rather than assuming it": 3 variants x 3 LODs x {glb, positions.f16, normals.f16} plus 3 manifests and 3 source blends = 33 files, and `src/world/agent-assets.ts` requests the three manifests by name. That check existed only as a paragraph, and the set is what a worktree removal destroyed on 2026-09-16 when it followed a `data/` junction into the primary — `data:agents` is not in `data:setup`, so the rebuild could not restore it.
+
+**Mutation:** twelve runs of the CLI, each from the same complete synthetic set with one change. Green: no change, `exit 0`, `33 of 33 files on disk`, 0 findings. Red, `exit 1` each, with the finding it named:
+
+A second mutation attacks the verdict itself rather than the tree, and it is the one `test/agent-human-set.test.ts` is watched against: `checkHumanSet` made to return `complete: true` whenever the directory listed and carried no top-level finding — the shape of a check that reports a set it did not examine. `npx tsc --noEmit` exit 0 under it, so it is a real red and not a broken build, and `npx vitest run test/agent-human-set.test.ts` exits 1 with **9 of 14 red**, every one of them `AssertionError: expected true to be false // Object.is equality`, including the subprocess case at `AssertionError: expected +0 to be 1 // Object.is equality` — the CLI answering `exit 0` for a set with a file missing. The one case that stays green is the stray-file case, which is correct: that set is still complete. Restoring the tool: `14 passed`, 1.4 s.
+
+```
+commuter-male-medium-normals.f16: commuter-male-medium-normals.f16 is missing, and commuter-male.json names
+  it as the medium normals of commuter-male. Run npm run data:agents to bake it into <root>.
+office-male-far.glb: office-male-far.glb is empty, and office-male.json names it as the far model of
+  office-male, so that LOD cannot be loaded from it. An interrupted bake leaves whole files at zero bytes.
+commuter-female.json: commuter-female.json is not valid JSON: Unexpected end of JSON input.
+office-male-medium-positions.f16: office-male-medium-positions.f16 digests fb4ed9a7…; office-male.json
+  records 000…0 for office-male/medium positions. src/agents/render/assets.ts verifies that digest at load
+  and refuses the asset, so office-male/medium cannot render from this set.
+office-male/medium.positionSha256: office-male.json records "not-a-digest" as the positions digest of
+  office-male/medium; a SHA-256 is 64 lowercase hexadecimal characters.
+commuter-female/near.bytes: commuter-female.json records 999999 bytes for commuter-female/near and its
+  three files are 8312 bytes together.
+commuter-male/far: commuter-male.json declares no far LOD, and src/agents/render/humans.ts loads near,
+  medium and far for every variant: it throws "Human commuter-male has no far LOD" at startup.
+office-male-source.blend: office-male-source.blend is missing, and tools/agents/build-human.py writes it
+  into <root> before tools/agents/bake-human.py reopens it per LOD.
+office-male/near.model: near.model is "models/office-male-near.glb", which is a path and not a file name
+  beside the manifest. The runtime loads it as "/scene/agents/models/office-male-near.glb", which no file satisfies.
+Human agent set INCOMPLETE: 30 of 33 files on disk, 3 named problems above; failed commuter-male/near,
+  office-male/medium, commuter-female/far. Run npm run data:agents to rebuild the set, then run this check again.
+```
+
+Two of those reds are defects in the check rather than in the tree, and both were found by running it rather than by reading it. `bytes` is written by `bake-human.py` as the three files added together and was first compared with each file's own size, which produced **27 findings across all 9 LODs of a correct bake** — a false red that would have buried every real finding; it is now checked against the sum. A digest field that was present but not 64 hex characters was read as "nothing recorded" and skipped, so a manifest carrying `"not-a-digest"` **passed**; the field is now three-valued and the malformed case is a finding. The first is the report inventing failures, the second is the report printing "did not run" as "passed".
+
+**Bound.** The inventory is the whole claim: it proves the 33 files exist, are non-empty, parse, and that every file a manifest names sits beside it at the digest the manifest records. It does not decode a GLB, read a half float, or measure a silhouette, a gait, a frame rate or a source blend's contents — a truncated `.blend` passes. The stronger contract on a populated directory is `tools/agents/verify.ts` (VAT half floats, stance contact, the shipping admission gate) and `tools/agents/manifests.ts` (`drawParts` re-derived from the delivered GLBs); neither is subsumed here, and this check exists to refuse an incomplete set before either of them loads one. It requires the `near`/`medium`/`far` ids and the three variant ids the bake writes, while the file each manifest names is what gets checked, so a set that renames an asset without renaming it in the manifest fails and a set using another naming convention passes. Files it does not name are listed and do not fail the set, because the vehicle fleet is published into the same directory; a file named the way the bake names its output but absent from the set is a finding. It reads nothing under `data/agents/source` and runs no bake, so a complete output set passes with its sources deleted.
