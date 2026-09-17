@@ -1,8 +1,8 @@
 /**
  * harness: the frame interval at 1920x1080 as a function of the drawn population,
- * on the hardware renderer, through the real input path. Not evidence: a hardware
+ * on the hardware renderer, through the real input path. Not evidence: an
  * iteration lane with no certificate, and `tools/visual/verify-output.ts` refuses
- * the `hardware-iteration` lane by name.
+ * the `frame-budget` lane by name.
  *
  * **Why this exists.** `frame-budget.spec.ts` measures the acceptance state and
  * finds it does not hold 60 fps. "It does not hold" is only half an answer: the
@@ -143,7 +143,7 @@ test("the population sweep: the frame interval against the drawn population", as
   const path = writeResult("sweep.json", {
     lane: "frame-budget",
     certifiable: false,
-    evidence: "not evidence: a hardware iteration lane with no certificate, refused by tools/visual/verify-output.ts",
+    evidence: "not evidence: an iteration lane with no certificate, refused by tools/visual/verify-output.ts",
     spec: "tools/frame-budget/sweep.spec.ts",
     viewport: { width: 1920, height: 1080 },
     renderer: (await page.evaluate(() => window.__mapsHarness?.status().glRenderer ?? null)),

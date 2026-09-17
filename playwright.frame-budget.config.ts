@@ -4,8 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
  * The frame-budget lane: what interval the delivered app actually holds at the
  * acceptance state, on the GPU.
  *
- * This is a hardware iteration lane, and the repository's rules for one apply to
- * it in full:
+ * This is an iteration lane, and the repository's rules for one apply to it in
+ * full:
  *
  * - it names its renderer. `MAPS_VISUAL_GPU=hardware` is what makes
  *   `tools/visual/orbit.ts` throw by name instead of accepting a silent software
@@ -14,19 +14,21 @@ import { defineConfig, devices } from "@playwright/test";
  * - it writes under its own ignored directory, `artifacts/frame-budget/`, named
  *   explicitly by the spec rather than resolved through `laneDir()`;
  * - `tools/visual/verify-output.ts` refuses it, because the lane runs under
- *   `hardware-iteration`, so no `complete.json` can ever name these numbers and
- *   nothing here is pixel evidence.
+ *   `frame-budget`, so no `complete.json` can ever name these numbers and nothing
+ *   here is pixel evidence. Since the appearance lane moved to the GPU, what keeps
+ *   this lane out of the certificate is the run rather than the renderer: it
+ *   measures intervals instead of capturing the 44-frame set.
  *
  * The 1920x1080 viewport is the lane's own and not `CAPTURE_VIEWPORT`: the target
  * in `src/world/frame.ts` is written at 1920x1080, and the spec asserts the
  * drawing buffer's size before it times anything, so a run that somehow got
  * another size fails by name instead of quoting its number as 1080p.
  *
- * Port 4335 is this lane's own. 4319 is the verdict gate's server, 4320 the
- * hardware lane's, 4321 the populated lane's, 4322 the render-defects lane's,
- * 4330 and 4331 the frame-time lane's, and 4329 was observed held by another
- * process on this machine. `reuseExistingServer: false` means a stale server is a
- * failure rather than something to attach to.
+ * Port 4335 is this lane's own. 4319 is the verdict gate's server, 4321 the
+ * populated lane's, 4322 the render-defects lane's, 4330 and 4331 the frame-time
+ * lane's, and 4329 was observed held by another process on this machine.
+ * `reuseExistingServer: false` means a stale server is a failure rather than
+ * something to attach to.
  *
  * It does **not** own a build step. The lane measures whatever `dist/` the preview
  * server is serving, and every result carries the SHA-256 of those bytes, so a
@@ -39,7 +41,7 @@ const PREVIEW_URL = "http://127.0.0.1:4335";
 // launch cannot leave the lane out. Without it the renderer check in
 // `tools/visual/orbit.ts` is skipped, and a software frame could be reported as a
 // hardware one.
-Object.assign(process.env, { MAPS_VISUAL_LANE: "hardware-iteration", MAPS_VISUAL_GPU: "hardware" });
+Object.assign(process.env, { MAPS_VISUAL_LANE: "frame-budget", MAPS_VISUAL_GPU: "hardware" });
 
 export default defineConfig({
   testDir: "./tools/frame-budget",

@@ -4,24 +4,28 @@
  * It is not the gate and it does not write `complete.json`. It exists so the
  * dusk post chain can be driven and photographed on the renderer the question is
  * about, where a frame costs 16.7 ms over D3D11 instead of SwiftShader's p50 of
- * 2,416 ms, while the verdict lane's 44 frames stay on SwiftShader and untouched.
+ * 2,416 ms, and so both renderers that capture the deliverable can be asked the
+ * same question. Since 2026-09-17 the verdict lane's own 44 frames are drawn on
+ * the hardware renderer too, so the arms here are about the post chain's answer,
+ * not about which renderer the gate uses.
  *
  * Two arms, because the defect this lane was built for turned out to be a
  * question about frame counts and the answer had to be the same on both
  * renderers that capture the deliverable:
  *
  * - `hardware` (the default) — `--use-angle=d3d11`, port 4330.
- * - `software` — SwiftShader, port 4331, the verdict lane's own launch shape
- *   copied rather than invented. It is a separate port on purpose: the two arms
- *   must never attach to each other's preview server, because a run that did
- *   would report one renderer's numbers under the other's name.
+ * - `software` — SwiftShader, port 4331, the launch shape this repository used
+ *   for the verdict lane until 2026-09-17, kept here because the question is
+ *   about the renderer rather than about the gate. It is a separate port on
+ *   purpose: the two arms must never attach to each other's preview server,
+ *   because a run that did would report one renderer's numbers under the other's
+ *   name.
  *
  * An unrecognised arm throws instead of defaulting, the same refusal
  * `tools/visual/lane.ts` makes for an unknown lane.
  *
- * Ports: 4319 is the verdict and lifecycle lane's, 4320 the hardware iteration
- * lane's, 4321 the populated lane's, 4322 the render-defects lane's, 5319 the
- * dev server's.
+ * Ports: 4319 is the verdict and lifecycle lane's, 4321 the populated lane's,
+ * 4322 the render-defects lane's, 5319 the dev server's.
  */
 
 import path from "node:path";

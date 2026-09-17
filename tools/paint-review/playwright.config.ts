@@ -10,21 +10,22 @@
  *
  * - **Not the verdict lane.** It never writes into `artifacts/visual/` and
  *   produces no `complete.json`; it has its own evidence root. The 44-frame
- *   SwiftShader set stays the only reviewable appearance set, for the reason
+ *   certified set stays the only reviewable appearance set, for the reason
  *   `tools/visual/lane.ts` gives.
- * - **Not the hardware iteration lane.** That lane runs the sweep and hero poses
- *   through `tools/visual`; this one runs three poses aimed at the crossing at
- *   1:1 and adds a reference decode and an analysis on top.
+ * - **Not the appearance lane.** That lane runs the sweep and hero poses through
+ *   `tools/visual` at 1280x720; this one runs three poses aimed at the crossing
+ *   at 1:1 and adds a reference decode and an analysis on top.
  * - **Not comparable across renderers, and it does not need to be.** A crop of
  *   this lane's frames is evidence about *this lane's bytes*, named by digest in
- *   the review it feeds. The renderer is recorded and refused by name, the same
- *   way `playwright.hardware.config.ts` does it, so a silent software fallback
- *   cannot be reported as a hardware frame.
+ *   the review it feeds. The renderer is recorded and refused by name through
+ *   `HARDWARE_RENDERER_DENYLIST`, the same predicate `playwright.config.ts` and
+ *   the lifecycle lane use, so a silent software fallback cannot be reported as a
+ *   hardware frame.
  * - **Not a certificate.** There is no artifact here a later reader could
  *   mistake for a gate result.
  *
- * Port 4331: 4319 is the verdict gate's server, 4320 the hardware iteration
- * lane, 4321 the populated lane and 4322/4323 two further lanes. 4324 and 4329
+ * Port 4331: 4319 is the verdict gate's server, 4321 the populated lane and
+ * 4322/4323 two further lanes. 4324 and 4329
  * were both already held by other lanes' node processes when this one was first
  * run, which is exactly the condition this paragraph exists for — a lane must
  * take a port no other lane uses rather than the next number after the last one

@@ -15,21 +15,40 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
  */
 const PREVIEW_URL = "http://127.0.0.1:4319";
 
+// Declared here rather than left to the launch flags, exactly as the iteration
+// lanes do it: `MAPS_VISUAL_GPU=hardware` is what makes `tools/visual/orbit.ts`
+// throw by name when Chromium reports a renderer that is not this machine's GPU,
+// so a silent software fallback fails at the first frame with a message about the
+// renderer rather than producing 44 CPU frames that look like a capture.
+Object.assign(process.env, { MAPS_VISUAL_GPU: "hardware" });
+
 export default defineConfig({
   testDir: "./tools/visual",
   outputDir: "./artifacts/playwright",
-  // This is the pixel lane: the 44-frame sweep and hero capture, on SwiftShader,
-  // where a frame is comparable across machines. The lifecycle check is a
-  // different question on a different renderer and runs in its own invocation
-  // (playwright.lifecycle.config.ts), so it is excluded here. There is
-  // deliberately no switch that could move this lane to hardware: a pixel set
-  // captured on one renderer cannot inherit a review written for another.
+  // This is the appearance lane: the 44-frame sweep and hero capture, plus the
+  // style-picker fixture, on the hardware renderer since the owner's 2026-09-16
+  // instruction ("if you can use GPU, don't use CPU").
   //
-  // `smoke.spec.ts` is excluded for a third reason, and this was a real defect
-  // when it was missing: it lives in this directory, so without this line the
-  // pixel lane collects it and a three-hour evidence run silently gains a fourth,
-  // unplanned spec. It asserts preconditions and captures nothing, and it belongs
-  // to `playwright.smoke.config.ts` alone. Measured by round 31's review, 2026-09-16.
+  // It ran on SwiftShader until that instruction, on the argument that a pixel
+  // set captured on one renderer cannot inherit a review written for another, and
+  // the argument cost about a fifty-fold tax: measured 2026-09-17, a 1280x720
+  // frame cost 302.4 s on the software lane against 16.7 ms for the same pose on
+  // the RTX 4090, and the capture held 7.7 of 32 cores continuously while the GPU
+  // sat idle. The frames were never compared across machines — the gate checks
+  // that they are distinct, non-blank, freshly timestamped and pose-recorded, and
+  // the reviews are by eye at native resolution — so what the software renderer
+  // bought was machine-independent bytes that nothing read. What pays for that
+  // now is the certificate: it names the renderer, the GPU and the driver version
+  // (`tools/visual/gpu-identity.ts`), and every review stays bound to the digest
+  // of the frames it inspected.
+  //
+  // The lanes are no longer split by renderer. `lifecycle.spec.ts` keeps its own
+  // config because it is a different question with its own timings, and this line
+  // is still load-bearing for `smoke.spec.ts`: it lives in this directory, so
+  // without it the appearance lane collects it and a capture run silently gains a
+  // fourth, unplanned spec. It asserts preconditions and captures nothing, and it
+  // belongs to `playwright.smoke.config.ts` alone. Measured by round 31's review,
+  // 2026-09-16.
   testIgnore: ["lifecycle.spec.ts", "smoke.spec.ts"],
   // A per-test budget of two minutes, and the reason is measured rather than
   // defensive habit. On 2026-09-16 the 30-second default killed a three-hour run
@@ -44,20 +63,32 @@ export default defineConfig({
   //
   // This weakens nothing: no assertion changes, no retry is added, `maxFailures: 1`
   // still stops the lane at the first real failure, and the specs that need more
-  // than two minutes already set their own budget — `hero.spec.ts` runs for an
-  // hour. What it buys is that a loaded machine cannot convert a scheduling problem
-  // into a red gate whose message blames the pixels.
+  // than two minutes already set their own budget — `hero.spec.ts` carries
+  // `HERO_TEST_BUDGET_MS`, a software-pace backstop the hardware lane no longer
+  // needs and keeps as one. What it buys is that a loaded machine cannot convert a
+  // scheduling problem into a red gate whose message blames the pixels.
   timeout: 120_000,
-  // The sweep is one continuous camera path through one page. Splitting it
-  // across workers would mean several browsers fighting for a software
-  // rasteriser and would not make it faster.
-  workers: 1,
+  // The three specification files are independent: `hero.spec.ts` drives one page
+  // through two times of day, `sweep.spec.ts` runs one page per style, and
+  // `style-picker.spec.ts` runs a DOM fixture that renders no city at all. One
+  // worker per file is the whole of the concurrency available here, so this is the
+  // measurement's upper arm.
+  //
+  // Measured 2026-09-17 on the RTX 4090 over the same ten hero captures: see the
+  // concurrency table in `docs/policies/local-rules.md`. The comment this replaces
+  // claimed a second browser "would fight for one software rasteriser and would
+  // not be faster" — true of the software lane, where every worker contends for
+  // one CPU, and false here, where a frame is a submission to an idle GPU.
+  // `workers: 1` was part of what made 44 frames take three hours. The number is
+  // set from that measurement now, and the rule it follows is the owner's: if you
+  // can use multi-core, do not use single core.
+  workers: 3,
   fullyParallel: false,
   // No retries. A visual gate that passes on the second attempt has told you
   // something is unstable, and hiding that is the whole problem.
   retries: 0,
   // Keep the first failed trace and stop: later screenshots cannot complete a
-  // rejected evidence set, and the software sweep is expensive.
+  // rejected evidence set.
   maxFailures: 1,
   forbidOnly: Boolean(process.env["CI"]),
   reporter: [["list"], ["html", { outputFolder: "./artifacts/playwright-report", open: "never" }]],
@@ -80,13 +111,14 @@ export default defineConfig({
         deviceScaleFactor: 1,
         launchOptions: {
           args: [
-            // No GPU is guaranteed on a CI runner, and headless Chromium will
-            // otherwise refuse a WebGL context rather than fall back. SwiftShader
-            // makes the gate produce the same pixels on every machine, which is
-            // what a gate needs more than it needs speed.
+            // The hardware launch shape the lifecycle lane has driven since
+            // 2026-09-15, reused rather than invented
+            // (`playwright.lifecycle.config.ts`, project `chromium-hardware`). No
+            // software fallback argument is present: a Chromium that cannot use
+            // the GPU fails by renderer name at its first frame instead of drawing
+            // the appearance set on the CPU.
             "--use-gl=angle",
-            "--use-angle=swiftshader",
-            "--enable-unsafe-swiftshader",
+            "--use-angle=d3d11",
             "--disable-lcd-text",
           ],
         },

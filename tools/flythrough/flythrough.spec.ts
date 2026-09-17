@@ -68,7 +68,7 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
-import { activeLane, laneDir } from "../visual/lane.js";
+import { activeLane, laneDir, requestedGpu } from "../visual/lane.js";
 import { OrbitDriver } from "../visual/orbit.js";
 import { captureLedger } from "../visual/progress.js";
 import { CAPTURE_VIEWPORT } from "../visual/shots.js";
@@ -607,7 +607,7 @@ test.describe("flythrough", () => {
           capturedAt: new Date().toISOString(),
           spec: THIS_FILE,
           query: CAPTURE_QUERY,
-          requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+          requestedGpu: requestedGpu(),
           renderer: last.renderState.renderer,
           viewport: CAPTURE_VIEWPORT,
           legFilter: LEG_FILTER.length === 0 ? null : LEG_FILTER,

@@ -108,7 +108,10 @@ it(
       await writeFile(join(dist, "index.html"), "<!doctype html>");
       await writeFile(join(dist, "assets", "index-abc.js"), "built");
       await writeFile(join(root, "complete.json"), JSON.stringify({ completedAt: "2026-09-14T00:00:00Z" }));
-      await beginVisualRun(root, dist);
+      // The GPU identity is passed rather than probed: this case is about the
+      // certificate being cleared, and a unit gate must not depend on the machine
+      // it runs on having a GPU tool installed.
+      await beginVisualRun(root, dist, { name: "NVIDIA GeForce RTX 4090", driverVersion: "616.64", source: "nvidia-smi" });
       await expect(readFile(join(root, "complete.json"), "utf8")).rejects.toThrow(/ENOENT/);
       const run = JSON.parse(await readFile(join(root, "run.json"), "utf8")) as {
         build: { file: string; sha256: string }[];

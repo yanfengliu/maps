@@ -14,15 +14,16 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
  * `artifacts/playwright-smoke/`, it never produces a certificate, and
  * `verify-output.ts` knows nothing about it.
  *
- * It runs on SwiftShader deliberately. The failures it exists to catch — a
+ * It runs on the hardware renderer, the one the appearance lane captures on since
+ * the owner's 2026-09-16 instruction. The failures it exists to catch — a
  * renderer fallback, a post-chain pass missing, a control that no longer offers
- * its options — are the ones that kill a three-hour capture, and they are only
- * visible on the renderer that capture uses.
+ * its options — are the ones that kill a long capture, and they are only visible
+ * on the renderer that capture uses. On the software lane it cost about a minute;
+ * here the same assertions answer in seconds, which is what a pre-flight is for.
  *
- * Port 4336, which no other lane holds: 4319 is the verdict and lifecycle lane's,
- * 4320 the hardware iteration lane's, 4321 the populated lane's, 4322 the
- * render-defects lane's, 4323 the flythrough lane's, 4330 the post-chain lane's,
- * 4335 the frame-budget lane's.
+ * Port 4336, which no other lane holds: 4319 the verdict and lifecycle lane's,
+ * 4321 the populated lane's, 4322 the render-defects lane's, 4323 the flythrough
+ * lane's, 4330 the post-chain lane's, 4335 the frame-budget lane's.
  */
 const PREVIEW_URL = "http://127.0.0.1:4336";
 
@@ -53,7 +54,7 @@ export default defineConfig({
         viewport: { ...CAPTURE_VIEWPORT },
         deviceScaleFactor: 1,
         launchOptions: {
-          args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--disable-lcd-text"],
+          args: ["--use-gl=angle", "--use-angle=d3d11", "--disable-lcd-text"],
         },
       },
     },

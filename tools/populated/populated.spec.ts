@@ -35,7 +35,7 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { laneDir, activeLane } from "../visual/lane.js";
+import { laneDir, activeLane, requestedGpu } from "../visual/lane.js";
 import { OrbitDriver } from "../visual/orbit.js";
 import { captureLedger } from "../visual/progress.js";
 import { CAPTURE_VIEWPORT } from "../visual/shots.js";
@@ -460,7 +460,7 @@ test.describe("populated capture", () => {
         sequencesNotCaptured: SEQUENCES.filter((sequence) => !SELECTED.includes(sequence)).map((sequence) => sequence.name),
         capturedAt: new Date().toISOString(),
         query: CAPTURE_QUERY,
-        requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+        requestedGpu: requestedGpu(),
         renderer: last.renderer,
         viewport: CAPTURE_VIEWPORT,
         expectedPopulation: EXPECTED_POPULATION,
