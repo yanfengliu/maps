@@ -265,7 +265,7 @@ Three failure paths are written and reachable and have never been watched to fir
 
 ## The visual gate's certificate cannot be issued for a run that did not happen
 
-**Gate:** `npm run visual` — `tools/visual/verify-output.ts` (`resetVisualRun`, `beginVisualRun`, `certifyVisualRun`, `lifecycleEvidence`, `sceneTreeDigest`, `pixelLaneRefusal`, `visualRunPhase`), the chain in `package.json`, `tools/visual/lane.ts`, `tools/visual/lifecycle-record.ts`, `tools/visual/lifecycle.spec.ts` and `src/harness/teardown.ts`. Pinned by `test/visual-instrument.test.ts` (31 cases), which drives the wrapper's own functions over synthetic runs it writes itself.
+**Gate:** `npm run visual` — `tools/visual/verify-output.ts` (`resetVisualRun`, `beginVisualRun`, `certifyVisualRun`, `lifecycleEvidence`, `sceneTreeDigest`, `harnessTreeDigest`, `pixelLaneRefusal`, `visualRunPhase`), the chain in `package.json`, `tools/visual/lane.ts`, `tools/visual/lifecycle-record.ts`, `tools/visual/lifecycle.spec.ts` and `src/harness/teardown.ts`. Pinned by `test/visual-instrument.test.ts` (39 cases), which drives the wrapper's own functions over synthetic runs it writes itself.
 
 **Landed:** 2026-09-16 on `main` at `f4e96f0`, from `966930e`. **Correction, 2026-09-16:** this paragraph used to end "**Not merged.**", with the landed-by line naming the `artifacts/gate-integrity` worktree and branch `worker/gate-integrity` off `0ae46df`. The worktree and the branch are both gone — the reclamation pass removed them on 2026-09-16 — and the code, the `package.json` chain and all five checks are on `main`, so a reader taking that sentence at face value would look for a fix that is already in the tree. The same worktree's `mutation-logs/` path below no longer resolves, and the mutation commands are quoted verbatim in each entry so the controls can be rebuilt; the reclaimed lane's own record is `artifacts/reclaim/`. The five findings come from `artifacts/instrument-review/review.md` and were confirmed unfixed on what was then `main` by `artifacts/record-repairs`. Every mutation below was run by `probe/mutations.mjs`, which rewrites one tracked file, runs the named case, records the failure and restores the file byte-for-byte; the logs were under the now-reclaimed `artifacts/gate-integrity/mutation-logs/`.
 
@@ -593,5 +593,67 @@ Received array: []
 That is the same message, in the same form, that `hero.spec.ts` produced three times inside the verdict lane — `Received array: []` against an expected style label — reached here in twenty-seven seconds instead of after a reset, a build, and a lane that had already been announced as the deliverable's evidence. Restored, `1 passed` in 25.0 s, `57.3 s` for the whole command including the preview server.
 
 **Bound.** One renderer (SwiftShader), one URL (the dusk hero URL), one build, and no capture at all: **it says the app will answer the questions the capture asks, and nothing about what the capture will photograph.** It cannot see a pose drifting, a frame count short, a blank frame, an aliasing artefact or temporal crawl — those need the frames, and the verdict lane remains the only evidence. It is also collected by the verdict lane's own `testDir` unless `playwright.config.ts` excludes it, which it now does by name: that omission was a real defect of this landing, caught by round 31's review, and the fix carries its reason in the config.
+## The style criterion's pointer half is completed by a press on the option row
+
+**Gate:** `tools/visual/hero.spec.ts` and `tools/visual/style-picker.spec.ts`, both driving the shipped control through `tools/visual/style-control.ts`. Each switch asserts `aria-expanded` on the control after the press that is supposed to open its list, and completes the pointer half with a press on the option row itself; the keyboard half opens with `Enter` and commits with `Enter`, as its own switch in both files. The reason the two are separated is the defect: `move()` in `src/ui/style-picker.ts` commits as the active option moves while the list is *closed*, so `click()` followed by `Home`/`End` and `Enter` cannot tell "the pointer opened the listbox" from "the pointer did nothing". Round 31's review, finding B3, on the shape both specs had at `30c7b01`.
+
+**Landed:** `7f4b045` with the assertion messages of `b152da5`, on branch `worker/gate-fixes` off `024c44d`.
+
+**Mutation:** the control's pointer path removed in the subject rather than the check — `control.addEventListener("click", onControlClick);` deleted from `src/ui/style-picker.ts`, which is the review's own hypothetical ("delete the click handler tomorrow"). The probe applies it to the module body at run time, so the shipped file is untouched.
+
+**Red control:** `npx playwright test --config artifacts/gate-fixes/probe/playwright.probe.config.ts` from a worktree at this revision, 2026-09-16, exit status 0, **5 passed (23.1 s)** over five arms on one page each. The probe is `artifacts/gate-fixes/probe/control-probe.spec.ts`; it builds its own page with `page.setContent` (no server, no port, no renderer requirement), holds the pointer mutation as the removal of that one registration line, and holds a second mutation as the absence of the option press. It prints the two failures it expects rather than swallowing them:
+
+```
+  ✓  1 shipped control: the new pointer sequence completes the switch (476ms)
+  ✓  2 shipped control: the old click-then-arrow sequence completes it too (239ms)
+PROBE arm 3 (dead pointer, new sequence) failure:
+a pointer press on the World style control must open its listbox
+expect(locator).toHaveAttribute(expected) failed
+Locator:  getByRole('combobox', { name: 'World style' })
+Expected: "true"
+Received: "false"
+  ✓  3 pointer path removed: the new sequence fails by name (10.2s)
+  ✓  4 pointer path removed: the old sequence still passes, so it saw nothing (244ms)
+PROBE arm 5 (list opened by pointer, no option press) failure:
+the press that opened the list must be what commits the style
+expect(locator).toHaveAttribute(expected) failed
+Locator:  getByRole('combobox', { name: 'World style' })
+Expected: "cartographic"
+Received: "satellite"
+  ✓  5 option press replaced by a no-op: the commit assertion fails by name (10.4s)
+  5 passed (23.1s)
+```
+
+Arm 3 is the pointer claim firing and arm 4 is the defect: with the pointer path gone, the old `click()`-then-arrow sequence still commits the style and still passes every assertion the two specs made before this landing. Arm 5 is the commit claim firing: the control was pressed, its listbox opened, no option was pressed, and the control that failed the assertion still reads `aria-expanded="true"` with `data-style-id="satellite"` — opening the list is not what changes the style. The two shipped arms say the new sequence is not merely stricter: it completes a real style change on the shipped control, read back through the control's own `data-style-id` and the fixture's `onChange`.
+
+**Bound.** One control module transpiled from `src/ui/style-picker.ts`, two registry entries, one initial style, no app, no renderer, no pixels: the probe proves the DOM control's own input path. It says nothing about the production build (that is `npm run visual:smoke`'s ground, measured green in 59.2 s on the same tree) and nothing about `hero.spec.ts`'s own assertions, which the verdict capture owns and which this landing therefore states as code rather than as evidence. The `End`/`Home` ternary in the keyboard half and the pointer row press both assume the control still writes `data-style-id` on its rows and itself; a control that renamed that attribute would fail the spec by name rather than passing quietly. And the pair cannot see a *spec* that swaps its option press for a key press: `choose()` is the one place the two input paths meet, so the app's state is identical either way, and what the gate owns is that the row press is reachable and is what commits (arm 5) and that the press opening the list is the pointer's (arm 3). Keeping the pointer arm pointed at the option row is therefore a review property, not a checked one.
+
+## The harness that drives the browser is bound into the certificate
+
+**Gate:** `npm run visual` — `harnessTreeDigest` in `tools/visual/verify-output.ts`, pinned by `beginVisualRun` into `run.json` as `harness`, and re-derived by `certifyVisualRun` through `assertHarnessUnchanged` before it reads a frame, in the same shape the scene digest uses. Its roots are the lane's own instrument: `tools/visual`, `playwright.config.ts`, `playwright.lifecycle.config.ts`, `vite.config.ts` and `tools/vite/serve-scene-data.ts`. Unit cases: `test/visual-instrument.test.ts`, in "the harness that drives the browser is bound into the certificate" — a helper changed, a spec added, a run with no pin, a root that resolves to nothing, and the `--begin` pin read back.
+
+**Landed:** `7f4b045`, off `024c44d`, on branch `worker/gate-fixes`.
+
+**Why.** The certificate bound `dist/` bytes and the served scene and nothing bound the specs and helpers that drove the browser, which `plan.md` requires of the final verification as "the complete source/build/data/harness closure before and after the run". It stopped being theoretical at 17:55:29 local on 2026-09-16, when `5c32286` changed `tools/visual/verify-output.ts` and added two files under `tools/visual/` while the capture that began at 17:35:33 was running. Round 31's review, finding B4.
+
+**Mutation:** `await assertHarnessUnchanged({ ...harness, roots: [...harnessRoots] });` removed from `certifyVisualRun` — the state of `30c7b01`, where nothing under `tools/` was hashed into the certificate at all.
+
+**Failure:** `npx vitest run test/visual-instrument.test.ts`, exit status 1, 2 of 39 red:
+
+```
+ FAIL  test/visual-instrument.test.ts > the harness that drives the browser is bound into the certificate >
+       refuses to certify when a helper changed during capture
+Error: certification succeeded, and this case exists because it must not: a run whose harness moved during
+capture was certified.
+ FAIL  test/visual-instrument.test.ts > the harness that drives the browser is bound into the certificate >
+       refuses to certify when a spec was added during capture
+AssertionError: promise resolved "undefined" instead of rejecting
+ Test Files  1 failed (1)
+      Tests  2 failed | 36 passed (39)
+```
+
+Restoring the call: `39 passed`, exit status 0, 7.9 s. Two smaller mutations pin the two other places the binding can go missing. The pin removed from `--begin` — the `harness: { roots: [...HARNESS_ROOTS], ...harness },` line deleted from `beginVisualRun`'s `run.json` write — fails `-t "pins that digest into run.json"` with `AssertionError: run.json written by --begin must carry a harness digest: expected undefined to be defined`, which is why that case drives the real `beginVisualRun` rather than writing its own record: every other case here pins a synthetic run and would stay green while every real run failed hours later at `--end`. The presence check in `certifyVisualRun` commented out fails `-t "pinned no harness digest"` with `AssertionError: expected [Function] to throw error matching /pinned no harness digest/ but got 'Cannot read properties of undefined (…'`.
+
+**Bound.** The digest folds in each file's path under its root and the SHA-256 of its bytes, so a file added, removed or edited under those roots moves it and no timestamp, size or inode is covered. It is taken at two instants, so a file changed and changed back between them is invisible — the same bound the scene digest states. It covers the chain's own instrument and not the app: `src/**` reaches the frames only through `dist/`, which the build hashes bind; `data/**` is the scene digest's; `package.json`'s chain order is pinned by the unit case in this file; the other lanes under `tools/` are never run by this chain; and the Draco decoder served from `node_modules` is bound by nothing here. It is a refusal to certify an unbound run rather than a claim that the frames are wrong: a commit landing mid-capture cannot change specs Playwright already loaded, and the message says so. Its cost is one read of about 191 KB across 22 files per call, twice per gate run. A run begun by a wrapper older than this check carries no `harness` key and is now refused at `--end` rather than certified without it, so this landing must not reach `main` before the capture in flight certifies.
 
 

@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import { expect, test } from "@playwright/test";
 
+import { styleDescription, styleOption, styleOptionRows } from "./style-control.js";
+
 test("renders and selects an added registry style without picker changes", async ({ page }) => {
   const source = await readFile("src/ui/style-picker.ts", "utf8");
   const css = await readFile("src/ui/style-picker.css", "utf8");
@@ -24,15 +26,36 @@ test("renders and selects an added registry style without picker changes", async
   // in-page listbox — rather than as a native `<select>`, whose popup the browser
   // process draws outside the renderer's hit testing. The labels are read from the
   // option rows' own label spans, because a row also carries its description and
-  // its text content is the two concatenated.
-  expect(await picker.page().locator('[role="option"] .world-style-picker__option-label').allTextContents()).toEqual(["Cartographic", "Satellite", "Future style"]);
+  // its text content is the two concatenated. The rows are the ones in the listbox
+  // this control names through `aria-controls` rather than every `[role="option"]`
+  // on the page; see `style-control.ts`.
+  const rows = await styleOptionRows(page, picker);
+  expect(await rows.locator(".world-style-picker__option-label").allTextContents()).toEqual(["Cartographic", "Satellite", "Future style"]);
   await page.keyboard.press("Tab"); await expect(picker).toBeFocused();
+  // Keyboard, control closed: an arrow key commits as the active option moves,
+  // which is what a native select does.
   await page.keyboard.press("ArrowDown");
   await expect(picker).toHaveAttribute("data-style-id", "future-style");
   await expect(page.getByRole("status")).toHaveText("future-style");
-  await expect(page.locator(".world-style-picker__description")).toHaveText("A third registry entry");
-  await picker.click(); await page.keyboard.press("Home"); await page.keyboard.press("Enter");
-  await expect(picker).toHaveAttribute("data-style-id", "cartographic");
+  // The description the control points at through `aria-describedby`, asserted
+  // visible as well as correct: `toHaveText` on its own passes on an element nobody
+  // can see, which is weaker than the visible assertion this replaced.
+  const description = await styleDescription(page, picker);
+  await expect(description).toBeVisible();
+  await expect(description).toHaveText("A third registry entry");
+  // Pointer, completed by a press on the option row itself. The press has to be
+  // what opens the list and the row press what commits: a closed control commits on
+  // an arrow key as well, so `click()` followed by `Home` and `Enter` cannot tell
+  // "the pointer opened the listbox" from "the pointer did nothing" — round 31's
+  // review, finding B3, and the shape both of these specs used to have.
+  await picker.click();
+  await expect(picker, "a pointer press on the control must open its listbox").toHaveAttribute("aria-expanded", "true");
+  await (await styleOption(page, picker, "cartographic")).click();
+  await expect(
+    picker,
+    "the press on the option row must be what commits the style, not the press that opened the list",
+  ).toHaveAttribute("data-style-id", "cartographic");
+  await expect(picker, "a completed switch must leave the listbox closed").toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("status")).toHaveText("cartographic");
   const box = await picker.boundingBox(); expect(box?.height).toBeGreaterThanOrEqual(44);
 });

@@ -9,11 +9,11 @@ import "./style-picker.css";
  * testing, so no synthesised pointer event can land on one of its rows: measured
  * 2026-09-16 in a headless and in a headed window alike, a press opens the popup
  * and a second press on the correct row closes it without changing the value —
- * see `docs/work/0_shibuya-1km/reviews/30_implementation.md`. A control whose
- * pointer path cannot be driven by a harness cannot be shown to work by pointer,
- * and the acceptance criterion asks for exactly that. Here every option is an
- * element in this document, so a synthesised press runs the same code a person's
- * click runs through.
+ * see `docs/work/0_shibuya-1km/reviews/27_implementation.md`, which measured it
+ * and kept its probe. A control whose pointer path cannot be driven by a harness
+ * cannot be shown to work by pointer, and the acceptance criterion asks for
+ * exactly that. Here every option is an element in this document, so a synthesised
+ * press runs the same code a person's click runs through.
  *
  * The options come from the caller and are never restated here. A new entry in
  * the registry (`src/world/styles.ts`) appears in this list with no change to
