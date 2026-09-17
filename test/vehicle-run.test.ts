@@ -21,6 +21,13 @@
  *    `PERFORMANCE_TARGET`, and no pedestrians at all. The 20-second window is
  *    under one signal cycle, so a body cannot be watched across a green-to-red
  *    transition.
+ *  - **No lane change happens.** No body in this window ever holds a non-zero
+ *    lateral lane index: every corridor the driven routes use is single-lane, and
+ *    of 4,855 delivered lanes only 189 carry a same-direction lateral neighbour at
+ *    all. The lane clause therefore gates that bodies stay on the centreline of the
+ *    lane their route drives, and it says nothing about MOBIL lane changes, which
+ *    this window never exercises. That is also why the lane red control adds a lane
+ *    offset rather than removing one.
  *  - **Not appearance.** Nothing here sees a pixel, a frame or a renderer.
  *
  * Claim: over this run, the vehicles the population draws hold their lanes, obey
@@ -30,40 +37,49 @@
  * times it had the opportunity to fail — because a clause with no opportunity is
  * not a clause that passed.
  *
- * Made to go red by three arms. What each one changes and which clause it reddens
- * are recorded in `artifacts/vehicle-gate/REPORT.md`, and the messages they produce
- * are not yet recorded anywhere, because this gate has not been run:
+ * Made to go red by three arms, and both red messages below were watched on the
+ * revision this file first went green on. The measurements, the three first-run
+ * failures and the mutation that had to be rewritten are recorded in
+ * `artifacts/vehicle-gate/REPORT.md`:
  *
- *  1. `populationInvariants.misplaceVehicleInLane` draws every body on the zeroth
- *     lateral lane of its route, which is a 1.35 m sideways displacement on a
- *     3.0 m lane. This reddens the lane-keeping clause.
+ *  1. Adding one lateral lane to every drawn pose's lane index
+ *     (`lateralLaneOffset: 1`) moves each body `widthM * 0.45` sideways — 1.35 m on
+ *     the 3.0 m lanes this window drives — and produces:
+ *     `a drawn body sat 1.3500 m from the centreline of the lane it is on, over a
+ *     0.05 m tolerance (28594 lane samples; widest band <0.5 m at 1.3500 m)`.
+ *     It is an offset *added* to the index and not a replacement for it, which
+ *     matters: no body in this window ever holds a non-zero lane index, so a seam
+ *     that forced the index to zero was a no-op and its arm passed green while
+ *     proving nothing. That was this gate's first defect and it is why the seam
+ *     takes an offset.
  *  2. Reading the entry-portal set from the *exit* portal list reddens the entry
- *     half of the boundary clause without touching the run, which is what shows
- *     the clause tests portal membership rather than merely counting lanes.
+ *     half of the boundary clause without touching the run:
+ *     `34 of 34 vehicles appeared somewhere other than a vehicle entry portal's own
+ *     first occurrence`.
  *  3. Zeroing the run's vehicle samples, turns or retirements reddens the matching
  *     vacuity guard, one quantity at a time.
  *
- * **The signal clause has no red control here, and the vacuity guard is what
- * fires instead.** Signal obedience is enforced in `JunctionAdmissions.resolve`,
- * which will not grant entry to a signal group that is not green, and the half of
- * it that closes — a body that enters a governed section anyway — is already gated
- * by `population-authority.test.ts` through `status.authorityViolations`, with a
+ * **The signal clause has no red control here, and the vacuity guard is what fires
+ * instead.** Signal obedience is enforced in `JunctionAdmissions.resolve`, which
+ * will not grant entry to a signal group that is not green, and the half of it that
+ * closes — a body that enters a governed section anyway — is already gated by
+ * `population-authority.test.ts` through `status.authorityViolations`, with a
  * mutation that produces 637 violations against 0 unmutated. What was missing was
- * the temporal half: nobody watched a run to see whether that enforcement holds
- * over time. This gate does watch it, and reports `governedEntries`. In this
- * fixture that number is 0, so there is no observation to assert on and no
- * mutation this gate could apply that would prove more than the vacuity guard
- * already does. The honest control is therefore the guard on an absent
- * measurement, and the header says so rather than implying a fourth arm exists.
+ * the temporal half: nobody watched a run to see whether that enforcement holds over
+ * time. This gate does watch it, and reports `governedEntries`. In this fixture that
+ * number is 0, so there is no observation to assert on and no mutation this gate
+ * could apply that would prove more than the vacuity guard already does. The honest
+ * control is therefore the guard on an absent measurement, and the header says so
+ * rather than implying a fourth arm exists.
  *
- * Measured on this window while the gate was written, and not re-measured after
- * it: 28,923 lane samples with a largest offset from the lane centreline of
- * 0.0216 m; the drawn envelope no more than 0.3899 m inside its lane edge; 46
- * completed turns and 150 lane-section changes at junctions; 34 entries, all at
- * an entry portal; 6 exits, all at an exit portal; 0 authority violations against
- * 2,755 grants. Those numbers came from throwaway probes that have been deleted,
- * and the gate's own run of them is the one verification this file has not yet
- * had.
+ * Measured on this window: 28,594 lane samples with a largest offset from the lane
+ * centreline of 0.0216 m, in every band from within half a metre of a section end
+ * out past four metres; the drawn envelope never nearer than 0.3899 m inside its
+ * lane edge; 14 lane-section changes at junctions, all 14 completed turns, widest
+ * turn-lane polyline swing 222.2 degrees, fewest ticks on a turn lane 36; 34
+ * entries, all 34 at an entry portal; 6 exits, all 6 at an exit portal, largest
+ * displacement 2.6234 m inside the authored 7.5 m envelope; 0 authority violations
+ * against 2,755 grants.
  */
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -73,7 +89,7 @@ import { createPopulation, populationInvariants, type Population } from "../src/
 import { populationSettings } from "../src/agents/population/config.ts";
 import type { LaneEdge, NetworkData, WorldPoint } from "../src/world/network-data.ts";
 import type { VehicleAssetManifest } from "../src/world/agent-assets.ts";
-import { describe as describeValues, envelopeBeyondLaneEdgeM, halfExtents, projectOnPolyline } from "../tools/agents/vehicle-run-metrics.ts";
+import { describe as describeValues, distanceFromSectionEndM, envelopeBeyondLaneEdgeM, halfExtents, projectOnPolyline } from "../tools/agents/vehicle-run-metrics.ts";
 import { deliveredFleet, deliveredNetwork, resetInvariants } from "./population-fixture.ts";
 
 const STEP = 1 / 60;
@@ -90,6 +106,15 @@ const TICKS = 1_200;
  * derivation: the body is placed by `placeVehicle` and this gate re-derives the
  * distance from the published pose and the delivered polyline rather than
  * restating `sampleRoute`.
+ *
+ * The tolerance is quoted over lane samples with the retiring ticks taken out. That
+ * split is the whole measurement: a retiring body is placed on its portal's outward
+ * line rather than on its last lane, so its distance from that lane's polyline grows
+ * to 2.6234 m as it leaves, and it is not a body failing to hold a lane. With those
+ * excluded, the widest offset anywhere in this window is **0.0216 m**, in every band
+ * from within half a metre of a section end out past four metres of it — which is
+ * why no section-end margin is applied and the per-band reading is reported beside
+ * the tolerance rather than used to narrow it.
  */
 const LANE_TOLERANCE_M = 0.05;
 /** A lane section change the plan did not intend is a re-home, not a turn. */
@@ -102,11 +127,13 @@ export interface VehicleRunReport {
   readonly active: { readonly distinctBodies: number; readonly maximum: number; readonly mean: number };
   readonly lifecycle: { readonly spawned: number; readonly retired: number; readonly retiredInPlace: number; readonly boundarySpawns: number };
   readonly lanes: {
+    /** Lane samples over the window, excluding the ticks a body is retiring. */
     readonly samples: number;
     readonly egressSamplesExcluded: number;
     readonly offsetM: ReturnType<typeof describeValues>;
+    /** The same samples, banded by how far they sit from a section's own end. */
+    readonly offsetByDistanceFromASectionEndM: readonly { readonly band: string; readonly samples: number; readonly widest: number }[];
     readonly envelopeBeyondEdgeM: ReturnType<typeof describeValues>;
-    readonly crossingSamples: number;
     readonly laneWidthsM: readonly number[];
     readonly classesDrawn: readonly number[];
   };
@@ -146,10 +173,10 @@ export interface RunInputs {
 /** The seams this gate drives to make its own clauses go red. */
 export interface RunMutations {
   /**
-   * Draw every body on the zeroth lateral lane of its route. The population's own
-   * seam; a body whose route drives lane 1 is drawn 1.35 m to the side of it.
+   * Lateral lanes added to every drawn pose's lane index. One lane on a 3.0 m lane
+   * is 1.35 m of sideways displacement, which is the lane-keeping defect.
    */
-  readonly misplaceVehicleInLane?: boolean;
+  readonly lateralLaneOffset?: number;
   /**
    * Read the entry-portal set from the *exit* portal list instead of the entry
    * list. The population is untouched: the run draws, turns and retires exactly
@@ -187,14 +214,17 @@ interface BodyState {
 export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {}): VehicleRunReport {
   const { network, fleet, vehicles, ticks } = inputs;
   const admissions = new JunctionAdmissions(network);
-  // The seam is set before construction, which is the only moment it is read.
-  populationInvariants.misplaceVehicleInLane = mutations.misplaceVehicleInLane ?? false;
   const population: Population = createPopulation({
     network,
     fleet,
     admissions,
     settings: populationSettings({ pedestrians: PEDESTRIANS, vehicles, seed: SEED, spawnIntervalTicks: inputs.spawnIntervalTicks ?? 1 }),
   });
+  // The seam is set *after* construction and not before it: `createPopulation`
+  // resets every test seam as its first act, so a seam set before it is zeroed
+  // before the run starts and the mutation silently does nothing. It is read once
+  // per tick by the integrate phase, so setting it here is in time.
+  populationInvariants.lateralLaneOffset = mutations.lateralLaneOffset ?? 0;
 
   const laneById = new Map<string, LaneEdge>(network.lanes.map((lane) => [lane.id, lane]));
   const entryPortals = new Set(mutations.readExitsAsEntries ? network.portals.vehicleExit : network.portals.vehicleEntry);
@@ -209,12 +239,13 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
   const turnTicks: number[] = [];
   const turnOffsets: number[] = [];
   const outward: number[] = [];
+  /** Lane samples banded by distance from a section end, reported not filtered. */
+  const bands = new Map<string, { samples: number; widest: number }>();
   const bodies = new Map<number, BodyState>();
   const cycles = new Map<string, number>();
   const lastCycle = new Map<string, number>();
   let samples = 0;
   let egressSamplesExcluded = 0;
-  let crossingSamples = 0;
   let activeSum = 0;
   let maximumActive = 0;
   let entries = 0;
@@ -277,9 +308,16 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
           samples += 1;
           offsets.push(projection.distanceM);
           const half = halfExtents(fleet, variant, scale);
-          const beyond = envelopeBeyondLaneEdgeM(projection.distanceM, half.halfWidthM, edge.widthM);
-          beyondEdge.push(beyond);
-          if (beyond <= 0) crossingSamples += 1;
+          beyondEdge.push(envelopeBeyondLaneEdgeM(projection.distanceM, half.halfWidthM, edge.widthM));
+          // Banded, not filtered. The bands are reported so a reader can see that no
+          // part of a lane section is doing better or worse than another, and so
+          // that a future version cannot quietly drop a band on a theory.
+          const fromStart = (entry?.travelledM ?? 0) - (route?.starts[routeIndex] ?? 0);
+          const band = bandFor(distanceFromSectionEndM(fromStart, edge.lengthM));
+          const bucket = bands.get(band) ?? { samples: 0, widest: 0 };
+          bucket.samples += 1;
+          bucket.widest = Math.max(bucket.widest, projection.distanceM);
+          bands.set(band, bucket);
         } else {
           egressSamplesExcluded += 1;
         }
@@ -305,10 +343,18 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
 
       // Turns: a body on a `turn` lane is on a section change the plan made at a
       // junction. It has to spend the junction on that lane and stay on it.
+      //
+      // The offset is read on the same rule as every other lane — non-retiring
+      // samples, no band excluded — and the largest reading is kept, because the
+      // tick a body leaves a turn lane is the tick it is furthest off it by
+      // construction. Keeping the largest value is what stops a turn that ends
+      // mid-junction from being recorded as a perfect one.
       if (edge?.kind === "turn") {
         const record = state.turns.get(edgeId) ?? { ticks: 0, maximumOffsetM: 0 };
         record.ticks += 1;
-        record.maximumOffsetM = Math.max(record.maximumOffsetM, projectOnPolyline(edge.points, x, z).distanceM);
+        if (!egressing) {
+          record.maximumOffsetM = Math.max(record.maximumOffsetM, projectOnPolyline(edge.points, x, z).distanceM);
+        }
         state.turns.set(edgeId, record);
       }
       // Any turn lane this body is no longer on has been left, whether it left it
@@ -363,8 +409,12 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
       samples,
       egressSamplesExcluded,
       offsetM: describeValues(offsets),
+      offsetByDistanceFromASectionEndM: ["<0.5 m", "0.5-1 m", "1-2 m", "2-4 m", ">=4 m"].map((band) => ({
+        band,
+        samples: bands.get(band)?.samples ?? 0,
+        widest: Number((bands.get(band)?.widest ?? 0).toFixed(4)),
+      })),
       envelopeBeyondEdgeM: describeValues(beyondEdge),
-      crossingSamples,
       laneWidthsM: [...widths].sort((left, right) => left - right),
       classesDrawn: [...classes].sort((left, right) => left - right),
     },
@@ -392,6 +442,15 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
       envelopeM: MAX_BOUNDARY_EGRESS_M,
     },
   };
+}
+
+/** The band label for a distance from a section's own end. */
+function bandFor(distanceFromEndM: number): string {
+  if (distanceFromEndM < 0.5) return "<0.5 m";
+  if (distanceFromEndM < 1) return "0.5-1 m";
+  if (distanceFromEndM < 2) return "1-2 m";
+  if (distanceFromEndM < 4) return "2-4 m";
+  return ">=4 m";
 }
 
 /** The total heading change along a polyline, degrees. */
@@ -434,9 +493,11 @@ export function controlFailures(report: VehicleRunReport): string[] {
   if (report.boundary.entries === 0) failures.push("no vehicle entered the run, so the entry clause measured nothing");
   if (report.boundary.exits === 0) failures.push("no vehicle retired through the boundary, so the exit clause measured nothing");
 
-  // Hold their lanes.
+  // Hold their lanes, over every non-retiring sample: no band of a lane section is
+  // excluded, because none of them showed a wider offset than any other.
   if (report.lanes.offsetM.maximum > LANE_TOLERANCE_M) {
-    failures.push(`a drawn body sat ${report.lanes.offsetM.maximum.toFixed(4)} m from the centreline of the lane it is on, over a ${LANE_TOLERANCE_M} m tolerance`);
+    const widestBand = [...report.lanes.offsetByDistanceFromASectionEndM].sort((left, right) => right.widest - left.widest)[0];
+    failures.push(`a drawn body sat ${report.lanes.offsetM.maximum.toFixed(4)} m from the centreline of the lane it is on, over a ${LANE_TOLERANCE_M} m tolerance (${report.lanes.samples} lane samples; widest band ${widestBand?.band ?? "none"} at ${(widestBand?.widest ?? 0).toFixed(4)} m)`);
   }
 
   // Obey the signals.
@@ -543,19 +604,25 @@ describe("vehicles over a run", () => {
   });
 
   it("shows the window reached all four clauses", () => {
-    // The evidence behind the green case above, so a reader can see the window
-    // was not empty and how big it was. These are floors and ceilings rather than
-    // the exact readings, because the exact readings are recorded in the header of
-    // this file and in the lane clause's tolerance; a range that a changed window
-    // would leave is the check, and a copy of one run's floats is not.
+    // The evidence behind the green case above, so a reader can see the window was
+    // not empty and how big it was. Floors are set just under what this window
+    // measures, and each is named with the reading it belongs to, because a floor
+    // is a statement about one window and not about the deliverable.
     const report = window();
     expect(report.lanes.samples).toBeGreaterThan(20_000);
     expect(report.lanes.egressSamplesExcluded).toBeGreaterThan(0);
     expect(report.lanes.offsetM.maximum).toBeLessThan(LANE_TOLERANCE_M);
+    // Every band of a lane section, not just the wide ones. Measured: 2,897 samples
+    // within half a metre of an end, widest 0.0000 m; 15,705 past four metres,
+    // widest 0.0216 m. No band is excluded from the clause above.
+    expect(report.lanes.offsetByDistanceFromASectionEndM.every((entry) => entry.samples > 0)).toBe(true);
+    expect(report.lanes.offsetByDistanceFromASectionEndM.every((entry) => entry.widest < LANE_TOLERANCE_M)).toBe(true);
     expect(report.lanes.envelopeBeyondEdgeM.maximum).toBeLessThan(0);
     expect(report.lanes.laneWidthsM.length).toBeGreaterThan(0);
-    expect(report.turns.transitionsAtAJunction).toBeGreaterThan(50);
-    expect(report.turns.turnsCompleted).toBeGreaterThan(10);
+    // Measured 14 at this window (60 vehicles, 1,200 ticks, seed 0x5b1b0a); the
+    // floor is under it rather than over it.
+    expect(report.turns.transitionsAtAJunction).toBeGreaterThanOrEqual(10);
+    expect(report.turns.turnsCompleted).toBeGreaterThanOrEqual(10);
     expect(report.turns.maximumSwingDeg).toBeGreaterThan(90);
     expect(report.turns.minimumTicksOnATurnLane).toBeGreaterThanOrEqual(2);
     expect(report.turns.maximumOffsetDuringATurnM).toBeLessThan(LANE_TOLERANCE_M);
@@ -578,8 +645,15 @@ describe("vehicles over a run", () => {
 
   it("is vacuous unless vehicles were drawn, turned, and retired through the boundary", () => {
     // Case one: no vehicle pose was ever published. This is the run that never
-    // started, and every clause below it would otherwise have read green.
-    const empty = withOverrides(window(), { lanes: { samples: 0 }, active: { maximum: 0 }, turns: { transitionsAtAJunction: 0, turnsCompleted: 0 }, boundary: { entries: 0, exits: 0 } });
+    // started, and every clause below it would otherwise have read green. Both
+    // halves of each portal count are zeroed together, because an empty run's
+    // boundary counts are all zero and not the real ones minus a deleted run.
+    const empty = withOverrides(window(), {
+      lanes: { samples: 0 },
+      active: { maximum: 0 },
+      turns: { transitionsAtAJunction: 0, turnsCompleted: 0 },
+      boundary: { entries: 0, entriesAtAnEntryPortal: 0, exits: 0, exitsAtAnExitPortal: 0 },
+    });
     expect(controlFailures(empty)).toEqual([
       "the run drew no vehicle pose at all, so no clause below measured anything: 0 lane samples over the window",
       "the run never held more than 0 vehicles, which is too few for a lane, a turn and a boundary retirement to be separate events",
@@ -608,17 +682,21 @@ describe("vehicles over a run", () => {
     expect(controlFailures(neverEntered)).toEqual(["no vehicle entered the run, so the entry clause measured nothing"]);
   });
 
-  it("goes red when a body is drawn on the wrong lane", { timeout: 120_000 }, () => {
-    const mutated = measureVehicleRun(WINDOW, { misplaceVehicleInLane: true });
+  it("goes red when a body is drawn a lane to the side of the lane it drives", { timeout: 120_000 }, () => {
+    const mutated = measureVehicleRun(WINDOW, { lateralLaneOffset: 1 });
     const failures = controlFailures(mutated);
     expect(failures.length).toBeGreaterThan(0);
     expect(failures.join("\n")).toContain("from the centreline of the lane it is on");
     // The mutation moves bodies sideways and changes nothing else: the run still
     // draws, still turns and still retires, so the reading that moved is the lane
     // offset rather than the whole report.
-    expect(mutated.lanes.samples).toBeGreaterThan(1_000);
+    expect(mutated.lanes.samples).toBeGreaterThan(20_000);
     expect(mutated.lanes.offsetM.maximum).toBeGreaterThan(LANE_TOLERANCE_M);
-    expect(mutated.turns.turnsCompleted).toBeGreaterThan(0);
+    expect(mutated.turns.turnsCompleted).toBeGreaterThanOrEqual(10);
+    expect(mutated.boundary.entries).toBe(mutated.boundary.entriesAtAnEntryPortal);
+    // A one-lane displacement on a 3.0 m lane is `widthM * 0.45` = 1.35 m, so the
+    // reading has to land there rather than merely clear the tolerance.
+    expect(mutated.lanes.offsetM.maximum).toBeCloseTo(1.35, 2);
   });
 
   it("goes red when the boundary clause is checked against the wrong portal list", { timeout: 120_000 }, () => {

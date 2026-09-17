@@ -83,6 +83,25 @@ function finite(value: number): number {
   return Number(value.toFixed(4));
 }
 
+/**
+ * How far a position sits from a section's interior, along the section.
+ *
+ * Kept as a reading rather than as a filter. An earlier version of this module used
+ * it to exclude samples within a metre of a section end, on the theory that a body
+ * adopting the next section's pose at the next section's start point is legitimately
+ * off the polyline it is measured against. Measured, that theory was wrong: once
+ * retiring bodies are excluded — and they are excluded, because a retiring body is
+ * placed on the portal's outward line rather than on its last lane — **the widest
+ * offset anywhere in the gate's window is 0.0216 m, in every band from within 0.5 m
+ * of an end out to past 4 m**. The band that appeared to need excluding contained
+ * 2,897 perfectly lane-holding samples and no deviating ones, so excluding it would
+ * have removed evidence and earned nothing. The number is reported beside the
+ * tolerance so that claim stays checkable instead of becoming folklore.
+ */
+export function distanceFromSectionEndM(distanceAlongSectionM: number, sectionLengthM: number): number {
+  return Math.min(distanceAlongSectionM, sectionLengthM - distanceAlongSectionM);
+}
+
 /** One active body's collision envelope half extents at its drawn scale. */
 export function halfExtents(fleet: VehicleAssetManifest, variant: number, scale: number): { halfWidthM: number; halfLengthM: number } {
   const asset = fleet.vehicles[variant];
