@@ -123,10 +123,12 @@ export interface LegStep {
   /**
    * The largest bearing change one step may dispatch, radians.
    *
-   * A leg that has to swing 172 degrees to look back at the crowd needs a bigger
-   * step than one holding a bearing it already has: at the default quarter radian
-   * a ten-step leg can only turn 143 degrees, and the swing would still be arriving
-   * after the leg ended.
+   * A leg that has to swing 82.5 degrees onto the crowd needs a bigger step than
+   * one holding a bearing it already has: at the default quarter radian a ten-step
+   * leg can only turn 143 degrees, and the swing would still be arriving after the
+   * leg ended. This number is the ask, not the ceiling — `rotateStepRadians`
+   * converts it to pixels and clamps those at `maxRotatePx`, so no leg delivers
+   * more than 0.3491 rad a step at this lane's 720 px canvas whatever it asks for.
    */
   turnStepRad?: number;
   /**
@@ -719,12 +721,12 @@ export class FlythroughDriver {
     });
     if (Math.abs(delta) < 0.01) return idle("within a hundredth of a radian already");
 
-    const stepped = clamp(delta, -maxStepRad, maxStepRad);
-    // `rotateLeft` subtracts from theta and is called with
-    // `2 * PI * pixelsX / clientHeight`, so pixels that buy a positive change in
-    // the azimuth are negative: a drag to the left. The sign lives here alone, so
-    // a caller cannot disagree with it.
-    const pixelsX = clamp(-stepped / this.radiansPerPixelY, -this.maxRotatePx, this.maxRotatePx);
+    const step = rotateStepRadians(delta, {
+      maxStepRad,
+      canvasHeightPx: this.box.height,
+      maxRotatePx: this.maxRotatePx,
+    });
+    const pixelsX = step.pixelsX;
     if (Math.abs(pixelsX) < 0.5) return idle(`a drag of ${pixelsX.toFixed(2)} px is below the pointer's resolution`);
 
     await this.drag(pixelsX, 0, "left");
@@ -735,9 +737,9 @@ export class FlythroughDriver {
     // would show it as a framing failure rather than as an input failure. The
     // threshold is wide because a damped gesture from the previous step is still
     // landing, and that landing is not this step's sign.
-    if (Math.abs(moved) > 0.05 && Math.sign(moved) !== Math.sign(stepped)) {
+    if (Math.abs(moved) > 0.05 && Math.sign(moved) !== Math.sign(step.askedRad)) {
       throw new Error(
-        `A turn towards ${azimuth.toFixed(3)} rad asked for ${stepped.toFixed(4)} rad of azimuth change and the ` +
+        `A turn towards ${azimuth.toFixed(3)} rad asked for ${step.askedRad.toFixed(4)} rad of azimuth change and the ` +
           `controls moved ${moved.toFixed(4)} rad the other way (${before.azimuth.toFixed(3)} -> ${after.azimuth.toFixed(3)}). ` +
           "The rotate sign is wrong, and every leg aimed through this control would photograph the wrong direction.",
       );
@@ -940,11 +942,62 @@ export class FlythroughDriver {
 }
 
 /** The signed difference between two angles, in (-PI, PI]. */
-function shortestAngle(delta: number): number {
+export function shortestAngle(delta: number): number {
   let value = delta % (2 * Math.PI);
   if (value > Math.PI) value -= 2 * Math.PI;
   if (value <= -Math.PI) value += 2 * Math.PI;
   return value;
+}
+
+/** What one `turnTo` step does to the bearing, before any pixel reaches the page. */
+export interface RotateStep {
+  /** The change the step asked for, clamped to the leg's own `turnStepRad`. */
+  askedRad: number;
+  /** The left-button drag the pointer is given, CSS pixels. */
+  pixelsX: number;
+  /** The azimuth change the controls will deliver; zero below the pointer's half-pixel resolution. */
+  deliveredRad: number;
+}
+
+/**
+ * The rotate control's arithmetic, with no page in it.
+ *
+ * A bearing is bought with left-button pixels, and two limits decide how many of
+ * the radians asked for actually arrive. The first is the leg's own
+ * `turnStepRad`. The second is `maxRotatePx`, the longest drag the pointer may
+ * make in one gesture, converted at `2 * PI / clientHeight` — at this lane's
+ * 1280x720 capture that is 40 px for 0.3491 rad, and **that** is the limit that
+ * sets what a leg can turn in one step, because the plan's 0.5 and 0.6 rad steps
+ * never reach the pixel cap otherwise. A leg whose swing asks for more than
+ * 0.3491 rad a step therefore arrives short, and the shortfall is silent: the
+ * driver reports `remainingRad` and drives on, so the leg opens wherever the
+ * camera got to.
+ *
+ * That is not a hypothetical. The approach leg's swing was written as an
+ * unwrapped angle running from `OPENING_AZIMUTH` the long way round to
+ * `CROWD_AZIMUTH`, which is 7.7231 rad over six steps — 1.2872 rad a step, or
+ * 3.7 times this cap. The driver delivered 0.3491 rad a step and its
+ * shortest-angle arithmetic flipped sign twice on the way, so the approach ended
+ * at azimuth 1.2872 rad against the 2.2253 the crowd leg's first frame needed:
+ * 0.9381 rad, 53.8 degrees, short. The crowd leg then opened on a hill face
+ * about 17 m from the scored pose, and the frames failed the clearance check.
+ *
+ * Exported because a plan's swing is only convergent against *this* arithmetic,
+ * and a test that re-derived the cap would be checking its own copy of it rather
+ * than the control's.
+ */
+export function rotateStepRadians(
+  deltaRad: number,
+  options: { maxStepRad: number; canvasHeightPx: number; maxRotatePx: number },
+): RotateStep {
+  const askedRad = clamp(deltaRad, -options.maxStepRad, options.maxStepRad);
+  // `rotateLeft` subtracts from theta and is called with
+  // `2 * PI * pixelsX / clientHeight`, so pixels that buy a positive change in
+  // the azimuth are negative: a drag to the left. The sign lives here alone, so
+  // a caller cannot disagree with it.
+  const pixelsX = clamp(-askedRad / ((2 * Math.PI) / options.canvasHeightPx), -options.maxRotatePx, options.maxRotatePx);
+  const deliveredRad = Math.abs(pixelsX) < 0.5 ? 0 : -pixelsX * ((2 * Math.PI) / options.canvasHeightPx);
+  return { askedRad, pixelsX, deliveredRad };
 }
 
 function clamp(value: number, low: number, high: number): number {
