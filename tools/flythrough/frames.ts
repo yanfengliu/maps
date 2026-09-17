@@ -239,7 +239,8 @@ export function judgeSequence(
     if (empty > 0) {
       failures.push(
         `${empty} of ${legFrames.length} frames in ${leg.name} have under ${(floors.structuredPixels * 100).toFixed(0)}% ` +
-          `of their pixels showing structure (${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
+          "of their 144 cells showing structure — per-cell luminance deviation above 12, or above 30% of the cell's " +
+          `own mean — (${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
           "which is a frame filled by one surface: a wall, a roof or the sky. Those frames were captured but they judged " +
           "nothing, and a leg that is mostly such frames is a leg aimed at the inside of a building.",
       );

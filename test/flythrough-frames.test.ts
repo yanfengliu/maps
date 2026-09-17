@@ -208,7 +208,9 @@ describe("judgeSequence", () => {
   it("fails frames that are one flat surface, which is a camera aimed into a wall", () => {
     const wall = frames(6).map((frame, index) => (index < 3 ? { ...frame, structuredPixels: 0.0 } : frame));
     const failures = judgeSequence(wall, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
-    expect(failures.join("\n")).toMatch(/3 of 6 frames in overview have under 5% of their pixels showing structure/);
+    expect(failures.join("\n")).toMatch(
+      /3 of 6 frames in overview have under 5% of their 144 cells showing structure — per-cell luminance deviation above 12, or above 30% of the cell's own mean/,
+    );
   });
 
   it("reads a dark but textured frame as structured, and a blank sky as nothing", () => {
