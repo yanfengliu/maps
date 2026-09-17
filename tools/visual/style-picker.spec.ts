@@ -51,7 +51,10 @@ test("renders and selects an added registry style without picker changes", async
   await picker.click();
   await expect(picker, "a pointer press on the control must open its listbox").toHaveAttribute("aria-expanded", "true");
   await (await styleOption(page, picker, "cartographic")).click();
-  await expect(picker).toHaveAttribute("data-style-id", "cartographic");
+  await expect(
+    picker,
+    "the press on the option row must be what commits the style, not the press that opened the list",
+  ).toHaveAttribute("data-style-id", "cartographic");
   await expect(picker, "a completed switch must leave the listbox closed").toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("status")).toHaveText("cartographic");
   const box = await picker.boundingBox(); expect(box?.height).toBeGreaterThanOrEqual(44);

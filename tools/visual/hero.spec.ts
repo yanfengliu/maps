@@ -203,7 +203,10 @@ test.describe("hero frames", () => {
         await styleSelect.press(style === "satellite" ? "End" : "Home");
         await styleSelect.press("Enter");
       }
-      await expect(styleSelect).toHaveAttribute("data-style-id", style);
+      await expect(
+        styleSelect,
+        `the ${via} switch must reach the control's own value, and a press on the option row is what commits it`,
+      ).toHaveAttribute("data-style-id", style);
       await expect(styleSelect, "a completed switch must leave the listbox closed").toHaveAttribute("aria-expanded", "false");
       await page.waitForFunction((id) => window.__mapsHarness?.style().id === id, style);
       const after = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount, search: location.search }));
@@ -315,7 +318,10 @@ test.describe("hero frames", () => {
       ).toHaveAttribute("aria-expanded", "true");
       await styleSelect.press("End");
       await styleSelect.press("Enter");
-      await expect(styleSelect).toHaveAttribute("data-style-id", "cartographic");
+      await expect(
+        styleSelect,
+        "the return switch must reach the control's own value, and Enter on the highlighted row is what commits it",
+      ).toHaveAttribute("data-style-id", "cartographic");
       await page.waitForFunction((frames) => window.__mapsHarness?.style().id === "cartographic" && window.__mapsHarness.status().frameCount > frames, beforeReturn.status.frameCount);
       await driver.waitForTilesIdle();
       const afterReturn = await page.evaluate(() => ({
