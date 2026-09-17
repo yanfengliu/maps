@@ -788,6 +788,8 @@ Six runs on the final code revision, in three load states (CPU median 35%, 70% a
 
 The 20:17 exit 1 is a different defect, found by these runs and **not fixed here**: `test/tile-memory.test.ts` failed with `SyntaxError: Unexpected end of JSON input` at `JSON.parse(repaired.stdout…)`, its LRU child having produced no stdout inside the `spawnSync` budget of 2,000 ms. Measured on the same machine minutes later, that child takes **66-87 ms** over six runs, so the budget is not tight in steady state; what the run shows is that a stall on this box can miss it, and that the failure then surfaces as a JSON parse error rather than as the timeout it is. It is the same class as this entry's second finding and belongs to its own lane.
 
+**Corrected 2026-09-16, in the entry below.** This paragraph names the wrong arm and therefore the wrong child. The line that threw is `13:15`, `JSON.parse(control.stdout.trim())`, and the child is the `--fractional` control, which hangs by design and needs only its *first* line inside the budget — not the repaired child, which runs to completion (`artifacts/flake/gate-R6.log:171-177`, re-read for the fix). The class is unchanged and the diagnosis of it was right; the arm was not.
+
 **The four evidence classes this file carries still refuse, re-measured on this revision** (the same four the earlier entry, "The complete visual evidence check catches erased or changed captures", records as red controls). `node artifacts/flake-probes/defect-probe.ts` builds the synthetic 44-frame run, certifies it — `All 44 fresh native-resolution frames survived the complete visual gate with matching hashes.` — then reintroduces each defect in the evidence and prints `verifyVisualRun`'s own message:
 
 ```
@@ -804,3 +806,48 @@ a byte changed in dist/      Visual build changed during capture: …\build.js. 
 Restoring each one certifies again, and `4 of 4 defects refused by name`.
 
 **Bound.** The ceilings cover the two cases' own work at the contention this suite has produced on this machine, and the six final runs on `240bc38` are the sample: five green, one red for the `tile-memory` defect above, and no watchdog firing in any of them. Six runs cannot prove a race is gone; what is proved is the mechanism and that the case that triggered it no longer holds the loop. The `visual-instrument` groups carry one ceiling for four groups, so a case inside one that pays none of that cost is bounded loosely — it finishes in milliseconds either way. The tick loop's yield assumes the population's own update is time-independent, which is the property `src/agents/population/tick.ts` is built on and which no assertion here checks; a future edit that reads a wall clock inside the loop would make the turn a behaviour change rather than a courtesy. Nothing here touches `src/**`, `tools/visual/**`, the Playwright configs or `data/**`, and the certificate's own digests are unaffected: no test file is in the harness closure.
+
+## The tile-memory case reports a stalled child as a stall, not as a JSON parse error
+
+**Gate:** `npx vitest run test/tile-memory.test.ts` — `outputWithinBudget` and `controlRemainder` in `test/tile-memory.test.ts`, over the real zero-budget LRU unload in `test/fixtures/lru-disposal.mjs`. The fixture is unchanged, and nothing under `src/**` or `tools/**` is involved.
+
+**Landed:** 2026-09-16 in `b308b78`, off `22ef994`, on branch `worker/tile-memory` in the worktree `artifacts/tile-memory/wt`. Not merged: the coordinator lands the branch.
+
+**Why.** `npm test` failed once in six runs on this box with `SyntaxError: Unexpected end of JSON input`, and the arm it was recorded against was the wrong one. Both arms spawn the same fixture and parse its stdout without checking that it has any. `spawnSync` at its budget returns `error.code = "ETIMEDOUT"`, `status = null`, `signal = "SIGTERM"` and **no stdout at all** — measured over budgets of 1, 5, 20, 50 and 100 ms, 0 bytes each time, against 75 bytes and exit 0 at 2,000 ms (scratch probe `artifacts/tile-memory-probe/spawn-budget-probe.mjs`, worktree-ignored under `artifacts/tile-memory/wt` and gone with it) — so `JSON.parse` over that empty string is the reported `SyntaxError`, and the timeout is reported as a claim about JSON.
+
+**The arm that threw is the control, and the child is the one that is supposed to hang.** `artifacts/flake/gate-R6.log:171-177` puts the failure at `13:15`, `JSON.parse(control.stdout.trim())`; the control's budget is *meant* to expire, because the `--fractional` child prints one line and then never returns — it was still running when killed at 25 s, and its remainder is `1.1102230246251565e-16`. All that child needs inside the budget is its first line. Deliberately reproduced in a scratch copy of the file inside the worktree with the control's budget cut from 2,000 ms to 50 ms and everything else byte-identical: `npx vitest run test/zz-scratch-control-budget.test.ts` exits 1 in 237 ms with the same `SyntaxError: Unexpected end of JSON input`, the caret on the control's parse. The repaired arm cannot produce it — with its own budget cut to 5 ms it fails earlier, at `expect(repaired.error).toBeUndefined()`, with `Error { "message": "spawnSync C:\\Program Files\\nodejs\\node.exe ETIMEDOUT", "code": "ETIMEDOUT" }` — which is what makes the earlier entry's attribution wrong from the code and not only from the log. That entry now carries a dated correction.
+
+**What changed.** No arm parses an empty string. A child with `error` set, a control child that settles before printing a complete line, and a child that exits with nothing on stdout each fail by name, with the command line as it ran, the budget it missed, the child's measured cost on this box and what to do next. The control's two windows are now two numbers rather than one: the load-sensitive budget for its first line, and the hang window after that line. The budgets are derived in the file's header from the child's own work, measured here with the loaded 60-file suite running on the same box — 66-152 ms from spawn to exit over 25 runs and 66-112 ms to the control's first line over 25, against 66-87 ms over six runs recorded earlier — so `CHILD_BUDGET_MS` is 15 s (100x the top measurement, 7.5x the 2,000 ms a stall broke), `HANG_WINDOW_MS` stays 2,000 ms because a hang cannot be made shorter or longer by load, and `CASE_BUDGET_MS` is 37 s, checked against both. No assertion about the LRU totals was weakened: `{ removed: 3, remaining: 0 }` and `remainder > 0` are the same assertions over the same fixture.
+
+**Red controls, each run from the worktree at `b308b78` and each restored byte-for-byte afterwards** (the file's SHA-256 is `9732123AF23ED874A8D7009E23EC362E651540AC1743A061AA8EE3FE366F712F` before and after all three), and each quoted in full so it can be rebuilt from this entry alone:
+
+Mutation R1, `CHILD_BUDGET_MS = 1`, standing in for the stalled box, exit 1 in 18 ms:
+
+```
+Error: C:\Program Files\nodejs\node.exe test/fixtures/lru-disposal.mjs produced no output within its 1 ms budget, so
+this run measured nothing and there was no JSON to read. That child boots Node, strips types from two modules and
+does this work in 66-152 ms on this box, so a missed budget is a stall and not slow work: re-run it, and if it
+repeats on an idle box the child is the defect rather than the budget.
+ ❯ outputWithinBudget test/tile-memory.test.ts:56:26
+```
+
+Mutation R2, the control's first-line budget alone cut to 1 ms — the exact case that reported a parse error at 20:18 — exit 1 in 139 ms:
+
+```
+Error: C:\Program Files\nodejs\node.exe test/fixtures/lru-disposal.mjs --fractional produced no output within its
+1 ms budget, so this run measured nothing and there was no JSON to read. That child boots Node, strips types from
+two modules and does this work in 66-112 ms to its first line on this box, so a missed budget is a stall and not
+slow work: re-run it, and if it repeats on an idle box the child is the defect rather than the budget.
+```
+
+Mutation R3, the control pointed at the terminating arm (`childArgs()` in place of `childArgs("--fractional")`), so the child prints and exits instead of hanging — the check that can tell a hang from a result, exit 1 in 2.47 s:
+
+```
+AssertionError: C:\Program Files\nodejs\node.exe test/fixtures/lru-disposal.mjs exited 0 within 2000 ms of printing
+its remainder, so fractional estimates no longer hang the zero-budget unload, which is the defect this arm exists
+to reintroduce.: expected true to be false // Object.is equality
+```
+
+**Green, all on the committed bytes.** `npx vitest run test/tile-memory.test.ts` exit 0 ten times over, at 100% CPU with 73 node processes for the first six and 2,162-2,194 ms per case for the last four; `npm test` exit 0 four times — twice before the file's last two cosmetic edits, twice on the committed revision — each reporting `Test Files 60 passed (60)` and `Tests 442 passed (442)` with no `Errors` line and no `Timeout calling "onTaskUpdate"` anywhere in the logs, at CPU 93%, 80%, 65% and 47%. The case still costs its old 2.2 s: the control's kill and the hang window are the same 2,000 ms it used to spend waiting to be killed. Typecheck, build and audit were exit 0 on the same revision. `npm run visual` was not run: this change is one unit-test file, no test file is in the harness closure, and the gate is a three-hour run that owns the machine.
+
+**Bound.** The budgets are derived from one child on one box, measured while a sibling checkout held 47-100% of 32 logical cores; they bound *this* child's startup and LRU work and say nothing about any other spawn in the suite, which still carry the plain numbers they were written with. The stall factor the fix is sized against is the one failure observed — a `--fractional` child that had not printed its first line after 2,000 ms against 66-87 ms in steady state — so it is sized at about 100x the measured worst rather than derived from a distribution. A box stalled past 15 s still fails this case, now with a message that says so; that red is honest and not a flake. Nothing here proves the LRU zero-budget disposal is right on any input other than the three items and the two accountings the fixture builds, which is the bound the case already carried.
