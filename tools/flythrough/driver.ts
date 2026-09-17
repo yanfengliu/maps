@@ -129,6 +129,18 @@ export interface LegStep {
    * after the leg ended.
    */
   turnStepRad?: number;
+  /**
+   * True when this step deliberately asks the camera for nothing.
+   *
+   * The crowd leg's closing hold uses it: the camera stays where it is so that
+   * every change between those frames is the scene's own, which is the
+   * measurement the hold exists to make. The spec copies the mark onto the
+   * frame's record, and the sequence judge exempts the pair from the travel
+   * floor and requires the scene to be alive instead — the damping tail is
+   * dead within one capture gap, so a held pair's travel is genuinely
+   * sub-millimetre by design and proves nothing about the input path.
+   */
+  holdsCamera?: boolean;
   /** What this step is, for the manifest. */
   note?: string;
 }
