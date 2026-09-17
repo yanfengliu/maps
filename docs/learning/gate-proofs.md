@@ -572,3 +572,26 @@ Restoring the two terms: `1 passed`, in 2.56 s. The same mutation driven through
 
 **Bound.** One delivered network at seed `0x5b1b0a`, 120 vehicles and no pedestrians, 1,200 ticks at 1/60 s — 20 simulated seconds — sampled every 5 ticks. That window is long enough for queues to form at the portals and at the first gates and for two bodies to be placed at one portal, and it is not a full signal cycle; it says nothing about pedestrian spacing, about lane changes at junctions, about the 3,000-pedestrian acceptance load or about route completion. It also permits head-on overlaps by construction, where two bodies are drawn on the same folded lane centreline: the test requires such a pair's centrelines to come within the two bodies' own half lengths, and fails any other head-on overlap as a different defect. The pedestrian half of the same review finding (46,615 overlapping pairs at t = 60 s) is **not** gated on this revision: `test/pedestrian-overlap.test.ts` is untracked and lives unlanded in `artifacts/spacing/wt`, so the crowd's spacing has no gate here.
 
+## The visual pre-flight answers in a minute what a capture answers in three hours
+
+**Gate:** `npm run visual:smoke` — `playwright.smoke.config.ts` and `tools/visual/smoke.spec.ts`. It asserts the preconditions a capture's first minute would test and photographs nothing: the production build boots and the harness is readable; **the renderer is SwiftShader through the pixel lane's own `pixelLaneRefusal` rather than a copy of it**; the post chain is active and carries `[TAARenderPass, GTAOPass, UnrealBloomPass, OutputPass]`; the tileset is reachable with no failed tiles; the World style control offers both registry entries and switches under a real keyboard press and a real pointer click, reporting each through the `data-style-id` it writes onto itself; and the simulation keeps advancing across both.
+
+**Landed:** 2026-09-16 in `5c32286`, after the coordinator started the three-hour verdict lane three times against a revision whose World style control had changed shape from a native `<select>` to a button plus an in-page listbox, each run dying on the same assertion about twenty-eight seconds in, after `--reset` and after the build.
+
+**Mutation — the real defect, not a synthetic break:** the assertion reverted to the assumption the three dead runs made, `styleControl.locator("option")`, which is the old control's shape rather than the new one's.
+
+**Failure:** `1 failed`, in 26.9 s:
+
+```
+Error: expect(received).toContain(expected) // indexOf
+Expected value: "Cartographic"
+Received array: []
+> 77 |   expect(optionLabels).toContain("Cartographic");
+1 failed
+```
+
+That is the same message, in the same form, that `hero.spec.ts` produced three times inside the verdict lane — `Received array: []` against an expected style label — reached here in twenty-seven seconds instead of after a reset, a build, and a lane that had already been announced as the deliverable's evidence. Restored, `1 passed` in 25.0 s, `57.3 s` for the whole command including the preview server.
+
+**Bound.** One renderer (SwiftShader), one URL (the dusk hero URL), one build, and no capture at all: **it says the app will answer the questions the capture asks, and nothing about what the capture will photograph.** It cannot see a pose drifting, a frame count short, a blank frame, an aliasing artefact or temporal crawl — those need the frames, and the verdict lane remains the only evidence. It is also collected by the verdict lane's own `testDir` unless `playwright.config.ts` excludes it, which it now does by name: that omission was a real defect of this landing, caught by round 31's review, and the fix carries its reason in the config.
+
+
