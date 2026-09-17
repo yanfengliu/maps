@@ -32,7 +32,7 @@ The positive controls fire and the question arm is silent across all three chann
 ## What is not proved
 
 - No lane of `npm run visual` was run: the verdict lane is three hours and another unit owns it. The two spec-side assertions (the lifecycle lane's page-error list and teardown read, and the specs' renderer refusal at the first frame) are typechecked, exercised against the shipping bundle through the probe, and pinned by source-level cases — but they have not executed inside the specs themselves.
-- The scene digest is over file names, sizes and mtimes, not contents. A byte rewritten in place with the same length and mtime is invisible to it.
+- The scene digest is over file names, sizes and mtimes, not contents. A byte rewritten in place with the same length and mtime is invisible to it. **Correction, 2026-09-16, `f4e96f0`:** the digest is now over the path each file is served at and the SHA-256 of its bytes, so that rewrite is exactly what it sees, and this bound was still being repeated in two places in `docs/learning/gate-proofs.md` until the same day. What the current digest cannot report is a file changed and changed back between its two calls, which no digest taken at two instants can see. The sentence standing before this marker is what was believed when this entry was written and is left as it was, because this file is history; the red control for the byte binding is in `docs/learning/gate-proofs.md`, "The scene digest sees a served file rewritten in place".
 - The three lifecycle records prove three conforming records for this build exist after this run's start. They cannot prove the records came from this process tree.
 
 ## Numbers that moved
