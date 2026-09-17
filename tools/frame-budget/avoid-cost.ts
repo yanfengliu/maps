@@ -101,7 +101,7 @@ const agents = crowd.agents;
 const active: number[] = [];
 for (let slot = 0; slot < pedestrians; slot += 1) if (poses.active[slot]) active.push(slot);
 
-const counters: GridCounters = { queries: 0, cellsVisited: 0, bodiesVisited: 0, inRadius: 0, atCap: 0, stoppedEarly: 0 };
+const counters: GridCounters = { queries: 0, cellsVisited: 0, bodiesVisited: 0, inRadius: 0, atCap: 0 };
 (globalThis as { __DSH_GRID_COUNTS?: GridCounters }).__DSH_GRID_COUNTS = counters;
 
 const neighbourOut = new Int32Array(PEDESTRIAN_DYNAMICS.neighbours);
@@ -119,7 +119,7 @@ const stage = (name: string, work: () => void): Stage => {
 const round = (value: number): number => Math.round(value * 1000) / 1000;
 
 /** What the neighbour query walked, filled by the stage that runs it. */
-const walk = { queries: 0, cellsVisitedPerQuery: 0, bodiesVisitedPerQuery: 0, returnedPerQuery: 0, stoppedEarlyShare: 0 };
+const walk = { queries: 0, cellsVisitedPerQuery: 0, bodiesVisitedPerQuery: 0, returnedPerQuery: 0 };
 /** Half-plane counts, filled by the stage that builds them. */
 const counting = { calls: 0, lines: 0, nulls: 0 };
 
@@ -129,7 +129,7 @@ function runRound(): Stage[] {
   let sink = 0;
 
   // 1. The neighbour query alone, at every active body's own position.
-  counters.queries = 0; counters.cellsVisited = 0; counters.bodiesVisited = 0; counters.inRadius = 0; counters.atCap = 0; counters.stoppedEarly = 0;
+  counters.queries = 0; counters.cellsVisited = 0; counters.bodiesVisited = 0; counters.inRadius = 0; counters.atCap = 0;
   stages.push(stage("neighbourQuery", () => {
     for (let index = 0; index < active.length; index += 1) {
       const agent = agents[active[index]!]!;
@@ -140,7 +140,6 @@ function runRound(): Stage[] {
   walk.cellsVisitedPerQuery = round(counters.cellsVisited / Math.max(1, counters.queries));
   walk.bodiesVisitedPerQuery = round(counters.bodiesVisited / Math.max(1, counters.queries));
   walk.returnedPerQuery = round(counters.inRadius / Math.max(1, counters.queries));
-  walk.stoppedEarlyShare = round(counters.stoppedEarly / Math.max(1, counters.queries));
 
   // 2. Half-plane construction alone, on the neighbours the query above returned.
   const lines: Line[] = [];

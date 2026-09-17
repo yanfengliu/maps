@@ -78,7 +78,7 @@ for (let slot = 0; slot < bodies; slot += 1) {
 }
 
 const grid = new CellGrid({ cellSizeM: PEDESTRIAN_DYNAMICS.cellSizeM, halfExtentM: 520 });
-const counters: GridCounters = { queries: 0, cellsVisited: 0, bodiesVisited: 0, inRadius: 0, atCap: 0, stoppedEarly: 0 };
+const counters: GridCounters = { queries: 0, cellsVisited: 0, bodiesVisited: 0, inRadius: 0, atCap: 0 };
 (globalThis as { __DSH_GRID_COUNTS?: GridCounters }).__DSH_GRID_COUNTS = counters;
 
 const rebuildBefore = performance.now();
@@ -95,7 +95,7 @@ for (let index = 0; index < 5000; index += 1) {
   const slot = index % bodies;
   grid.neighbours(position[slot * 3]!, position[slot * 3 + 2]!, radius, limit, out);
 }
-counters.queries = 0; counters.cellsVisited = 0; counters.bodiesVisited = 0; counters.inRadius = 0; counters.atCap = 0; counters.stoppedEarly = 0;
+counters.queries = 0; counters.cellsVisited = 0; counters.bodiesVisited = 0; counters.inRadius = 0; counters.atCap = 0;
 
 const samples: number[] = [];
 const found: number[] = [];
@@ -128,7 +128,6 @@ const result = {
     bodiesVisited: rounded(counters.bodiesVisited / queries),
     inRadius: rounded(counters.inRadius / queries),
     atCap: rounded(counters.atCap / queries),
-    stoppedEarlyShare: rounded(counters.stoppedEarly / queries),
     returned: rounded(found.reduce((sum, value) => sum + value, 0) / found.length),
     returnedMedian: at(found, 0.5),
   },
