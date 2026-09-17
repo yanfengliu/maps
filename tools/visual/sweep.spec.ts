@@ -18,7 +18,7 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { laneDir, pixelLaneRefusal } from "./lane.js";
+import { laneDir, pixelLaneRefusal, requestedGpu } from "./lane.js";
 import { collectPageErrors } from "./page-errors.js";
 import { SWEEP_CAPTURE_COUNT, SWEEP_TEST_BUDGET_MS } from "./budget.js";
 import { OrbitDriver, shortestAngle, type CameraSnapshot, type TileStatus } from "./orbit.js";
@@ -39,8 +39,10 @@ interface CapturedFrame {
 
 test.describe("visual sweep", () => {
   // Eighteen poses, each waiting for damped controls to come to rest *and* for
-  // the building tileset to stop refining, on a software renderer drawing half a
-  // million triangles and 4096x4096 texture atlases.
+  // the building tileset to stop refining, over half a million triangles and
+  // 4096x4096 texture atlases. On the hardware lane that is seconds a view; the
+  // measurements are in the gate's own report, and the budget below is the
+  // software pace kept as a backstop.
   //
   // The budget is derived from those eighteen captures rather than rounded:
   // `tools/visual/budget.ts` carries the derivation and the measurements. The
@@ -57,8 +59,8 @@ test.describe("visual sweep", () => {
   for (const style of ["satellite", "cartographic"] as const) {
   test(`${style}: orbits the scene through the real controls and writes every frame`, async ({ page }) => {
     // The lane's own root: the verdict lane writes `artifacts/visual/`, the
-    // hardware iteration lane `artifacts/visual-hardware/`. Resolved per test
-    // rather than at module load, so the run's own lane governs.
+    // frame-budget lane `artifacts/frame-budget/`. Resolved per test rather than
+    // at module load, so the run's own lane governs.
     const OUTPUT_DIR = path.resolve(laneDir(), "sweep", style);
     // Wipe first. A stale frame from an earlier run is worse than no frame: it
     // makes a run that never captured anything look like a run that passed.
@@ -73,11 +75,11 @@ test.describe("visual sweep", () => {
     const driver = new OrbitDriver(page);
     const status = await driver.waitForFirstFrame();
 
-    // The renderer is asserted, not recorded. The 44 reviewed frames are
-    // comparable across machines only while they all come from the SwiftShader
-    // `playwright.config.ts` pins, and a Chromium that accepted the flag and drew
-    // somewhere else would move the reviewed set silently. Here, at the first
-    // frame, so a wrong renderer fails in seconds instead of after a whole sweep.
+    // The renderer is asserted, not recorded. The 44 appearance frames are drawn
+    // on the hardware renderer `playwright.config.ts` pins, and a Chromium that
+    // fell back to a software rasteriser would draw a different picture at a cost
+    // of seconds a frame. Here, at the first frame, so a wrong renderer fails in
+    // seconds instead of after a whole sweep.
     const rendererRefusal = pixelLaneRefusal(status.glRenderer, `${style}: the first frame of the sweep`);
     if (rendererRefusal !== null) throw new Error(rendererRefusal);
 
@@ -317,7 +319,7 @@ test.describe("visual sweep", () => {
     const manifest = {
       capturedAt: new Date().toISOString(),
       style,
-      requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+      requestedGpu: requestedGpu(),
       lane: process.env["MAPS_VISUAL_LANE"] ?? "verdict",
       budgetMs: SWEEP_TEST_BUDGET_MS,
       captures: ledger.entries(),

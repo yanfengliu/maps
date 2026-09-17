@@ -1,11 +1,11 @@
 /**
  * Which lane a capture run belongs to, and what that lane is allowed to write.
  *
- * `npm run visual` produces the 44-frame verdict set on SwiftShader. A pixel set
- * captured on one renderer cannot inherit a review written for another, so each
- * iteration lane is a different lane with different pixels and must be
- * impossible to mistake for the verdict. Four things enforce that here rather
- * than in prose:
+ * `npm run visual` produces the 44-frame verdict set on the hardware renderer,
+ * since the owner's 2026-09-16 instruction ("if you can use GPU, don't use CPU")
+ * replaced the machine-independent software set. Each iteration lane is still a
+ * different lane writing different pixels, and must be impossible to mistake for
+ * the verdict. Four things enforce that here rather than in prose:
  *
  * 1. Each lane resolves to its own output root. No iteration lane can write into
  *    `artifacts/visual/`, because its root is its own directory.
@@ -19,23 +19,35 @@
  *    `HARDWARE_RENDERER_DENYLIST` in its own specification. A recorded string is
  *    a note; a refused string is a check.
  *
+ * The renderer no longer separates the verdict from an iteration lane: every lane
+ * is on the GPU now. What separates them is the run — the verdict is the one the
+ * gate's own chain opened and certified, with the build, the served scene and the
+ * harness pinned at `--begin`, and its frames are the appearance set the plan's
+ * reviews are bound to. Everything else writes to a directory the certificate
+ * never reads.
+ *
  * The lane is named by `MAPS_VISUAL_LANE`, and the iteration lanes additionally
  * require `MAPS_VISUAL_GPU=hardware` — which is also the switch `orbit.ts`
  * already uses to refuse a silent software fallback, so a hardware run that
  * softwarises fails by renderer name rather than reporting a fast CPU frame.
  *
- * The two iteration lanes are not one lane with a flag, because they differ by
+ * The three iteration lanes are not one lane with a flag, because they differ by
  * more than taste: the appearance sweep runs `?agents=`-free by design, so the
  * reviewed 44 frames contain no agent at all. `populated-iteration` captures the
  * population and is the only lane whose frames can show a pedestrian.
  */
 
-export const LANES = ["verdict", "hardware-iteration", "populated-iteration", "flythrough-iteration"] as const;
+export const LANES = ["verdict", "frame-budget", "populated-iteration", "flythrough-iteration"] as const;
 
 export type Lane = (typeof LANES)[number];
 
 /**
- * The lane whose frames are comparable across machines and carry the review.
+ * The lane whose frames carry the review and the certificate.
+ *
+ * It is no longer the lane that is comparable across machines — the 44 frames are
+ * this GPU's pixels since 2026-09-16 — so what makes it the verdict is that the
+ * gate's chain opened it and pinned the build, the served scene and the harness
+ * around it, and the certificate names the GPU and driver those frames came from.
  *
  * Typed as the literal rather than as `Lane` so that `lane !== VERDICT_LANE`
  * narrows the union, which is what lets `assertCertifiable` look a refusal up
@@ -44,29 +56,15 @@ export type Lane = (typeof LANES)[number];
 export const VERDICT_LANE = "verdict" as const;
 
 /**
- * The environment `playwright.hardware.config.ts` pins for its own run.
- *
- * Exported rather than written into the config as string literals so the config
- * and this module cannot disagree about what the hardware lane is called, and so
- * the fact that it requests the GPU lives beside the check that refuses a
- * software fallback.
- */
-export const HARDWARE_ITERATION_ENV: Readonly<Record<string, string>> = Object.freeze({
-  MAPS_VISUAL_LANE: "hardware-iteration",
-  MAPS_VISUAL_GPU: "hardware",
-});
-
-/**
  * The environment `playwright.populated.config.ts` pins for its own run.
  *
  * A third lane, for the same reason the second one exists: the verdict set is
  * captured `?agents=`-free by design, so its 44 frames contain no pedestrian and
  * no vehicle, and a frame set of the *population* cannot inherit the review
- * written for an empty city. On top of the renderer difference it carries scene
- * state the reviewed set never had, so it is kept apart by name rather than
- * folded into the hardware lane: a run that forgot `?agents=1` would otherwise
- * write an empty city into the populated lane's directory and look like a
- * capture of the population.
+ * written for an empty city. It carries scene state the reviewed set never had, so
+ * it is kept apart by name rather than folded into another lane: a run that forgot
+ * `?agents=1` would otherwise write an empty city into the populated lane's
+ * directory and look like a capture of the population.
  */
 export const POPULATED_ITERATION_ENV: Readonly<Record<string, string>> = Object.freeze({
   MAPS_VISUAL_LANE: "populated-iteration",
@@ -74,8 +72,8 @@ export const POPULATED_ITERATION_ENV: Readonly<Record<string, string>> = Object.
   // pedestrians (measured 2026-09-15 under the verdict lane's load,
   // `artifacts/populated-capture/population-run-1800.json`), so a software
   // rasteriser would put a wall-clock ceiling on the simulated window this lane
-  // exists to cover. It is a hardware lane for that reason and not only for
-  // comparability.
+  // exists to cover. It asks for the hardware renderer for that reason and not
+  // only for comparability.
   MAPS_VISUAL_GPU: "hardware",
 });
 
@@ -108,7 +106,7 @@ export const FLYTHROUGH_ITERATION_ENV: Readonly<Record<string, string>> = Object
  */
 const LANE_ROOT: Readonly<Record<Lane, string>> = Object.freeze({
   verdict: "artifacts/visual",
-  "hardware-iteration": "artifacts/visual-hardware",
+  "frame-budget": "artifacts/frame-budget",
   "populated-iteration": "artifacts/populated-capture",
   "flythrough-iteration": "artifacts/flythrough2",
 });
@@ -149,23 +147,41 @@ export function laneDir(lane: Lane = activeLane()): string {
 }
 
 /**
+ * The renderer this process's lane asks Chromium for, for the record.
+ *
+ * The capture specifications and `progress.ts` run inside Playwright, under a
+ * config that declares `MAPS_VISUAL_GPU` itself, so there the environment is the
+ * whole answer. The wrapper does not: `node tools/visual/verify-output.ts --begin`
+ * is its own process, started before any lane, and the `?? "software"` it used to
+ * carry filed the first promoted run's own `run.json` as a software request beside
+ * a 4090 renderer in the very same certificate — measured 2026-09-17. The verdict
+ * lane asks for the GPU by construction, which is what its config pins and what
+ * `pixelLaneRefusal` enforces at the first frame of either capture spec.
+ */
+export function requestedGpu(): "hardware" | "software" {
+  const declared = process.env["MAPS_VISUAL_GPU"];
+  if (declared === "hardware" || declared === "software") return declared;
+  return activeLane() === VERDICT_LANE ? "hardware" : "software";
+}
+
+/**
  * Why a lane's frames cannot be the verdict, in that lane's own terms.
  *
  * Kept per lane rather than as one sentence, because the reasons genuinely
- * differ: the hardware lane differs by renderer, and the populated lane differs
- * by renderer *and* by scene — no frame of the reviewed set contains an agent.
+ * differ: the frame-budget lane measures intervals rather than appearance, and
+ * the populated lane differs by scene as well — no frame of the reviewed set
+ * contains an agent.
  */
 const LANE_REFUSAL: Readonly<Record<Exclude<Lane, typeof VERDICT_LANE>, string>> = Object.freeze({
-  "hardware-iteration":
-    "its frames come from a different renderer than the reviewed 44-frame set",
+  "frame-budget":
+    "its subject is the frame interval at 1920x1080, not the appearance of the 1280x720 frames the " +
+    "reviews are bound to, and it keeps no frame set to review",
   "populated-iteration":
-    "its frames come from a different renderer than the reviewed 44-frame set and from a " +
-    "populated scene the reviewed 44-frame set never contained, since the appearance sweep " +
-    "runs with the population switched off by design",
+    "its frames come from a populated scene the reviewed 44-frame set never contained, since the " +
+    "appearance sweep runs with the population switched off by design",
   "flythrough-iteration":
-    "its frames are a moving sequence on a different renderer than the reviewed 44-frame set, " +
-    "from a populated scene the reviewed set never contained, and its subject is what changes " +
-    "between adjacent frames, which no still frame of the reviewed set can show",
+    "its frames are a moving sequence from a populated scene the reviewed set never contained, and its " +
+    "subject is what changes between adjacent frames, which no still frame of the reviewed set can show",
 });
 
 /**
@@ -174,15 +190,17 @@ const LANE_REFUSAL: Readonly<Record<Exclude<Lane, typeof VERDICT_LANE>, string>>
  * `complete.json` is the artifact the plan and the reviews read. An iteration run
  * reaching this point would produce a certificate for a pixel set that no review
  * covers, and the reader of that file cannot tell the two apart afterwards —
- * which is exactly the mistake the lane split exists to make impossible.
+ * which is exactly the mistake the lane split exists to make impossible. The
+ * renderer is no longer what makes an iteration frame different, so the refusal
+ * is about the run rather than the GPU.
  */
 export function assertCertifiable(lane: Lane = activeLane()): void {
   if (lane !== VERDICT_LANE) {
     throw new Error(
-      `Refusing to certify the "${lane}" lane: ${LANE_REFUSAL[lane]}, and a pixel set captured ` +
-        `on one renderer cannot inherit a review written for another. Only the "${VERDICT_LANE}" ` +
-        "lane produces complete.json. Run `npm run visual` for the verdict, and use the iteration " +
-        "lanes for iteration only.",
+      `Refusing to certify the "${lane}" lane: ${LANE_REFUSAL[lane]}. Only the "${VERDICT_LANE}" lane ` +
+        "produces complete.json, because the certificate binds the run's own build, served scene and " +
+        "harness, which only the gate's chain pins. Run `npm run visual` for the verdict, and use the " +
+        "iteration lanes for iteration only.",
     );
   }
 }
@@ -190,23 +208,21 @@ export function assertCertifiable(lane: Lane = activeLane()): void {
 /**
  * Software rasterisers, by the strings Chromium reports for them.
  *
- * A denylist rather than an allowlist, because the lifecycle lane's question is
- * "is this the hardware renderer rather than a fallback" and an allowlist would
- * also refuse hardware this repository has never measured. The pixel lane's
- * question is the opposite one and has its own positive predicate below.
+ * Both halves of the gate refuse these now. The pixel lane's frames are the
+ * appearance set and are drawn on the GPU, and the lifecycle lane's question was
+ * always "is this the hardware renderer rather than a fallback", since a software
+ * rasteriser spends about 28-30 s inside Chromium's own teardown.
+ *
+ * A denylist rather than an allowlist, because an allowlist would also refuse
+ * hardware this repository has never measured. What *requires* hardware rather
+ * than merely excluding software is the second layer: the certificate compares
+ * the renderer Chromium reports against the GPU and driver version read from the
+ * machine (`tools/visual/gpu-identity.ts`), so a frame set is bound to the
+ * hardware it was drawn on instead of to a string some other machine could
+ * report.
  */
 export const HARDWARE_RENDERER_DENYLIST =
   /swiftshader|llvmpipe|softpipe|software|basic render driver|\bwarp\b/i;
-
-/**
- * The renderer the pixel lane's frames must come from, positively.
- *
- * `playwright.config.ts` pins `--use-angle=swiftshader`, and the whole premise of
- * splitting the lanes by renderer is that the 44 reviewed frames come from one
- * known renderer. Recording that string is not a check: a Chromium that accepted
- * the flag and drew somewhere else would move the reviewed frame set silently.
- */
-export const PIXEL_LANE_RENDERER = /swiftshader/i;
 
 /**
  * Why this renderer string cannot be the pixel lane's, or null when it can.
@@ -215,22 +231,29 @@ export const PIXEL_LANE_RENDERER = /swiftshader/i;
  * first frame, and by `verify-output.ts`, which refuses to certify a frame set
  * whose manifests name anything else — so the refusal names the offending string
  * wherever it fires instead of only in the spec that happened to run.
+ *
+ * This is the fast half of the requirement. It fires on a Chromium that fell back
+ * to a CPU rasteriser; the certificate's GPU-identity check is the half that
+ * fires on a Chromium drawing on some *other* GPU, which is a slower comparison
+ * because it needs the machine's own answer.
  */
 export function pixelLaneRefusal(renderer: unknown, where: string): string | null {
   if (typeof renderer !== "string" || renderer.trim() === "") {
     return (
       `${where} reported no glRenderer, so this run cannot show which renderer produced its frames. ` +
-      "The pixel lane's frames are comparable across machines only while every one of them comes from " +
-      "the SwiftShader that lane pins (playwright.config.ts, --use-angle=swiftshader); a frame set with " +
-      "no renderer identity cannot be reviewed as this lane's."
+      "The 44-frame appearance set is captured on the hardware renderer the gate pins " +
+      "(playwright.config.ts, --use-angle=d3d11), and the certificate names the GPU and driver version " +
+      "beside it; a frame set with no renderer identity cannot be reviewed as this lane's."
     );
   }
-  if (!PIXEL_LANE_RENDERER.test(renderer)) {
+  if (HARDWARE_RENDERER_DENYLIST.test(renderer)) {
     return (
-      `${where} reports the renderer "${renderer}", which is not SwiftShader. The 44-frame pixel set is ` +
-      "comparable across machines only while every frame comes from the software lane the config pins " +
-      "(--use-angle=swiftshader); a set captured on another renderer cannot inherit a review written " +
-      "for this one, and there is deliberately no switch that moves this lane."
+      `${where} reports the renderer "${renderer}", which names a software rasteriser. The 44-frame ` +
+      "appearance set is drawn on the GPU since the owner's 2026-09-16 instruction, not on the CPU: a " +
+      "software frame costs seconds where the hardware frame costs milliseconds, and it is a different " +
+      "picture from the one the reviews are of (playwright.config.ts, --use-angle=d3d11). Check that the " +
+      "GPU is usable and that no software fallback flag was passed; a machine with no usable GPU reports " +
+      "this gate unavailable rather than passing it."
     );
   }
   return null;

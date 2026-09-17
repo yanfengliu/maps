@@ -29,7 +29,7 @@ import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { HERO_CAPTURE_COUNT, HERO_TEST_BUDGET_MS } from "./budget.js";
-import { laneDir, pixelLaneRefusal } from "./lane.js";
+import { laneDir, pixelLaneRefusal, requestedGpu } from "./lane.js";
 import { OrbitDriver } from "./orbit.js";
 import { collectPageErrors } from "./page-errors.js";
 import { decodePng, measureFrame, signatureDistance } from "./png.js";
@@ -72,6 +72,11 @@ test.describe("hero frames", () => {
   // The ceiling is now a backstop rather than the deciding vote: every capture
   // appends to `captures.json` in the lane's own directory as it lands, so a run
   // that is cut off names the capture it died in and the pace it was running at.
+  //
+  // Measured 2026-09-17 on the hardware renderer the lane moved to, this block
+  // costs 91.1 s of ledger time for all ten captures, with per-capture gaps of
+  // 1.4-3.6 s and one 33.7 s page reload. The allowance is unchanged: it is the
+  // software pace, and a backstop nothing can reach weakens nothing.
   test.setTimeout(HERO_TEST_BUDGET_MS);
 
   test("captures the crossing at dusk and in daylight through the real controls", async ({
@@ -106,10 +111,11 @@ test.describe("hero frames", () => {
       await driver.waitForFirstFrame();
 
       // The renderer is asserted, not recorded. `playwright.config.ts` pins
-      // `--use-angle=swiftshader` and the eight hero frames are part of the one
-      // reviewed set, so a Chromium that accepted the flag and drew somewhere else
-      // would move that set silently. Checked here, before the first capture, so a
-      // wrong renderer fails in seconds instead of after ten of them.
+      // `--use-angle=d3d11` and the eight hero frames are the appearance set, so a
+      // Chromium that fell back to a software rasteriser would draw a different
+      // picture and cost seconds a frame instead of milliseconds. Checked here,
+      // before the first capture, so a wrong renderer fails in seconds instead of
+      // after ten of them.
       const status = await driver.readStatus();
       const rendererRefusal = pixelLaneRefusal(
         status.glRenderer,
@@ -284,7 +290,7 @@ test.describe("hero frames", () => {
           taaSamples: post.taaSamples,
           facade: tiles.facade,
           tileMemory: { cachedBytes: tiles.cachedBytes, estimatedGpuBytes: tiles.gpuBytes },
-          requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+          requestedGpu: requestedGpu(),
           glRenderer: (await driver.readStatus()).glRenderer,
           albedoBefore: tiles.albedoBefore,
           albedoAfter: tiles.albedoAfter,
@@ -415,7 +421,7 @@ test.describe("hero frames", () => {
       path.join(OUTPUT_DIR, "hero.json"),
       `${JSON.stringify({
         capturedAt: new Date().toISOString(),
-        requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+        requestedGpu: requestedGpu(),
         lane: process.env["MAPS_VISUAL_LANE"] ?? "verdict",
         budgetMs: HERO_TEST_BUDGET_MS,
         captures: ledger.entries(),

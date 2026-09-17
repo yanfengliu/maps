@@ -2,33 +2,48 @@
  * Complete-run evidence must survive every sibling spec with exact fresh bytes.
  *
  * Bound: eight hero frames and eighteen sweep frames for each current style, at
- * 1280x720, captured in the lane this process names — the verdict lane. The
- * hardware iteration lane is refused by name: its frames come from a different
- * renderer than the reviewed set and it produces no certificate.
+ * 1280x720, captured in the lane this process names — the verdict lane. Every
+ * other lane is refused by name: an iteration lane's frames or numbers are not
+ * the appearance set the reviews are bound to, and it produces no certificate.
  *
  * The certificate is issued by `certifyVisualRun`, which is `verifyVisualRun`
  * plus the evidence a pixel set cannot carry about itself: that three hardware
  * lifecycle runs exist for this run and named the hardware renderer, that every
- * frame's manifest names the SwiftShader the pixel lane pins, that the scene
- * data the preview server serves is still the scene the run started with, and
- * that the harness which drove the browser is the one the run began with.
+ * frame's manifest names a renderer that is not a software rasteriser and names
+ * the GPU this machine reported at `--begin`, that the scene data the preview
+ * server serves is still the scene the run started with, and that the harness
+ * which drove the browser is the one the run began with.
  *
  * Bound of the whole instrument, in one place: it proves the 44 frames exist, are
- * fresh, are native 1280x720, hash to what their manifests say, came from the
- * software lane the config pins, and were captured while the same build, the same
- * scene data and the same harness were on disk, with three hardware lifecycle
- * records written after this run began. It cannot prove that any frame looks
- * right. It cannot prove the lifecycle records came from *this* process tree
- * rather than from three other fresh ones — their timestamps are the only
- * identity they carry — and both tree digests are taken at two instants, so a
- * file changed and changed back between them is outside what it can report.
+ * fresh, are native 1280x720, hash to what their manifests say, came from this
+ * machine's GPU rather than a software fallback or another adapter, and were
+ * captured while the same build, the same scene data and the same harness were on
+ * disk, with three hardware lifecycle records written after this run began. It
+ * cannot prove that any frame looks right. It cannot prove the lifecycle records
+ * came from *this* process tree rather than from three other fresh ones — their
+ * timestamps are the only identity they carry — and both tree digests are taken
+ * at two instants, so a file changed and changed back between them is outside
+ * what it can report.
  */
 import { createHash } from "node:crypto";
 import type { Stats } from "node:fs";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { activeLane, assertCertifiable, HARDWARE_RENDERER_DENYLIST, laneDir, pixelLaneRefusal } from "./lane.ts";
+import {
+  activeLane,
+  assertCertifiable,
+  HARDWARE_RENDERER_DENYLIST,
+  laneDir,
+  pixelLaneRefusal,
+  requestedGpu,
+} from "./lane.ts";
+import {
+  gpuBindingRefusal,
+  gpuIdentityRefusal,
+  probeGpuIdentity,
+  type GpuIdentity,
+} from "./gpu-identity.ts";
 import { LIFECYCLE_RECORD_DIR, LIFECYCLE_RUNS, type LifecycleRecord } from "./lifecycle-record.ts";
 import { decodePng } from "./png.ts";
 import { teardownRecordRefusal } from "../../src/harness/teardown.ts";
@@ -314,6 +329,12 @@ interface VisualRun {
   startedAt: string;
   lane: string;
   requestedGpu: string;
+  /**
+   * The GPU and driver the machine reported when this run opened, pinned here for
+   * the same reason the scene and the harness are: the pixels are this adapter's,
+   * and a certificate that cannot name it cannot be compared with the next run's.
+   */
+  gpu?: GpuIdentity;
   build: { file: string; sha256: string }[];
   scene: SceneDigest & { mounts: string[] };
   harness: HarnessDigest & { roots: string[] };
@@ -336,8 +357,21 @@ interface VisualRun {
 export async function beginVisualRun(
   root: string,
   dist = "dist",
+  /**
+   * The GPU identity to pin. Omitted by the gate's own chain, which reads the
+   * machine; given by a test so a synthetic run does not depend on the box it runs
+   * on. `null` is the explicit "this machine could not be asked" case and is
+   * refused below rather than recorded as an absent field.
+   */
+  gpu?: GpuIdentity | null,
 ): Promise<{ runId: string; scene: SceneDigest }> {
   await resetVisualRun(root);
+  // Before the build bytes are read, so a machine whose GPU cannot be named fails
+  // here — after the build and before any capture — rather than after 44 frames
+  // that nothing can bind.
+  const identity = gpu === undefined ? await probeGpuIdentity() : gpu;
+  const gpuRefusal = gpuIdentityRefusal(identity, "The visual gate's --begin step");
+  if (gpuRefusal !== null) throw new Error(gpuRefusal);
   // Forward slashes, not `join`: on Windows `join` would spell these with
   // backslashes, and `lifecycle.spec.ts` hashes the same two file names with a
   // template literal. The certificate compares the two lists by name, so one
@@ -361,7 +395,8 @@ export async function beginVisualRun(
         runId,
         startedAt,
         lane: activeLane(),
-        requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+        requestedGpu: requestedGpu(),
+        gpu: identity,
         build,
         scene: { mounts: SCENE_MOUNTS.map((mount) => mount.route), ...scene },
         harness: { roots: [...HARNESS_ROOTS], ...harness },
@@ -444,8 +479,11 @@ async function readManifest(
  *
  * `hero/hero.json` records it per frame rather than once for the manifest — the
  * hero block reloads the page for each time of day — so both shapes are read. The
- * positive predicate lives in `lane.ts` and is shared with the two specifications,
- * which fail on it within seconds of their first frame instead of after hours.
+ * predicate lives in `lane.ts` and is shared with the two specifications, which
+ * fail on it within seconds of their first frame instead of after a whole
+ * capture. What that predicate refuses is a software rasteriser; that the frames
+ * came from *this machine's* GPU is the separate binding check in
+ * `gpu-identity.ts`, which needs the answer the machine gave at `--begin`.
  */
 function assertPixelLaneRenderer(manifestName: string, manifest: ReadManifest): string {
   if (manifestName === "hero/hero.json") {
@@ -707,6 +745,17 @@ export async function certifyVisualRun(
   }
   const scene = run.scene;
   const harness = run.harness;
+  // The GPU this run pinned, or a refusal naming what to repair. Checked before
+  // the frames are read, for the same reason as the scene and harness bindings:
+  // the certificate's claim is that these 44 frames are one machine's pixels.
+  const gpu = run.gpu ?? null;
+  const gpuRefusal = gpuIdentityRefusal(gpu, `The run in ${root}`);
+  if (gpuRefusal !== null) {
+    throw new Error(
+      `${gpuRefusal} run.json is written by \`--begin\`, and a run begun before the GPU binding ` +
+        "existed carries no identity — re-run the gate with `npm run visual`.",
+    );
+  }
   const sceneMounts = options.sceneMounts ?? SCENE_MOUNTS;
   const harnessRoots = options.harnessRoots ?? harness.roots;
   // Before a single frame is read, for the same reason every other check runs
@@ -726,6 +775,12 @@ export async function certifyVisualRun(
     );
   }
   const pixelRenderer = [...pixelRenderers][0]!;
+  // The positive half: the browser's renderer string has to name the adapter this
+  // run pinned. A denylist can only say "not software"; this is what makes the
+  // certificate a claim about one GPU and one driver rather than about a class of
+  // renderer, which is the price of the frames no longer being machine-independent.
+  const bindingRefusal = gpuBindingRefusal(pixelRenderer, gpu as GpuIdentity, `The pixel lane's manifests`);
+  if (bindingRefusal !== null) throw new Error(`Visual gate refused: ${bindingRefusal}`);
   // `verifyVisualRun` writes `complete.json` as its own last act, because the
   // frame checks are also driven directly by `test/visual-evidence.test.ts`. That
   // file is not yet this certificate: it carries no lifecycle evidence, so it must
@@ -746,6 +801,7 @@ export async function certifyVisualRun(
         runId: run.runId,
         scene,
         pixelRenderer,
+        gpu,
         lifecycle: { renderer: lifecycle.renderer, runs: lifecycle.runs },
       },
       null,
@@ -756,7 +812,8 @@ export async function certifyVisualRun(
     .map((entry) => `navigation ${entry.navigationStepMs} ms / replacement ${entry.replacementStepMs} ms`)
     .join(", ");
   console.log(
-    `Certified run ${run.runId}: pixel lane on "${pixelRenderer}", lifecycle lane on ` +
+    `Certified run ${run.runId}: pixel lane on "${pixelRenderer}" (${gpu!.name}, driver ` +
+      `${gpu!.driverVersion} from ${gpu!.source}), lifecycle lane on ` +
       `"${lifecycle.renderer}" — ${timings}.`,
   );
 }
@@ -793,7 +850,7 @@ export function visualRunPhase(argv: readonly string[]): VisualRunPhase {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   // This script creates the run's certificate, so it runs as the verdict lane by
-  // construction. An attempt to point it at the hardware iteration lane fails
+  // construction. An attempt to point it at an iteration lane fails
   // here, by name, before any artifact is written.
   assertCertifiable(activeLane());
   const phase = visualRunPhase(process.argv);

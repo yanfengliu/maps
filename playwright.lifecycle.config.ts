@@ -14,11 +14,13 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
  * finished in 2.1-4.3 ms, and the replacement document's first script had not
  * run by the deadline. That is the rasteriser's teardown, not the application.
  *
- * So the split is by renderer, not by requirement: the pixel lane stays on
- * SwiftShader for deterministic frames, and this lane runs on hardware with the
- * same URL, preparation, viewport, assertions and 15 s / 60 s bounds. The spec
- * itself asserts the renderer it actually got, so a machine without a usable GPU
- * fails here by name instead of passing on a silent software fallback.
+ * The split the two lanes were built around is gone: since the owner's 2026-09-16
+ * instruction the appearance lane draws on the hardware renderer too, so this is
+ * no longer the one lane on the GPU. It keeps its own config because it is a
+ * different question with its own bounds — the same URL, preparation, viewport,
+ * assertions and 15 s / 60 s limits — and the spec still asserts the renderer it
+ * actually got, so a machine without a usable GPU fails here by name instead of
+ * passing on a silent software fallback.
  */
 const PREVIEW_URL = "http://127.0.0.1:4319";
 

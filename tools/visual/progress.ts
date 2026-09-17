@@ -21,6 +21,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { requestedGpu } from "./lane.js";
+
 export interface CaptureEntry {
   /** 1-based position in this spec's own sequence. */
   index: number;
@@ -62,7 +64,7 @@ export function captureLedger(directory: string, expected: number, name = "captu
       await mkdir(path.dirname(file), { recursive: true });
       await writeFile(file, `${JSON.stringify({
         lane: process.env["MAPS_VISUAL_LANE"] ?? "verdict",
-        requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
+        requestedGpu: requestedGpu(),
         startedAt: new Date(started).toISOString(),
         expected,
         completed: entries.length,

@@ -1,6 +1,20 @@
 /**
  * What each capture spec is allowed to spend, derived from the captures it makes.
  *
+ * These are the software lane's numbers, kept as backstops. They were written
+ * when both capture specs ran on SwiftShader, and the owner's 2026-09-16
+ * instruction moved the lane to the hardware renderer without changing them: a
+ * ceiling that a correct run cannot approach costs nothing, and lowering one on
+ * the strength of a single quiet-machine measurement is how a shared box turns a
+ * scheduling problem into a red gate. What changed is the pace they sit beside.
+ * Measured 2026-09-17 on the RTX 4090, the same ten hero captures and the two
+ * eighteen-view sweeps: 91.1 s / 83.2 s / 78.7 s of ledger time, against 4,438.2 s
+ * for the ten software hero captures this repository stopped on the same night —
+ * roughly 49x. The measurement that made the software pace visible is the probe
+ * in `artifacts/gpu-lane/software-probe.json`: one software capture drew its
+ * frames at 1,035 ms each, waited 64.9 s for the tileset to refine, spent 342.7 s
+ * in controls corrections and 55.7 s inside one screenshot.
+ *
  * Both software capture specs carried a single round wall-clock number — 60
  * minutes for the ten hero images, 70 for each eighteen-view sweep — described in
  * their own comments as a measured budget. A round number cannot be a budget: it
@@ -13,6 +27,8 @@
  * | 2026-09-12, to the first hero capture | 6m20 |
  * | 2026-09-15 run that passed | 49.3 minutes |
  * | 2026-09-15 20:18 run | first capture 20:28:02, last 21:18:26 — **50.4 minutes for ten captures**, and `test.setTimeout(60 * 60_000)` fired at 21:18:18, eight seconds before the last one landed |
+ * | 2026-09-17 stopped software run | 8 captures in 74.0 minutes, intervals 107.4 s to 795.0 s |
+ * | 2026-09-17 hardware run | **91.1 s for all ten**, intervals 1.4 s to 3.6 s with one 33.7 s page reload |
  *
  * The same block took 49.3 and 50.4 minutes against a 60-minute ceiling that also
  * had to cover the preparation before the first capture. The ceiling was not a

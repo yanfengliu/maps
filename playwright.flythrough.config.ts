@@ -44,9 +44,9 @@ Object.assign(process.env, FLYTHROUGH_ITERATION_ENV);
  * run that measured the previous build would say the fix worked.
  *
  * Port 4323 is its own: 4319 is the verdict gate's server and its lifecycle lane,
- * 4320 the hardware lane's, 4321 the populated lane's and 4322 the render-defects
- * capture's. `reuseExistingServer: false` means whatever is on this port is this
- * run's own server or the run fails.
+ * 4321 the populated lane's and 4322 the render-defects capture's.
+ * `reuseExistingServer: false` means whatever is on this port is this run's own
+ * server or the run fails.
  */
 const PREVIEW_URL = "http://127.0.0.1:4323";
 

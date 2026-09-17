@@ -17,9 +17,9 @@
  *   - the population the app itself reports it drew, so a window that measured an
  *     empty scene is visible in the result rather than reported as a fast one.
  *
- * **What it is not.** It is a hardware iteration lane: it writes under
+ * **What it is not.** It is an iteration lane: it writes under
  * `artifacts/frame-budget/`, it names its renderer in every file, and
- * `tools/visual/verify-output.ts` refuses the `hardware-iteration` lane, so no
+ * `tools/visual/verify-output.ts` refuses the `frame-budget` lane, so no
  * `complete.json` can ever name these numbers. It is not pixel evidence and it
  * certifies nothing.
  *
@@ -147,7 +147,7 @@ test("the frame interval at 1920x1080 with 3,000 animated pedestrians", async ({
   const result = {
     lane: "frame-budget",
     certifiable: false,
-    evidence: "not evidence: a hardware iteration lane with no certificate, refused by tools/visual/verify-output.ts",
+    evidence: "not evidence: an iteration lane with no certificate, refused by tools/visual/verify-output.ts",
     spec: "tools/frame-budget/frame-budget.spec.ts",
     url: POPULATED_URL,
     viewport: { width: 1920, height: 1080 },

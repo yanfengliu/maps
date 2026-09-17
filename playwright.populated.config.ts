@@ -98,7 +98,7 @@ export default defineConfig({
 
   webServer: {
     // Its own port, so this lane can never attach to the verdict gate's server on
-    // 4319 or the hardware lane's on 4320 — and never reuse a stale server:
+    // 4319 — and never reuse a stale server:
     // whatever is already on a port might be an older build of this app or
     // another project entirely.
     command: "npm run preview -- --port 4321",

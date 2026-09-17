@@ -16,7 +16,7 @@ import { PerspectiveCamera } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { Page } from "@playwright/test";
 import { createCameraRig } from "../src/render/camera.js";
-import { activeLane, assertCertifiable, laneDir, HARDWARE_ITERATION_ENV } from "../tools/visual/lane.js";
+import { activeLane, assertCertifiable, laneDir } from "../tools/visual/lane.js";
 import { OrbitDriver, SETTLE_BUDGET } from "../tools/visual/orbit.js";
 import { CameraSettling, cameraMovement, type CameraObservation } from "../tools/visual/settling.js";
 
@@ -390,17 +390,18 @@ describe("settle budget is denominated in the frames the predicate consumes", ()
   });
 });
 
-describe("the hardware iteration lane cannot be certified", () => {
+describe("an iteration lane cannot be certified", () => {
   it("refuses to certify any lane but the verdict lane, by name", () => {
-    expect(() => assertCertifiable("hardware-iteration")).toThrow(
-      /Refusing to certify the "hardware-iteration" lane: its frames come from a different renderer than the reviewed 44-frame set.*Only the "verdict" lane produces complete\.json/s);
+    expect(() => assertCertifiable("frame-budget")).toThrow(
+      /Refusing to certify the "frame-budget" lane: its subject is the frame interval at 1920x1080.*Only the "verdict" lane produces complete\.json/s);
     expect(() => assertCertifiable("verdict")).not.toThrow();
   });
 
-  it("gives the hardware lane its own directory and requires the GPU switch", () => {
-    for (const [key, value] of Object.entries(HARDWARE_ITERATION_ENV)) vi.stubEnv(key, value);
-    expect(activeLane()).toBe("hardware-iteration");
-    expect(laneDir()).toBe("artifacts/visual-hardware");
+  it("gives the frame-budget lane its own directory and requires the GPU switch", () => {
+    vi.stubEnv("MAPS_VISUAL_LANE", "frame-budget");
+    vi.stubEnv("MAPS_VISUAL_GPU", "hardware");
+    expect(activeLane()).toBe("frame-budget");
+    expect(laneDir()).toBe("artifacts/frame-budget");
     vi.stubEnv("MAPS_VISUAL_GPU", "");
     expect(() => activeLane()).toThrow(/requires MAPS_VISUAL_GPU=hardware/);
   });

@@ -1,6 +1,6 @@
 /**
  * The visual gate's pre-flight: the assertions that decide whether a capture is
- * worth starting, in seconds instead of three hours.
+ * worth starting, in seconds instead of after a long capture.
  *
  * Why it exists. On 2026-09-16 the coordinator started `npm run visual` three
  * times against a revision whose World style control had changed shape, and each
@@ -15,9 +15,9 @@
  *
  * - the production build boots, the preview server is serving this app, and the
  *   harness is present and readable;
- * - the renderer is SwiftShader, through the pixel lane's own predicate rather
- *   than a copy of it, so a browser that fell back to another rasteriser fails
- *   here by name instead of in the certificate;
+ * - the renderer is the gate's hardware renderer, through the pixel lane's own
+ *   predicate rather than a copy of it, so a browser that fell back to a software
+ *   rasteriser fails here by name instead of in the certificate;
  * - the post chain is active and carrying the four passes, which is what
  *   `hero.spec.ts` asserts per frame and what the dusk criterion depends on;
  * - the World style control offers both registry entries, switches under real
@@ -34,7 +34,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import type {} from "../../src/harness/bridge.js";
 import { OrbitDriver } from "./orbit.js";
-import { pixelLaneRefusal, PIXEL_LANE_RENDERER } from "./lane.js";
+import { pixelLaneRefusal, HARDWARE_RENDERER_DENYLIST } from "./lane.js";
 
 /** The dusk hero URL, character for character the one `hero.spec.ts` opens. */
 const DUSK_URL = "/?time=dusk&seed=9137&style=satellite";
@@ -51,12 +51,12 @@ test("the app answers everything a capture's first minute asks", async ({ page }
   await page.goto(DUSK_URL, { timeout: 60_000 });
   const boot = await driver.waitForFirstFrame(120_000);
 
-  // The pixel lane's own refusal, not a copy of it: a capture photographed on
-  // another renderer cannot inherit a review written for this one, and the same
+  // The pixel lane's own refusal, not a copy of it: a capture drawn on a software
+  // rasteriser is a different picture at a cost of seconds a frame, and the same
   // sentence that refuses a certificate refuses this run.
   const refusal = pixelLaneRefusal(boot.glRenderer, "the visual pre-flight");
-  expect(refusal, `this pre-flight must run on the verdict lane's renderer`).toBeNull();
-  expect(String(boot.glRenderer)).toMatch(PIXEL_LANE_RENDERER);
+  expect(refusal, `this pre-flight must run on the appearance lane's renderer`).toBeNull();
+  expect(String(boot.glRenderer)).not.toMatch(HARDWARE_RENDERER_DENYLIST);
 
   const opened = await observe(page);
   expect(opened.post.active, `the post chain fell back to a direct render: ${String(opened.post.error)}`).toBe(true);

@@ -40,9 +40,9 @@ import {
 import { LIFECYCLE_RECORD_DIR } from "../tools/visual/lifecycle-record.js";
 import {
   HARDWARE_RENDERER_DENYLIST,
-  PIXEL_LANE_RENDERER,
   pixelLaneRefusal,
 } from "../tools/visual/lane.js";
+import { gpuBindingRefusal, type GpuIdentity } from "../tools/visual/gpu-identity.js";
 import {
   TEARDOWN_COMPLETED,
   TEARDOWN_FAILED_PREFIX,
@@ -76,6 +76,20 @@ const SWIFTSHADER =
   "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)";
 const RTX_4090 =
   "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)";
+/** Hardware that is not this machine's adapter, which the GPU binding must refuse. */
+const OTHER_GPU =
+  "ANGLE (AMD, AMD Radeon RX 7900 XTX (0x0000744C) Direct3D11 vs_5_0 ps_5_0, D3D11)";
+
+/**
+ * The GPU identity a synthetic run pins, so a case about the certificate does not
+ * depend on the machine the unit gate runs on. The name is the substring
+ * `RTX_4090` carries, exactly as `nvidia-smi` reports it there.
+ */
+const GPU_FIXTURE: GpuIdentity = {
+  name: "NVIDIA GeForce RTX 4090",
+  driverVersion: "616.64",
+  source: "nvidia-smi",
+};
 
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
@@ -150,7 +164,16 @@ async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
   const startedAt = new Date(Date.now() - 60_000).toISOString();
   await writeFile(
     join(root, "run.json"),
-    JSON.stringify({ runId: "run-1", startedAt, lane: "verdict", requestedGpu: "software", build, scene, harness }),
+    JSON.stringify({
+      runId: "run-1",
+      startedAt,
+      lane: "verdict",
+      requestedGpu: "hardware",
+      gpu: GPU_FIXTURE,
+      build,
+      scene,
+      harness,
+    }),
   );
 
   const bytes = png();
@@ -168,8 +191,8 @@ async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
     for (const name of names) await writeFile(join(directory, name), bytes);
     const isHero = file === "hero/hero.json";
     const renderer = isHero
-      ? ("heroRenderer" in options ? options.heroRenderer : SWIFTSHADER)
-      : ("sweepRenderer" in options ? options.sweepRenderer : SWIFTSHADER);
+      ? ("heroRenderer" in options ? options.heroRenderer : RTX_4090)
+      : ("sweepRenderer" in options ? options.sweepRenderer : RTX_4090);
     await writeFile(join(root, file), JSON.stringify({
       capturedAt: new Date().toISOString(),
       ...(isHero ? {} : { glRenderer: renderer }),
@@ -257,16 +280,16 @@ async function amendLifecycleRecord(
 }
 
 describe("the pixel lane's renderer is asserted, not recorded", { timeout: FRAME_SET_BUDGET_MS }, () => {
-  it("accepts the SwiftShader string the 2026-09-16 run recorded", () => {
-    expect(pixelLaneRefusal(SWIFTSHADER, "sweep/satellite/manifest.json")).toBeNull();
-    expect(PIXEL_LANE_RENDERER.test(SWIFTSHADER)).toBe(true);
+  it("accepts the RTX 4090 string the 2026-09-17 hardware run recorded", () => {
+    expect(pixelLaneRefusal(RTX_4090, "sweep/satellite/manifest.json")).toBeNull();
+    expect(HARDWARE_RENDERER_DENYLIST.test(RTX_4090)).toBe(false);
   });
 
-  it("refuses the hardware string a Chromium that ignored --use-angle would report", () => {
-    const refusal = pixelLaneRefusal(RTX_4090, "sweep/satellite/manifest.json");
+  it("refuses the SwiftShader string a Chromium that fell back would report", () => {
+    const refusal = pixelLaneRefusal(SWIFTSHADER, "sweep/satellite/manifest.json");
     expect(refusal).not.toBeNull();
-    expect(refusal).toContain(RTX_4090);
-    expect(refusal).toContain("not SwiftShader");
+    expect(refusal).toContain(SWIFTSHADER);
+    expect(refusal).toContain("names a software rasteriser");
   });
 
   it("refuses a manifest that recorded no renderer at all, rather than passing it", () => {
@@ -275,9 +298,9 @@ describe("the pixel lane's renderer is asserted, not recorded", { timeout: FRAME
     expect(refusal).toContain("reported no glRenderer");
   });
 
-  it("refuses to certify a run whose sweep manifest names the hardware renderer", async () => {
-    await withRun({ sweepRenderer: RTX_4090 }, async (run) => {
-      await expect(certify(run)).rejects.toThrow(/not SwiftShader/);
+  it("refuses to certify a run whose sweep manifest names a software rasteriser", async () => {
+    await withRun({ sweepRenderer: SWIFTSHADER }, async (run) => {
+      await expect(certify(run)).rejects.toThrow(/names a software rasteriser/);
     });
   });
 
@@ -293,13 +316,39 @@ describe("the pixel lane's renderer is asserted, not recorded", { timeout: FRAME
     });
   });
 
-  it("keeps the two renderer predicates pointing opposite ways", () => {
-    // One shared regex would make each lane's check agree with the other's by
-    // construction, which is the shape a check built from the same symbol as its
-    // subject has.
+  it("refuses a frame set drawn on a GPU that is not the one the run pinned", async () => {
+    // The half a denylist cannot do: this string is hardware, is not software, and
+    // is not this machine's adapter. Both manifests carry it, so the run's own
+    // "all 44 frames came from one renderer" check is satisfied and the GPU
+    // binding is what refuses. Before that binding existed this certified.
+    await withRun({ sweepRenderer: OTHER_GPU, heroRenderer: OTHER_GPU }, async (run) => {
+      await expect(certify(run)).rejects.toThrow(/does not name the GPU this run pinned/);
+    });
+  });
+
+  it("refuses to certify a run that pinned no GPU identity", async () => {
+    await withRun({}, async (run) => {
+      const file = join(run.root, "run.json");
+      const record = JSON.parse(await readFile(file, "utf8")) as Record<string, unknown>;
+      delete record["gpu"];
+      await writeFile(file, JSON.stringify(record));
+      await expect(certify(run)).rejects.toThrow(/could not read the GPU and driver version/);
+    });
+  });
+
+  it("points both lanes' renderer predicates the same way, now that both are hardware", () => {
+    // They pointed opposite ways while the pixel lane required SwiftShader. The
+    // owner's 2026-09-16 instruction removed that requirement, so what has to hold
+    // is that the shared denylist refuses every software rasteriser and that the
+    // certificate's GPU binding is what separates hardware from hardware.
     expect(HARDWARE_RENDERER_DENYLIST.test(SWIFTSHADER)).toBe(true);
-    expect(PIXEL_LANE_RENDERER.test(RTX_4090)).toBe(false);
     expect(HARDWARE_RENDERER_DENYLIST.test(RTX_4090)).toBe(false);
+    expect(pixelLaneRefusal(RTX_4090, "sweep/satellite/manifest.json")).toBeNull();
+    expect(gpuBindingRefusal(RTX_4090, GPU_FIXTURE, "sweep/satellite/manifest.json")).toBeNull();
+    const refusal = gpuBindingRefusal(OTHER_GPU, GPU_FIXTURE, "sweep/satellite/manifest.json");
+    expect(refusal).toContain(OTHER_GPU);
+    expect(refusal).toContain(GPU_FIXTURE.name);
+    expect(refusal).toContain(GPU_FIXTURE.driverVersion);
   });
 });
 
@@ -310,6 +359,7 @@ describe("certification requires the hardware lifecycle lane's own evidence", { 
       const complete = JSON.parse(await readFile(join(run.root, "complete.json"), "utf8")) as {
         runId: string;
         pixelRenderer: string;
+        gpu: GpuIdentity;
         scene: { digest: string; files: number };
         harness: { digest: string; files: number; roots: string[] };
         lifecycle: { renderer: string; runs: unknown[] };
@@ -317,7 +367,12 @@ describe("certification requires the hardware lifecycle lane's own evidence", { 
       };
       expect(complete.frames).toHaveLength(44);
       expect(complete.runId).toBe("run-1");
-      expect(complete.pixelRenderer).toBe(SWIFTSHADER);
+      expect(complete.pixelRenderer).toBe(RTX_4090);
+      // The GPU and driver the frames are bound to, which is what the certificate
+      // offers in place of the machine-independent bytes it no longer captures.
+      expect(complete.gpu.name).toBe(GPU_FIXTURE.name);
+      expect(complete.gpu.driverVersion).toBe(GPU_FIXTURE.driverVersion);
+      expect(complete.gpu.source).toBe("nvidia-smi");
       expect(complete.lifecycle.renderer).toBe(RTX_4090);
       expect(complete.lifecycle.runs).toHaveLength(3);
       expect(complete.scene.digest).toMatch(/^[0-9a-f]{64}$/);
@@ -509,7 +564,7 @@ describe("the harness that drives the browser is bound into the certificate", { 
       await mkdir(join(dist, "assets"), { recursive: true });
       await writeFile(join(dist, "index.html"), "<!doctype html><title>frozen</title>");
       await writeFile(join(dist, "assets", "index-abc123.js"), "export {};\n");
-      await beginVisualRun(root, dist);
+      await beginVisualRun(root, dist, GPU_FIXTURE);
       const record = JSON.parse(await readFile(join(root, "run.json"), "utf8")) as Record<string, unknown>;
       const harness = record["harness"] as { digest: string; files: number; roots: string[] } | undefined;
       expect(harness, "run.json written by --begin must carry a harness digest").toBeDefined();
@@ -517,6 +572,8 @@ describe("the harness that drives the browser is bound into the certificate", { 
       expect(harness!.files).toBeGreaterThanOrEqual(10);
       // The value `--end` re-derives when nothing under those roots has moved.
       expect(harness!.digest).toBe((await harnessTreeDigest()).digest);
+      // And the GPU the certificate binds the frames to, pinned by the same step.
+      expect(record["gpu"]).toEqual(GPU_FIXTURE);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -648,7 +705,7 @@ describe("the gate's chain claims the run before the build", () => {
 
   it("writes the cleanup record from the page's own pagehide handler", async () => {
     // The record the lifecycle lane reads only exists if the app writes it, and a
-    // run without that line would fail three hours later in the wrapper with a
+    // run without that line would fail at the wrapper with a
     // message about a missing record rather than here.
     // Normalised, because this checkout is on Windows and the file is CRLF there.
     const main = (await readFile(new URL("../src/main.ts", import.meta.url), "utf8")).replaceAll("\r\n", "\n");

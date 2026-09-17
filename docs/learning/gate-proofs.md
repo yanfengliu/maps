@@ -336,22 +336,41 @@ Both exit status 1. **Executed red controls.** On the real production build thro
 
 **Bound.** The listeners see what the page *reports*; an empty list is evidence that nothing was reported, never that nothing threw. The teardown record proves the `picker.dispose()` → `app.dispose()` chain returned: it cannot show that each disposer did useful work, and if session storage is unavailable the record is absent, which the lane treats as "did not report" and fails on. Both checks are asserted inside `lifecycle.spec.ts`, so they need a hardware machine and a full lifecycle run to execute for real; what has been executed here is the recorder, the reader and the listeners on the shipping bundle, not the spec's own assertion lines.
 
-**(5) The pixel lane's renderer identity was recorded and never read.** `sweep.spec.ts` and `hero.spec.ts` wrote `glRenderer` into their manifests and nothing asserted it, so a Chromium that accepted `--use-angle=swiftshader` and drew elsewhere would have moved the reviewed 44-frame set silently. Both specs now refuse a non-SwiftShader renderer within seconds of their first frame, through `pixelLaneRefusal` in `lane.ts`, and `certifyVisualRun` asserts it again over every manifest it certifies.
+**(5) The pixel lane's renderer identity was recorded and never read.** `sweep.spec.ts` and `hero.spec.ts` wrote `glRenderer` into their manifests and nothing asserted it, so a Chromium that accepted the launch flag and drew elsewhere would have moved the reviewed 44-frame set silently. Both specs now refuse a renderer that is not their lane's within seconds of their first frame, through `pixelLaneRefusal` in `lane.ts`, and `certifyVisualRun` asserts it again over every manifest it certifies.
 
-**Mutation:** the wrapper's refusal replaced by `void pixelLaneRefusal;`.
+The direction was inverted on 2026-09-17, when the owner's instruction — "if you can use GPU, don't use CPU" — moved the appearance set off SwiftShader. What the predicate refuses is now **a software rasteriser**, and what *requires* hardware rather than merely excluding software is the check the certificate gained the same day: `gpuBindingRefusal` in `tools/visual/gpu-identity.ts` compares the browser's renderer string against the adapter and driver version read from the machine at `--begin`, so a frame set drawn on another GPU fails instead of being compared with this one's review.
+
+**Mutation, spec level — the wrong renderer, reproduced twice on the committed tree.** Two one-line mutations of `playwright.config.ts`, each followed by `npx playwright test --config playwright.config.ts -g "satellite: orbits the scene"`:
+
+1. `--use-angle=d3d11` → `--use-angle=swiftshader --enable-unsafe-swiftshader`, leaving `MAPS_VISUAL_GPU=hardware` declared. Exit status 1 after 51.6 s — Playwright startup, the preview server and a SwiftShader boot are almost all of that; the refusal is at the first frame — thrown from `tools/visual/orbit.ts:172`, reached by `sweep.spec.ts:76`:
 
 ```
-× the pixel lane's renderer is asserted, not recorded refuses to certify a run whose sweep manifest names the hardware renderer
-AssertionError: expected [Function] to throw error matching /not SwiftShader/ but got 'The pixel lane\'s manifests name 2 di…'
+Error: Hardware rendering was requested, but Chromium reports ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver). This lane requires the NVIDIA GPU; software fallback is not a performance measurement.
 ```
 
-Exit status 1. **CLI red control** (`node probe/gate-chain.mjs p5-renderer`) with the satellite manifest naming the real RTX 4090 string:
+2. The same launch args **and** the `MAPS_VISUAL_GPU` declaration removed, so the lane's own predicate is what refuses rather than the lane's hardware switch. Exit status 1 after 53.2 s, log `artifacts/gpu-lane/mutation-2-lane-predicate.log`:
+
+```
+Error: satellite: the first frame of the sweep reports the renderer "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)", which names a software rasteriser. The 44-frame appearance set is drawn on the GPU since the owner's 2026-09-16 instruction, not on the CPU: a software frame costs seconds where the hardware frame costs milliseconds, and it is a different picture from the one the reviews are of (playwright.config.ts, --use-angle=d3d11). Check that the GPU is usable and that no software fallback flag was passed; a machine with no usable GPU reports this gate unavailable rather than passing it.
+```
+
+Both mutation runs were reverted byte-identically before the commit, and the certificate below was issued on the reverted tree.
+
+**Mutation, certificate level.** The wrapper's refusals are driven directly by `test/visual-instrument.test.ts`, over synthetic runs, which is where they reproduce without a browser:
+
+- a sweep manifest naming a software rasteriser — `refuses to certify a run whose sweep manifest names a software rasteriser`. This is the case this entry carried in the opposite direction until 2026-09-17, and its old mutation (`void pixelLaneRefusal;` in the wrapper) still describes the same refusals firing.
+- a frame set whose manifests all name hardware that is not this machine's adapter (`OTHER_GPU`, an AMD string) — `refuses a frame set drawn on a GPU that is not the one the run pinned`, message `does not name the GPU this run pinned`. **Removing the `gpuBindingRefusal` call from `certifyVisualRun`** makes it fail `AssertionError: promise resolved "undefined" instead of rejecting`; restoring the call byte-identically (`tools/visual/verify-output.ts`, SHA-256 `8E56E3F988BC…`) makes it pass. That run certified before the binding existed.
+- a run whose `run.json` pinned no GPU identity at all — `refuses to certify a run that pinned no GPU identity`, message `could not read the GPU and driver version`.
+
+**CLI red control** (`node probe/gate-chain.mjs p5-renderer`, executed 2026-09-16 against the software predicate) with the satellite manifest naming the RTX 4090 string:
 
 ```
 Visual gate refused: sweep/satellite/manifest.json reports the renderer "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)", which is not SwiftShader. The 44-frame pixel set is comparable across machines only while every frame comes from the software lane the config pins (--use-angle=swiftshader); a set captured on another renderer cannot inherit a review written for this one, and there is deliberately no switch that moves this lane.
 ```
 
-**Bound.** The predicate is only as strong as what Chromium reports: the unmasked `WEBGL_debug_renderer_info` string, or the masked fallback (`WebKit WebGL`) when the extension is withheld. The fallback is refused rather than passed, but it fails as "wrong renderer" rather than as "identity unavailable". The specs' own assertion fails fast and has not been watched to fire against a browser that actually drew on another renderer — what has been executed is the shipped predicate accepting the real first frame's SwiftShader string and refusing the hardware string in the same page (`probe/capture.spec.ts`), plus the wrapper's refusal above.
+That message is history and its direction is now wrong: the same manifest is what a correct run produces, and a hardware string is no longer refused. It is kept here because it is the executed red control of the predicate this entry is about, and its replacement is the pair of spec-level mutations above.
+
+**Bound.** The predicate is only as strong as what Chromium reports: the unmasked `WEBGL_debug_renderer_info` string, or the masked fallback (`WebKit WebGL`) when the extension is withheld. The fallback is refused rather than passed, but it fails as "wrong renderer" rather than as "identity unavailable". The GPU identity is read once, at `--begin`, from the machine running the gate — the adapter and driver it had at that instant — so a driver replaced between that read and the capture is outside what the certificate can report, and on a machine where neither `nvidia-smi` nor the OS device record answers, the gate refuses to begin rather than certifying frames whose GPU it cannot name.
 
 **Not yet proved red.** The three paths in "Not yet proved red" above are unchanged by this unit, and one is added: the scene digest is re-derived at certification and has been watched to fire against a file changed between the two hashes inside one synthetic run only — that firing was a movement of names, sizes or mtimes, which is all the pre-`f4e96f0` digest could see, and since `f4e96f0` the firing comes from the bytes themselves ("The scene digest sees a served file rewritten in place" below) — and not against `npm run data:scene` running during a real capture.
 

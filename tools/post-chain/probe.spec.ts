@@ -22,9 +22,10 @@
  * **Both renderers run this one spec.** `MAPS_POST_CHAIN_ARM` selects the launch
  * args, the preview port and which renderer the run must report, and names the
  * trace file after the arm. Two specs would have differed by more than the
- * renderer, which is the one thing a comparison must not do; the 44 frames the
- * deliverable is judged on are captured on SwiftShader, so the arm that matters
- * most is the slow one.
+ * renderer, which is the one thing a comparison must not do. Both arms still
+ * matter after 2026-09-17: the 44 appearance frames moved to the hardware
+ * renderer, and this lane is where the post chain's behaviour on a software
+ * rasteriser stays measured rather than remembered.
  *
  * Everything here reads `window.__mapsHarness`, which is frozen and has no
  * setter. The camera moves only through synthesised pointer and wheel input on
