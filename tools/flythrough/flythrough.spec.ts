@@ -544,6 +544,13 @@ test.describe("flythrough", () => {
         targetToleranceM: 0.05,
         minimumTravelM: 0.001,
         minimumDistinctFraction: 0.95,
+        // The plan's own hold, read off its `holdsCamera` steps rather than the
+        // records: a held frame is exempt from the travel floor, so the count the
+        // plan wrote is what bounds the exemption. `holdsCamera` marks a step,
+        // and only a held frame after the first in its leg is a held pair.
+        heldPairs: Object.fromEntries(
+          SELECTED.map((leg) => [leg.name, Math.max(0, leg.steps.filter((step) => step.holdsCamera === true).length - 1)]),
+        ),
         redControl: RED_CONTROL,
       },
     );
@@ -551,15 +558,23 @@ test.describe("flythrough", () => {
     const accumulating = frames.filter((record) => record.renderState.post.taaAccumulating).length;
     const sampleCounts = [...new Set(frames.map((record) => record.renderState.post.taaSamples))].sort((a, b) => a - b);
 
-    // The pose ledger goes to disk BEFORE anything asserts over the sequence.
-    // The write used to sit after the judgeSequence expectation, and the first
-    // run that failed it — 2026-09-16, adjudicated in
+    // The pose ledger goes to disk BEFORE the sequence assertions, and only
+    // those. The write used to sit after the judgeSequence expectation, and the
+    // first run that failed it — 2026-09-16, adjudicated in
     // `artifacts/flythrough2/adjudication-report.md` — left only `captures.json`
     // (labels and intervals) where the poses, travels and per-frame counts were
-    // the evidence the adjudication needed. A failed run is exactly the run
-    // shape that needs adjudicating, so the ledger is written first and a
-    // failing run's manifest carries the failures it failed with; the
-    // assertions below then judge a ledger already on disk.
+    // the evidence the adjudication needed. A run that fails the sequence judge
+    // is exactly the run shape that needs adjudicating, so the ledger is written
+    // first and carries the failures it failed with; the assertions below then
+    // judge a ledger already on disk.
+    //
+    // What this does NOT cover is a failure inside the capture loop above: the
+    // per-frame clearance, renderer and viewport assertions still abort before
+    // this write, and such a run leaves no ledger at all — the same defect class
+    // the move fixed, one assertion earlier. The `failures` field has the same
+    // bound: it is judgeSequence's failures only, and the preset, post-chain,
+    // console-error and ledger-count assertions below are separate and are never
+    // recorded.
     const last = frames[frames.length - 1]!;
     await writeFile(
       MANIFEST,

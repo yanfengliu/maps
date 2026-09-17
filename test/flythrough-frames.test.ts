@@ -30,6 +30,10 @@ const EXPECTATIONS: SequenceExpectations = {
   targetToleranceM: 0.05,
   minimumTravelM: 0.001,
   minimumDistinctFraction: 0.95,
+  // The plan's own hold, per leg. The route the lane flies marks six frames of
+  // the crowd leg held and none of any other leg (`tools/flythrough/plan.ts`),
+  // so a synthetic leg holds nothing unless a case says otherwise.
+  heldPairs: {},
   redControl: false,
 };
 
@@ -105,36 +109,96 @@ describe("judgeSequence", () => {
   });
 
   it("exempts a held frame from the travel floor, and fails a held frame whose scene went still, by name", () => {
-    // A planned hold: the last two pairs are measuredly still by design, and
-    // the scene under them keeps living.
-    const held = frames(6).map((frame, index) =>
-      index >= 4 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
+    // A planned hold: the last two pairs of the leg are measuredly still by
+    // design, the scene under them keeps living, and the plan says this leg
+    // holds three frames — so two held pairs.
+    const heldExpectations: SequenceExpectations = { ...EXPECTATIONS, heldPairs: { crowd: 2 } };
+    const held = frames(6, "crowd").map((frame, index) =>
+      index >= 3 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
     );
-    expect(judgeSequence(held, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS)).toEqual([]);
+    expect(judgeSequence(held, [{ name: "crowd", frames: 6 }], FLOORS, heldExpectations)).toEqual([]);
 
     // The same hold with the scene dead: the second held frame is the previous
     // frame's bytes again.
-    const dead = held.map((frame, index) => (index === 5 ? { ...frame, sha256: held[4]!.sha256 } : frame));
-    const failures = judgeSequence(dead, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
-    expect(failures.join("\n")).toMatch(/1 of 2 held frame pairs show a scene that went still/);
-    expect(failures.join("\n")).toMatch(/overview-005\.png: the same bytes as the previous frame/);
+    const dead = held.map((frame, index) => (index === 4 ? { ...frame, sha256: held[3]!.sha256 } : frame));
+    const failures = judgeSequence(dead, [{ name: "crowd", frames: 6 }], FLOORS, heldExpectations);
+    expect(failures.join("\n")).toMatch(/1 of 3 held frame pairs show a scene that went still/);
+    expect(failures.join("\n")).toMatch(/crowd-004\.png: the same bytes as the previous frame/);
     expect(failures.join("\n")).toMatch(/a stopped scene photographed again, not a hold/);
 
     // And with the clocks dead rather than the bytes: the render counter and
     // the population ticks carry the same claim.
     const frozen = held.map((frame, index) =>
-      index === 5
+      index === 4
         ? {
             ...frame,
-            frameCountBefore: held[4]!.frameCountBefore,
-            frameCountAfter: held[4]!.frameCountAfter,
-            ticksBefore: held[4]!.ticksBefore,
+            frameCountBefore: held[3]!.frameCountBefore,
+            frameCountAfter: held[3]!.frameCountAfter,
+            ticksBefore: held[3]!.ticksBefore,
           }
         : frame,
     );
-    const frozenFailures = judgeSequence(frozen, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
-    expect(frozenFailures.join("\n")).toMatch(/overview-005\.png: the render counter did not advance/);
+    const frozenFailures = judgeSequence(frozen, [{ name: "crowd", frames: 6 }], FLOORS, heldExpectations);
+    expect(frozenFailures.join("\n")).toMatch(/crowd-004\.png: the render counter did not advance/);
     expect(frozenFailures.join("\n")).toMatch(/the population ticks did not advance/);
+  });
+
+  it("fails a sequence that marks more frames held than the plan holds, by leg, so the exemption cannot grow", () => {
+    // The measured attack: a static camera reported as a flythrough with every
+    // frame of every leg marked held. The route's own hold is the crowd leg's
+    // six closing steps, and a leg the plan holds nothing in must hold nothing.
+    const everyLeg = frames(6, "overview").map((frame) => ({ ...frame, cameraTravelM: 0, cameraHeld: true }));
+    const widened = judgeSequence(everyLeg, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
+    expect(widened.join("\n")).toMatch(/The overview leg marks 6 of its frames held and the plan holds 0 of them/);
+    expect(widened.join("\n")).toMatch(/a camera that never moved as a flythrough/);
+
+    // A leg that holds more than the plan: six held frames where the plan's
+    // crowd leg holds six of twelve. The count is the plan's, so the leg fails
+    // by name however orderly the run looks.
+    const sixHeld = frames(12, "crowd").map((frame, index) =>
+      index >= 6 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
+    );
+    const tooMany = judgeSequence(sixHeld, [{ name: "crowd", frames: 12 }], FLOORS, {
+      ...EXPECTATIONS,
+      heldPairs: { crowd: 2 },
+    });
+    expect(tooMany.join("\n")).toMatch(/The crowd leg marks 6 of its frames held and the plan holds 3 of them/);
+  });
+
+  it("fails held frames scattered through a leg, because the plan's hold is one run at the tail", () => {
+    // The plan's shape: one unbroken run over the closing frames of the leg, so
+    // two held pairs over the last three frames is what the plan wrote.
+    const oneRun = frames(7, "crowd").map((frame, index) =>
+      index >= 4 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
+    );
+    expect(
+      judgeSequence(oneRun, [{ name: "crowd", frames: 7 }], FLOORS, { ...EXPECTATIONS, heldPairs: { crowd: 2 } }),
+    ).toEqual([]);
+
+    // Three held frames in two runs: the count matches the plan, so only the
+    // shape gives it away, and the shape is what the exemption is bounded by —
+    // each held pair is a pair the travel floor never sees.
+    const twoRuns = frames(7, "crowd").map((frame, index) =>
+      index === 2 || index === 5 || index === 6 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
+    );
+    const split = judgeSequence(twoRuns, [{ name: "crowd", frames: 7 }], FLOORS, {
+      ...EXPECTATIONS,
+      heldPairs: { crowd: 2 },
+    });
+    expect(split.join("\n")).toMatch(/The crowd leg marks its held frames in 2 separate runs and the plan's hold is one/);
+    expect(split.join("\n")).toMatch(/leaving unchecked stretches between them/);
+
+    // One run of the right length, in the wrong place: the same two held pairs
+    // one step earlier than the plan holds them.
+    const shifted = frames(7, "crowd").map((frame, index) =>
+      index === 2 || index === 3 ? { ...frame, cameraTravelM: 0, cameraHeld: true } : frame,
+    );
+    const moved = judgeSequence(shifted, [{ name: "crowd", frames: 7 }], FLOORS, {
+      ...EXPECTATIONS,
+      heldPairs: { crowd: 2 },
+    });
+    expect(moved.join("\n")).toMatch(/the plan holds the closing 3, at indices 4 to 6/);
+    expect(moved.join("\n")).toMatch(/a run that starts anywhere else is not that hold/);
   });
 
   it("passes a red-control sequence only when nothing moved at all, and fails when input that moves nothing moved the camera", () => {
@@ -154,7 +218,8 @@ describe("judgeSequence", () => {
   it("keeps the red control's semantics unchanged for held frames: every pair still, held included", () => {
     // Held frames are still frames under the red control too: input that
     // cannot move anything must move nothing, whether or not the plan parked
-    // the camera on purpose.
+    // the camera on purpose. The plan's own hold is stated because the hold
+    // check runs under the red control as well.
     const red = frames(6).map((frame, index) => ({
       ...frame,
       sha256: `still-${frame.file}`,
@@ -162,12 +227,17 @@ describe("judgeSequence", () => {
       cameraHeld: index >= 4,
     }));
     expect(
-      judgeSequence(red, [{ name: "overview", frames: 6 }], FLOORS, { ...EXPECTATIONS, redControl: true }),
+      judgeSequence(red, [{ name: "overview", frames: 6 }], FLOORS, {
+        ...EXPECTATIONS,
+        heldPairs: { overview: 1 },
+        redControl: true,
+      }),
     ).toEqual([]);
 
     const moved = red.map((frame, index) => (index === 5 ? { ...frame, cameraTravelM: 3 } : frame));
     const failures = judgeSequence(moved, [{ name: "overview", frames: 6 }], FLOORS, {
       ...EXPECTATIONS,
+      heldPairs: { overview: 1 },
       redControl: true,
     });
     expect(failures.join("\n")).toMatch(/1 of 5 frame pairs still moved the camera/);
@@ -209,7 +279,7 @@ describe("judgeSequence", () => {
     const wall = frames(6).map((frame, index) => (index < 3 ? { ...frame, structuredPixels: 0.0 } : frame));
     const failures = judgeSequence(wall, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
     expect(failures.join("\n")).toMatch(
-      /3 of 6 frames in overview have under 5% of their 144 cells showing structure — per-cell luminance deviation above 12, or above 30% of the cell's own mean/,
+      /3 of 6 frames in overview have under 5% of their 144 cells showing structure — per-cell luminance deviation above 12, or above 2 with a mean above 8 and a ratio above 30% of the cell's own mean/,
     );
   });
 
@@ -226,6 +296,25 @@ describe("judgeSequence", () => {
     // 5% floor the judge applies.
     const blankSky = syntheticFrame(() => 200);
     expect(structuredFraction(blankSky)).toBe(0);
+  });
+
+  it("reads a flat dark surface with dither as nothing, so noise cannot qualify a whole frame", () => {
+    // One flat surface at mean luminance 3 with +-1 of quantization dither in
+    // 2-pixel blocks: each of the 144 cells has mean 3 and a standard deviation
+    // of exactly 1, so the *relative* leg alone is satisfied by every one of
+    // them — 1/3 of the mean, from one 8-bit level. Without an absolute floor on
+    // that leg the fraction is 1 and a frame filled by a single near-black
+    // surface counts as structure. The 2-pixel blocks matter: the statistic
+    // samples every second pixel, so a one-pixel checkerboard is invisible to it
+    // and both rules read it as flat.
+    const flatDark = syntheticFrame((x, y) => (((x >> 1) + (y >> 1)) % 2 === 0 ? 4 : 2));
+    expect(structuredFraction(flatDark)).toBe(0);
+
+    // A dusk wall a step brighter and much flatter: mean 30 with +-8, deviation
+    // 8, is under the absolute leg and under 30% of its own mean, so it fails
+    // under either rule. The hole this pins is at the dark end only.
+    const flatDusk = syntheticFrame((x, y) => (((x >> 1) + (y >> 1)) % 2 === 0 ? 38 : 22));
+    expect(structuredFraction(flatDusk)).toBe(0);
   });
 
   it("fails a frame whose controls target moved in height, which no input can do", () => {

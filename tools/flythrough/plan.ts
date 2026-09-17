@@ -410,12 +410,16 @@ const ASCENT_STEPS: readonly LegStep[] = ASCENT_LADDER.map((rung, index) => {
   const previous = index === 0 ? CROWD_END_DISTANCE_M : ASCENT_LADDER[index - 1]!.distance;
   const t = Math.min(1, Math.max(0, (index - 2) / 8));
   // An unwrapped angle like the approach's old one, and this one converges, so it
-  // stays. Checked against the driver's cap: the shortest-angle arithmetic
-  // reverses at step 3, after 1.0472 rad the wrong way, and the last eight steps
-  // turn the short way home — 3.538 rad of travel through eleven steps of 0.3491,
-  // which is 3.840. It reaches `OPENING_AZIMUTH` at step 10 with one step spare,
-  // and `test/flythrough-plan.test.ts` asserts it. It is not monotone, unlike the
-  // approach's repaired swing, and a longer route would not fit the cap.
+  // stays. Checked against the driver's cap by flying it through the driver's own
+  // rotate arithmetic: the shortest-angle path reverses at step 3, after 1.0472 rad
+  // the wrong way, and the last eight steps turn the short way home — 3.5343 rad of
+  // travel through eleven steps whose cap is 0.3491 each, which is 3.840. It lands
+  // exactly on `OPENING_AZIMUTH` at the final step, index 10 of 0..10; the tenth
+  // step carries the last 0.0436 rad, so there is no spare step:
+  // `test/flythrough-plan.test.ts` passes the last step only because its tolerance
+  // is 0.05, and deleting that step leaves it green, 0.0436 rad short. It is not
+  // monotone, unlike the approach's repaired swing, and a longer route would not
+  // fit the cap.
   const azimuth =
     index < 4
       ? CROWD_AZIMUTH + (OPENING_AZIMUTH + 2 * Math.PI - CROWD_AZIMUTH) * ((index + 1) / 4)
@@ -540,8 +544,8 @@ export const FRAME_FLOORS = Object.freeze({
   vehiclesDrawn: 1,
   /**
    * Fraction of the frame's 16x9 grid of cells whose luminance shows structure:
-   * a standard deviation above 12 absolute units, or above 30% of the cell's
-   * own mean on a dark frame. See `structuredFraction` in
+   * a standard deviation above 12 absolute units, or above 2 with a cell mean
+   * above 8 and a ratio above 30% of that mean. See `structuredFraction` in
    * `tools/flythrough/structure.ts`.
    */
   structuredPixels: 0.05,
