@@ -943,6 +943,8 @@ A moving-leg pair at 0.4 mm passed silently. Restored: 15 passed.
 
 Both cases are red against the pre-fix judge and green with it restored (18 passed), which is the six-frame static-camera record reproduced as a passing flythrough.
 
+**The check does not move the recorded run.** The 46-frame record in `artifacts/flythrough2/manifest.json` — 11/12/12/11 frames over overview, approach, crowd and ascent, with exactly 6 `cameraHeld: true` frames, all in the crowd leg's closing steps — was fed through the shipping `judgeSequence` with the plan's own `{ crowd: 5 }` and `FRAME_FLOORS`: **0 failures**, as it was before the change. The reds above are the mutated records, not the lane's own.
+
 **Bound.** Synthetic records over `judgeSequence`: the cases prove the check fires on the records they construct — a leg the plan holds nothing in, a leg that holds more than the plan, a leg that holds the same number in separate runs, and a run of the right length in the wrong place — and the plan side of the comparison is the spec's own read of `LEGS`, so a plan that itself marked every step held would move both sides together and this check would not see it. What it does not bound is the run: only a lane run shows the real 46-frame record passing. A held first-frame-of-a-leg is no pair, so the held pair count is one less than the held frame count, and the judge derives the frame count from it that way.
 
 ## The flythrough's structure floor reads a dark facade as structured and a blank frame as nothing
