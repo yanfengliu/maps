@@ -8,20 +8,22 @@
  * `camera.matrixWorld` against 1e-7, and a camera on `OrbitControls` damping
  * never satisfies a bar that fine: the residual decays by 0.92 a frame and
  * never reaches zero, so the strictest predicate in the app could only be met
- * by the arithmetic running out of significand. Measured on hardware, that was
- * 460 frames after the last pointer input, while the gate reads the accumulator
- * at frame 378 (`artifacts/post-chain/REPORT.md`).
+ * by the arithmetic running out of significand. Measured on hardware, the glide
+ * crossed that bar at frame 460 — 200 frames after the last pointer input and 82
+ * frames after the gate reads the accumulator at frame 378
+ * (`artifacts/post-chain/REPORT.md`).
  *
  * The check below is the app's own witness, restated exactly: the same sixteen
  * `matrixWorld` elements, the same 1e-7 bar, the same one-frame-apart
  * comparison. What it adds is a bounded number of frames. `FRAMES_ALLOWED` is
  * the gate: 120 frames is 2 s at 60 fps, which is far past what a glide that
- * ends when it stops being visible needs and far short of the 460 the damping
+ * ends when it stops being visible needs and far short of the 200 the damping
  * tail needs on its own.
  *
  * Bound of this file: no renderer draws anything, so it proves the camera
  * reaches rest and says nothing about what the frames look like. The frames are
- * `tools/post-chain/post-chain.spec.ts`'s business, on the hardware renderer.
+ * `tools/post-chain/probe.spec.ts` and `motion.spec.ts`'s business, on the
+ * hardware renderer and on the SwiftShader one the verdict frames are taken on.
  */
 
 import { describe, expect, it } from "vitest";

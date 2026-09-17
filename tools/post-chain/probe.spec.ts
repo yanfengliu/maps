@@ -19,6 +19,13 @@
  * `artifacts/post-chain/probe/` so the reading can be checked against numbers
  * rather than against a memory of them.
  *
+ * **Both renderers run this one spec.** `MAPS_POST_CHAIN_ARM` selects the launch
+ * args, the preview port and which renderer the run must report, and names the
+ * trace file after the arm. Two specs would have differed by more than the
+ * renderer, which is the one thing a comparison must not do; the 44 frames the
+ * deliverable is judged on are captured on SwiftShader, so the arm that matters
+ * most is the slow one.
+ *
  * Everything here reads `window.__mapsHarness`, which is frozen and has no
  * setter. The camera moves only through synthesised pointer and wheel input on
  * the canvas — the same path a person's hand takes.
@@ -42,6 +49,25 @@ const DUSK_URL = "/?time=dusk&seed=9137&style=satellite";
 
 const CROSSING = HERO_POSES.find((pose) => pose.name === "crossing")!;
 
+/**
+ * Which renderer this run is about, set by `playwright.config.ts`.
+ *
+ * The same spec measures both, deliberately: the defect was a question about
+ * frame counts, and a comparison between two specs would differ by more than the
+ * renderer. The arm decides which renderer string is acceptable and which trace
+ * file the numbers land in, so neither arm can overwrite or be mistaken for the
+ * other.
+ */
+const ARM = process.env["MAPS_POST_CHAIN_ARM"] === "software" ? "software" : "hardware";
+const EXPECTED_RENDERER = ARM === "software" ? /SwiftShader|llvmpipe|software/i : /NVIDIA|GeForce|RTX/i;
+
+/** The view movement above which a frame is a hand on the canvas and not a glide. */
+const INPUT_METRES = 0.05;
+
+/** How long the witness may take to arrive after the shutter, if it is not there yet. */
+const WITNESS_FRAMES = 240;
+const WITNESS_MS = 8 * 60_000;
+
 /** One reading of everything the harness can see, from one browser task. */
 async function observe(page: Page) {
   return page.evaluate(() => {
@@ -63,11 +89,14 @@ test("the accumulator at the hero shutter, and what the camera was doing there",
   const boot = await driver.waitForFirstFrame(120_000);
   await driver.waitForTilesIdle();
 
-  // The renderer is named here so a softwarised run cannot be read as a
-  // hardware measurement, the same refusal the hardware lane makes.
-  expect(boot.glRenderer, `this lane needs the NVIDIA GPU, not ${boot.glRenderer}`).toMatch(
-    /NVIDIA|GeForce|RTX/i,
-  );
+  // The renderer is named, and named as the one this arm is about, so a
+  // softwarised hardware run and a hardware software run both fail by name
+  // instead of reporting the other renderer's numbers.
+  expect(
+    boot.glRenderer,
+    `the ${ARM} arm requires ${ARM === "software" ? "a software rasteriser" : "the NVIDIA GPU"}, ` +
+      `and Chromium reports "${boot.glRenderer}".`,
+  ).toMatch(EXPECTED_RENDERER);
 
   await startRecorder(page);
 
@@ -80,20 +109,56 @@ test("the accumulator at the hero shutter, and what the camera was doing there",
   const atShutter = await observe(page);
   const framesAtShutter = atShutter.status.frameCount;
 
-  // Now stop touching it and watch. Thirty seconds is about 1,800 frames on
-  // this renderer: 56x the 32 frames the accumulator needs once it starts.
-  await page.waitForTimeout(30_000);
+  // Whether the glide had already ended at the shutter is the whole question, so
+  // the wait is for the app's own stillness witness rather than for a timer. On
+  // the hardware arm it is already there and this costs one observation; on the
+  // software arm it is bounded in frames and in wall clock, because a frame there
+  // costs seconds and a wait measured in seconds would be measuring the
+  // renderer's speed instead of the camera's.
+  let after = { frameCount: framesAtShutter, taaAccumulating: atShutter.post.taaAccumulating, taaSamples: atShutter.post.taaSamples };
+  if (!atShutter.post.taaAccumulating) {
+    const waitStartedAt = Date.now();
+    for (;;) {
+      await page.waitForTimeout(500);
+      after = await page.evaluate(() => {
+        const post = window.__mapsHarness!.post();
+        return { frameCount: window.__mapsHarness!.status().frameCount, taaAccumulating: post.taaAccumulating, taaSamples: post.taaSamples };
+      });
+      if (after.taaAccumulating) break;
+      if (after.frameCount - framesAtShutter >= WITNESS_FRAMES) break;
+      if (Date.now() - waitStartedAt >= WITNESS_MS) break;
+    }
+  }
 
   const rows = await collectRecorder(page);
-  const quiet = await observe(page);
+
+  // The last frame a hand moved the camera, told apart from the glide by size:
+  // a gesture moves centimetres to metres in one frame, and the damped tail
+  // decays below the bar within a few frames of the gesture ending.
+  let lastInputFrame = rows.length > 0 ? rows[0]!.f : framesAtShutter;
+  for (let index = 1; index < rows.length; index += 1) {
+    const previous = rows[index - 1]!;
+    const row = rows[index]!;
+    const moved =
+      Math.hypot(row.px - previous.px, row.py - previous.py, row.pz - previous.pz) +
+      Math.hypot(row.tx - previous.tx, row.ty - previous.ty, row.tz - previous.tz) +
+      Math.max(row.d, previous.d) * (Math.abs(row.az - previous.az) + Math.abs(row.polar - previous.polar));
+    if (moved > INPUT_METRES) lastInputFrame = row.f;
+  }
+
+  const firstRestAfterShutter = rows.find((row) => row.acc && row.f >= framesAtShutter)?.f ?? null;
 
   writeFileSync(
-    path.join(OUT, "still-trace.json"),
+    path.join(OUT, `still-trace-${ARM}.json`),
     JSON.stringify(
       {
+        arm: ARM,
         url: DUSK_URL,
         glRenderer: boot.glRenderer,
         drawingBuffer: [boot.drawingBufferWidth, boot.drawingBufferHeight],
+        lastInputFrame,
+        shutterFrame: framesAtShutter,
+        firstRestAfterShutter,
         atShutter: {
           frameCount: framesAtShutter,
           taaAccumulating: atShutter.post.taaAccumulating,
@@ -104,11 +169,7 @@ test("the accumulator at the hero shutter, and what the camera was doing there",
             revision: atShutter.tiles.revision,
           },
         },
-        afterThirtySeconds: {
-          frameCount: quiet.status.frameCount,
-          taaAccumulating: quiet.post.taaAccumulating,
-          taaSamples: quiet.post.taaSamples,
-        },
+        afterWitnessWait: after,
         rows,
       },
       null,
@@ -120,13 +181,17 @@ test("the accumulator at the hero shutter, and what the camera was doing there",
   const accumulating = rows.filter((row) => row.acc);
   const firstAccumulating = accumulating[0];
   const peakSamples = rows.reduce((best, row) => Math.max(best, row.n), 0);
+  const framesFromLastInput = rows.length === 0 ? null : rows[rows.length - 1]!.f - lastInputFrame;
 
   console.log(
-    `at the shutter: frame ${framesAtShutter}, taaAccumulating ${atShutter.post.taaAccumulating}, ` +
-      `taaSamples ${atShutter.post.taaSamples}\n` +
-      `trace: ${rows.length} rows, ${accumulating.length} accumulating, first accumulating ` +
-      `${firstAccumulating === undefined ? "never" : `at frame ${firstAccumulating.f}, ${firstAccumulating.f - framesAtShutter} frames after the shutter`}, ` +
-      `peak samples ${peakSamples}, frames drawn in the 30 s ${quiet.status.frameCount - framesAtShutter}`,
+    `${ARM} arm on ${boot.glRenderer}\n` +
+      `  last input frame      ${lastInputFrame}\n` +
+      `  shutter frame         ${framesAtShutter}\n` +
+      `  rest after shutter    ${firstRestAfterShutter === null ? `never within ${after.frameCount - framesAtShutter} frames` : `frame ${firstRestAfterShutter}`}\n` +
+      `  at the shutter        taaAccumulating ${atShutter.post.taaAccumulating}, taaSamples ${atShutter.post.taaSamples}\n` +
+      `  after the wait        frame ${after.frameCount}, taaAccumulating ${after.taaAccumulating}, taaSamples ${after.taaSamples}\n` +
+      `  trace                 ${rows.length} rows, ${accumulating.length} accumulating, first ${firstAccumulating === undefined ? "never" : `frame ${firstAccumulating.f}`}, peak samples ${peakSamples}, ` +
+      `${framesFromLastInput} frames from the last input to the end of the trace`,
   );
 
   // The claim the criterion rests on, asserted at the shutter rather than

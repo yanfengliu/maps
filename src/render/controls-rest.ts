@@ -12,9 +12,10 @@
  * `camera.matrixWorld`, and hands the answer to the post chain's temporal
  * accumulation — which holds still only for a camera that holds still. Measured
  * on the hardware renderer on 2026-09-16 (`artifacts/post-chain/REPORT.md`): at
- * the pose the hero frames are captured from, the glide crosses 1e-7 m per
- * frame 460 frames after the last pointer input, and `hero.spec.ts` reads the
- * accumulator at frame 378. Every hero frame in the last capture was therefore
+ * the pose the hero frames are captured from, the last pointer input landed on
+ * frame 259, the glide crossed 1e-7 m a frame at frame 460 — 200 frames later —
+ * and `hero.spec.ts` reads the accumulator at frame 378, 82 frames before the
+ * camera would have rested. Every hero frame in the last capture was therefore
  * taken with `taaAccumulating: false, taaSamples: 0`, exactly as
  * `artifacts/gate-timing/REPORT.md` found.
  *
