@@ -122,7 +122,6 @@ export function buildDigest(): { sha256: string; files: { name: string; bytes: n
   }
   return { sha256: hash.digest("hex"), files };
 }
-
 /** Every result file this lane writes, in its own directory, never overwriting another run's. */
 export function writeResult(name: string, value: unknown): string {
   mkdirSync(OUT_DIR, { recursive: true });

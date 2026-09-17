@@ -43,7 +43,7 @@ Object.assign(process.env, { MAPS_VISUAL_LANE: "hardware-iteration", MAPS_VISUAL
 
 export default defineConfig({
   testDir: "./tools/frame-budget",
-  testMatch: ["frame-budget.spec.ts"],
+  testMatch: ["frame-budget.spec.ts", "sweep.spec.ts"],
   outputDir: "./artifacts/playwright-frame-budget",
   // One scenario at a time. Each is a load of the whole city, the agent asset set
   // and a population of thousands; two at once contend for the GPU and the CPU and
