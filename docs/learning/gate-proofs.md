@@ -574,6 +574,31 @@ Restoring the two terms: `1 passed`, in 2.56 s. The same mutation driven through
 
 **Bound.** One delivered network at seed `0x5b1b0a`, 120 vehicles and no pedestrians, 1,200 ticks at 1/60 s — 20 simulated seconds — sampled every 5 ticks. That window is long enough for queues to form at the portals and at the first gates and for two bodies to be placed at one portal, and it is not a full signal cycle; it says nothing about pedestrian spacing, about lane changes at junctions, about the 3,000-pedestrian acceptance load or about route completion. It also permits head-on overlaps by construction, where two bodies are drawn on the same folded lane centreline: the test requires such a pair's centrelines to come within the two bodies' own half lengths, and fails any other head-on overlap as a different defect. The pedestrian half of the same review finding (46,615 overlapping pairs at t = 60 s) is **not** gated on this revision: `test/pedestrian-overlap.test.ts` is untracked and lives unlanded in `artifacts/spacing/wt`, so the crowd's spacing has no gate here.
 
+## The hero spec's return switch committed the row it was already on
+
+**Gate:** `tools/visual/hero.spec.ts`'s style-return block, and the assertion in it that the control reaches the style the switch claims: `expect(styleSelect).toHaveAttribute("data-style-id", "cartographic")`. The block opens the listbox with `Enter`, walks it with an arrow key and commits with `Enter`.
+
+**Landed:** 2026-09-16 in `48c19c5`. The block shipped with the gate-fixes landing `cb266f7`, whose rewrite flipped the capture order and the return direction with it.
+
+**Mutation — the defect itself, not a synthetic one:** `await styleSelect.press("Home")` replaced by `await styleSelect.press("End")`. The registry orders cartographic first and satellite second (`src/world/styles.ts`), and the style being left is satellite, so `End` walks to the row already selected — and `move()` in `src/ui/style-picker.ts` does not commit a move onto the current option, so the control correctly did nothing.
+
+**Failure:** the verdict lane, after 25.7 minutes and four hero captures:
+
+```
+Error: the return switch must reach the control's own value, and Enter on the highlighted row is what commits it
+expect(locator).toHaveAttribute(expected) failed
+Locator:  getByRole('combobox', { name: 'World style' })
+Expected: "cartographic"
+Received: "satellite"
+Timeout:  5000ms
+```
+
+**Red control, run before the next three-hour attempt rather than after:** `artifacts/preflight/style-return-probe.spec.ts` with `artifacts/preflight/style-return.config.ts` drives the real app through the real control — `?time=dusk&seed=9137&style=satellite`, then `Enter`, then `Home`, then `Enter` — and reports `rows: ["Cartographic","Satellite"]` and `Enter/Home/Enter -> cartographic`, `1 passed` in **8.0 s**, 40.0 s including the preview server.
+
+**Bound.** One control, one registry, one build, one renderer, and no capture: the probe proves the key-to-row mapping the spec depends on and says nothing about the 25 minutes of rendering that precede it, nor about the noon iteration or the two frame-comparison thresholds that follow. It exists because the check that was made before the failing run — that hero's first assertions passed a minute in — could not reach a failure twenty-five minutes in.
+
+
+
 ## The visual pre-flight answers in a minute what a capture answers in three hours
 
 **Gate:** `npm run visual:smoke` — `playwright.smoke.config.ts` and `tools/visual/smoke.spec.ts`. It asserts the preconditions a capture's first minute would test and photographs nothing: the production build boots and the harness is readable; **the renderer is SwiftShader through the pixel lane's own `pixelLaneRefusal` rather than a copy of it**; the post chain is active and carries `[TAARenderPass, GTAOPass, UnrealBloomPass, OutputPass]`; the tileset is reachable with no failed tiles; the World style control offers both registry entries and switches under a real keyboard press and a real pointer click, reporting each through the `data-style-id` it writes onto itself; and the simulation keeps advancing across both.
