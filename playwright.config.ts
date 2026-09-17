@@ -31,6 +31,23 @@ export default defineConfig({
   // unplanned spec. It asserts preconditions and captures nothing, and it belongs
   // to `playwright.smoke.config.ts` alone. Measured by round 31's review, 2026-09-16.
   testIgnore: ["lifecycle.spec.ts", "smoke.spec.ts"],
+  // A per-test budget of two minutes, and the reason is measured rather than
+  // defensive habit. On 2026-09-16 the 30-second default killed a three-hour run
+  // that had already written all eight hero frames in an hour: the next spec,
+  // `style-picker.spec.ts`, failed with `Test timeout of 30000ms exceeded while
+  // setting up "context"` and `browser.newContext: Protocol error
+  // (Browser.setDownloadBehavior)`. That is a browser that cannot create a context
+  // in thirty seconds, which is a starved machine rather than a defect — the same
+  // spec runs in 405 ms on an idle one — and the timeout, not the assertion, is
+  // what ended the run. The budget covers setup as well as assertions, so it must
+  // not be the smallest number that works on the quietest machine.
+  //
+  // This weakens nothing: no assertion changes, no retry is added, `maxFailures: 1`
+  // still stops the lane at the first real failure, and the specs that need more
+  // than two minutes already set their own budget — `hero.spec.ts` runs for an
+  // hour. What it buys is that a loaded machine cannot convert a scheduling problem
+  // into a red gate whose message blames the pixels.
+  timeout: 120_000,
   // The sweep is one continuous camera path through one page. Splitting it
   // across workers would mean several browsers fighting for a software
   // rasteriser and would not make it faster.
