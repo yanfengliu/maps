@@ -26,6 +26,7 @@ export function resetInvariants(): void {
   populationInvariants.driveWithoutGrant = false;
   populationInvariants.ignoreCurb = false;
   populationInvariants.leakRetiredBody = false;
+  populationInvariants.misplaceVehicleInLane = false;
   populationInvariants.violations = 0;
 }
 

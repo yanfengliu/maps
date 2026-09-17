@@ -63,7 +63,7 @@ export type TickPhase = typeof TICK_PHASES[number];
 export const tickOrder: { phases: TickPhase[] } = { phases: [...TICK_PHASES] };
 
 /**
- * Test seams for the three invariant gates, and the only way to make them fail.
+ * Test seams for the invariant gates, and the only way to make them fail.
  *
  * Each exists so a gate can be shown to go red rather than trusted. The shipped
  * population never sets any of them, and `createPopulation` resets them on
@@ -76,9 +76,20 @@ export const populationInvariants: {
   ignoreCurb: boolean;
   /** When set, a retired body is left present — the conservation mutation. */
   leakRetiredBody: boolean;
+  /**
+   * When set, every vehicle is drawn on the zeroth lateral lane of its route's
+   * entry occurrence — the lane-keeping mutation.
+   *
+   * It restores what a body placed from the wrong lane would look like: a
+   * position offset sideways from the lane the route actually drives. The
+   * delivered placement offsets by `laneIndex * widthM * 0.45`, so a body on a
+   * 3.0 m lane drawn one lane over sits 1.35 m off its own lane's centreline,
+   * well outside the ~0.02 m the unmutated run holds.
+   */
+  misplaceVehicleInLane: boolean;
   /** Set by the population when an uncommitted hull reached a conflict area. */
   violations: number;
-} = { driveWithoutGrant: false, ignoreCurb: false, leakRetiredBody: false, violations: 0 };
+} = { driveWithoutGrant: false, ignoreCurb: false, leakRetiredBody: false, misplaceVehicleInLane: false, violations: 0 };
 
 let phaseIndex = 0;
 
@@ -279,6 +290,7 @@ export function createPopulation(options: PopulationOptions): Population {
   populationInvariants.driveWithoutGrant = false;
   populationInvariants.leakRetiredBody = false;
   populationInvariants.ignoreCurb = false;
+  populationInvariants.misplaceVehicleInLane = false;
   populationInvariants.violations = 0;
   const table: SlotTable = createSlotTable(settings);
   const refusals = new RefusalCounts();
@@ -1361,7 +1373,10 @@ export function createPopulation(options: PopulationOptions): Population {
       state.speedMps = reached ? 0 : actual / step;
       state.travelledM += actual;
       stepLateral(state, step);
-      placeVehicle(table, slot, state.travelledM, state.laneIndex);
+      // The lane-keeping mutation, and the only thing it changes: the lateral
+      // index the drawn pose is offset by. A body whose route is on lane 1 is
+      // drawn on lane 0, which is a sideways displacement and not a route change.
+      placeVehicle(table, slot, state.travelledM, populationInvariants.misplaceVehicleInLane ? 0 : state.laneIndex);
       state.stoppedSeconds = state.speedMps <= VEHICLE_DYNAMICS.idm.stoppedSpeedMps ? state.stoppedSeconds + step : 0;
       if (state.egressing) {
         // The outbound leg of the boundary lifecycle: the pose walks out through
