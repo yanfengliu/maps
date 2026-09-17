@@ -275,7 +275,8 @@ const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => 
  * the bearing is still held, because a camera 170 m out that swings before it
  * closes would leave the area of interest; then the bearing swings the short way
  * onto the crowd over the last six, where the camera is under 60 m out and the
- * circle it turns on is small.
+ * circle it turns on is small. The stand heights are a ladder down the descent,
+ * so the camera arrives at the footway rather than over the roofs.
  *
  * The swing is 1.4399 rad, 82.5 degrees, from `OPENING_AZIMUTH` 0.7854 to
  * `CROWD_AZIMUTH` 2.2253. It is written as an interpolation *towards* the
