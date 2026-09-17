@@ -9,20 +9,22 @@
  * The certificate is issued by `certifyVisualRun`, which is `verifyVisualRun`
  * plus the evidence a pixel set cannot carry about itself: that three hardware
  * lifecycle runs exist for this run and named the hardware renderer, that every
- * frame's manifest names the SwiftShader the pixel lane pins, and that the scene
- * data the preview server serves is still the scene the run started with.
+ * frame's manifest names the SwiftShader the pixel lane pins, that the scene
+ * data the preview server serves is still the scene the run started with, and
+ * that the harness which drove the browser is the one the run began with.
  *
  * Bound of the whole instrument, in one place: it proves the 44 frames exist, are
  * fresh, are native 1280x720, hash to what their manifests say, came from the
- * software lane the config pins, and were captured while the same build and the
- * same scene data were on disk, with three hardware lifecycle records written
- * after this run began. It cannot prove that any frame looks right. It cannot
- * prove the lifecycle records came from *this* process tree rather than from
- * three other fresh ones — their timestamps are the only identity they carry —
- * and its scene digest is taken at two instants, so a scene file changed and
- * changed back between them is outside what it can report.
+ * software lane the config pins, and were captured while the same build, the same
+ * scene data and the same harness were on disk, with three hardware lifecycle
+ * records written after this run began. It cannot prove that any frame looks
+ * right. It cannot prove the lifecycle records came from *this* process tree
+ * rather than from three other fresh ones — their timestamps are the only
+ * identity they carry — and both tree digests are taken at two instants, so a
+ * file changed and changed back between them is outside what it can report.
  */
 import { createHash } from "node:crypto";
+import type { Stats } from "node:fs";
 import { mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -145,6 +147,150 @@ async function assertSceneUnchanged(
 }
 
 /**
+ * The harness closure: every file the verdict chain reads or executes that is not
+ * compiled into `dist/` and not served as scene data.
+ *
+ * Why this exists. The certificate bound `dist/` bytes and the served scene, so a
+ * reader could tell which build and which city the frames came from, and nothing
+ * bound the specs and helpers that drove the browser. That stopped being
+ * theoretical on 2026-09-16, when a commit under `tools/visual/` landed twenty
+ * minutes into a three-hour capture (`5c32286`): the frames were not invalidated —
+ * Playwright collects its test list and loads its specs when the run starts, and
+ * the build bytes were pinned — but the certificate could not show that, and the
+ * plan requires the complete source/build/data/harness closure before and after
+ * the run. A certificate that cannot say which instrument drew its frames cannot
+ * be compared with the next one, and a reviewer has to take the lane's word for
+ * which specs ran.
+ *
+ * The boundary is the lane's own instrument, not the whole of `tools/`: the
+ * directory both capture lanes are selected from, the two configs that select them
+ * and pin the renderer, port, viewport and per-test bounds they run under, and the
+ * preview mount that decides what they are served. Deliberately outside it, and
+ * each for a reason: the app's own sources, which reach the frames only through
+ * `dist/` and are bound by the build hashes; `data/`, bound by the scene digest;
+ * `package.json`'s chain order, pinned by `test/visual-instrument.test.ts`; the
+ * other lanes under `tools/`, which this chain never runs; and the Draco decoder
+ * served from `node_modules`, which nothing here binds.
+ */
+export const HARNESS_ROOTS: readonly string[] = [
+  "tools/visual",
+  "playwright.config.ts",
+  "playwright.lifecycle.config.ts",
+  "vite.config.ts",
+  "tools/vite/serve-scene-data.ts",
+];
+
+interface HarnessDigest {
+  digest: string;
+  files: number;
+  bytes: number;
+}
+
+/**
+ * A digest over the harness the lane executes: the path of each file, and its
+ * bytes.
+ *
+ * The same shape and the same reasoning as `sceneTreeDigest`. Contents rather than
+ * metadata, because a spec edited in place that keeps its length can keep its
+ * modification time too, and that is precisely the change a certificate must not
+ * miss.
+ *
+ * Roots are read from the working directory the gate's chain runs in, and a root
+ * may be a file or a directory. Keys are spelled with forward slashes so the same
+ * tree gives the same value on every platform, which is what lets one certificate
+ * name its instrument comparably with another.
+ *
+ * Bound: only the path and the content enter the digest, so a file added under a
+ * root moves it and a file removed from one moves it, while no timestamp, size or
+ * inode is covered. A root that resolves to nothing is refused rather than
+ * digested, because a digest taken over no files cannot tell an unchanged harness
+ * from a missing one. What it cannot report is a file changed and changed back
+ * between its two calls, which is a difference no digest taken at two instants can
+ * see.
+ */
+export async function harnessTreeDigest(
+  roots: readonly string[] = HARNESS_ROOTS,
+): Promise<HarnessDigest> {
+  const entries: string[] = [];
+  let bytes = 0;
+  const visit = async (path: string, key: string): Promise<void> => {
+    let info: Stats;
+    try {
+      info = await stat(path);
+    } catch (error) {
+      throw new Error(
+        `The visual gate cannot read ${path}, which is part of the harness this lane executes: ` +
+          `${error instanceof Error ? error.message : String(error)}. The certificate binds the instrument ` +
+          "that drove the browser, so a run whose own specs, configs or preview mount cannot be read cannot " +
+          "show which harness produced its frames. Restore the file before re-running the gate.",
+      );
+    }
+    if (info.isDirectory()) {
+      let names: string[];
+      try {
+        names = await readdir(path);
+      } catch (error) {
+        throw new Error(
+          `The visual gate cannot list ${path}, which is part of the harness this lane executes: ` +
+            `${error instanceof Error ? error.message : String(error)}. Restore the directory before ` +
+            "re-running the gate.",
+        );
+      }
+      for (const name of names.sort()) await visit(join(path, name), `${key}/${name}`);
+      return;
+    }
+    if (!info.isFile()) return;
+    let content: Buffer;
+    try {
+      content = await readFile(path);
+    } catch (error) {
+      throw new Error(
+        `The visual gate cannot read the harness file ${path}: ` +
+          `${error instanceof Error ? error.message : String(error)}. Every file under these roots is hashed ` +
+          "by content into the certificate, so one this run cannot read would leave its frames unbound from " +
+          "the specs that produced them. Restore the file before re-running the gate.",
+      );
+    }
+    entries.push(`${key}\u0000${hash(content)}`);
+    bytes += content.byteLength;
+  };
+  for (const root of roots) await visit(root, root.replaceAll("\\", "/"));
+  if (entries.length === 0) {
+    throw new Error(
+      `The harness digest covered no files under ${roots.join(", ")}, so it would show nothing about the ` +
+        "instrument that drove this run. A digest that cannot tell an empty harness from an unchanged one " +
+        "would certify frames whose specs are unknown; restore the lane's own files before re-running the gate.",
+    );
+  }
+  return { digest: hash(Buffer.from(entries.join("\n"), "utf8")), files: entries.length, bytes };
+}
+
+/**
+ * Re-derive the harness digest this run pinned, and refuse if it moved.
+ *
+ * A commit under `tools/visual/` during a capture does not change the frames the
+ * run already loaded, and this check says so rather than implying the frames are
+ * wrong. What it refuses is a certificate that cannot name the instrument which
+ * drew them: `plan.md` requires the harness closure on both sides of the run, and
+ * two certificates whose specs differ are not comparable even when their build and
+ * scene bytes agree.
+ */
+async function assertHarnessUnchanged(harness: HarnessDigest & { roots: string[] }): Promise<void> {
+  const now = await harnessTreeDigest(harness.roots);
+  if (now.digest !== harness.digest) {
+    throw new Error(
+      "The harness this lane runs changed during capture, so this certificate cannot show which specs and " +
+        `helpers drove the browser: ${harness.files} files digested ${harness.digest.slice(0, 12)} when the ` +
+        `run began and ${now.files} files digest ${now.digest.slice(0, 12)} now, over ${harness.roots.join(", ")}. ` +
+        "A commit to the lane mid-run does not invalidate frames the run had already loaded, but it does leave " +
+        "the certificate unable to say which instrument produced them — and a certificate with no harness " +
+        "binding cannot be compared with the next run's. Re-run the gate from one revision so the harness is " +
+        "bound on both sides of the capture.",
+    );
+  }
+}
+
+/**
  * Delete every artifact a later step could mistake for this run's.
  *
  * This is the gate's first step, ahead of the build, and that placement is the
@@ -170,11 +316,12 @@ interface VisualRun {
   requestedGpu: string;
   build: { file: string; sha256: string }[];
   scene: SceneDigest & { mounts: string[] };
+  harness: HarnessDigest & { roots: string[] };
 }
 
 /**
- * Hash the build bytes this run will capture and pin the scene data it will
- * serve, then open the run.
+ * Hash the build bytes this run will capture, pin the scene data it will serve
+ * and pin the harness it will drive, then open the run.
  *
  * Runs *after* the build — the hash is of the bytes the browser will serve.
  *
@@ -204,6 +351,7 @@ export async function beginVisualRun(
   const build: { file: string; sha256: string }[] = [];
   for (const file of files) build.push({ file, sha256: hash(await readFile(file)) });
   const scene = await sceneTreeDigest();
+  const harness = await harnessTreeDigest();
   const startedAt = new Date().toISOString();
   const runId = hash(Buffer.from(`${startedAt}\u0000${build.map((entry) => entry.sha256).join("")}`, "utf8")).slice(0, 16);
   await writeFile(
@@ -216,6 +364,7 @@ export async function beginVisualRun(
         requestedGpu: process.env["MAPS_VISUAL_GPU"] ?? "software",
         build,
         scene: { mounts: SCENE_MOUNTS.map((mount) => mount.route), ...scene },
+        harness: { roots: [...HARNESS_ROOTS], ...harness },
       },
       null,
       2,
@@ -509,15 +658,17 @@ export async function lifecycleEvidence(
  * itself.
  *
  * This is the gate's end step. It refuses a run this chain did not open, and it
- * refuses to certify on the pixel lane's word alone. The mounts and the lifecycle
- * directory are arguments so a test can drive the whole certificate over a run it
- * wrote itself; the gate's own step calls it with the defaults.
+ * refuses to certify on the pixel lane's word alone. The mounts, the lifecycle
+ * directory and the harness roots are arguments so a test can drive the whole
+ * certificate over a run it wrote itself; the gate's own step calls it with the
+ * defaults, and the harness roots default to the ones the run pinned.
  */
 export async function certifyVisualRun(
   root: string,
   options: {
     sceneMounts?: readonly { route: string; directory: string }[];
     lifecycleDir?: string;
+    harnessRoots?: readonly string[];
   } = {},
 ): Promise<void> {
   let run: VisualRun;
@@ -546,11 +697,23 @@ export async function certifyVisualRun(
         "pictures of. run.json is written by `--begin`; re-run the gate with `npm run visual`.",
     );
   }
+  if (typeof run.harness?.digest !== "string" || !Array.isArray(run.harness.roots) || run.harness.roots.length === 0) {
+    throw new Error(
+      `The run in ${root} pinned no harness digest, so nothing shows which specs and helpers drove its ` +
+        "browser. run.json is written by `--begin`, and a run begun by a wrapper older than this check " +
+        "carries no harness binding — the frames may be sound, but the certificate cannot say which " +
+        "instrument produced them. Re-run the gate with `npm run visual`.",
+    );
+  }
   const scene = run.scene;
+  const harness = run.harness;
   const sceneMounts = options.sceneMounts ?? SCENE_MOUNTS;
+  const harnessRoots = options.harnessRoots ?? harness.roots;
   // Before a single frame is read, for the same reason every other check runs
-  // before the certificate: a certificate is a claim about one city and one build.
+  // before the certificate: a certificate is a claim about one city, one build
+  // and one instrument.
   await assertSceneUnchanged(scene, sceneMounts);
+  await assertHarnessUnchanged({ ...harness, roots: [...harnessRoots] });
   const pixelRenderers = new Set<string>();
   for (const [manifestName, names] of expectedFrames()) {
     const manifest = await readManifest(root, manifestName, names, run.startedAt);

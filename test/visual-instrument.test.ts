@@ -24,7 +24,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 import {
+  HARNESS_ROOTS,
+  beginVisualRun,
   certifyVisualRun,
+  harnessTreeDigest,
   lifecycleEvidence,
   sceneTreeDigest,
   visualRunPhase,
@@ -68,6 +71,8 @@ function png(): Buffer {
 interface SyntheticRun {
   root: string;
   mounts: { route: string; directory: string }[];
+  /** The lane's own files, which the run pins a digest of. */
+  harnessRoots: string[];
   lifecycleDir: string;
 }
 
@@ -78,14 +83,18 @@ interface FrameSetOptions {
   heroRenderer?: unknown;
   /** Replace the scene manifest after the run has pinned its digest. */
   sceneAfter?: string;
+  /** Rewrite the lane's helper after the run has pinned its harness digest. */
+  harnessEdit?: string;
+  /** Add a file under the lane's own directory after the run pinned its digest. */
+  harnessAdd?: string;
   /** Omit the lifecycle records entirely. */
   withoutLifecycle?: boolean;
 }
 
 /**
- * A complete, self-consistent 44-frame run on disk, its scene data and its three
- * lifecycle records. Everything the certificate reads is an argument here, so each
- * case changes exactly one thing.
+ * A complete, self-consistent 44-frame run on disk, its scene data, the harness it
+ * pinned and its three lifecycle records. Everything the certificate reads is an
+ * argument here, so each case changes exactly one thing.
  */
 async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
   const root = await mkdtemp(join(tmpdir(), "maps-instrument-"));
@@ -100,6 +109,14 @@ async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
   await writeFile(join(mounts[1]!.directory, "network.json"), "{}");
   const scene = await sceneTreeDigest(mounts);
 
+  // The harness the run pins: a lane directory of its own, so a case can change it
+  // after `--begin` exactly as a commit during a real capture changes the real one.
+  const harnessRoots = [join(root, "tools", "visual")];
+  await mkdir(harnessRoots[0]!, { recursive: true });
+  await writeFile(join(harnessRoots[0]!, "orbit.ts"), "export const settle = (): void => undefined;\n");
+  await writeFile(join(harnessRoots[0]!, "hero.spec.ts"), "// the hero block\n");
+  const harness = { roots: harnessRoots, ...(await harnessTreeDigest(harnessRoots)) };
+
   const buildFile = join(root, "dist", "index.html");
   await mkdir(dirname(buildFile), { recursive: true });
   await writeFile(buildFile, "frozen build");
@@ -107,7 +124,7 @@ async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
   const startedAt = new Date(Date.now() - 60_000).toISOString();
   await writeFile(
     join(root, "run.json"),
-    JSON.stringify({ runId: "run-1", startedAt, lane: "verdict", requestedGpu: "software", build, scene }),
+    JSON.stringify({ runId: "run-1", startedAt, lane: "verdict", requestedGpu: "software", build, scene, harness }),
   );
 
   const bytes = png();
@@ -161,7 +178,13 @@ async function frameSet(options: FrameSetOptions = {}): Promise<SyntheticRun> {
   if (options.sceneAfter !== undefined) {
     await writeFile(join(mounts[0]!.directory, "manifest.json"), options.sceneAfter);
   }
-  return { root, mounts, lifecycleDir };
+  if (options.harnessEdit !== undefined) {
+    await writeFile(join(harnessRoots[0]!, "orbit.ts"), options.harnessEdit);
+  }
+  if (options.harnessAdd !== undefined) {
+    await writeFile(join(harnessRoots[0]!, options.harnessAdd), "// added while the run was capturing\n");
+  }
+  return { root, mounts, harnessRoots, lifecycleDir };
 }
 
 async function withRun<T>(options: FrameSetOptions, body: (run: SyntheticRun) => Promise<T>): Promise<T> {
@@ -175,7 +198,24 @@ async function withRun<T>(options: FrameSetOptions, body: (run: SyntheticRun) =>
 
 /** The certificate, driven the way the gate's own end step drives it. */
 function certify(run: SyntheticRun): Promise<void> {
-  return certifyVisualRun(run.root, { sceneMounts: run.mounts, lifecycleDir: run.lifecycleDir });
+  return certifyVisualRun(run.root, {
+    sceneMounts: run.mounts,
+    lifecycleDir: run.lifecycleDir,
+    harnessRoots: run.harnessRoots,
+  });
+}
+
+/** The refusal message from a certification that must not succeed. */
+async function refusalFrom(run: SyntheticRun): Promise<string> {
+  try {
+    await certify(run);
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+  throw new Error(
+    "certification succeeded, and this case exists because it must not: a run whose harness moved during " +
+      "capture was certified.",
+  );
 }
 
 /** Rewrite one lifecycle record in place, the way a broken instrument would. */
@@ -238,13 +278,14 @@ describe("the pixel lane's renderer is asserted, not recorded", () => {
 });
 
 describe("certification requires the hardware lifecycle lane's own evidence", () => {
-  it("certifies a complete run and records both renderers and the scene digest", async () => {
+  it("certifies a complete run and records both renderers, the scene digest and the harness digest", async () => {
     await withRun({}, async (run) => {
       await certify(run);
       const complete = JSON.parse(await readFile(join(run.root, "complete.json"), "utf8")) as {
         runId: string;
         pixelRenderer: string;
         scene: { digest: string; files: number };
+        harness: { digest: string; files: number; roots: string[] };
         lifecycle: { renderer: string; runs: unknown[] };
         frames: unknown[];
       };
@@ -255,6 +296,11 @@ describe("certification requires the hardware lifecycle lane's own evidence", ()
       expect(complete.lifecycle.runs).toHaveLength(3);
       expect(complete.scene.digest).toMatch(/^[0-9a-f]{64}$/);
       expect(complete.scene.files).toBeGreaterThan(0);
+      // The harness that drove the browser, in the certificate rather than only in
+      // the wrapper's run record: this is what B4 of round 31 found missing.
+      expect(complete.harness.digest).toMatch(/^[0-9a-f]{64}$/);
+      expect(complete.harness.files).toBe(2);
+      expect(complete.harness.roots).toEqual(run.harnessRoots);
     });
   });
 
@@ -396,6 +442,121 @@ describe("the scene data's identity is bound into the certificate", () => {
     try {
       await expect(sceneTreeDigest([{ route: "/scene/", directory: join(root, "scene") }]))
         .rejects.toThrow(/npm run data:scene/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("the harness that drives the browser is bound into the certificate", () => {
+  it("covers every config the gate's own chain runs", async () => {
+    // Read from the chain rather than restated: adding a lane config to
+    // `npm run visual` and forgetting it here is exactly how the closure would
+    // quietly narrow, and the digest would go on passing while covering less.
+    const scripts = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8")) as {
+      scripts: Record<string, string>;
+    };
+    const configs = [...scripts.scripts["visual"]!.matchAll(/--config\s+(\S+)/g)].map((match) => match[1]!);
+    expect(configs.length).toBeGreaterThan(0);
+    for (const config of configs) {
+      expect(
+        HARNESS_ROOTS.some((root) => config === root || config.startsWith(`${root}/`)),
+        `${config} is run by the gate's chain and is outside the harness closure`,
+      ).toBe(true);
+    }
+  });
+
+  it("digests the real lane's files when it is called the way --begin calls it", async () => {
+    const digest = await harnessTreeDigest();
+    expect(digest.files).toBeGreaterThanOrEqual(10);
+    expect(digest.bytes).toBeGreaterThan(1_000);
+    expect(digest.digest).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("pins that digest into run.json at --begin", async () => {
+    // The synthetic runs above write their own run.json, so nothing else here
+    // would notice the real `--begin` no longer pinning a harness — every real run
+    // would fail hours later at `--end` instead.
+    const root = await mkdtemp(join(tmpdir(), "maps-harness-begin-"));
+    try {
+      const dist = join(root, "dist");
+      await mkdir(join(dist, "assets"), { recursive: true });
+      await writeFile(join(dist, "index.html"), "<!doctype html><title>frozen</title>");
+      await writeFile(join(dist, "assets", "index-abc123.js"), "export {};\n");
+      await beginVisualRun(root, dist);
+      const record = JSON.parse(await readFile(join(root, "run.json"), "utf8")) as Record<string, unknown>;
+      const harness = record["harness"] as { digest: string; files: number; roots: string[] } | undefined;
+      expect(harness, "run.json written by --begin must carry a harness digest").toBeDefined();
+      expect(harness!.roots).toEqual([...HARNESS_ROOTS]);
+      expect(harness!.files).toBeGreaterThanOrEqual(10);
+      // The value `--end` re-derives when nothing under those roots has moved.
+      expect(harness!.digest).toBe((await harnessTreeDigest()).digest);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("changes the digest when a harness file changes", async () => {
+    const root = await mkdtemp(join(tmpdir(), "maps-harness-digest-"));
+    try {
+      const roots = [join(root, "tools", "visual")];
+      await mkdir(roots[0]!, { recursive: true });
+      await writeFile(join(roots[0]!, "orbit.ts"), "one");
+      const before = await harnessTreeDigest(roots);
+      await writeFile(join(roots[0]!, "orbit.ts"), "two");
+      const after = await harnessTreeDigest(roots);
+      expect(after.digest).not.toBe(before.digest);
+      expect(after.files).toBe(before.files);
+      // A file added to the lane moves it too, which is the shape the real
+      // incident took: `5c32286` added two specs while a capture was running.
+      await writeFile(join(roots[0]!, "smoke.spec.ts"), "one");
+      const added = await harnessTreeDigest(roots);
+      expect(added.digest).not.toBe(after.digest);
+      expect(added.files).toBe(after.files + 1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("refuses to certify when a helper changed during capture", async () => {
+    await withRun(
+      { harnessEdit: "export const settle = (): void => { throw new Error(\"changed mid-run\"); };\n" },
+      async (run) => {
+        const refusal = await refusalFrom(run);
+        expect(refusal).toMatch(/harness this lane runs changed during capture/);
+        // Both values, as the scene refusal prints both: the reader is entitled to
+        // see what moved rather than only that something did.
+        const record = JSON.parse(await readFile(join(run.root, "run.json"), "utf8")) as {
+          harness: { digest: string };
+        };
+        const now = await harnessTreeDigest(run.harnessRoots);
+        expect(refusal).toContain(record.harness.digest.slice(0, 12));
+        expect(refusal).toContain(now.digest.slice(0, 12));
+        expect(refusal).toContain("tools");
+      },
+    );
+  });
+
+  it("refuses to certify when a spec was added during capture", async () => {
+    await withRun({ harnessAdd: "smoke.spec.ts" }, async (run) => {
+      await expect(certify(run)).rejects.toThrow(/harness this lane runs changed during capture/);
+    });
+  });
+
+  it("refuses a run whose run.json pinned no harness digest", async () => {
+    await withRun({}, async (run) => {
+      const record = JSON.parse(await readFile(join(run.root, "run.json"), "utf8")) as Record<string, unknown>;
+      delete record["harness"];
+      await writeFile(join(run.root, "run.json"), JSON.stringify(record));
+      await expect(certify(run)).rejects.toThrow(/pinned no harness digest/);
+    });
+  });
+
+  it("refuses a harness root that resolves to nothing, rather than digesting nothing", async () => {
+    const root = await mkdtemp(join(tmpdir(), "maps-harness-missing-"));
+    try {
+      await expect(harnessTreeDigest([join(root, "tools", "visual")]))
+        .rejects.toThrow(/cannot read .*tools.*visual/s);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

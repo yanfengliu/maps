@@ -35,9 +35,27 @@ import { collectPageErrors } from "./page-errors.js";
 import { decodePng, measureFrame, signatureDistance } from "./png.js";
 import { captureLedger } from "./progress.js";
 import { CAPTURE_VIEWPORT, HERO_AZIMUTH, HERO_POSES, HERO_TIMES } from "./shots.js";
+import { styleOption, styleOptionRows } from "./style-control.js";
 
 const OUTPUT_DIR = path.resolve(laneDir(), "hero");
 const STYLE_RETURN_DIR = path.resolve(laneDir(), "style-return");
+
+/**
+ * The two directions of the style criterion, each driven by one input path.
+ *
+ * Why the paths are named here rather than left to the body: the control commits a
+ * selection as the active option moves while it is *closed* (`move()` in
+ * `src/ui/style-picker.ts`), so `click()` followed by `Home`/`End` and `Enter`
+ * could not tell "the pointer opened the listbox" from "the pointer did nothing" —
+ * the arrow key commits on its own, so deleting the pointer path left both
+ * assertions green. Round 31's review, finding B3. Each direction below is a real
+ * change of style from the one before it, and the pointer one is completed by a
+ * press on the option row itself.
+ */
+const STYLE_SWITCHES = [
+  { style: "cartographic", via: "pointer" },
+  { style: "satellite", via: "keyboard" },
+] as const;
 
 test.describe("hero frames", () => {
   // Ten captures — eight hero views and the two style returns. The budget is
@@ -146,22 +164,47 @@ test.describe("hero frames", () => {
       // criterion could not be exercised at all. These options are elements in
       // this document, so they can be read and clicked. `[role="option"]` is a
       // CSS selector rather than `getByRole` because a closed listbox is hidden
-      // and stays out of the accessibility tree.
-      const styleOptions = page.locator('[role="option"]');
+      // and stays out of the accessibility tree, and the rows are scoped to the
+      // listbox this control names through `aria-controls` rather than matched
+      // page-wide — see `style-control.ts`.
+      const styleRows = await styleOptionRows(page, styleSelect);
       // Joined before matching, because `allTextContents` returns one string per
       // row and a row carries its label and its description together. `toContain`
       // on the array would ask whether some row is exactly "Cartographic", which
       // no row is.
-      const styleOptionText = (await styleOptions.allTextContents()).join("\n");
+      const styleOptionText = (await styleRows.allTextContents()).join("\n");
       expect(styleOptionText).toContain("Cartographic");
       expect(styleOptionText).toContain("Satellite");
-      for (const style of ["satellite", "cartographic"] as const) {
+      for (const { style, via } of STYLE_SWITCHES) {
       await driver.settle("preservation");
       const before = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount }));
-      await styleSelect.click();
-      await page.keyboard.press(style === "cartographic" ? "Home" : "End");
-      await page.keyboard.press("Enter");
+      if (via === "pointer") {
+        // A real press on the control and then a real press on the row, with the
+        // control's own report that the press opened the list asserted between
+        // them. That middle assertion is the one that fails when the pointer path
+        // is dead: without it a dead press and a live one are indistinguishable
+        // until the commit, and the commit is what the keyboard path does too.
+        await styleSelect.click();
+        await expect(
+          styleSelect,
+          "a pointer press on the World style control must open its listbox",
+        ).toHaveAttribute("aria-expanded", "true");
+        await (await styleOption(page, styleSelect, style)).click();
+      } else {
+        // The keyboard path on its own: Enter opens, the arrow keys walk the list
+        // while it is open, and Enter commits the highlighted row. Not the same
+        // gesture the criterion's pointer half asks for, and deliberately asserted
+        // separately from it.
+        await styleSelect.press("Enter");
+        await expect(
+          styleSelect,
+          "Enter on the World style control must open its listbox",
+        ).toHaveAttribute("aria-expanded", "true");
+        await styleSelect.press(style === "satellite" ? "End" : "Home");
+        await styleSelect.press("Enter");
+      }
       await expect(styleSelect).toHaveAttribute("data-style-id", style);
+      await expect(styleSelect, "a completed switch must leave the listbox closed").toHaveAttribute("aria-expanded", "false");
       await page.waitForFunction((id) => window.__mapsHarness?.style().id === id, style);
       const after = await page.evaluate(() => ({ camera: window.__mapsHarness!.camera(), frames: window.__mapsHarness!.status().frameCount, search: location.search }));
       expect(after.frames).toBeGreaterThanOrEqual(before.frames);
@@ -174,6 +217,10 @@ test.describe("hero frames", () => {
       }
       expect(after.search).toContain(`time=${time.id}`);
       expect(after.search).toContain("seed=9137");
+      // The switch reached the URL as well as the control: `src/main.ts` writes the
+      // selected id there, so a control that recoloured itself without telling the
+      // app would not satisfy this.
+      expect(after.search).toContain(`style=${style}`);
       for (const pose of HERO_POSES) {
         await driver.zoomTo(pose.distance);
         await driver.orbitTo(HERO_AZIMUTH, pose.polar);
@@ -249,6 +296,10 @@ test.describe("hero frames", () => {
       // Return through the real dropdown in the same document. A fresh page
       // would hide a disposed texture/cache or a camera reset on this direction.
       // Actor identity is outside this static-city gate until population exists.
+      // The direction follows the captures above, so this is a real change back
+      // rather than a re-selection: Cartographic leaves and Cartographic returns.
+      // Driven by the keyboard here, which is the path the criterion names beside
+      // the pointer: Enter opens, End walks to the last row, Enter commits it.
       await driver.waitForTilesIdle();
       await driver.settle("preservation");
       const beforeReturn = await page.evaluate(() => ({
@@ -256,12 +307,16 @@ test.describe("hero frames", () => {
         tiles: window.__mapsHarness!.tiles(), style: window.__mapsHarness!.style(),
         href: location.href, timeOrigin: performance.timeOrigin,
       }));
-      expect(beforeReturn.style.id).toBe("cartographic");
-      await styleSelect.click();
-      await page.keyboard.press("End");
-      await page.keyboard.press("Enter");
-      await expect(styleSelect).toHaveAttribute("data-style-id", "satellite");
-      await page.waitForFunction((frames) => window.__mapsHarness?.style().id === "satellite" && window.__mapsHarness.status().frameCount > frames, beforeReturn.status.frameCount);
+      expect(beforeReturn.style.id).toBe("satellite");
+      await styleSelect.press("Enter");
+      await expect(
+        styleSelect,
+        "Enter on the World style control must open its listbox for the return switch",
+      ).toHaveAttribute("aria-expanded", "true");
+      await styleSelect.press("End");
+      await styleSelect.press("Enter");
+      await expect(styleSelect).toHaveAttribute("data-style-id", "cartographic");
+      await page.waitForFunction((frames) => window.__mapsHarness?.style().id === "cartographic" && window.__mapsHarness.status().frameCount > frames, beforeReturn.status.frameCount);
       await driver.waitForTilesIdle();
       const afterReturn = await page.evaluate(() => ({
         camera: window.__mapsHarness!.camera(), status: window.__mapsHarness!.status(),
@@ -269,7 +324,7 @@ test.describe("hero frames", () => {
         href: location.href, timeOrigin: performance.timeOrigin,
       }));
       expect(afterReturn.timeOrigin, "Style return reloaded the document").toBe(beforeReturn.timeOrigin);
-      expect(afterReturn.style.id).toBe("satellite");
+      expect(afterReturn.style.id).toBe("cartographic");
       expect(afterReturn.status.frameCount).toBeGreaterThan(beforeReturn.status.frameCount);
       expect(afterReturn.status.ready).toBe(true);
       expect(afterReturn.status.error).toBeNull();
@@ -280,7 +335,7 @@ test.describe("hero frames", () => {
         expect(afterReturn.camera.target[axis]).toBeCloseTo(beforeReturn.camera.target[axis], 2);
       }
       const expectedUrl = new URL(beforeReturn.href);
-      expectedUrl.searchParams.set("style", "satellite");
+      expectedUrl.searchParams.set("style", "cartographic");
       expect(afterReturn.href).toBe(expectedUrl.href);
       expect(afterReturn.tiles.error).toBeNull();
       expect(afterReturn.tiles.failed).toBe(0);
@@ -290,12 +345,12 @@ test.describe("hero frames", () => {
       expect(afterReturn.tiles.drawnBounds).toEqual(beforeReturn.tiles.drawnBounds);
       expect(afterReturn.tiles.cachedBytes).toBeGreaterThan(0);
       // Extra flow evidence stays outside the formal eight hero/44 total frames.
-      // Live geometry alone cannot prove that photographic materials returned.
-      const returnFile = path.join(STYLE_RETURN_DIR, `return-satellite-${time.id}.png`);
+      // Live geometry alone cannot prove that the designed materials returned.
+      const returnFile = path.join(STYLE_RETURN_DIR, `return-cartographic-${time.id}.png`);
       await page.screenshot({ path: returnFile, animations: "disabled" });
       const returnBytes = new Uint8Array(await readFile(returnFile));
       const returnStats = measureFrame(decodePng(returnBytes));
-      await ledger.record(`return-satellite-${time.id}`);
+      await ledger.record(`return-cartographic-${time.id}`);
       expect(returnStats.width).toBe(CAPTURE_VIEWPORT.width);
       expect(returnStats.height).toBe(CAPTURE_VIEWPORT.height);
       styleReturns.push({
