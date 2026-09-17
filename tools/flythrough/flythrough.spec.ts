@@ -75,6 +75,7 @@ import { CAPTURE_VIEWPORT } from "../visual/shots.js";
 import { decodePng, measureFrame, signatureDistance, type DecodedPng, type FrameStats } from "../visual/png.js";
 import { FlythroughDriver, groundBelow, type FlythroughObservation } from "./driver.js";
 import { judgeSequence, type SequenceFrame } from "./frames.js";
+import { structuredFraction } from "./structure.js";
 import {
   CAPTURE_QUERY,
   EXPECTED_LIGHTING_PRESET,
@@ -150,8 +151,6 @@ interface FrameRecord extends SequenceFrame {
   /** Ticks between this frame and the previous one in the leg. */
   ticksSincePrevious: number | null;
   camera: FlythroughObservation["camera"];
-  /** The metres the camera itself travelled since the previous frame in the leg. */
-  cameraTravelM: number;
   /** What this step dispatched, and what the pan loop still owed afterwards. */
   input: {
     zoom: number;
@@ -198,43 +197,6 @@ interface FrameRecord extends SequenceFrame {
   signatureDistanceFromPrevious: number | null;
   /** Fraction of pixels whose any-channel change from the previous frame is >= 8. */
   changedFractionFromPrevious: number | null;
-}
-
-/**
- * How much of a frame shows structure rather than one flat surface.
- *
- * A wall, a roof and the sky are all one colour across most of the frame, and a
- * leg aimed into a building produces frames of exactly that. The measure is the
- * fraction of a 16x9 grid of cells whose luminance standard deviation is above
- * 12 — the same statistic `tools/populated/capture.ts` uses to tell a drained
- * scene from a full one, at a finer grid because a 3 m camera sees less.
- */
-function structuredFraction(png: DecodedPng): number {
-  const cellsX = 16;
-  const cellsY = 9;
-  const cellW = Math.floor(png.width / cellsX);
-  const cellH = Math.floor(png.height / cellsY);
-  let structured = 0;
-  for (let cy = 0; cy < cellsY; cy += 1) {
-    for (let cx = 0; cx < cellsX; cx += 1) {
-      let sum = 0;
-      let sumSquares = 0;
-      let count = 0;
-      for (let y = cy * cellH; y < (cy + 1) * cellH; y += 2) {
-        for (let x = cx * cellW; x < (cx + 1) * cellW; x += 2) {
-          const at = (y * png.width + x) * 4;
-          const luminance = 0.2126 * png.rgba[at]! + 0.7152 * png.rgba[at + 1]! + 0.0722 * png.rgba[at + 2]!;
-          sum += luminance;
-          sumSquares += luminance * luminance;
-          count += 1;
-        }
-      }
-      const mean = sum / count;
-      const deviation = Math.sqrt(Math.max(0, sumSquares / count - mean * mean));
-      if (deviation > 12) structured += 1;
-    }
-  }
-  return structured / (cellsX * cellsY);
 }
 
 /**
@@ -426,9 +388,14 @@ test.describe("flythrough", () => {
         const decoded = decodePng(bytes);
         const stats: FrameStats = measureFrame(decoded);
 
+        // The first captured frame of a leg has no predecessor, so it is no pair
+        // at all: null, not 0. A 0 here lands in the sequence judge's sub-1mm
+        // set as a pair whose travel is zero by construction — the phantom
+        // complaints of the 2026-09-16 run, adjudicated in
+        // `artifacts/flythrough2/adjudication-report.md`.
         const travel =
           previous === null
-            ? 0
+            ? null
             : Math.hypot(
                 before.camera.position.x - previous.camera.position.x,
                 before.camera.position.y - previous.camera.position.y,
@@ -453,6 +420,10 @@ test.describe("flythrough", () => {
           ticksSincePrevious: previous === null ? null : before.population.ticks - previous.ticksBefore,
           camera: before.camera,
           cameraTravelM: travel,
+          // The plan's mark for a step that deliberately asks the camera for
+          // nothing; the sequence judge exempts the pair from the travel floor
+          // and requires the scene to be alive instead.
+          cameraHeld: step.holdsCamera === true,
           input,
           turn: input.turn,
           stand: input.stand,
@@ -525,7 +496,7 @@ test.describe("flythrough", () => {
           `  ${leg.name}-${String(stepIndex).padStart(3, "0")} tick ${record.ticksBefore} ` +
             `(${record.simulatedSecondsBefore.toFixed(1)} s, +${record.ticksSincePrevious ?? 0}) ` +
             `d ${before.camera.distance.toFixed(1)} m az ${((before.camera.azimuth * 180) / Math.PI).toFixed(1)} ` +
-            `travel ${travel.toFixed(2)} m ` +
+            `travel ${travel === null ? "-" : `${travel.toFixed(2)} m`} ` +
             `clear ${record.clearanceM.toFixed(1)} m ` +
             `structured ${(record.structuredPixels * 100).toFixed(0)}% ` +
             `changed ${record.changedFractionFromPrevious === null ? "-" : (record.changedFractionFromPrevious * 100).toFixed(1)}% ` +
@@ -556,9 +527,6 @@ test.describe("flythrough", () => {
     // sequence, and a reviewer opening frame 30 would be reviewing the fallback.
     const offPreset = frames.filter((record) => record.renderState.lightingPreset !== EXPECTED_LIGHTING_PRESET);
     const offChain = frames.filter((record) => !record.renderState.post.active);
-    expect(offPreset.map((record) => record.file), `${offPreset.length} frames were not captured at ${EXPECTED_LIGHTING_PRESET}`).toEqual([]);
-    expect(offChain.map((record) => record.file), `${offChain.length} frames were drawn without the post chain`).toEqual([]);
-    expect(consoleErrors, `the page logged errors:\n${consoleErrors.join("\n")}`).toEqual([]);
 
     // The sequence claims, in the one place they can be made to fail cheaply and
     // watched to do it: `./frames.ts`, exercised by
@@ -579,23 +547,19 @@ test.describe("flythrough", () => {
         redControl: RED_CONTROL,
       },
     );
-    expect(
-      failures,
-      `the frame sequence does not show a camera driven through the controls:\n- ${failures.join("\n- ")}`,
-    ).toEqual([]);
-
-    expect(
-      ledger.entries().length,
-      `only ${ledger.entries().length} of ${EXPECTED_FRAMES} frames reached disk; see ${ledger.file()}`,
-    ).toBe(EXPECTED_FRAMES);
 
     const accumulating = frames.filter((record) => record.renderState.post.taaAccumulating).length;
     const sampleCounts = [...new Set(frames.map((record) => record.renderState.post.taaSamples))].sort((a, b) => a - b);
-    console.log(
-      `\nTAA over the moving sequence: ${accumulating} of ${frames.length} frames report accumulation, ` +
-        `sample counts seen: ${sampleCounts.join("/")}`,
-    );
 
+    // The pose ledger goes to disk BEFORE anything asserts over the sequence.
+    // The write used to sit after the judgeSequence expectation, and the first
+    // run that failed it — 2026-09-16, adjudicated in
+    // `artifacts/flythrough2/adjudication-report.md` — left only `captures.json`
+    // (labels and intervals) where the poses, travels and per-frame counts were
+    // the evidence the adjudication needed. A failed run is exactly the run
+    // shape that needs adjudicating, so the ledger is written first and a
+    // failing run's manifest carries the failures it failed with; the
+    // assertions below then judge a ledger already on disk.
     const last = frames[frames.length - 1]!;
     await writeFile(
       MANIFEST,
@@ -620,6 +584,7 @@ test.describe("flythrough", () => {
           legs,
           frames,
           taa: { accumulatingFrames: accumulating, totalFrames: frames.length, sampleCounts },
+          ...(failures.length > 0 ? { failures } : {}),
           caveat:
             "A frame is evidence of what was on screen at its tick. The pose, the counts and the post state beside it " +
             "are the app's own numbers, read in one browser task immediately before the shot; the ticks after it " +
@@ -629,6 +594,24 @@ test.describe("flythrough", () => {
         2,
       )}\n`,
       "utf8",
+    );
+
+    expect(offPreset.map((record) => record.file), `${offPreset.length} frames were not captured at ${EXPECTED_LIGHTING_PRESET}`).toEqual([]);
+    expect(offChain.map((record) => record.file), `${offChain.length} frames were drawn without the post chain`).toEqual([]);
+    expect(consoleErrors, `the page logged errors:\n${consoleErrors.join("\n")}`).toEqual([]);
+    expect(
+      failures,
+      `the frame sequence does not show a camera driven through the controls:\n- ${failures.join("\n- ")}`,
+    ).toEqual([]);
+
+    expect(
+      ledger.entries().length,
+      `only ${ledger.entries().length} of ${EXPECTED_FRAMES} frames reached disk; see ${ledger.file()}`,
+    ).toBe(EXPECTED_FRAMES);
+
+    console.log(
+      `\nTAA over the moving sequence: ${accumulating} of ${frames.length} frames report accumulation, ` +
+        `sample counts seen: ${sampleCounts.join("/")}`,
     );
 
     console.log(

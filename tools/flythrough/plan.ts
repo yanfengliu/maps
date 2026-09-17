@@ -360,6 +360,7 @@ const CROWD_STEPS: readonly LegStep[] = [
     zoom: 1,
     turnToAzimuth: CROWD_AZIMUTH,
     standAtM: CROWD_STAND_M,
+    holdsCamera: true,
     note: "held: the camera asks for nothing, the population does not",
   })),
 ];
@@ -510,7 +511,12 @@ export const FRAME_FLOORS = Object.freeze({
   pedestriansDrawn: 100,
   /** Drawn vehicles. The fleet is small at the ticks this lane captures. */
   vehiclesDrawn: 1,
-  /** Fraction of the frame's pixels with a luminance deviation above 12. */
+  /**
+   * Fraction of the frame's 16x9 grid of cells whose luminance shows structure:
+   * a standard deviation above 12 absolute units, or above 30% of the cell's
+   * own mean on a dark frame. See `structuredFraction` in
+   * `tools/flythrough/structure.ts`.
+   */
   structuredPixels: 0.05,
 });
 

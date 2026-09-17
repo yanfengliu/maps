@@ -24,6 +24,20 @@ export interface SequenceFrame {
   sha256: string;
   /** The metres the camera itself travelled since the previous frame in the leg. */
   cameraTravelM: number | null;
+  /**
+   * True when the plan held the camera still for this frame on purpose.
+   *
+   * The crowd leg's closing steps ask the camera for nothing ("held: the camera
+   * asks for nothing, the population does not"), so the pair's travel is
+   * genuinely sub-millimetre by design — the damping tail is dead within one
+   * capture gap — and the 1 mm travel floor does not apply. What applies
+   * instead is the reason the hold exists: with the camera ruled out, every
+   * change between those frames is the scene's own, so the digest must differ
+   * from the previous frame's and the render counter and population ticks must
+   * have advanced. The red control is unaffected: under it every real pair
+   * must be still, held frames included.
+   */
+  cameraHeld?: boolean;
   /** Frame counter before and after the capture, so a stalled loop is visible. */
   frameCountBefore: number;
   frameCountAfter: number;
@@ -34,7 +48,11 @@ export interface SequenceFrame {
   /** Drawn pedestrians and vehicles as the app reported them for this frame. */
   pedestriansDrawn: number;
   vehiclesDrawn: number;
-  /** Fraction of the frame's pixels with a luminance deviation above 12. */
+  /**
+   * Fraction of the frame's 16x9 grid of cells whose luminance shows structure
+   * — not a fraction of its pixels. See `structuredFraction` in
+   * `tools/flythrough/structure.ts`.
+   */
   structuredPixels: number;
   /** The controls' target height, which no input can move. */
   targetY: number;
@@ -55,13 +73,20 @@ export interface SequenceExpectations {
   /**
    * The least camera travel a pair of adjacent frames may show, metres.
    *
-   * Not zero, and that is the point. The camera is under damped controls and a
-   * leg that stops asking for movement still glides for a moment, so the pairs a
-   * plan wrote as "no input" carry centimetres rather than nothing; a pair that
-   * carries *nothing* is a pair where either the input path failed or the render
-   * loop stopped, and both are reported by name rather than counted as a
-   * flythrough. 1 mm over a 100 ms gap is 1 cm/s, which is a tenth of a walking
-   * pace — below anything the controls do when they are being driven.
+   * Not zero, and that is the point: a pair that carries *nothing* is a pair
+   * where either the input path failed or the render loop stopped, and both are
+   * reported by name rather than counted as a flythrough. 1 mm over a 100 ms
+   * gap is 1 cm/s, which is a tenth of a walking pace — below anything the
+   * controls do when they are being driven.
+   *
+   * The floor applies to pairs the plan asked to move. A pair the plan held
+   * still on purpose (`cameraHeld`) is exempt: OrbitControls decays its
+   * residual delta by about 0.95 per rendered frame, so across the capture
+   * gaps this lane pays for the tail is dead within a gap or two and a held
+   * pair's travel is genuinely sub-millimetre by design. The 2026-09-16 run
+   * proved the premise "a no-input pair carries centimetres" false for exactly
+   * the segment the plan wrote as held (`artifacts/flythrough2/`). What a held
+   * pair is judged on is the scene staying alive, below.
    */
   minimumTravelM: number;
   /** The least fraction of a leg's frames whose digests must differ. */
@@ -103,6 +128,9 @@ export function judgeSequence(
   const travel = frames.filter((frame) => frame.cameraTravelM !== null);
   const still = travel.filter((frame) => (frame.cameraTravelM ?? 0) < expectations.minimumTravelM);
   if (expectations.redControl) {
+    // The red control's semantics are exactly this: every real pair must be
+    // still, held frames included — the hold exemption below does not apply
+    // here, and this branch returns before it.
     if (still.length !== travel.length) {
       failures.push(
         `MAPS_FLYTHROUGH_INPUT is set to a mode that raises pointer and wheel events with zero deltas, which is the ` +
@@ -114,13 +142,55 @@ export function judgeSequence(
     return failures;
   }
 
-  if (still.length > 0) {
+  // A pair the plan held still on purpose is exempt from the travel floor: its
+  // travel is zero by design. What it is not exempt from is the scene being
+  // alive — that is what the hold is for, and it is checked below.
+  const heldPairs = travel.filter((frame) => frame.cameraHeld === true);
+  const stillDriven = still.filter((frame) => frame.cameraHeld !== true);
+  if (stillDriven.length > 0) {
     failures.push(
-      `${still.length} of ${travel.length} frame pairs moved the camera less than ${(expectations.minimumTravelM * 1000).toFixed(0)} mm ` +
-        `(${still.slice(0, 4).map((frame) => frame.file).join(", ")}${still.length > 4 ? ", ..." : ""}). The camera is ` +
+      `${stillDriven.length} of ${travel.length - heldPairs.length} frame pairs moved the camera less than ${(expectations.minimumTravelM * 1000).toFixed(0)} mm ` +
+        `(${stillDriven.slice(0, 4).map((frame) => frame.file).join(", ")}${stillDriven.length > 4 ? ", ..." : ""}). The camera is ` +
         "driven by synthesised pointer, wheel and key input, and a pair of frames taken from two poses is the only " +
         "evidence that the input path reaches the controls at all: identical frames from a moving route mean the " +
         "route was not flown, whatever the manifest says.",
+    );
+  }
+
+  // The hold's own claim: with the camera ruled out, every change between the
+  // held frames is the scene's own. A hold whose scene went still — same bytes
+  // as the previous frame, a render counter that stopped, population ticks
+  // that stopped — is a stopped scene photographed again, which nothing else
+  // here reports: the camera being still is the plan, not a defect.
+  const deadHold: { file: string; reasons: string[] }[] = [];
+  let heldPairsChecked = 0;
+  for (const [index, frame] of frames.entries()) {
+    if (frame.cameraHeld !== true) continue;
+    // A held frame with no predecessor in its leg is no pair, exactly as with
+    // travel: there is nothing to compare it with. The plan never writes one.
+    const previous = index > 0 && frames[index - 1]!.leg === frame.leg ? frames[index - 1]! : null;
+    if (previous === null) continue;
+    heldPairsChecked += 1;
+    const reasons: string[] = [];
+    if (frame.sha256 === previous.sha256) reasons.push("the same bytes as the previous frame");
+    if (frame.frameCountAfter <= previous.frameCountAfter) {
+      reasons.push(`the render counter did not advance (${previous.frameCountAfter} to ${frame.frameCountAfter})`);
+    }
+    if (frame.ticksBefore <= previous.ticksBefore) {
+      reasons.push(`the population ticks did not advance (${previous.ticksBefore} to ${frame.ticksBefore})`);
+    }
+    if (reasons.length > 0) deadHold.push({ file: frame.file, reasons });
+  }
+  if (deadHold.length > 0) {
+    failures.push(
+      `${deadHold.length} of ${heldPairsChecked} held frame pairs show a scene that went still while the camera was ` +
+        `deliberately held (${deadHold
+          .slice(0, 4)
+          .map((dead) => `${dead.file}: ${dead.reasons.join(", ")}`)
+          .join("; ")}${deadHold.length > 4 ? "; ..." : ""}). The hold is the lane's control measurement — the camera ` +
+        "asks for nothing and the population does not — so every change between those frames is the scene's own, " +
+        "and a hold whose bytes repeat the previous frame, whose render counter stopped or whose population ticks " +
+        "stopped is a stopped scene photographed again, not a hold.",
     );
   }
 
@@ -169,7 +239,8 @@ export function judgeSequence(
     if (empty > 0) {
       failures.push(
         `${empty} of ${legFrames.length} frames in ${leg.name} have under ${(floors.structuredPixels * 100).toFixed(0)}% ` +
-          `of their pixels showing structure (${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
+          "of their 144 cells showing structure — per-cell luminance deviation above 12, or above 30% of the cell's " +
+          `own mean — (${legFrames.filter((frame) => frame.structuredPixels < floors.structuredPixels).slice(0, 3).map((frame) => frame.file).join(", ")}), ` +
           "which is a frame filled by one surface: a wall, a roof or the sky. Those frames were captured but they judged " +
           "nothing, and a leg that is mostly such frames is a leg aimed at the inside of a building.",
       );

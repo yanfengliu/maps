@@ -870,3 +870,85 @@ to reintroduce.: expected true to be false // Object.is equality
 **Green, all on the committed bytes.** `npx vitest run test/tile-memory.test.ts` exit 0 ten times over, at 100% CPU with 73 node processes for the first six and 2,162-2,194 ms per case for the last four; `npm test` exit 0 four times — twice before the file's last two cosmetic edits, twice on the committed revision — each reporting `Test Files 60 passed (60)` and `Tests 442 passed (442)` with no `Errors` line and no `Timeout calling "onTaskUpdate"` anywhere in the logs, at CPU 93%, 80%, 65% and 47%. The case still costs its old 2.2 s: the control's kill and the hang window are the same 2,000 ms it used to spend waiting to be killed. Typecheck, build and audit were exit 0 on the same revision. `npm run visual` was not run: this change is one unit-test file, no test file is in the harness closure, and the gate is a three-hour run that owns the machine.
 
 **Bound.** The budgets are derived from one child on one box, measured while a sibling checkout held 47-100% of 32 logical cores; they bound *this* child's startup and LRU work and say nothing about any other spawn in the suite, which still carry the plain numbers they were written with. The stall factor the fix is sized against is the one failure observed — a `--fractional` child that had not printed its first line after 2,000 ms against 66-87 ms in steady state — so it is sized at about 100x the measured worst rather than derived from a distribution. A box stalled past 15 s still fails this case, now with a message that says so; that red is honest and not a flake. Nothing here proves the LRU zero-budget disposal is right on any input other than the three items and the two accountings the fixture builds, which is the bound the case already carried.
+
+## The flythrough's held frames are judged on the scene being alive
+
+**Gate:** `npm test` — `test/flythrough-frames.test.ts`, the case "exempts a held frame from the travel floor, and fails a held frame whose scene went still, by name", checking the `cameraHeld` branch of `judgeSequence` in `tools/flythrough/frames.ts`.
+
+**Landed:** 2026-09-17 on branch `worker/flythrough-check-fix` off `6780225`, in the worktree `artifacts/flythrough-fix/wt`. Not merged: the coordinator lands the branch.
+
+**Why the gate had to exist.** The crowd leg's last six steps hold the camera still on purpose — "held: the camera asks for nothing, the population does not" — so that every change between those frames is the scene's own. Until this landing nothing checked that the scene actually changed there: the 1 mm travel floor failed the hold for being still (the 2026-09-16 run's crowd-008…011 complaints), and the aggregate distinct-digest check cannot see one repeated pair in 46 frames (97.8% distinct against a 95% floor). The adjudication of that run is `artifacts/flythrough2/adjudication-report.md`; the fix marks the six steps `holdsCamera` in `tools/flythrough/plan.ts`, the spec copies the mark onto each frame record, and the judge exempts held pairs from the travel floor and instead requires the digest to differ from the previous frame and the render counter and population ticks to have advanced.
+
+**Mutation A — the digest rule neutralised:** `if (frame.sha256 === previous.sha256)` → `if (false)` in the held-pair check, nothing else changed. `npx vitest run test/flythrough-frames.test.ts`, exit status 1, in 0.38 s:
+
+```
+ FAIL  test/flythrough-frames.test.ts > judgeSequence > exempts a held frame from the travel floor, and fails a held frame whose scene went still, by name
+AssertionError: expected '5 distinct digests across 6 frames (8…' to match /1 of 2 held frame pairs show a scene …/
+
++ Received: 
+"5 distinct digests across 6 frames (83.3%), and the most repeated one appears 2 times. The frames are the same bytes written more than once, so at least 1 of them are a copy of another and none of them is a frame of a moving city."
+```
+
+The only thing that fired is the aggregate digest check, which the synthetic fixture trips because one repeat in six frames is 83.3% under a 95% floor; the real lane's one dead hold pair in 46 frames is 97.8% and passes it. The held frame's own message — the one that names the frame and says the scene went still during the hold — never appeared.
+
+**Mutation B — the hold exemption removed:** `still.filter((frame) => frame.cameraHeld !== true)` widened to count held frames again (the pre-fix behaviour). Exit status 1:
+
+```
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "2 of 3 frame pairs moved the camera less than 1 mm (frames/overview/overview-004.png, frames/overview/overview-005.png). The camera is driven by synthesised pointer, wheel and key input, and a pair of frames taken from two poses is the only evidence that the input path reaches the controls at all: identical frames from a moving route mean the route was not flown, whatever the manifest says.",
+```
+
+which is the 2026-09-16 crowd-008…011 false complaint reproduced: the designed hold failed for being still.
+
+**Green on the restored bytes:** 15 passed in 0.39 s; `tools/flythrough/frames.ts` SHA-256 `2C07A565DC45…` and `tools/flythrough/structure.ts` SHA-256 `7EB649E8D146…` before and after all seven mutations of this landing. The frozen-clock half of the same case (render counter and population ticks flat between held frames) fails with `overview-005.png: the render counter did not advance` and `the population ticks did not advance`, unmutated — those two signals share the mutation's branch only through the digest line.
+
+**Bound.** Synthetic records over `judgeSequence`: the case proves the check fires by name, not that any browser run produces such records. A held first-frame-of-a-leg has no predecessor and is no pair, exactly as with travel — the plan never writes one. The liveness claim is three signals between adjacent captures of one leg (bytes, render counter, population ticks); it says nothing about what the changing pixels show, which remains a file to open.
+
+## The flythrough's travel floor survives exempting the hold
+
+**Gate:** `npm test` — `test/flythrough-frames.test.ts`, the case "fails a pair of adjacent frames the camera did not move between", over the sub-1 mm branch of `judgeSequence` in `tools/flythrough/frames.ts`.
+
+**Landed:** 2026-09-17 on branch `worker/flythrough-check-fix` off `6780225`, in the worktree `artifacts/flythrough-fix/wt`. Not merged: the coordinator lands the branch. The floor itself predates this landing; what this landing proves is that exempting the six held crowd pairs did not gut it.
+
+**Mutation:** `if (stillDriven.length > 0)` → `if (false)` — the travel-floor failure removed. `npx vitest run test/flythrough-frames.test.ts`, exit status 1:
+
+```
+AssertionError: expected '' to match /1 of 5 frame pairs moved the camera l…/
+
++ Received: 
+""
+```
+
+A moving-leg pair at 0.4 mm passed silently. Restored: 15 passed.
+
+**The denominator's own guard, watched red in the same run shape.** The pair filter widened to count null travels as pairs (`frame.cameraTravelM !== null || true`) — the recorder-side defect this landing fixes in the spec, where the first frame of a leg was written `0` instead of `null` — and the fixture's "1 of 5 frame pairs" became "2 of 6 frame pairs moved the camera less than 1 mm (frames/overview/overview-000.png, frames/overview/overview-003.png)…", the phantom leg-first pair named first, exit status 1 with four cases red. The 2026-09-16 run reported "8 of 46 frame pairs" over a denominator that included four such pseudo-pairs; the honest count was 42.
+
+**Bound.** The fixture's moving pairs carry 11-15 m of synthetic travel, so the floor's edge is exercised only from below (a 0.4 mm pair) and from the null side, never at exactly 1 mm. The red-control branch is separately pinned by the case beside it, including that held frames are *not* exempt there: exempting them was watched red as `expected '' to match /1 of 5 frame pairs still moved the camera/`, a held frame moved 3 m under zero-delta input and the control passed silently.
+
+## The flythrough's structure floor reads a dark facade as structured and a blank frame as nothing
+
+**Gate:** `npm test` — `test/flythrough-frames.test.ts`, the case "reads a dark but textured frame as structured, and a blank sky as nothing", driving `structuredFraction` in `tools/flythrough/structure.ts` over two synthetic 1280x720 frames.
+
+**Landed:** 2026-09-17 on branch `worker/flythrough-check-fix` off `6780225`, in the worktree `artifacts/flythrough-fix/wt`. Not merged: the coordinator lands the branch.
+
+**Why.** The 2026-09-16 run failed approach-005 — a close dusk facade with window bands, lit balcony rails and an adjacent lit face, compositionally poor but not blank — at 4.2% of cells under a purely absolute deviation-12 threshold against a 5% floor: dusk tone mapping compresses absolute contrast, so the metric read exposure as absence of structure (`artifacts/flythrough2/adjudication-report.md`). A cell now counts when its luminance deviation exceeds 12 absolute units **or** 30% of the cell's own mean, with the relative leg guarded by a mean above 2 so a near-black cell cannot qualify on noise.
+
+**Mutation A — the relative leg removed** (`deviation > 12` alone, the pre-fix rule): the dark-textured fixture — every cell alternating 12 and 28 luminance in 2-pixel blocks, mean 20, deviation 8, ratio 0.4 — scores zero:
+
+```
+AssertionError: expected +0 to be 1 // Object.is equality
+```
+
+Exit status 1. That is approach-005's false positive reproduced synthetically: a frame of nothing but texture reads as a blank wall.
+
+**Mutation B — every cell structured** (`deviation >= 0`): the blank-sky fixture, one luminance across the whole frame, scores one:
+
+```
+AssertionError: expected 1 to be +0 // Object.is equality
+```
+
+Exit status 1. Under it the floor that fails a leg aimed at the sky is gone.
+
+**Calibration, measured with the shipped function over the real frame bytes** (`artifacts/flythrough-fix/scratch-calibration.txt`, script beside it): approach-005 scores **15.3%** — 22 of 144 cells, 6 on the absolute leg and 16 more on the relative leg — against the 5% floor, where the absolute leg alone scores 4.2%. The frame's flattest cell, the clear-sky cell (3, 8), measures deviation 0.374 at mean 26.0 (ratio 0.014) and stays structured-free under both legs. The cell arithmetic reproduces the adjudication's published numbers exactly (6 of 144 over 12, 35 of 144 over 0.25 relative contrast, deviation bands 64/63/11/6), so the instrument is the one the adjudication measured with.
+
+**Bound.** The synthetic fixtures pin the rule's two ends; the real-frame calibration pins the 0.3 threshold to the one dark frame this lane has produced, tuned against it and its 45 neighbours from one run at the dusk preset. A bright frame is unaffected by construction — the absolute leg dominates there — but no noon-preset run exists to prove the relative leg stays quiet on one. The metric still cannot tell a textured wall from the city: a close facade passes it, which is a review question rather than a metric one.
