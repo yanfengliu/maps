@@ -62,8 +62,11 @@ interface SceneDigest {
  * one city, and a rebuilt tile that keeps its length can keep its modification
  * time too, so a digest over names, sizes and mtimes can go on carrying the old
  * city's identity while the pixels are of a new one. Every served file is
- * therefore read and hashed — 354 MB across 137 files on the current data, twice
- * per gate, before the build and after the capture.
+ * therefore read and hashed — 214,114,015 bytes across 84 files on the payload
+ * the 2026-09-16 capture pins, twice per gate, before the build and after the
+ * capture. (It was 371,228,426 bytes across 137 files before that day's rebuild
+ * of `data/`. The human agent set under `data/scene/agents/` is not part of
+ * `data:setup` and has not been restored yet, which is the whole difference.)
  *
  * Bound: only the path and the content enter the digest, so the same tree gives
  * the same value on every run and no timestamp, size or inode is covered. What it
