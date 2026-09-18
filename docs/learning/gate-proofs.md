@@ -1148,7 +1148,7 @@ AssertionError: the refusal has to name the steep axis rather than a missing cro
 
 ## The flythrough lane's held-pair judgement catches a crowd that is not there
 
-**Gate:** `npm run visual:flythrough` — `judgeSequence` in `tools/flythrough/frames.ts`, read by `tools/flythrough/flythrough.spec.ts`. It fails a held frame pair whose bytes repeat, because the leg's six held steps are its control measurement: the camera asks for nothing, so any change between those frames is the population's own and any *absence* of change is a scene with nothing moving in it.
+**Gate:** `npm run visual:flythrough` ï¿½ `judgeSequence` in `tools/flythrough/frames.ts`, read by `tools/flythrough/flythrough.spec.ts`. It fails a held frame pair whose bytes repeat, because the leg's six held steps are its control measurement: the camera asks for nothing, so any change between those frames is the population's own and any *absence* of change is a scene with nothing moving in it.
 
 **Landed:** the gate already existed; what it caught on 2026-09-18 is a real defect in `tools/flythrough/plan.ts`, and the repair is the anchor re-planned for the whole tick window. Branch `crowd-aim-window` off `b4a7053`. Not merged: the coordinator lands it.
 
@@ -1160,17 +1160,44 @@ AssertionError: the refusal has to name the steep axis rather than a missing cro
 41 distinct digests across 46 frames (89.1%), the most repeated one appears 6 times
 ```
 
-Exit status 1. The anchor that produced it, `(452.07, 353.95)`, held 225 walking bodies inside 45 m at tick 3,000 and **4** at 5,400; the run took 127 s of wall clock against 72 s for the run before it — eight inspection lanes were loading the machine — and ticks advance with wall time, so its crowd leg captured at ticks 4,899-5,332 instead of ~3,000. The held frames photographed a scene with no walking crowd in it.
+Exit status 1. The anchor that produced it, `(452.07, 353.95)`, held 225 walking bodies inside 45 m at tick 3,000 and **4** at 5,400; the run took 127 s of wall clock against 72 s for the run before it ï¿½ eight inspection lanes were loading the machine ï¿½ and ticks advance with wall time, so its crowd leg captured at ticks 4,899-5,332 instead of ~3,000. The held frames photographed a scene with no walking crowd in it.
 
-**Why this is the check that mattered.** Every other number in that run was healthy: 46 frames written, clearance 3.0-3.1 m, the approach's swing delivered 45° ? 7.5° at 0.11 rad a step, `structuredPixels` 0.36-0.60, 3,000 pedestrians and 43-53 vehicles drawn, and each frame individually distinct from its neighbours in the *moving* steps. A review of the frames would have found a leg that looks like a crowd shot with nobody in it, and a review of the counts would have found `pedestriansActive: 3000`. Only the held-pair comparison read the thing the leg is for.
+**Why this is the check that mattered.** Every other number in that run was healthy: 46 frames written, clearance 3.0-3.1 m, the approach's swing delivered 45ï¿½ ? 7.5ï¿½ at 0.11 rad a step, `structuredPixels` 0.36-0.60, 3,000 pedestrians and 43-53 vehicles drawn, and each frame individually distinct from its neighbours in the *moving* steps. A review of the frames would have found a leg that looks like a crowd shot with nobody in it, and a review of the counts would have found `pedestriansActive: 3000`. Only the held-pair comparison read the thing the leg is for.
 
 **Green on the repaired anchor**, a fresh `npm run visual:flythrough` in the worktree on 2026-09-18, exit status 0:
 
-- `failures` absent from the manifest — `judgeSequence` reported zero failures;
+- `failures` absent from the manifest ï¿½ `judgeSequence` reported zero failures;
 - **46 distinct digests of 46 (100%)**, where the refused run had 41 and a digest repeating six times;
-- the held pair `crowd-007`..`crowd-011` changed by 8.5%, 4.5%, 5.7%, 4.2% and 3.6% of pixels against byte-identical before, with `cameraTravelM` 0.0000 on the last four — the camera is held and the population moves;
+- the held pair `crowd-007`..`crowd-011` changed by 8.5%, 4.5%, 5.7%, 4.2% and 3.6% of pixels against byte-identical before, with `cameraTravelM` 0.0000 on the last four ï¿½ the camera is held and the population moves;
 - the crowd leg ran at ticks 3,985-4,328, where the anchor holds 95-100 walking bodies inside 45 m with 39-55 px figures.
 
-**Bound.** The judgement reads pixels, not agents, so it separates "something in the frame moved" from "nothing did" and nothing finer — a crowd walking behind a building, or a single distant figure, would pass it as readily as a knot at 20 m. It is a whole-lane run, so reproducing it costs about two minutes of browser and needs the GPU, the preview server and the scene data; it is not a unit case and cannot run in `npm test`. Measured on this machine at 2% CPU with 16 node processes: the run reproduced the *unloaded* end of the spread, landing the crowd leg at ~4,000 ticks where the dumps say the anchor holds 99-100 near bodies. **The loaded end has never been flown** — the anchor's 95-100 readings at 4,900-6,000 come from offline dumps — so the anchor is robust across the measured window by construction, and only a run under load can confirm it end to end. Tick 7,200 is thin in the same way and by measurement: 10 walking bodies inside 45 m at the median 46 m.
+**Bound.** The judgement reads pixels, not agents, so it separates "something in the frame moved" from "nothing did" and nothing finer ï¿½ a crowd walking behind a building, or a single distant figure, would pass it as readily as a knot at 20 m. It is a whole-lane run, so reproducing it costs about two minutes of browser and needs the GPU, the preview server and the scene data; it is not a unit case and cannot run in `npm test`. Measured on this machine at 2% CPU with 16 node processes: the run reproduced the *unloaded* end of the spread, landing the crowd leg at ~4,000 ticks where the dumps say the anchor holds 99-100 near bodies. **The loaded end has never been flown** ï¿½ the anchor's 95-100 readings at 4,900-6,000 come from offline dumps ï¿½ so the anchor is robust across the measured window by construction, and only a run under load can confirm it end to end. Tick 7,200 is thin in the same way and by measurement: 10 walking bodies inside 45 m at the median 46 m.
 
 **Not yet proved red.** The failure was caught by the lane rather than staged, so the mutation is the previous anchor and the evidence is the run it produced. Nothing here demonstrates that the check fires for a crowd that is present but walking *away* from the camera, which is a different failure and would need its own control.
+## The surface shader patch refuses a source it cannot rewrite, and the tile's step is gated in albedo
+
+**Gate:** `test/surface-material-shader.test.ts` and the visibility floors in `test/surface-detail.test.ts`.
+
+**Landed:** 2026-09-17, `cd94f1a`.
+
+**Mutations, two of them.** (1) The `roughnessmap_fragment` anchor in `src/scene/surface-materials.ts` renamed to `roughnessmap_fragment_v2`, so the `String.replace` that injects the detail sample matches nothing. (2) `OCTAVE_AMPLITUDE.road` restored to the shipped-and-invisible `[1, 0.62, 0.38, 0.22, 0.12, 0.06]` together with `SURFACE_DETAIL_STRENGTH.road` `0.45` ? `0.16`.
+
+**Failures:** exit status 1 each. The first fails five cases, each naming the stage: `The surface shader patch did not apply to road's fragment stage: the anchor "#include <roughnessmap_fragment>" appears 0 times in three's shader source and must appear exactly once.` The second fails one case with its arithmetic: `road: mean neighbouring-texel step is 0.41% of albedo at mip 0 (p95 1.00%); the shipped-and-invisible tile measured 0.36% on the road and 0.40% on the ground, and under about 3% is less than one display level: expected 0.0040890072564459656 to be greater than or equal to 0.045`.
+
+**Why the first mutation is the gate this session owed.** This patch is applied by rewriting three's own shader source, and a `replace` whose anchor does not match returns the source unchanged: the material compiles, renders, and reports nothing while the surface stays flat. The eight-frame re-inspection of the frames captured after the tile landed recorded exactly that as its leading hypothesis for a tile that was in the bundle and absent from the pixels, and the hypothesis was false ï¿½ the anchors do match ï¿½ which is why the check has to exist rather than be reasoned about. That entry's bound ("properties of the generated bytes ... they say nothing about how the tinted, lit, tone-mapped result looks") is the gap this defect fell through: the previous gate held determinism and scale, both of which the invisible tile satisfied. The visibility floor closes it at the level of the product the frame's own high-pass measure reads.
+
+**Bound.** The shader cases drive the patch against three's source text and against the material's own `onBeforeCompile`; they do not compile or link a program, so they prove the source three is handed carries the detail term where the surface's colour is decided and not that the GPU draws it. The visibility floors come from the renderer's tone curve (ACES filmic at the style's exposure, then sRGB) evaluated at the luminances the certified frames show, so they predict a display-level change rather than measuring one; the measurement is the frame set. The floors are set for each surface's own spectrum and strength, and the road's are the acceptance bar's 0.0144-0.0886 m/px.
+
+## The satellite road's albedo is gated inside the range asphalt occupies
+
+**Gate:** `test/road-tone.test.ts`.
+
+**Landed:** 2026-09-17, `a2282f8`.
+
+**Mutation:** the satellite palette's `road` `0x474d55` ? `0x32363c`, the value the certified black near field was drawn with.
+
+**Failure:** exit status 1. `holds the replaced value outside the asphalt band, so the band is not satisfied by anything` fails at `expected 0.0321... to be less than 0.045`, and `keeps the photographic style's road inside the albedo range dry-to-wet asphalt occupies` fails with `satellite's road is linear 0.0321 (0x32363c); asphalt runs 0.045-0.2. The satellite road measured median 10.4 of 255 at dusk at 0.0365, and 66.6% of that near field under 12`. The red control is the first of those two cases, which is the old value failing the band and is asserted inside the case rather than left as a mutation to be remembered.
+
+**Why this is a gate and not a preference.** The measured defect is that a surface renders below the frame's own black threshold at the darkest preset. The check cannot assert the pixel, so it asserts the input the pixel is made of, with the conversion between them recorded in the case: both fits (`radiance = A + Kï¿½albedo`, and the single-point fit that assumes no albedo-free light) are calibrated on the certified frames' own measurements and must reproduce them before they are used, and the case fails if the albedo leaves the band real asphalt occupies.
+
+**Bound.** It gates the albedo, not the luminance. The prediction for the shipped value spans 15.6 to 24.6 of 255 at dusk because the albedo-independent term (specular from the dusk sky plus bloom) is 66% of the satellite road's radiance, and only the upper end clears a floor of 20. Which end holds is the re-capture's measurement, not this case's; the case is written so that a measurement landing at the lower end means the palette is the wrong lever rather than a reason to move the band.
