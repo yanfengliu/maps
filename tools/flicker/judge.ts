@@ -129,12 +129,16 @@ export const CRAWL_FRACTION_PER_FRAME = 0.005;
  * than a formality.
  *
  * **It is 26, and the reading it bounds is the mid-shutter one.** A
- * native-resolution screenshot costs about 250 ms on this renderer - 16 to 18
- * rendered frames - so the shutter is open for almost the whole interval between
- * one still and the next, and the closest two stills this instrument can take are
- * one still cycle apart. That cycle is the bound: a pair spans about 20-24
- * rendered frames, roughly 350 ms, and 26 leaves room for the jitter of a slower
- * frame without accepting a pair from two different places in the walk.
+ * native-resolution screenshot costs about 250 to 400 ms on this renderer, so the
+ * shutter is open for most of the interval between one still and the next and the
+ * closest two stills this instrument can take are one still cycle apart. That
+ * cycle is the bound. Measured on RUN-02's two runs: **19.5 to 23 rendered frames
+ * between midpoints**, with the shutters themselves spanning 27 to 34 frames each
+ * and 5 to 7 frames of idle time between them. 26 is one frame of jitter above the
+ * worst of that, which is deliberately tight: the bound's job is to refuse a pair
+ * that has drifted out of the walk, and a pair at 23 frames still describes one
+ * gesture. If a future scene or renderer pushes the cycle past 26 the instrument
+ * should fail and be re-bounded deliberately rather than absorb it.
  *
  * **The number this replaces was 18 and it was bounding the wrong reading.** The
  * first version measured a pair's span from the earlier shot's close to the later
