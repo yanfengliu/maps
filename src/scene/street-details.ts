@@ -27,7 +27,7 @@ export interface StreetDetails {
   setStyle(style: WorldStyle): void;
   updateSignals(signals: readonly SignalSnapshot[]): void;
   paintPlacements: readonly PaintPlacement[];
-  counts: { crossings: number; stripes: number; unplacedStripes: number; unplacedPaintFeatures: number; signalHeads: number; guardrailPosts: number; placedControls: number; unplacedControls: number };
+  counts: { crossings: number; stripes: number; unplacedStripes: number; unplacedPaintFeatures: number; signalHeads: number; placedControls: number; unplacedControls: number };
   dispose(): void;
 }
 
@@ -227,7 +227,11 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
     if (lensMesh.instanceColor) lensMesh.instanceColor.needsUpdate = true;
   };
   updateSignals([]);
-  return { root, paintPlacements, counts: { crossings, stripes, unplacedStripes: paintPlacements.filter(p => p.kind === "crossing" && p.status === "unplaced").length, unplacedPaintFeatures: new Set(paintPlacements.filter(p => p.status === "unplaced").map(p => p.sourceId)).size, signalHeads: headMatrices.length, guardrailPosts: 0, placedControls: hardware.filter(r => r.status === "placed").length, unplacedControls: hardware.filter(r => r.status === "unplaced").length }, updateSignals,
+  // Guardrails are not built here and never were: `src/scene/vegetation.ts` builds
+  // the four `guard_rail` ways `data/scene/decorations.json` carries. This object
+  // used to report `guardrailPosts: 0` as a literal, which read like a measurement
+  // of this scene and was a count of nothing; it is gone rather than kept.
+  return { root, paintPlacements, counts: { crossings, stripes, unplacedStripes: paintPlacements.filter(p => p.kind === "crossing" && p.status === "unplaced").length, unplacedPaintFeatures: new Set(paintPlacements.filter(p => p.status === "unplaced").map(p => p.sourceId)).size, signalHeads: headMatrices.length, placedControls: hardware.filter(r => r.status === "placed").length, unplacedControls: hardware.filter(r => r.status === "unplaced").length }, updateSignals,
     setStyle(next): void { paintMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); },
     dispose(): void {
       const materials = new Set<MeshStandardMaterial | MeshBasicMaterial>();
