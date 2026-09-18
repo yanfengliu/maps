@@ -178,7 +178,7 @@ export interface FlickerFrame {
    * Frames drawn since boot at the **midpoint of the shutter**.
    *
    * This is the reading a pair's span is measured between, and the instrument's
-   * own cadence is why: a native-resolution screenshot spans 16-18 rendered
+   * own cadence is why: a native-resolution screenshot spans 27-34 rendered
    * frames, so a pose and a counter read before the shutter describe a picture
    * that no longer exists by the time the bytes are taken. The capture reads the
    * counter on both sides of the shutter and this is their midpoint, which is the
@@ -429,10 +429,10 @@ export function judgeFlicker(
 
     // The cadence, measured rather than asked for. The span is midpoint to
     // midpoint, which is the window `cameraTravelM` and `cameraRotationRad` are
-    // measured over as well: a screenshot spans 16-18 rendered frames, so the
-    // frames between two shutters is 6-8 and is *not* the span the motion
-    // describes. Both numbers are reported - `idleGapFrames` is the old one -
-    // because the difference between them is the instrument's own cadence.
+    // measured over as well. What the first version counted instead was the idle
+    // time between two shutters, which is not the span the motion describes; both
+    // numbers are reported - `idleGapFrames` is the old one - because the
+    // difference between them is the instrument's own cadence.
     const gap = pair.frameGap;
     if (gap <= contract.maxPairGapFrames) withinBound += 1;
     if (gap > worstGapFrames) worstGapFrames = gap;

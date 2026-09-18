@@ -43,22 +43,22 @@
  * ## What it cannot reach, stated rather than implied
  *
  * - **The cadence is the screenshot's, not the frame's.** A screenshot costs
- *   about 250 ms on this renderer, so about fifteen frames are drawn while the
- *   shutter is open and the closest two stills this lane can take are roughly
- *   that far apart. The frame counter is read on both sides of every shot and
- *   written into the record, so the cadence actually achieved is measured rather
- *   than claimed; `judgeFlicker` refuses a pair that spans more than
+ *   about 300-400 ms on this renderer, so 27 to 34 rendered frames are drawn while
+ *   the shutter is open and the closest two stills this lane can take are roughly
+ *   that far apart - measured 19.5 to 23 rendered frames between midpoints, against
+ *   the criterion's `cadenceFrames: 2`. The frame counter is read on both sides of
+ *   every shot and written into the record, so the cadence actually achieved is
+ *   measured rather than claimed; `judgeFlicker` refuses a pair that spans more than
  *   `maxPairGapFrames` frames and reports the span it saw.
  * - **The recorded pose is the pose of the recorded pixels, as far as a
- *   screenshot can say.** The shutter spans 16-18 rendered frames, so one pose
- *   read before it describes a picture that no longer exists by the time the
- *   buffer is read, and the pair's motion divided by the idle gap between the two
- *   shutters is not a rate. Each still therefore records the pose before the
- *   shutter, the pose after it, and the midpoint between them; the frame's `pose`
- *   is the midpoint and a pair's span is measured midpoint to midpoint, so the
- *   motion and the gap it is divided by describe the same window. The pre- and
- *   post-shutter poses are kept beside it, so what the shutter covered is visible
- *   in the record instead of being modelled.
+ *   screenshot can say.** One pose read before a 27-to-34-frame shutter describes a
+ *   picture that no longer exists by the time the buffer is read, and a pair's
+ *   motion divided by the idle gap between two shutters is not a rate. Each still
+ *   therefore records the pose before the shutter, the pose after it, and the
+ *   midpoint between them; the frame's `pose` is the midpoint and a pair's span is
+ *   measured midpoint to midpoint, so the motion and the gap it is divided by
+ *   describe the same window. The pre- and post-shutter poses are kept beside it, so
+ *   what the shutter covered is visible in the record instead of being modelled.
  * - **It judges the non-accumulating path.** With the camera moving, TAA is off
  *   by construction, so what this lane sees is the post chain without its
  *   temporal accumulator. Whether the accumulator engages at all is
