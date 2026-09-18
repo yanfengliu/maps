@@ -301,7 +301,29 @@ const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => 
  * here against the 26.000 m the anchor's own coordinates measure — and a route
  * whose approach and crowd legs aim at distances 1.6% apart is a disagreement the
  * next reader has to resolve. One number, in one place.
+ *
+ * ## The descent's floor, and why the ladder's own rungs are not enough
+ *
+ * The last three rungs ask for 4.5, 3.5 and 3 m, and over the crowd's own ground —
+ * 22 m climbing to 26.4 m along the path — the camera is 33 m to 26 m from a target
+ * parked at the crossing's 15.2 m. The vertical control buys height above that
+ * target by lowering the polar angle, and the camera's offset from the target is
+ * `distance * (sin polar, cos polar)`: the distance is closing fast at the same
+ * time, so the offset's vertical term shrinks with it. The recorded 2026-09-17 run
+ * sank the camera under the ground twice on that stretch — `approach-009` read
+ * 0.19419 m above the terrain before its own vertical control ran and
+ * `approach-010` 1.07751 m — because one capped drag per step delivered part of
+ * the correction and the next step's zoom then shrank what was left.
+ *
+ * `standFloorM` is the leg's own floor, carried by each step so the vertical
+ * control clamps the aim to it *within* the step: a rung that would stand the
+ * camera below two metres is held at two metres, which is the same floor
+ * `minClearanceM` states for the leg and the same one `holdClearance` rescues
+ * against after the fact. It is deliberately the leg's `minClearanceM` value and
+ * not a second number written here, so the ladder and the rescue cannot disagree
+ * about how low this leg may go.
  */
+const APPROACH_FLOOR_M = 2;
 const APPROACH_LADDER = ladder(
   [170, 140, 115, 95, 78, 64, 52, 43, 37, 33, CROWD_DISTANCE_M, CROWD_DISTANCE_M],
   [60, 48, 38, 30, 23, 17, 12, 8.5, 6, 4.5, 3.5, 3],
@@ -323,6 +345,7 @@ const APPROACH_STEPS: readonly LegStep[] = APPROACH_LADDER.map((rung, index) => 
     turnStepRad: 0.5,
     standAtM: rung.standM,
     standStepRad: 0.2,
+    standFloorM: APPROACH_FLOOR_M,
     note:
       swing === 0
         ? `descending to ${rung.distance.toFixed(0)} m and ${rung.standM} m up, bearing still held`

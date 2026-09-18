@@ -112,6 +112,18 @@ export interface LegStep {
    */
   standAtM?: number;
   /**
+   * The least height above the ground this step's vertical control may leave the
+   * camera at, metres.
+   *
+   * The leg's clearance floor, carried by the step because it is the step that has
+   * to honour it. A descent that would stand the camera below this is held at it —
+   * the floor is clamped into the stand's aim rather than answered after the fact
+   * by `holdClearance`, which rescues a camera that has already arrived under the
+   * ground. Omitted means no floor, and a leg that omits it keeps the old behaviour
+   * exactly.
+   */
+  standFloorM?: number;
+  /**
    * The largest polar change one step of the vertical control may dispatch, radians.
    *
    * A descent that has to change the angle by 0.4 rad in one leg needs a bigger
@@ -192,6 +204,22 @@ const MIN_HEIGHT_RATIO = 0.02;
 const MAX_HEIGHT_RATIO = 0.999;
 
 /**
+ * How close to the height it asked for the vertical control has to leave the
+ * camera before it stops correcting, metres.
+ *
+ * `OrbitControls` turns a drag into a spherical delta that decays by 0.95 a frame,
+ * so one drag delivers part of the angle it asked for and the rest lands over the
+ * following frames. A convergence bar this tight is what makes the control finish
+ * the correction inside its own step; the loose `toleranceM` a leg may pass stays
+ * the bar for "the camera is where the plan put it", and this is the bar for "send
+ * no more drags".
+ */
+export const STAND_CONVERGENCE_M = 0.05;
+
+/** The most drags one step's vertical correction may spend converging. */
+export const MAX_STAND_DRAGS = 8;
+
+/**
  * What an input path that is not driven does, for the lane's own red control.
  *
  * `MAPS_FLYTHROUGH_INPUT=none` is a mutation of this instrument and not a mode of
@@ -260,6 +288,8 @@ export interface StandResult {
   targetY: number;
   /** True when the camera stands within `toleranceM` of the asked height. */
   settled: boolean;
+  /** Drags this step's vertical correction spent; 0 when the camera was already there. */
+  iterations?: number;
   /** Why no input was sent, when none was. Empty when one was. */
   idle: string;
 }
@@ -297,6 +327,7 @@ export class FlythroughDriver {
    * sunk.
    */
   private lastPanBearing: number | null = null;
+
 
   constructor(page: Page, options: FlythroughDriverOptions = {}) {
     this.page = page;
@@ -492,9 +523,7 @@ export class FlythroughDriver {
     // A factor below one therefore wants a negative delta, which is the leading
     // minus here and is the whole of the sign convention.
     const ticks = -Math.log(factor) / Math.log(0.95);
-    if (Math.abs(ticks) < 0.5) return;
-    await this.wheel(ticks * 100);
-
+    if (Math.abs(ticks) < 0.5) return;    await this.wheel(ticks * 100);
     const reached = (await this.observe()).camera.distance;
     const ratio = reached / current;
     if (Math.abs(ratio - factor) / factor > 0.15) {
@@ -650,10 +679,8 @@ export class FlythroughDriver {
     stand: StandResult | null;
   }> {
     if (this.box.width === 0) await this.readBox();
-
     const zoom = step.zoom ?? 1;
     if (zoom !== 1) await this.zoomBy(zoom);
-
     const rotateX = clamp(step.rotateX ?? 0, -this.maxRotatePx, this.maxRotatePx);
     const rotateY = clamp(step.rotateY ?? 0, -this.maxRotatePx, this.maxRotatePx);
     if (rotateX !== 0 || rotateY !== 0) await this.drag(rotateY, rotateX, "left");
@@ -666,6 +693,19 @@ export class FlythroughDriver {
           : await this.turnTo(step.turnToAzimuth, step.turnStepRad);
     }
 
+    // The floor is answered **inside the step**, between the zoom that threatens
+    // it and the pan that moves the camera on. `zoomBy` scales the camera's whole
+    // offset from the target — the vertical term with it — so a step that closes
+    // 21% of the distance lowers the camera by 21% of its altitude above the
+    // target, and over the approach's rising ground that is the metres between the
+    // camera and the terrain. Raising the camera after the pan instead lets the
+    // step's own stand read the height the zoom left, which is the recorded
+    // defect: `approach-010` read 0.66 m before its vertical control ran. Nothing
+    // between here and the pan lowers the camera again — the pan's two axes are
+    // horizontal (`screenSpacePanning` is false) — so a camera that clears the
+    // floor here clears it for the rest of the step, and the stand that follows
+    // converges on the height the plan asked for.
+    await this.raiseToFloor(step.standFloorM, step.standStepRad ?? 0.2);
     let pan = { x: step.panX ?? 0, y: step.panY ?? 0 };
     let panErrorAfter: number | null = null;
     // A step may carry its own destination; the leg's goal is the fallback, so a
@@ -683,11 +723,10 @@ export class FlythroughDriver {
     }
 
     let stand: StandResult | null = null;
-    if (step.standAtM !== undefined) {
-      stand =
+    if (step.standAtM !== undefined) {      stand =
         step.standStepRad === undefined
-          ? await this.standAt(step.standAtM)
-          : await this.standAt(step.standAtM, { maxStepRad: step.standStepRad });
+          ? await this.standAt(step.standAtM, { clearanceFloorM: step.standFloorM })
+          : await this.standAt(step.standAtM, { maxStepRad: step.standStepRad, clearanceFloorM: step.standFloorM });
     }
 
     return { zoom, rotate: { x: rotateX, y: rotateY }, pan, panErrorAfter, turn, stand };
@@ -773,13 +812,37 @@ export class FlythroughDriver {
    * pose, computes the polar that stands the camera at the wanted height above the
    * terrain under it, and dispatches that much of the turn as a drag.
    *
-   * A **target**, not a floor: `holdClearance` is the floor and this is the aim.
-   * The step is capped so a leg arrives over several steps rather than in one
-   * lurch, which is what keeps the sequence a movement rather than a cut.
+   * A **target**, not a floor: `clearanceFloorM` is the floor and this is the aim.
+   * The aim is reached **within the step**, by iterating the correction until the
+   * camera stands at the asked height, and that is a fix rather than a flourish.
+   *
+   * A single capped drag does not deliver the angle it asks for: `OrbitControls`
+   * accumulates the gesture into its spherical delta and lets that delta decay by
+   * 0.95 a frame, so one drag buys part of the turn and the rest of it lands as a
+   * tail over the following frames. The correction therefore has to be read back
+   * and repeated, or the camera enters the next step still short of its height.
+   * That is what sank the camera under the ground on the recorded 2026-09-17 run
+   * and again on 2026-09-17's re-run in `artifacts/stand-repair/`: the approach
+   * leg's ladder asks for 4.5 m at 33 m out over ground that has risen to 24.4 m,
+   * the previous step's drag delivered 0.0070 of the 0.0132 rad it asked for, and
+   * the next step's zoom then scales the camera's offset from the target — the
+   * whole offset, vertical term included — by 0.788, which dropped the camera to
+   * 0.55 m above the ground before this control ran (`heightBeforeM`), under the
+   * 1.5 m floor the sequence judge reads. Iterating to the aim leaves the camera
+   * at the asked height at the end of every step, so the zoom has the whole rung
+   * to shrink instead of the last half metre of it.
+   *
+   * The floor is clamped into the aim as well: `max(wanted, floor)` above the
+   * ground under the camera. A leg whose ladder would descend below its own floor
+   * is held at the floor and recorded as such rather than being flown through it.
    */
-  async standAt(wantedAboveGroundM: number, options: { maxStepRad?: number; toleranceM?: number } = {}): Promise<StandResult> {
+  async standAt(
+    wantedAboveGroundM: number,
+    options: { maxStepRad?: number | undefined; toleranceM?: number | undefined; clearanceFloorM?: number | undefined } = {},
+  ): Promise<StandResult> {
     const maxStepRad = options.maxStepRad ?? 0.05;
-    const toleranceM = options.toleranceM ?? 0.75;
+    const toleranceM = options.toleranceM ?? STAND_CONVERGENCE_M;
+    const clearanceFloorM = Number.isFinite(options.clearanceFloorM) ? options.clearanceFloorM! : Number.NEGATIVE_INFINITY;
     const before = (await this.observe()).camera;
     const ground = groundBelow(before.position.x, before.position.z);
     const heightBeforeM = before.position.y - ground.heightM;
@@ -806,40 +869,47 @@ export class FlythroughDriver {
       return done(true, `already within ${toleranceM} m of the asked height`);
     }
 
-    // The polar that stands the camera at the wanted height. `distance` is the
-    // controls' own radius, so this needs no trigonometry of the ground at the
-    // target: the height above the target is what the polar sets, and the height
-    // above the ground follows from where the target is.
-    const wantedCameraY = ground.heightM + wantedAboveGroundM;
-    const ratio = clamp((wantedCameraY - before.target.y) / before.distance, MIN_HEIGHT_RATIO, MAX_HEIGHT_RATIO);
-    const wantedPolar = Math.acos(ratio);
-    const stepped = clamp(wantedPolar - before.polar, -maxStepRad, maxStepRad);
-    if (Math.abs(stepped) < 0.002) {
-      return done(false, `the ${toleranceM} m tolerance is smaller than one step of ${maxStepRad} rad`, { wantedPolar });
-    }
+    // The correction, iterated to the aim by the loop the floor rescue runs as well.
+    // Each round reads the pose back, so the part of the previous drag that is still
+    // landing is simply the next round's error; convergence follows from the loop
+    // reading the controls rather than from the drag delivering a figure this file
+    // assumes.
+    const correction = await runVerticalCorrection(this.verticalPage(), {
+      polar: before.polar,
+      distance: before.distance,
+      targetY: before.target.y,
+      groundM: ground.heightM,
+      heightM: heightBeforeM,
+      wantedAboveGroundM,
+      clearanceFloorM,
+      maxStepRad,
+      maxRotatePx: this.maxRotatePx,
+      radiansPerPixelY: this.radiansPerPixelY,
+      toleranceM,
+      iteration: 0,
+      wantedPolar: before.polar,
+      commandedRad: 0,
+      pixelsY: 0,
+      reachedAboveGroundM: wantedAboveGroundM,
+      commanded: false,
+      idle: "",
+    });
+    const heightAfterM = correction.heightAfterM;
+    const polarAfter = correction.polarAfter;
+    const movedPolar = polarAfter - before.polar;
+    const askedPolar = correction.wantedPolar - before.polar;
 
-    // A **downward** drag lowers the polar angle and therefore raises the camera:
-    // `_rotateUp` subtracts `2 * PI * pixelsY / clientHeight` from phi. The sign
-    // lives here alone.
-    const pixelsY = clamp(-stepped / this.radiansPerPixelY, -this.maxRotatePx, this.maxRotatePx);
-    if (Math.abs(pixelsY) < 0.5) {
-      return done(false, `a drag of ${pixelsY.toFixed(2)} px is below the pointer's resolution`, { wantedPolar });
-    }
-    await this.drag(0, pixelsY, "left");
-    const after = (await this.observe()).camera;
-    const groundAfter = groundBelow(after.position.x, after.position.z);
-    const heightAfterM = after.position.y - groundAfter.heightM;
     // The sign is checked on the **polar angle** and not on the height, and that is
     // a fix rather than a preference. At 275 m of distance a gesture that moves the
     // camera a metre changes the angle by 0.004 rad, so a check on the height reads
     // the tail of the previous step's gesture — or the ground rising under the
     // camera — as a sign error and refuses a leg that is behaving. The angle is what
     // this control drives, and a wrong sign sends the whole step in the wrong
-    // direction at once, which is an order of magnitude past the tail.
-    const movedPolar = after.polar - before.polar;
-    if (Math.abs(stepped) >= 0.02 && Math.abs(movedPolar) > 0.02 && Math.sign(movedPolar) !== Math.sign(stepped)) {
+    // direction at once, which is an order of magnitude past the tail. Read over the
+    // step's whole correction, because it is now several drags and not one.
+    if (Math.abs(askedPolar) >= 0.02 && Math.abs(movedPolar) > 0.02 && Math.sign(movedPolar) !== Math.sign(askedPolar)) {
       throw new Error(
-        `Standing at ${wantedAboveGroundM.toFixed(1)} m asked for ${stepped.toFixed(4)} rad of polar change from ` +
+        `Standing at ${wantedAboveGroundM.toFixed(1)} m asked for ${askedPolar.toFixed(4)} rad of polar change from ` +
           `${before.polar.toFixed(3)} and the angle moved ${movedPolar.toFixed(4)} rad the other way, taking the camera ` +
           `from ${heightBeforeM.toFixed(2)} m to ${heightAfterM.toFixed(2)} m above the ground. The vertical control's ` +
           "sign is wrong, and every leg aimed through it would photograph the city from the height it was trying to leave.",
@@ -848,14 +918,96 @@ export class FlythroughDriver {
 
     return {
       ...base,
-      wantedPolar,
-      polarAfter: after.polar,
-      adjustRad: after.polar - before.polar,
-      pixelsY,
+      wantedPolar: correction.wantedPolar,
+      polarAfter,
+      adjustRad: movedPolar,
+      pixelsY: correction.pixelsY,
       heightAfterM,
-      settled: Math.abs(heightAfterM - wantedAboveGroundM) <= toleranceM,
-      idle: "",
+      iterations: correction.drags,
+      settled: Math.abs(heightAfterM - correction.reachedAboveGroundM) <= STAND_CONVERGENCE_M,
+      idle: correction.idle,
     };
+  }
+
+  /**
+   * The vertical control's loop, bound to this page.
+   *
+   * `runVerticalCorrection` is the loop both the aim and the floor rescue run; this
+   * is the two calls it makes on this driver and nothing else, so what a test drives
+   * in its place is the loop itself rather than a second copy of it.
+   */
+  private verticalPage(): VerticalCorrectionPage {
+    return {
+      observe: async () => {
+        const camera = (await this.observe()).camera;
+        const ground = groundBelow(camera.position.x, camera.position.z);
+        return {
+          polar: camera.polar,
+          distance: camera.distance,
+          targetY: camera.target.y,
+          groundM: ground.heightM,
+          heightM: camera.position.y - ground.heightM,
+        };
+      },
+      drag: async (pixelsY: number) => {
+        await this.drag(0, pixelsY, "left");
+      },
+    };
+  }
+
+  /**
+   * Raise the camera until it clears `floorM`, iterating the correction.
+   *
+   * This is `holdClearance`'s job done **inside** the step that needs it, and the
+   * iteration is what makes it finish there. One capped drag delivers part of the
+   * turn it asks for — `OrbitControls` decays its spherical delta by 0.95 a frame —
+   * so a single nudge leaves the camera short of the floor and the *next* step's
+   * zoom then takes it further down; that is the recorded defect, and it is why the
+   * floor cannot be a rescue that runs once. The same convergence loop `standAt`
+   * uses drives it, with the floor as its aim in place of a plan height.
+   *
+   * Never lowers the camera: a frame the plan already put above its floor is left
+   * exactly where the plan put it. Fails by name rather than flying on if the
+   * controls cannot reach the floor at all.
+   */
+  private async raiseToFloor(floorM: number | undefined, maxStepRad: number): Promise<void> {
+    if (floorM === undefined || !Number.isFinite(floorM)) return;
+
+    const camera = (await this.observe()).camera;
+    const ground = groundBelow(camera.position.x, camera.position.z);
+    const correction = await runVerticalCorrection(this.verticalPage(), {
+      polar: camera.polar,
+      distance: camera.distance,
+      targetY: camera.target.y,
+      groundM: ground.heightM,
+      heightM: camera.position.y - ground.heightM,
+      // The floor is the aim and the plan's height is not in play here: a camera
+      // the plan already put above the floor is left alone, and one under it climbs
+      // to the floor and no further.
+      wantedAboveGroundM: Number.NEGATIVE_INFINITY,
+      clearanceFloorM: floorM,
+      maxStepRad,
+      maxRotatePx: this.maxRotatePx,
+      radiansPerPixelY: this.radiansPerPixelY,
+      toleranceM: STAND_CONVERGENCE_M,
+      iteration: 0,
+      wantedPolar: camera.polar,
+      commandedRad: 0,
+      pixelsY: 0,
+      reachedAboveGroundM: floorM,
+      atLeast: true,
+      commanded: false,
+      idle: "",
+    });
+    if (correction.heightAfterM < floorM) {
+      throw new Error(
+        `A step's clearance rescue ran ${correction.drags} drags of up to ${maxStepRad} rad and left the camera ` +
+          `${correction.heightAfterM.toFixed(2)} m above the ground, under the leg's ${floorM.toFixed(1)} m floor. The polar ` +
+          "angle is the only axis this control has and it is at the controls' own limit, so this leg's distance from " +
+          "its target cannot stand the camera clear of the terrain under it: the ladder's rungs are too close in, or " +
+          "the route crosses ground higher than the target. Nothing below the floor is photographed.",
+      );
+    }
   }
 
   /**
@@ -884,8 +1036,7 @@ export class FlythroughDriver {
     const camera = (await this.observe()).camera;
     const ground = groundBelow(camera.position.x, camera.position.z);
     const clearanceM = camera.position.y - ground.heightM;
-    const noChange = { clearanceM, adjustRad: 0, groundM: ground.heightM, radiusM: ground.radiusM };
-    if (clearanceM >= minimumM) return noChange;
+    const noChange = { clearanceM, adjustRad: 0, groundM: ground.heightM, radiusM: ground.radiusM };    if (clearanceM >= minimumM) return noChange;
 
     // The camera's height above the target is `distance * cos(polar)`, so the angle
     // that stands it `h` above the target is `acos(h / distance)` — the target's own
@@ -1003,6 +1154,249 @@ export function rotateStepRadians(
 function clamp(value: number, low: number, high: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(low, Math.min(high, value));
+}
+
+/** One moment of the vertical control's iteration, and what it decided to do next. */
+export interface StandConvergence {
+  /** The camera's polar angle at this moment, radians. */
+  polar: number;
+  /** The controls' distance, metres. */
+  distance: number;
+  /** The controls' target height, metres — fixed by the app, not by this lane. */
+  targetY: number;
+  /** The highest terrain under the camera at this moment, metres. */
+  groundM: number;
+  /** The camera's height above that terrain at this moment, metres. */
+  heightM: number;
+  /** The height the plan asked for, metres above the ground. */
+  wantedAboveGroundM: number;
+  /** The leg's clearance floor, metres; `-Infinity` when the leg has none. */
+  clearanceFloorM: number;
+  /** The largest polar change one drag may command, radians. */
+  maxStepRad: number;
+  /** The longest drag the pointer may make in one gesture, CSS pixels. */
+  maxRotatePx: number;
+  /** Radians of polar change per pixel of drag, from the canvas's own height. */
+  radiansPerPixelY: number;
+  /** The bar the correction stops at, metres. */
+  toleranceM: number;
+  /** How many drags this step has dispatched so far. */
+  iteration: number;
+  /** The polar angle that would stand the camera at `reachedAboveGroundM`. */
+  wantedPolar: number;
+  /** The polar change the next drag asks for, clamped to `maxStepRad`. */
+  commandedRad: number;
+  /** Pixels of downward drag that buy it. */
+  pixelsY: number;
+  /** The height this moment is aiming at: the plan's ask, or the leg's floor. */
+  reachedAboveGroundM: number;
+  /**
+   * True when the aim is a **floor**: being above it is done, and the correction
+   * only ever climbs. `standAt` aims at a height and approaches it from either
+   * side; a clearance rescue must not lower a camera the plan already placed.
+   */
+  atLeast?: boolean;
+  /** True when a drag is left to dispatch at this moment. */
+  commanded: boolean;
+  /** Why no drag is left, when none is. */
+  idle: string;
+}
+
+/**
+ * One moment of the vertical control's closed loop, with no page in it.
+ *
+ * `standAt` iterates this: it hands over the pose and the ground the browser
+ * reported, dispatches whatever drag comes back, reads the pose again and calls
+ * this once more. Separated from the browser for the reason `rotateStepRadians`
+ * is: the correction's convergence is the claim, and a claim about a loop that
+ * only runs against a live page cannot be watched to fail cheaply. What the
+ * helper computes is the whole of the arithmetic — the polar that stands the
+ * camera `max(wanted, floor)` metres above the ground, the part of the remaining
+ * error one drag may command, and whether any error is left to command.
+ *
+ * The floor is a **clamp on the aim** and not a separate control: a leg whose
+ * ladder descends past its own floor is held at the floor, so the floor is
+ * honoured by the same correction that honours the plan instead of by a rescue
+ * that runs after the camera is already under it. The helper never returns a
+ * downward command that would take the camera below the floor: the aim is
+ * `max(wanted, floor)` and the correction approaches it from either side.
+ */
+export function standConverge(state: StandConvergence): StandConvergence {
+  const floor = Number.isFinite(state.clearanceFloorM) ? state.clearanceFloorM : Number.NEGATIVE_INFINITY;
+  // A floor aim is held **above** the floor by a margin that scales with the
+  // camera's distance, and that is a fix rather than caution. The height this
+  // helper reads is the one the controls report the instant the previous drag
+  // returned, and a drag's spherical delta is still landing then: the camera carries
+  // on climbing after the reading, so a correction that stops the moment the reading
+  // touches the floor can settle under it. The overshoot scales with the distance
+  // and with the size of the step, so the margin is a fraction of the distance —
+  // 3% of it, and at least a decimetre — and a rescue that stops this far above the
+  // floor settles at or above it.
+  const overshootMarginM = state.atLeast === true ? Math.max(0.1, state.distance * 0.03) : 0;
+  const reachedAboveGroundM = Math.max(state.wantedAboveGroundM, floor + overshootMarginM);
+  const wantedCameraY = state.groundM + reachedAboveGroundM;
+  const ratio = clamp((wantedCameraY - state.targetY) / state.distance, MIN_HEIGHT_RATIO, MAX_HEIGHT_RATIO);
+  const wantedPolar = Math.acos(ratio);
+  const remaining = wantedPolar - state.polar;
+
+  state.reachedAboveGroundM = reachedAboveGroundM;
+  state.wantedPolar = wantedPolar;
+  // Within the convergence bar of the height the step is aiming at: no drag is
+  // left, whatever the remaining angle looks like. The two are not the same
+  // question when the ground under the camera is moving, which is the whole reason
+  // this is read off the height and not off the angle. An aim that is a floor is
+  // the one case with no bar below it: the convergence tolerance would let the
+  // correction stop a few centimetres *under* the floor and call it settled, so a
+  // camera at or above the floor is done and one under it keeps climbing.
+  const heightError = state.heightM - reachedAboveGroundM;
+  if (state.atLeast === true ? heightError >= 0 : Math.abs(heightError) <= state.toleranceM) {
+    state.commandedRad = 0;
+    state.pixelsY = 0;
+    state.commanded = false;
+    state.idle = `already within ${state.toleranceM} m of the height this step is aiming at`;
+    return state;
+  }
+
+  const commandedRad = clamp(remaining, -state.maxStepRad, state.maxStepRad);
+  if (Math.abs(commandedRad) < 0.002) {
+    state.commandedRad = commandedRad;
+    state.pixelsY = 0;
+    state.commanded = false;
+    state.idle = `less than 0.002 rad is left to correct, which is under one step of ${state.maxStepRad} rad`;
+    return state;
+  }
+
+  // A **downward** drag lowers the polar angle and therefore raises the camera:
+  // `_rotateUp` subtracts `2 * PI * pixelsY / clientHeight` from phi. The pixels and
+  // not the radians are the input, so the pointer's own resolution is the second
+  // place the correction can run out of room.
+  const pixelsY = clamp(-commandedRad / state.radiansPerPixelY, -state.maxRotatePx, state.maxRotatePx);
+  const deliverable = Math.abs(pixelsY) >= 0.5;
+  state.commandedRad = commandedRad;
+  state.pixelsY = deliverable ? pixelsY : 0;
+  state.commanded = deliverable;
+  state.idle = deliverable ? "" : `a drag of ${pixelsY.toFixed(2)} px is below the pointer's resolution`;
+  return state;
+}
+
+/** What one dispatched left-button drag did to the camera, read back from the page. */
+export interface VerticalDragOutcome {
+  /** The camera's polar angle after the drag, radians. */
+  polar: number;
+  /** The controls' distance after the drag, metres. */
+  distance: number;
+  /** The controls' target height after the drag, metres. */
+  targetY: number;
+  /** The highest terrain under the camera after the drag, metres. */
+  groundM: number;
+  /** The camera's height above that terrain after the drag, metres. */
+  heightM: number;
+}
+
+/** Everything the vertical control's loop needs from the controls, and nothing else. */
+export interface VerticalCorrectionPage {
+  /**
+   * Read the camera and the ground under it, in one moment.
+   *
+   * Called once before any drag and once after each, so what the loop corrects
+   * against is the pose the controls actually reached rather than the pose this
+   * file assumed the last drag would leave.
+   */
+  observe(): Promise<VerticalDragOutcome>;
+  /**
+   * Dispatch one vertical drag: `pixelsY` positive is a downward drag, which
+   * raises the camera.
+   */
+  drag(pixelsY: number): Promise<void>;
+}
+
+/** What one step's vertical correction did, drag by drag. */
+export interface VerticalCorrectionOutcome {
+  /** The height above the ground the step's aim resolved to, metres. */
+  reachedAboveGroundM: number;
+  /** The polar angle that aim needs, radians. */
+  wantedPolar: number;
+  /** The camera's polar angle before and after the correction, radians. */
+  polarBefore: number;
+  polarAfter: number;
+  /** The camera's height above the ground before and after, metres. */
+  heightBeforeM: number;
+  heightAfterM: number;
+  /** The pixels this correction dispatched in total, and how many drags carried them. */
+  pixelsY: number;
+  drags: number;
+  /** True when the loop ran out of correction to dispatch: the aim is reached. */
+  settled: boolean;
+  /** Why no further drag was left, when the correction stopped short of its aim. */
+  idle: string;
+}
+
+/**
+ * The vertical control's correction of one step, iterated to its aim.
+ *
+ * This is the loop `standAt` and the in-step floor rescue both run, and it is one
+ * function rather than two so that neither can drift from the other about what
+ * "converged" means. It hands over the pose and the ground the browser reported,
+ * dispatches whatever drag `standConverge` comes back with, reads the pose again
+ * and repeats, to `MAX_STAND_DRAGS` drags.
+ *
+ * The iteration is the fix and not a flourish: one capped drag does not deliver the
+ * angle it asks for — `OrbitControls` decays its spherical delta by 0.95 a frame —
+ * so a single drag leaves the camera short of the height it was aiming at, and the
+ * next step's zoom then scales what is left of the camera's offset. The recorded
+ * 2026-09-17 run measured that as `approach-009` reading 0.19419 m above the ground
+ * before its own vertical control ran and `approach-010` 1.07751 m, both under the
+ * 1.5 m floor their captured clearances passed.
+ *
+ * Exported, with `VerticalCorrectionPage` as its page, because this is the claim:
+ * `test/flythrough-stand.test.ts` drives *this* loop with a camera and a ground
+ * profile in place of a browser, so the convergence it asserts is the shipped
+ * loop's and not a copy of it.
+ */
+export async function runVerticalCorrection(
+  page: VerticalCorrectionPage,
+  initial: StandConvergence,
+): Promise<VerticalCorrectionOutcome> {
+  let state = standConverge(initial);
+  const polarBefore = state.polar;
+  const heightBeforeM = state.heightM;
+  let observed = { polar: state.polar, distance: state.distance, targetY: state.targetY, groundM: state.groundM };
+  let heightM = state.heightM;
+  let pixelsY = 0;
+  while (state.commanded && state.iteration < MAX_STAND_DRAGS) {
+    await page.drag(state.pixelsY);
+    pixelsY += state.pixelsY;
+    const after = await page.observe();
+    observed = { polar: after.polar, distance: after.distance, targetY: after.targetY, groundM: after.groundM };
+    // The height the controls report is the one the whole correction is judged on,
+    // and it is measured against the ground the drag left the camera over: the
+    // ground is the camera's own, not the terrain at some assumed position.
+    heightM = after.heightM;
+    state = standConverge({
+      ...state,
+      polar: after.polar,
+      distance: after.distance,
+      targetY: after.targetY,
+      groundM: after.groundM,
+      heightM,
+      iteration: state.iteration + 1,
+    });
+  }
+  return {
+    reachedAboveGroundM: state.reachedAboveGroundM,
+    wantedPolar: state.wantedPolar,
+    polarBefore,
+    polarAfter: observed.polar,
+    heightBeforeM,
+    heightAfterM: heightM,
+    pixelsY,
+    drags: state.iteration,
+    settled: !state.commanded,
+    // `idle` is why no input was sent, so a correction that dispatched drags has
+    // none to report: the helper's last message describes how it stopped, which for
+    // an iterated correction is the convergence it reached and not a reason to idle.
+    idle: state.iteration === 0 && !state.commanded ? state.idle : "",
+  };
 }
 
 /**
