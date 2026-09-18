@@ -50,9 +50,10 @@
  * The road's 4 m tile resolves one texel every 3.13 cm, so at the hero crossing's
  * measured 0.0144–0.0886 m/px one pixel covers 0.35–2.8 texels: the grain is magnified
  * at the near end and sits at mip 1–2 at the far end, and the mip chain holds the
- * on-screen step roughly constant across that range. Shipped, the road's tile puts a
- * mean of **6.1% of albedo** between neighbouring texels (p95 14.4%) at a strength of
- * 0.45 — 17x the 0.36% the frames showed — and the ground's puts 3.0% (p95 6.9%) at 0.3.
+ * on-screen step roughly constant across that range. With the first-strength vector the
+ * road's tile put a mean of **6.1% of albedo** between neighbouring texels (p95 14.4%)
+ * at a strength of 0.45 — 17x the 0.36% the frames showed — and the ground's puts 3.0%
+ * (p95 6.9%) at 0.3.
  *
  * **Why the road and the ground carry different spectra.** The road is photographed at
  * 0.01–0.09 m/px, where the subject is asphalt aggregate at the texel scale, so its
@@ -60,6 +61,37 @@
  * at the block and overhead framings, so it keeps more coarse content: its
  * 16x16-block spread is 0.21 of the tile's range against the road's 0.18, and the
  * coarse half is the part minification leaves behind.
+ *
+ * ## What the second version of the road got wrong
+ *
+ * The tile was present, structured and visible in tile space, and the road still read
+ * as flat at 1:1 in the certified satellite plaza frame. Measured on the certificate's
+ * own bytes (`artifacts/dusk-light/after-arm/`, runId `ebf66d041d14173b`), the road
+ * rect's neighbouring-pixel step was **0.304 display levels, 3.580% of albedo, against
+ * the pavement control's 1.604 levels and 5.891% in the same frame**, with 82.2% of
+ * neighbouring pixel pairs bit-identical. Two facts from that measurement set this
+ * change:
+ *
+ * **1. The road's own spectrum was the binding constraint, not a global gain.** The
+ * frame's step rose sub-linearly with strength on a scratch sweep of this worktree:
+ * 0.304 levels at 0.45, 0.444 at 0.75 (1.67x strength, 1.46x step) and 0.614 at 1.1
+ * (1.47x again, 1.38x step), all on the old vector and the same pose
+ * (`artifacts/grain/arms.md` carries the arms). Reaching the pavement's share by
+ * amplitude alone therefore needs roughly 0.9–1.0, and at that strength the coarse
+ * octaves of the old vector put visible 4 m blotches across the near field — the road
+ * reads as oil-stained, which is the opposite of aggregate.
+ *
+ * **2. The old vector was dominated by its coarse octaves.** (0.35, 0.45, 0.6, 0.85,
+ * 1.2, 1.7) puts most of its energy in the 1–4 m octaves, which at the hero crossing's
+ * near field are blotches rather than grain. The shipped vector moves that weight into
+ * the 64- and 128-cell octaves and leaves the coarse ones as modulation: it puts
+ * **10.30% of albedo between neighbouring texels at mip 0 (p95 24.0%) and 5.43% at
+ * mip 1** against the old vector's 6.35% and 3.97%, and in the frame it clears the
+ * pavement's share at strength 0.72 where the old spectrum did not clear it at 0.75 or
+ * 1.1. The alternative — the same vector with only the two finest octaves doubled —
+ * reached 4.63% at mip 1 and 7.733% of albedo in the frame at strength 1.0, so the
+ * finer reallocation is the cheaper lever *and* the one that keeps the near field from
+ * reading as blotches.
  *
  * Neither is small enough to alias: the mip level is chosen from the world-space UV
  * derivatives, so the distance fade *is* the mip chain, and it fades the finest octave
@@ -88,12 +120,27 @@ const OCTAVE_CELLS: readonly number[] = [4, 8, 16, 32, 64, 128];
  * Chosen by measuring the neighbouring-texel step each spectrum produces rather than
  * by eye; the header carries the arithmetic. The road's rises towards the fine octaves
  * because a 3 cm texel is aggregate, and the ground's is flatter because most of what
- * anyone sees of it is minified.
+ * anyone sees of it is minified. The road's 16 m and 8 m octaves are deliberately
+ * small: they are the ones that read as blotches rather than grain at the hero
+ * crossing's near field, and the display step they cost is worth less than the same
+ * weight in the 64- and 128-cell octaves.
  */
 const OCTAVE_AMPLITUDE: Readonly<Record<SurfaceDetailKind, readonly number[]>> = Object.freeze({
   ground: Object.freeze([0.6, 0.7, 0.85, 1, 1.2, 1.4]),
-  road: Object.freeze([0.35, 0.45, 0.6, 0.85, 1.2, 1.7]),
+  road: Object.freeze([0.04, 0.075, 0.175, 0.5, 2, 5.2]),
 });
+
+/**
+ * The road's octave weights, exported so the unit case can hold the *shape* of the
+ * spectrum and not only the step it produces.
+ *
+ * A step floor alone cannot see the difference this change is about: the previous
+ * spectrum cleared its own floor and the certified frames still drew the road flat,
+ * because a spectrum can put its contrast in octaves a viewer integrates. The case in
+ * `test/surface-detail.test.ts` asserts this vector rises towards the fine octaves and
+ * that the fine half carries the coarse half's step.
+ */
+export const ROAD_OCTAVE_AMPLITUDE: readonly number[] = OCTAVE_AMPLITUDE.road!;
 
 /** A different stream per surface, so the two do not share a pattern. */
 const KIND_SALT: Readonly<Record<SurfaceDetailKind, number>> = { ground: 0x9e3779b1, road: 0x85ebca6b };
@@ -112,17 +159,28 @@ export const SURFACE_DETAIL_METRES: Readonly<Record<SurfaceDetailKind, number>> 
  *
  * This is the number the first version got wrong in the other direction: at 0.16 the
  * road's tile moved 0.36% of albedo between neighbouring texels, which is a tenth of a
- * display level and invisible. 0.45 with the spectra above puts the road's mean step at
- * 6.1% and its p95 step at 14.4%, which is two to five display levels — and ±22.5% of
- * albedo is still below the contrast between binder and aggregate in real asphalt.
+ * display level and invisible. 0.45 with the first spectrum put the road's mean step at
+ * 6.1% of albedo, which the certified frames then measured as 3.580% in the frame
+ * against the pavement's 5.891% — the tile was there and the road still looked flat.
+ *
+ * The road is 0.72 with the spectrum above, which puts 10.30% of albedo between
+ * neighbouring texels at mip 0 (p95 24.0%) and 5.43% at mip 1, and the certified
+ * re-capture at that setting measures **7.241% of albedo in the frame against the
+ * pavement control's 6.257% in the same frame** (`artifacts/grain/`). The choice
+ * between amplitude and spectrum is measured rather than argued: 0.45 × 1.6 = 0.72 of
+ * strength would have put the *old* spectrum's 6.35% at 10.2% of mip-0 albedo for the
+ * same frame step, and the frames at 1.1 on the old spectrum show the difference — the
+ * coarse octaves turn into 4 m blotches where this spectrum leaves grain.
  *
  * The bound that matters is not the strength but the mean: the generator centres the
  * tile, so the surface's palette colour stays its mean and the tile only varies around
- * it. `test/surface-detail.test.ts` holds both.
+ * it. At 0.72 the tile swings the palette colour by at most ±36%, and the measured
+ * distribution of the field's extremes is narrower than that. `test/surface-detail.test.ts`
+ * holds the bounds and the step.
  */
 export const SURFACE_DETAIL_STRENGTH: Readonly<Record<SurfaceDetailKind, number>> = Object.freeze({
   ground: 0.3,
-  road: 0.45,
+  road: 0.72,
 });
 
 /**

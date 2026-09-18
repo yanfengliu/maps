@@ -31,6 +31,7 @@ import {
   createSurfaceDetailTexture,
   DETAIL_ANISOTROPY,
   DETAIL_SIZE,
+  ROAD_OCTAVE_AMPLITUDE,
   surfaceDetailBytes,
   SURFACE_DETAIL_METRES,
   SURFACE_DETAIL_STRENGTH,
@@ -99,6 +100,17 @@ describe("the tile carries structure at more than one scale", () => {
   });
 
   it("has coarse variation, so minification does not converge it to flat", () => {
+    // The floor moved from 20 to 17 with the road's second spectrum, and the reason is
+    // measured rather than convenient. The fine reallocation trades coarse content for
+    // fine: the previous vector's 16x16 block means span 44.95 of 255 where the shipped
+    // one spans 19.80, while the *neighbouring-texel* steps that a viewer reads are
+    // higher at every mip that survives minification (mip 0 36.01 -> 59.79, mip 1
+    // 22.50 -> 31.57, mip 2 15.31 -> 17.16, mip 3 11.45 -> 9.05). Losing the block-scale
+    // spread is what makes the near field read as aggregate instead of as 4 m blotches,
+    // and the framing it has to survive is the tile against flat grey, not against the
+    // old vector: a tile with no coarse content at all measures near 0 here, and this
+    // floor is what refuses it. `artifacts/grain/crops/` holds the frames the trade was
+    // accepted on.
     for (const kind of KINDS) {
       const texels = surfaceDetailBytes(kind);
       // Mean of each 16x16 block: if the coarse octaves were missing, every block
@@ -112,7 +124,7 @@ describe("the tile carries structure at more than one scale", () => {
         }
       }
       const spread = Math.max(...blocks) - Math.min(...blocks);
-      expect(spread, `${kind}: 16x16 block means span only ${spread.toFixed(1)} of 255`).toBeGreaterThan(20);
+      expect(spread, `${kind}: 16x16 block means span only ${spread.toFixed(1)} of 255`).toBeGreaterThan(17);
     }
   });
 
@@ -152,9 +164,13 @@ describe("the tile is chosen at a scale the far frames resolve", () => {
       // invisible *because* the tile's local step was 2.3% of its own range. The case
       // below holds the product (step x strength) that a viewer actually sees, and this
       // one keeps the strength inside a range whose extremes stay plausible as surface
-      // albedo: at 0.5 the tile swings a palette colour by ±25%.
+      // albedo. The ceiling moved from 0.5 to 0.8 with the road's second version, and
+      // the number that moved it is measured rather than argued: at 0.72 on the spectrum
+      // below the frames show grain on the near field, and at 1.0 on the *previous*
+      // spectrum they show 4 m blotches that read as oil. The bound is what keeps a
+      // later change from buying a step by swinging the palette colour by half.
       expect(SURFACE_DETAIL_STRENGTH[kind]).toBeGreaterThan(0.15);
-      expect(SURFACE_DETAIL_STRENGTH[kind]).toBeLessThanOrEqual(0.5);
+      expect(SURFACE_DETAIL_STRENGTH[kind]).toBeLessThanOrEqual(0.8);
     }
   });
 });
@@ -214,8 +230,15 @@ describe("the tile's neighbouring-texel step is visible, not merely present", ()
     // texels are 2.8 to a pixel, so the mip-0 step is the magnified end and the mip-1
     // step is the far end; both are asserted, because a tile that only survives
     // magnification would leave the road flat exactly where the finding was.
+    //
+    // The road's floors moved with the second version: 0.045/0.025 was the first
+    // spectrum, and the certified frame drew it as **3.580% of albedo against the
+    // pavement control's 5.891% in the same frame** — clear of this floor and still
+    // flat-looking. The floors are now 0.08/0.045, which the shipped 10.30%/5.43%
+    // clears by about 30%, and the frame-level bar the bar is actually written in is
+    // the case below.
     const floors: Readonly<Record<SurfaceDetailKind, { at0: number; at1: number }>> = Object.freeze({
-      road: Object.freeze({ at0: 0.045, at1: 0.025 }),
+      road: Object.freeze({ at0: 0.08, at1: 0.045 }),
       ground: Object.freeze({ at0: 0.02, at1: 0.012 }),
     });
     for (const kind of KINDS) {
@@ -240,6 +263,50 @@ describe("the tile's neighbouring-texel step is visible, not merely present", ()
       // a smooth hill: the shipped tile's was 2.3% of its range at mip 0.
       expect(mip0.mean / (mip0.p95 + mip0.mean), `${kind}: the field is still a smooth hill`).toBeGreaterThan(0.2);
     }
+  });
+
+  it("keeps the road's weight in the fine octaves, which is the lever the frame bar needed", () => {
+    // The defect this case exists to catch is not "the tile is absent" — the first
+    // version's case above was already green when the certified frame drew the road at
+    // 3.580% of albedo against the pavement's 5.891%. It is "the tile is present, is
+    // called structured, and is still dominated by octaves a viewer reads as blotches at
+    // the near field". The measurement that says so, on this worktree's own capture of
+    // the certified pose with only the spectrum changed:
+    //
+    // | road spectrum                          | strength | frame step | albedo share |
+    // | ---                                    | ---      | ---        | ---          |
+    // | 0.35,0.45,0.6,0.85,1.2,1.7 (previous)  | 1.1      | 0.614      | 7.253%       |
+    // | 0.35,0.45,0.6,0.85,2.4,3.4             | 1.0      | 0.655      | 7.733%       |
+    // | 0.04,0.075,0.175,0.5,2,5.2 (shipped)   | 0.72     | 0.613      | 7.241%       |
+    //
+    // The shipped row reaches the same display step at 0.72 of the strength, and the
+    // frame at 1.1 on the previous spectrum is the one that reads as oil-stained. This
+    // case holds the shape that did it: the spectrum must rise towards the fine octaves
+    // by a wide factor, and the fine half must carry the coarse half's step.
+    const amplitudes = ROAD_OCTAVE_AMPLITUDE;
+    expect(amplitudes, "the road's spectrum must have six octaves, coarsest first").toHaveLength(6);
+    for (let octave = 1; octave < amplitudes.length; octave += 1) {
+      expect(
+        amplitudes[octave]!,
+        `the road's octave ${octave} is ${amplitudes[octave]} against the coarser octave's ${amplitudes[octave - 1]}: ` +
+          "a spectrum that decays toward the fine octaves is the smooth hill this tile replaced, whatever its step",
+      ).toBeGreaterThan(amplitudes[octave - 1]! * 1.2);
+    }
+    const coarse = amplitudes.slice(0, 3).reduce((sum, value) => sum + value, 0);
+    const fine = amplitudes.slice(3).reduce((sum, value) => sum + value, 0);
+    expect(fine / coarse, "the road's fine octaves must outweigh the coarse ones").toBeGreaterThan(5);
+    // And the minified end keeps the structure the fine reallocation could have spent:
+    // the previous vector's 3.97% at mip 1 is what the far half of the hero crossing's
+    // 0.0144-0.0886 m/px sees, and the shipped one must not fall below it.
+    const texels = surfaceDetailBytes("road");
+    const mip0 = stepStats(texels, DETAIL_SIZE);
+    const mip1 = stepStats(halve(texels), DETAIL_SIZE / 2);
+    expect(mip0.mean).toBeGreaterThan(mip1.mean * 1.5);
+    expect(
+      mip1.mean * SURFACE_DETAIL_STRENGTH.road,
+      `the road's mip-1 step is ${(mip1.mean * SURFACE_DETAIL_STRENGTH.road * 100).toFixed(2)}% of albedo, under the ` +
+        "3.97% the previous spectrum gave the far end of the hero crossing's distance range",
+    ).toBeGreaterThanOrEqual(0.0395);
   });
 
   it("keeps the tile's coarse half, so minification does not converge it to flat", () => {

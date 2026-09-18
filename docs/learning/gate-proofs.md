@@ -1307,3 +1307,33 @@ span. ...
 
 **The whole lane is `tools/` and `test/`.** No file under `src/`, `index.html` or `vite.config.ts` is touched, which was a requirement rather than a coincidence: any `src/` change moves `dist` and strands the certificate `685d0eaeb5669287` issued at `a7f865d`. The first version of this lane added `RenderStatus.simulatedSeconds` to `src/harness/bridge.ts` to carry a frame's simulation step; it was removed, and the migration is recorded because the substitute is not the obvious one. `population().ticks`, which the flythrough lane records, is **0 for a whole `?agents=`-free run** - `src/app.ts` calls `agents.attach(...)` only when a population is requested, and `src/agents/agents.ts` registers `population?.update` against a `population` that stays `null` otherwise, so `status()` returns `emptyPopulationStatus()` - and this lane captures `?agents=`-free on purpose so a crossing vehicle cannot be read as a crawl. The step is therefore derived from the page's own clock (`(performance.now() - performance.timeOrigin) * 60`, clamped to the frame counter) and `FlickerFrame.tick` is `number | null`, with `null` recorded rather than 0 so an absent step is never read as a step of zero. The bound is in the field's own docstring: it cannot see a fixed-step clock that stopped while frames kept being drawn, which is why the stalled-render-counter predicate is what carries the sequence's aliveness. Verified by building both revisions on this machine on 2026-09-18: `9795fc4` and the lane's tree both emit `dist/assets/index-_LQ7yEQN.js`, 981,039 bytes, sha256 `a5b9d4146308fea52447fbba8eee0b01bddaaf21d83fae1ae49f0237bb374364e`.
 
+## The road tile's spectrum shape: the gate the step floor alone could not make
+
+**Gate:** `test/surface-detail.test.ts` - the case "keeps the road's weight in the fine octaves, which is the lever the frame bar needed", plus the raised mip-0/mip-1 floors in "puts at least 5% of albedo between neighbouring texels on the road" (0.045/0.025 to 0.08/0.045) and the strengthened modulation ceiling (0.5 to 0.8).
+
+**Landed:** 2026-09-18, branch `grain/amplitude` off `a7f865d`. Not merged: the coordinator lands it.
+
+**The defect it gates.** The previous spectrum (0.35, 0.45, 0.6, 0.85, 1.2, 1.7) at strength 0.45 cleared its own 0.045 floor - it measured 6.35% of albedo at mip 0 - and the certified satellite `plaza-az000` frame still drew the road flat: **0.304 display levels, 3.580% of albedo against the pavement control's 5.891% in the same frame, 82.2% of neighbouring pixel pairs bit-identical**. The old floor was a step floor and the defect was a *shape*: the contrast was in 1-4 m octaves that a viewer at the near field integrates, and at strength 1.1 the same spectrum reads as 4 m blotches rather than aggregate. The fix moves the weight into the 64- and 128-cell octaves and raises the strength to 0.72, which measures **0.613 levels and 7.241% of albedo against the control's 6.255%**.
+
+**Mutations, two, each exit status 1 in under a second.**
+
+(1) `OCTAVE_AMPLITUDE.road` and `SURFACE_DETAIL_STRENGTH.road` restored to the previous spectrum and strength (the values certificate `685d0eaeb5669287` was drawn with). Two cases fail:
+
+```
+AssertionError: road: mean neighbouring-texel step is 6.35% of albedo at mip 0 (p95 14.82%); the shipped-and-invisible
+tile measured 0.36% on the road and 0.40% on the ground, and under about 3% is less than one display level:
+expected 0.06354591245947225 to be greater than or equal to 0.08
+
+AssertionError: the road's fine octaves must outweigh the coarse ones: expected 2.678571428571429 to be greater than 5
+```
+
+(2) Only the vector reverted, the strength left at the shipped 0.72. The floors pass - the old vector at 0.72 measures 10.17% at mip 0 - and the shape case is the one that fires:
+
+```
+AssertionError: the road's fine octaves must outweigh the coarse ones: expected 2.678571428571429 to be greater than 5
+```
+
+**Why the second mutation is the one that matters.** It is the mutation the first gate could not see: a tree that satisfies every step floor, with the strength raised to compensate, and a near field that reads as blotches. The case pins the vector itself, which is why it is exported (`ROAD_OCTAVE_AMPLITUDE`) rather than restated in the test: a check built from a copy of the constant agrees with the test file and not with the code.
+
+**Bound.** It gates a property of the generated texels: the octave weights rise by at least 1.2x each, the fine half outweighs the coarse half by at least 5x, the mip-1 albedo step stays at or above the 3.97% the previous spectrum gave, and the mip-0 step stays above 1.5x the mip-1. It does not compile a shader, does not render, and cannot see a repeat lattice, aliasing or a surface that reads as noise: those are the frame set's evidence, and the frames this claim rests on are the 44 certified under `b9d02f80d450203a` with their 1:1 crops preserved at `artifacts/grain/crops/`. The step it measures is tile-space, and the frame's own step was 2.4x lower than the tile-space prediction on the road rect, so the floors are a proxy with a measured offset rather than a measurement of the pixel.
+
