@@ -60,6 +60,13 @@
     <div id="attribution">
       Map data: PLATEAU (PDL 1.0 / CC BY 4.0) · OpenStreetMap (ODbL) · GSI — modified
     </div>
+    <!--
+      Frame-budget probe seam. It must precede `/src/main.ts`, because it wraps the
+      app's own RenderLoop class and so has to be evaluated first; and it installs
+      nothing without `?frameBudgetProbe=1`, so the delivered app is unaffected.
+      test/probe-seam.test.ts asserts both.
+    -->
+    <script type="module" src="/tools/frame-budget/probe-entry.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

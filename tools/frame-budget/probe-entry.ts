@@ -28,6 +28,15 @@
  * prototype it wraps is the app's own class rather than a second copy of it.
  * Deleting that one line leaves the app exactly as it ships.
  *
+ * **Nothing here happens unless the URL asks for it.** The gate is
+ * `probeRequested` from `./probe-switch.ts`, checked before the first wrapper is
+ * installed: a page without `?frameBudgetProbe=1` gets no `requestAnimationFrame`
+ * wrapper, no `RenderLoop` wrapper and no `globalThis.__frameBudgetProbe`, so the
+ * lane's own reader fails by name instead of reporting intervals an instrument that
+ * is not installed did not observe. That matters because the seam is in the shipped
+ * page: ungated, every appearance frame the certificate photographs would be drawn
+ * through a wrapped frame boundary and would carry a tick cost nobody asked for.
+ *
  * The bound, stated where the number is taken: `performance.now()` is clamped to
  * 100 microseconds in this browser, so every cost below is quantised at that
  * resolution. Nothing here is finer than that, and a difference under 0.1 ms is
@@ -35,6 +44,7 @@
  */
 
 import { RenderLoop } from "../../src/render/loop.ts";
+import { probeRequested } from "./probe-switch.ts";
 
 export interface TickCost {
   /** Milliseconds the whole `advance` call took: fixed steps, frame steps and render. */
@@ -63,44 +73,67 @@ const probe: FrameBudgetProbe = {
   failure: null,
 };
 
-(globalThis as unknown as { __frameBudgetProbe: FrameBudgetProbe }).__frameBudgetProbe = probe;
+/** The page's own query string, or `""` where there is no page. */
+export function pageSearch(): string {
+  return typeof location === "undefined" ? "" : location.search;
+}
+
+/**
+ * Whether this module installed its wrappers.
+ *
+ * False is the delivered app: the seam is present in `index.html` and inert. The
+ * lane reads `globalThis.__frameBudgetProbe` instead, which is absent when this is
+ * false, so a run that forgot the switch fails rather than reporting zero observed
+ * frames as a measurement.
+ */
+export const enabled = probeRequested(pageSearch());
+
+if (enabled) {
+  (globalThis as unknown as { __frameBudgetProbe: FrameBudgetProbe }).__frameBudgetProbe = probe;
+  installFrameBoundary();
+  installTickCost();
+}
 
 /* ------------------------------------------------------------- frame boundary */
 
-const originalRaf = globalThis.requestAnimationFrame.bind(globalThis);
-globalThis.requestAnimationFrame = (callback: FrameRequestCallback): number =>
-  originalRaf((timestamp) => {
-    probe.frameTimestamps.push(timestamp);
-    callback(timestamp);
-  });
+function installFrameBoundary(): void {
+  const originalRaf = globalThis.requestAnimationFrame.bind(globalThis);
+  globalThis.requestAnimationFrame = (callback: FrameRequestCallback): number =>
+    originalRaf((timestamp) => {
+      probe.frameTimestamps.push(timestamp);
+      callback(timestamp);
+    });
+}
 
 /* --------------------------------------------------------------- tick cost */
 
 /** Fixed-step milliseconds accumulated since the last `advance` read them. */
 let simulationMs = 0;
 
-const originalOnFixedStep = RenderLoop.prototype.onFixedStep;
-RenderLoop.prototype.onFixedStep = function measuredOnFixedStep(
-  this: RenderLoop,
-  step: (stepSeconds: number, simulatedSeconds: number) => void,
-): () => void {
-  return originalOnFixedStep.call(this, (stepSeconds, simulatedSeconds) => {
-    const before = performance.now();
-    step(stepSeconds, simulatedSeconds);
-    simulationMs += performance.now() - before;
-  });
-};
+function installTickCost(): void {
+  const originalOnFixedStep = RenderLoop.prototype.onFixedStep;
+  RenderLoop.prototype.onFixedStep = function measuredOnFixedStep(
+    this: RenderLoop,
+    step: (stepSeconds: number, simulatedSeconds: number) => void,
+  ): () => void {
+    return originalOnFixedStep.call(this, (stepSeconds, simulatedSeconds) => {
+      const before = performance.now();
+      step(stepSeconds, simulatedSeconds);
+      simulationMs += performance.now() - before;
+    });
+  };
 
-const originalAdvance = RenderLoop.prototype.advance;
-RenderLoop.prototype.advance = function measuredAdvance(this: RenderLoop, timestamp: number): void {
-  simulationMs = 0;
-  const before = performance.now();
-  const beforeSeconds = this.simulatedSeconds;
-  originalAdvance.call(this, timestamp);
-  const after = performance.now();
-  // `stepSeconds` is a constant and the loop only ever adds it, so the count is
-  // exact arithmetic on the loop's own clock rather than a guess from wall time.
-  const steps = Math.round((this.simulatedSeconds - beforeSeconds) / this.stepSeconds);
-  probe.tickCosts.push({ advanceMs: after - before, simulationMs, steps });
-  probe.installed = true;
-};
+  const originalAdvance = RenderLoop.prototype.advance;
+  RenderLoop.prototype.advance = function measuredAdvance(this: RenderLoop, timestamp: number): void {
+    simulationMs = 0;
+    const before = performance.now();
+    const beforeSeconds = this.simulatedSeconds;
+    originalAdvance.call(this, timestamp);
+    const after = performance.now();
+    // `stepSeconds` is a constant and the loop only ever adds it, so the count is
+    // exact arithmetic on the loop's own clock rather than a guess from wall time.
+    const steps = Math.round((this.simulatedSeconds - beforeSeconds) / this.stepSeconds);
+    probe.tickCosts.push({ advanceMs: after - before, simulationMs, steps });
+    probe.installed = true;
+  };
+}

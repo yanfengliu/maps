@@ -30,7 +30,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { OrbitDriver } from "../visual/orbit.js";
-import { buildDigest, interiorIntervals, intervalsFrom, machineFacts, readProbe, resetProbe, round, statsOf, writeResult } from "./run.js";
+import { buildDigest, interiorIntervals, intervalsFrom, machineFacts, readProbe, resetProbe, round, statsOf, withProbe, writeResult } from "./run.js";
 
 const WINDOW_MS = 12_000;
 const DRAWN_SHARE = 0.9;
@@ -65,7 +65,7 @@ test("the population sweep: the frame interval against the drawn population", as
   const digest = buildDigest();
 
   for (const pedestrians of arms()) {
-    await page.goto(`/?agents=1&seed=5970698&pedestrians=${pedestrians}&vehicles=${VEHICLES}`, { timeout: 90_000 });
+    await page.goto(withProbe(`/?agents=1&seed=5970698&pedestrians=${pedestrians}&vehicles=${VEHICLES}`), { timeout: 90_000 });
     const driver = new OrbitDriver(page);
     const status = await driver.waitForFirstFrame(120_000);
     expect(

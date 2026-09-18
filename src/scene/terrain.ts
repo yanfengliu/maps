@@ -71,7 +71,10 @@ export async function createTerrain(style: WorldStyle = worldStyle(DEFAULT_WORLD
     },
     dispose(): void {
       geometry.dispose();
-      material.dispose();
+      // Through the treatment, not `material.dispose()`: the ground's material owns
+      // the world-space detail texture, and disposing only the material would leave
+      // that texture on the GPU.
+      treatment.dispose();
     },
   };
 }

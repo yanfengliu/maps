@@ -29,7 +29,15 @@ export const SCENE_FILES = Object.freeze({
 export interface SceneManifest {
   /** Bumped when the shape of anything under `data/scene/` changes. */
   version: 1;
-  builtAt: string;
+  /*
+    No build timestamp here, on purpose. This file is served, so `sceneTreeDigest`
+    folds its bytes into the certificate's scene binding; a `builtAt` would make
+    that digest a *build* identity, so that every rebuild moved it with
+    byte-identical geometry and no certificate's scene binding could be re-derived
+    after one. When a build happened belongs in the devlog, not in a payload the
+    certificate hashes. `tools/scene/scene-manifest.ts` carries the rule and
+    `test/scene-manifest.test.ts` holds it.
+  */
   terrain: {
     triangleCount: number;
     insideAoiTriangleCount: number;

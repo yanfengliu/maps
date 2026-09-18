@@ -1097,3 +1097,51 @@ AssertionError: the refusal has to name the steep axis rather than a missing cro
 **Bound.** The fixture is synthetic and is the whole bound. It does not read `data/scene/terrain.mesh`, it does not know which knots the population forms, and it says nothing about what any frame looks like � `node tools/flythrough/aim.ts --dump <probe dump>` is the measurement for that, and its own bound is that it is an offline aiming aid rather than evidence. The two-plateau fixture also cannot exercise the ground *reader*: `plateauGround` is an explicit function, so a defect in `terrainIndex`'s grid arithmetic would not show up here, and the tool's own readings of the real mesh are what cover that. Measured on the real scene instead: at the old anchor the corrected tool counts 457 moving bodies at tick 3,000 and none of them inside 45 m, and the chosen anchor `(452.071, 353.949)` holds 225 inside 45 m with a 5.0 degree axis.
 
 **Not yet proved red.** The leg's own run. No flythrough was run for this change � the coordinator reserved the next one for the stand-repair lane � so the re-planned anchor is a measurement over offline dumps and not a captured frame.
+
+## The probe seam's index.html line is checked at the seam, not minutes into a browser run
+
+**Gate:** `test/probe-seam.test.ts` — the script tag's presence and its order ahead of `/src/main.ts`, the switch's exactness, and that the import is a no-op.
+
+**Landed:** Phase B, 2026-09-17, `d2babb8`.
+
+**Mutation:** the probe's `<script type="module" src="/tools/frame-budget/probe-entry.ts"></script>` line deleted from `index.html`, nothing else changed.
+
+**Failure:** `npx vitest run test/probe-seam.test.ts`, exit status 1, two of five cases red:
+
+```
+× the probe seam in index.html > carries the probe script ahead of the app
+  → index.html does not load <script type="module" src="/tools/frame-budget/probe-entry.ts"></script>, so the
+    frame-budget probe is not on the page: expected -1 to be greater than -1
+```
+
+**Why the case reads tags and not bare paths.** Its first draft matched `"/src/main.ts"`, and the comment above the seam names that path in prose, so `indexOf` found the comment first and the case reported the order backwards — it said the probe came *after* the app while the tag was correctly ahead of it. A search that cannot match returns `-1`, and a search that matches the wrong occurrence returns a plausible index; both read as findings. The case now matches whole script tags. Restoring the line makes all five green.
+
+**Bound.** The case proves the line is present and ordered. It does not prove the probe installs when the switch is on — that is the frame-budget lane's own evidence, in a browser — and it cannot see a line that is present but whose `src` the build fails to resolve, which is the build gate's business.
+
+## The served manifest carries no clock
+
+**Gate:** `test/scene-manifest.test.ts` — two builds from the same facts produce the same bytes, and a one-byte content change still moves `sceneTreeDigest`.
+
+**Landed:** Phase B, 2026-09-17, `ddb87ac`.
+
+**Mutation:** `builtAt: new Date().toISOString(),` put back into `sceneManifest`'s return, nothing else changed.
+
+**Failure:** `npx vitest run test/scene-manifest.test.ts`, exit status 1, two of three cases red — `carries no clock, so two builds of the same facts are the same bytes`, and `agrees across two builds of the same content and moves when content moves`. The second is the one that matters: it is the digest a certificate binds, moving with byte-identical geometry.
+
+**Why both halves are there.** A digest that ignored its input would pass the same-bytes case on its own. The content-change half is what says the fix made the digest sharper rather than blinder. Reverting the mutation makes all three green.
+
+**Bound.** The fixture is a synthetic tree of one manifest and one mesh, not the 117 files the real payload serves, and the facts fed to `sceneManifest` are a fixture rather than a real build. What closes that gap is the payload itself, measured rather than assumed: two consecutive `npm run data:scene` runs in the isolated worktree, with `sceneTreeDigest` taken after each, return the **same** digest — `7f2bab4bf61ba94e0bb96fee5307e75017ed4fc848d063b1c00f1683d290ee63`, 117 files, 301,665,257 bytes. The old manifest carried a clock, which is why the defect register records two such runs differing in exactly `manifest.json`. The bound that remains is the one every digest has: a file changed and changed back between the two calls is invisible.
+
+## The detail tile is deterministic and coarse enough to survive minification
+
+**Gate:** `test/surface-detail.test.ts`.
+
+**Landed:** Phase B, 2026-09-17, `68a4775`.
+
+**Mutations, two of them.** (1) `values[index] = rng()` → `values[index] = Math.random()` in `surfaceDetailBytes`, so the tile is redrawn per call. (2) `SURFACE_DETAIL_METRES.ground` `8` → `2`, so the ground tile is 1.5 px at the overhead framing.
+
+**Failures:** exit status 1 each. The first: `× the surface detail tile is deterministic > gives the same bytes for the same kind, every time`. The second: `× the tile is chosen at a scale the far frames resolve > spans several pixels at the overhead sweep's 1.374 m per pixel`. Restoring either makes all nine green.
+
+**Why the second mutation is a gate and not a comment.** The audit's finding was not "there is no texture" but "the road's grain fades out above 0.015–0.08 m/px" — a surface that is flat exactly where the mid and far frames look. A tile whose period is under a couple of pixels at the overhead shot reproduces that with a texture in place, so the scale is asserted against the camera's own metres per pixel rather than left to taste.
+
+**Bound.** These are properties of the generated bytes and of the chosen scale. They say nothing about how the tinted, lit, tone-mapped result looks; that is the 44-frame set's evidence, and no assertion here stands in for it.
