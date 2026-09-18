@@ -1005,7 +1005,7 @@ The delivered azimuth in that message is the one the run's own failure came from
 
 **Gate:** `npm test` — the case "fails a recorded moment below the clearance floor even when the captured clearance passes, by name" in `test/flythrough-frames.test.ts`, over `judgeSequence` in `tools/flythrough/frames.ts` (`SequenceExpectations.clearanceFloorM`). The flythrough spec feeds it from `CLEARANCE_FLOOR_M` in `tools/flythrough/flythrough.spec.ts`, the same constant its per-frame clearance assertion now reads, so the two places cannot drift apart.
 
-**Landed:** 2026-09-17 on branch `clearance-bound` off `057085f`, in the worktree `artifacts/clearance-bound/wt`. Not merged: the coordinator lands the branch.
+**Landed:** 2026-09-17 as `17082fc` on branch `clearance-bound` off `057085f`, in the worktree `artifacts/clearance-bound/wt`. Not merged: the coordinator lands the branch.
 
 **Why.** The lane's clearance assertion read the camera once per frame, at the instant of the screenshot, so a leg whose vertical control dropped the camera below the floor and lifted it again before the shot passed it. The 2026-09-17 run did exactly that: `artifacts/flythrough2/manifest.json` records `frames/approach/approach-009.png` at a captured clearance of **2.68534 m** — clear of the 1.5 m floor — while the same step's `stand` read `heightBeforeM` **0.19419 m**, and `approach-010.png` at **1.07751 m** before its own control ran. The driver recorded both readings in every frame whose step dispatched a vertical control, and the manifest carries them; nothing read them.
 
