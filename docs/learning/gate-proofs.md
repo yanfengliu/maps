@@ -1252,3 +1252,58 @@ The fourth case, the noon pin, stays green under that mutation, which is the poi
 **What the cases hold, and the one number in them that is not derived from the code.** The certified road rect's mean (17.8) and the two pre-change ambient values at dusk (hemisphere 0.2403, environment 2.8048) are written out rather than recomputed from the daylight ramp, because a case that derives its reference from the same expression it checks agrees with the code by construction; the lift, the predicted luminance under the whole-radiance and the albedo-free-fixed splits, and the 49% albedo-free share all come from those plus the tone curve and the calibrated `radiance = A + K*albedo` fit. The noon pin is the load-bearing one for the tone review: `dark` is 0 with the sun up, so the cartographic noon crossing band's 169.80 of 255 cannot move, and the after-arm capture measures it at 167.2 mean in both arms with mean|d| 0.04 levels.
 
 **Bound.** It gates the lighting numbers, not the pixel. It converts the certified mean through three's ACES filmic curve at the preset's exposure and sRGB and asserts a *prediction*: 33.0 of 255 under the assumption that the whole road radiance follows the ambient, 25.6 under the assumption that the 49% albedo-free share does not. The pixel is the appearance lane's evidence, and the delivered value on the after arm is **27.78 mean, 0.0% of its pixels under 12, 3.580% of albedo between neighbouring pixels against the same frame's pavement control at 5.891%** - between the two predictions, as the pair of cases was written to bracket. What it does not gate, and cannot: the surface's structure still reads at 91.0% of pixels indistinguishable from flat against the pavement's 70.7%, because the display step grows as about `R^0.35` and one level of grain on this albedo needs roughly 7x the radiance. That is a tile-amplitude question for the next change, not a lighting one, and it is in the register and the detailed devlog entry rather than claimed here.
+## The flicker judge fails by name on each class the dusk criterion names, and the crawl bar is pinned by a control on each side
+
+**Gate:** `npm test` - `test/flicker-judge.test.ts`, eleven cases over `judgeFlicker` in `tools/flicker/judge.ts`.
+
+**Landed:** 2026-09-18, branch `flicker/lane` off `9795fc4`, worktree `artifacts/flicker/wt`. **Not merged: the coordinator lands it.** No browser lane was run, per the assignment; the capture specification was written and typechecked and its first real run is sequenced by the coordinator.
+
+**Why this gate exists.** The deliverable's dusk criterion asks the preset to "hold still - no flicker or crawl over a moving sequence". Its first half is answered by `tools/post-chain/`, and the second half had never been judged: `src/app.ts` feeds `cameraStill` into `post.setStill`, so TAA cannot accumulate while the camera moves in any run, and no lane had ever captured two consecutive rendered frames of a moving camera. Every existing capture does the opposite - `OrbitDriver.settle` waits for the camera to stop first.
+
+**Three mutations, each watched red on a synthetic record, and the tree reverted green after each.** The messages below are the assertion the case produced, quoted from the run.
+
+**M1 - the byte-identity check disabled.** In `judgeFlicker`, the branch's condition `!digestDiffers && moved` became `digestDisagrees && !digestDiffers && moved` with `const digestDisagrees = false;` beside it, so the check can never fire and nothing else changed. `npx vitest run test/flicker-judge.test.ts`, exit 1, 2 of 11 cases red:
+
+```
+AssertionError: a frozen scene produced:
+: expected [] to have a length of 1 but got +0
+FAIL  test/flicker-judge.test.ts > the flicker judge > fails a frozen scene by name
+```
+
+**The first version of that case passed this mutation**, and the reason is worth keeping. It asserted `has(report.failures, "byte-identical")` and then, separately, that a failure naming the pair was present. With the byte-identity check deleted the frozen record still tripped a different predicate - the zero-travel wall - and that neighbour's message satisfied the second assertion, so the case stayed green on a judge that had lost the check it was written for. The case now pins the count (`toHaveLength(9)` for nine pairs) and requires every reported failure to be the byte-identity one, so a deleted check cannot be covered by a neighbour's message.
+
+**M2 - the stalled-render-counter check disabled.** The same shape: the branch `frame.frameCountAfter <= previous.frameCountAfter` became `false && ...`. Exit 1, 1 of 11 red:
+
+```
+AssertionError: expected false to be true // Object.is equality
+❯ test/flicker-judge.test.ts:135:52
+FAIL  test/flicker-judge.test.ts > the flicker judge > fails a stalled render counter by name
+```
+
+**M3 - the crawl bar weakened a hundredfold.** `const allowed = contract.crawlFractionPerFrame * Math.max(1, pair.frameGap)` became `... * 100`. Exit 1, 1 of 11 red - and only the crawl case, so the crawl predicate is not being carried by the byte-identity or motion checks:
+
+```
+AssertionError: expected false to be true // Object.is equality
+❯ test/flicker-judge.test.ts:128:52
+FAIL  test/flicker-judge.test.ts > the flicker judge > flags a synthetic high-frequency change that a shift cannot explain, and not a pure shift
+```
+
+**The bar, and the control on each side of it.** `CRAWL_FRACTION_PER_FRAME` is `0.005` of the frame's pixels per rendered frame, and a pair's bound is that times its own measured frame gap. The negative control - ten frames of the synthetic field, each a pure 3 px, 1 px translation of the one before - measures **1.2e-4 to 1.6e-3** per frame. The positive control - the same movement with the detail collapsed on alternate frames - measures **3.7e-2 to 5.2e-2**. The first case asserts the pure shift stays under a third of the bar and the crawl case asserts it is above it, and the crawl case asserts the separation is more than tenfold, so the two controls pin the bar rather than each being checked alone. Every frame pair's crawl message carries its own arithmetic; the crawl case's is, verbatim from the run:
+
+```
+the crawl indicator reads 5.233e-2 of the frame's pixels per rendered frame between syn-00.png and syn-01.png,
+above the contract's 2.500e-2 (the bar of 5.000e-3 per frame over this pair's measured 5-frame span). 2.617e-1 of
+the frame's pixels are a hard local feature - more than 24 of 255 from their own 3x3 neighbourhood - in one frame
+of the pair and not in the other, after the earlier frame was shifted onto the later one by the best rigid
+translation the estimator could find (0, 0 px), and the camera travelled 0.0274 m and turned 0.0006 rad over that
+span. ...
+```
+
+**The estimator is itself a pinned predicate.** The pure-shift case asserts `estimatedShift` equals `{dx: 3, dy: 1}` on every pair - the translation the frames were built with - rather than merely being non-zero. That is the strongest statement in the file and it is load-bearing: the judge's first synthetic field was a smooth ramp with a level of noise, from which a 6 px shift scored as well as the true 3 px one and the "pure shift" case measured a frame where every pixel had changed. The field is now built with structure at three scales plus hard edges (`test/flicker-synthetic.ts`), and the assertion is what stops a return to a field the estimator can only align by accident.
+
+**One real-frame check, and it is not a verdict.** The last case reads the post-chain lane's archive - the only rendered bytes on this machine - and runs the whole instrument over them: decode, digest, pose arithmetic, shift estimate, crawl. It asserts the instrument's digest of `rest-a.png` and `motion-07.png` equals the sha256 `artifacts/post-chain/motion/motion.json` recorded for them, and that every figure is finite. Measured on the surviving frames: `rest-a -> motion-07` is 219 rendered frames apart with crawl `2.39e-4`, `motion-07 -> stop-00` is 120 frames apart with crawl `5.05e-4`. Those spans are two orders of magnitude coarser than the cadence this lane captures at, so this case proves the predicates *run* over real pixels and says so; it is not evidence that the dusk preset holds still. The case fails by name when the archive is absent rather than returning quietly.
+
+**Bound.** All three mutations were watched on synthetic records assembled in-process from a field written by `test/flicker-synthetic.ts` - real PNGs through `tools/visual/png.ts`, but no lens, no tone curve, no parallax and no population. The bar of `0.005` was set from those two controls and **no real dusk pair has ever been measured against it**: a rendered frame carries noise, anti-aliasing and sub-pixel motion that the synthetic field does not, so the number that matters is the first real run's and this file deliberately does not claim it. What the gate proves is that each predicate can fail, by name, on the defect class it exists for; it cannot prove that the classes are calibrated to this renderer.
+
+**The whole lane is `tools/` and `test/`.** No file under `src/`, `index.html` or `vite.config.ts` is touched, which was a requirement rather than a coincidence: any `src/` change moves `dist` and strands the certificate `685d0eaeb5669287` issued at `a7f865d`. The first version of this lane added `RenderStatus.simulatedSeconds` to `src/harness/bridge.ts` to carry a frame's simulation step; it was removed, and the migration is recorded because the substitute is not the obvious one. `population().ticks`, which the flythrough lane records, is **0 for a whole `?agents=`-free run** - `src/app.ts` calls `agents.attach(...)` only when a population is requested, and `src/agents/agents.ts` registers `population?.update` against a `population` that stays `null` otherwise, so `status()` returns `emptyPopulationStatus()` - and this lane captures `?agents=`-free on purpose so a crossing vehicle cannot be read as a crawl. The step is therefore derived from the page's own clock (`(performance.now() - performance.timeOrigin) * 60`, clamped to the frame counter) and `FlickerFrame.tick` is `number | null`, with `null` recorded rather than 0 so an absent step is never read as a step of zero. The bound is in the field's own docstring: it cannot see a fixed-step clock that stopped while frames kept being drawn, which is why the stalled-render-counter predicate is what carries the sequence's aliveness. Verified by building both revisions on this machine on 2026-09-18: `9795fc4` and the lane's tree both emit `dist/assets/index-_LQ7yEQN.js`, 981,039 bytes, sha256 `a5b9d4146308fea52447fbba8eee0b01bddaaf21d83fae1ae49f0237bb374364e`.
+
