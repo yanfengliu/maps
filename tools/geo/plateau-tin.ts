@@ -137,24 +137,50 @@ export function sampleTin(
  * writes them, and it is the caller's job to clip. The return value is the number
  * of triangles the file held, so a caller clipping to the area of interest can
  * say what share of the cell it kept rather than only how much it kept.
+ *
+ * **What is left in the buffer between chunks is the whole of the correctness
+ * here.** Only an unclosed `<gml:Triangle>` may survive into the next chunk. The
+ * buffer used to be cut back to the last *opening* tag the chunk held, which is a
+ * triangle that has already been yielded whenever the chunk ends on its closing
+ * tag — so it was parsed a second time on the next chunk. Measured on the real
+ * 360.6 MB `533935_dem_6697_op.gml`: the document holds 1,101,033
+ * `<gml:Triangle>` elements and this reader yielded 1,101,417 before the fix, 384
+ * of them double-counted, and 65 exact duplicate triangles survived the clip into
+ * `data/scene/terrain.mesh`. `test/plateau-tin-stream.test.ts` holds the chunk
+ * boundary that reproduces it.
  */
+export interface StreamTinOptions {
+  /**
+   * Bytes to read at a time. Only a test sets this, so that a chunk boundary can
+   * be put exactly where the defect lives instead of wherever a 64 KiB read falls.
+   */
+  chunkSize?: number;
+}
+
+const TRIANGLE_OPEN = "<gml:Triangle>";
+const TRIANGLE_CLOSE = "</gml:Triangle>";
+
 export async function streamTinTriangles(
   path: string,
   onTriangle: (triangle: TinTriangle) => void,
+  options: StreamTinOptions = {},
 ): Promise<number> {
   let tail = "";
   let count = 0;
 
-  for await (const chunk of createReadStream(path, { encoding: "utf8" })) {
+  for await (const chunk of createReadStream(path, {
+    encoding: "utf8",
+    highWaterMark: options.chunkSize,
+  })) {
     tail += chunk as string;
 
     let searchFrom = 0;
     for (;;) {
-      const open = tail.indexOf("<gml:Triangle>", searchFrom);
+      const open = tail.indexOf(TRIANGLE_OPEN, searchFrom);
       if (open === -1) break;
-      const close = tail.indexOf("</gml:Triangle>", open);
+      const close = tail.indexOf(TRIANGLE_CLOSE, open);
       if (close === -1) break;
-      const end = close + "</gml:Triangle>".length;
+      const end = close + TRIANGLE_CLOSE.length;
       for (const triangle of parseTin(tail.slice(open, end))) {
         onTriangle(triangle);
         count += 1;
@@ -162,8 +188,15 @@ export async function streamTinTriangles(
       searchFrom = end;
     }
 
-    const lastOpen = tail.lastIndexOf("<gml:Triangle>");
-    tail = lastOpen === -1 ? tail.slice(-"<gml:Triangle>".length) : tail.slice(lastOpen);
+    // Everything complete has just been yielded, so what is kept is only what
+    // cannot be parsed yet: the last unclosed opening tag, or — when the chunk
+    // ended inside the tag itself — the few trailing characters that could be its
+    // beginning. Keeping the opening tag of an already-parsed triangle is what
+    // made this reader count 384 of them twice.
+    const lastOpen = tail.lastIndexOf(TRIANGLE_OPEN);
+    const lastClose = tail.lastIndexOf(TRIANGLE_CLOSE);
+    tail =
+      lastOpen > lastClose ? tail.slice(lastOpen) : tail.slice(-(TRIANGLE_OPEN.length - 1));
   }
 
   if (count === 0) {
