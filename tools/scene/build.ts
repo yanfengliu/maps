@@ -41,12 +41,13 @@ import {
   type SceneManifest,
 } from "../../src/world/scene-data.ts";
 import { planeRectangularToWorld } from "../../src/world/frame.ts";
+import { decodeMesh } from "../../src/world/mesh.ts";
 import { PLATEAU_3DTILES } from "../data/manifest.ts";
 import { readCityGmlBuildings } from "../geo/citygml-buildings.ts";
 import { geographicToPlaneRectangular } from "../geo/plane-rectangular.ts";
 import { buildBuildings } from "./build-buildings.ts";
 import { buildRoads } from "./build-roads.ts";
-import { buildTerrain } from "./build-terrain.ts";
+import { buildTerrain, verifyTerrainIsWatertight } from "./build-terrain.ts";
 import { cleanSceneGeometry } from "./clean-geometry.ts";
 import { writeMarkings } from "./build-markings.ts";
 import { buildPavementPresentation, writePavementPresentation } from "./pavement-recipe.ts";
@@ -107,6 +108,20 @@ async function main(): Promise<void> {
     `      relief inside the box ${terrain.result.minimumHeightM.toFixed(2)} to ` +
       `${terrain.result.maximumHeightM.toFixed(2)} m; ground at the crossing ` +
       `${terrain.result.groundAtOriginM.toFixed(2)} m`,
+  );
+
+  // The written file, read back, rather than the builder's own arrays: a census
+  // over the object the builder just produced proves only that the builder agrees
+  // with itself. This is the gate the terrain-hole defect's register entry names,
+  // and it has to be able to fail on a mesh that reached disk without the cap.
+  const terrainWatertight = verifyTerrainIsWatertight(
+    decodeMesh(new Uint8Array(await readFile(join(SCENE_ROOT, "terrain.mesh")))),
+    "data/scene/terrain.mesh",
+  );
+  log(
+    `      watertight: ${terrainWatertight.boundaryEdgeCount} rim edges, one outer rim of ` +
+      `${terrainWatertight.outerLoopVertices} vertices / ${terrainWatertight.outerLoopPerimeterM.toFixed(1)} m, ` +
+      "no holes",
   );
 
   if (
@@ -202,6 +217,19 @@ async function main(): Promise<void> {
       minimumHeightM: terrain.result.minimumHeightM,
       maximumHeightM: terrain.result.maximumHeightM,
       groundAtOriginM: terrain.result.groundAtOriginM,
+      closedHoleCount: terrain.result.holes.holes.length,
+      capTriangleCount: terrain.result.capTriangleCount,
+      // The invention, nameable. Each record is the rim as it was measured before
+      // the fan: the apex is the rim's own vertex mean, which is a position no
+      // survey measured, and the mesh carries it as an ordinary vertex.
+      closedRims: terrain.result.holes.holes.map((loop) => ({
+        rimVertexCount: loop.vertices.length,
+        rimPerimeterM: loop.perimeterM,
+        apexX: loop.centroidX,
+        apexY: loop.centroidY,
+        apexZ: loop.centroidZ,
+        rimAreaM2: Math.abs(loop.signedAreaXZ),
+      })),
     },
     roads: {
       lowestVertexM: roads.result.lowestVertexM,

@@ -31,7 +31,34 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { sceneManifest, type SceneManifestInputs } from "../tools/scene/scene-manifest.js";
+import type { ClosedTerrainRim } from "../src/world/scene-data.js";
 import { sceneTreeDigest } from "../tools/visual/verify-output.js";
+
+/**
+ * The fourteen rims the real build closes, as the cap measures them.
+ *
+ * Real values, from the capped build of the pinned DEM: the rim counts and perimeters
+ * are what `verifyTerrainIsWatertight` lists worst-first, the apex is the rim's own
+ * vertex mean (which is the position the fan inserts), and the areas are the
+ * projected rim areas. They are here so the manifest's record of the invention is
+ * pinned against the census rather than against a synthetic shape.
+ */
+const CLOSED_RIMS: readonly ClosedTerrainRim[] = [
+  { rimVertexCount: 54, rimPerimeterM: 369.4, apexX: 426.8, apexY: 11.83, apexZ: 391.3, rimAreaM2: 1325.0 },
+  { rimVertexCount: 28, rimPerimeterM: 189.7, apexX: 533.1, apexY: 11.33, apexZ: 500.5, rimAreaM2: 650.0 },
+  { rimVertexCount: 24, rimPerimeterM: 169.7, apexX: 329.3, apexY: 12.35, apexZ: 308.9, rimAreaM2: 550.0 },
+  { rimVertexCount: 22, rimPerimeterM: 155.6, apexX: 276.8, apexY: 12.25, apexZ: 251.4, rimAreaM2: 500.0 },
+  { rimVertexCount: 16, rimPerimeterM: 109.0, apexX: 586.5, apexY: 10.8, apexZ: 568.9, rimAreaM2: 350.0 },
+  { rimVertexCount: 14, rimPerimeterM: 99.0, apexX: 656.8, apexY: 10.37, apexZ: 636.4, rimAreaM2: 300.0 },
+  { rimVertexCount: 14, rimPerimeterM: 99.0, apexX: 621.8, apexY: 10.34, apexZ: 606.4, rimAreaM2: 300.0 },
+  { rimVertexCount: 15, rimPerimeterM: 89.5, apexX: 579.0, apexY: 26.42, apexZ: -403.1, rimAreaM2: 512.5 },
+  { rimVertexCount: 8, rimPerimeterM: 56.6, apexX: 694.3, apexY: 9.74, apexZ: 673.9, rimAreaM2: 150.0 },
+  { rimVertexCount: 8, rimPerimeterM: 52.4, apexX: 707.4, apexY: 10.57, apexZ: 693.9, rimAreaM2: 150.0 },
+  { rimVertexCount: 6, rimPerimeterM: 42.4, apexX: 496.8, apexY: 10.37, apexZ: 461.4, rimAreaM2: 100.0 },
+  { rimVertexCount: 6, rimPerimeterM: 42.4, apexX: 566.8, apexY: 10.35, apexZ: 541.4, rimAreaM2: 100.0 },
+  { rimVertexCount: 6, rimPerimeterM: 42.4, apexX: 681.8, apexY: 9.95, apexZ: 656.4, rimAreaM2: 100.0 },
+  { rimVertexCount: 6, rimPerimeterM: 38.3, apexX: 714.3, apexY: 10.55, apexZ: 711.4, rimAreaM2: 100.0 },
+];
 
 function facts(): SceneManifestInputs {
   return {
@@ -42,6 +69,9 @@ function facts(): SceneManifestInputs {
       minimumHeightM: 8.71,
       maximumHeightM: 36.35,
       groundAtOriginM: 15.2,
+      closedHoleCount: 14,
+      capTriangleCount: 227,
+      closedRims: CLOSED_RIMS,
     },
     roads: {
       roadCount: 3248,
@@ -99,6 +129,53 @@ describe("the scene manifest is a function of its facts", () => {
     // The rounding happens on the published value rather than beside it, so a fact
     // that is already published cannot be recorded unrounded and drift.
     expect(JSON.stringify(manifest.buildings)).toContain("\"textureMegapixels\":551.9");
+  });
+
+  it("records the invented ground rim by rim, so a reviewer can find it", () => {
+    const manifest = sceneManifest(facts());
+    expect(manifest.terrain.closedHoleCount).toBe(14);
+    expect(manifest.terrain.capTriangleCount).toBe(227);
+    expect(manifest.terrain.closedRims).toHaveLength(14);
+    expect(
+      manifest.terrain.closedRims.reduce((total, rim) => total + rim.rimVertexCount, 0),
+      "the closed rims' own vertex counts must add up to the cap's triangle count",
+    ).toBe(227);
+    // The F1 rim — 15 rim vertices, 89.5 m, (579.0, -403.1) at 26.42 m — is the one
+    // the defect was reported from, and it is the reason the apex height is recorded
+    // at all: the fan puts a vertex 26 m above sea level in the ground there.
+    const f1 = manifest.terrain.closedRims.find((rim) => rim.rimVertexCount === 15);
+    expect(f1).toEqual({
+      rimVertexCount: 15,
+      rimPerimeterM: 89.5,
+      apexX: 579,
+      apexY: 26.42,
+      apexZ: -403.1,
+      rimAreaM2: 512.5,
+    });
+    // The records are rounded the way the other measured facts are, so a rebuild
+    // from the same mesh writes the same bytes.
+    const unrounded = sceneManifest({
+      ...facts(),
+      terrain: {
+        ...facts().terrain,
+        closedRims: [{ ...CLOSED_RIMS[0]!, apexX: 426.80001, rimAreaM2: 1325.04 }],
+        closedHoleCount: 1,
+        capTriangleCount: 54,
+      },
+    });
+    expect(unrounded.terrain.closedRims[0]!.apexX).toBe(426.8);
+    expect(unrounded.terrain.closedRims[0]!.rimAreaM2).toBe(1325.0);
+  });
+
+  it("refuses to publish cap facts that disagree with each other", () => {
+    // The count, the triangle total and the per-rim records are the same fact told
+    // three ways. A file where they disagree looks complete and is not.
+    expect(() =>
+      sceneManifest({ ...facts(), terrain: { ...facts().terrain, closedHoleCount: 13 } }),
+    ).toThrow(/13 as their count/);
+    expect(() =>
+      sceneManifest({ ...facts(), terrain: { ...facts().terrain, capTriangleCount: 226 } }),
+    ).toThrow(/cap triangles/);
   });
 });
 
