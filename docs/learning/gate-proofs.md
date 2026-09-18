@@ -1224,3 +1224,31 @@ pair's own bearing is that plus a half turn: expected 3.141592653589793 to be le
 **It caught two mistakes in its own first draft, which is the reason to write the numbers down rather than re-derive them.** Dropping `sin(polar)` from the controls' formula put the opening camera 314 m out; deriving the flown camera as the target minus the scorer's offset returned the aim camera itself, so the "two cameras are 52 m apart" case failed at 0.00 m.
 
 **Bound.** It reads constants and the run's recorded numbers. It does not run a browser, does not read a dump, and cannot prove which pose holds the crowd: `node tools/flythrough/aim.ts --dump artifacts/crowd-aim-fix/dump-t3000.json` is that measurement, and it reports the scored pose's own near counts (152 / 99 / 95 / 100 / 100 / 10 walking bodies inside 45 m at ticks 3,000 to 7,200) and its 3.9 degree axis for the camera at `(456.0, 389.7)`. What it proves is that the pair, the derived flown camera and the route's own pans and pushes all name the same two ends of one line, so an edit that swaps them fails in the unit gate rather than 53 m away in a frame. **It does not license changing the constants to describe the flown pose**: `CROWD_TARGET` is the pan the approach closes on and the crowd leg's push direction, so swapping the roles to make the pair's own bearing equal `CROWD_AZIMUTH` would move the flown pose 53.1 m and re-aim both legs. The tension is stated in the plan and in the test rather than forced.
+
+## The dusk ambient gate: the near-field road's own measured value against the black floor
+
+**Gate:** `npm test` - `test/road-tone.test.ts`, the four cases in the describe block "the dusk ambient is what lifts the dark near field".
+
+**Landed:** 2026-09-18, branch `dusk-light` off `9795fc4`. Not merged: the coordinator lands it.
+
+**The defect it gates.** The certified satellite `plaza-az000` near-field road - the `near-pavement` rect, 320,540 640x180, which is the `roads:plateau-tran` mesh - read mean luminance **17.80 of 255** with **86.8% of neighbouring pixel pairs bit-identical**, against 43.77 for the pavement in the same frame. The palette lift that preceded this change delivered 10.4 to 17.8 and the appearance lane's arithmetic said the illumination-driven share of that surface's radiance needed about 2.5x to reach 30. The fix is a `dark`-ramped dusk fill on `hemisphereIntensity` (0.2) and `environmentIntensity` (2.55) in `src/scene/time-of-day.ts`.
+
+**Mutation.** Both constants held at 0, which is exactly the pre-change lighting: at the dusk preset `hemisphereIntensity` returns to `0.16 + 0.42 * daylight` and `environmentIntensity` to `1.5 + 1.5 * dark`, nothing else changed. `npx vitest run test/road-tone.test.ts`, exit status 1, in 0.4 s, three of ten cases failing:
+
+```
+the dusk environment is 2.805 against the certified 2.8048: a lift of 1.00x. The certified satellite
+near-field road is 17.8 of 255 at this preset with 49% of its radiance albedo-free, so a lift that does
+not move the ambient does not move the rect.: expected 1.0000893267658042 to be greater than 1.5
+
+the certified satellite near-field road is 17.8 of 255 at dusk; the shipped ambient's 1.00x lift puts it
+at 17.8 against a floor of 20: expected 17.801872498348775 to be greater than or equal to 20
+
+with 49% of the certified 17.8 of 255 held fixed as albedo-free and the rest lifted 1.00x, the road lands
+at 17.8 against a floor of 20: expected 17.800951764227776 to be greater than or equal to 20
+```
+
+The fourth case, the noon pin, stays green under that mutation, which is the point of it: it is the control for the direction of the change rather than for its size.
+
+**What the cases hold, and the one number in them that is not derived from the code.** The certified road rect's mean (17.8) and the two pre-change ambient values at dusk (hemisphere 0.2403, environment 2.8048) are written out rather than recomputed from the daylight ramp, because a case that derives its reference from the same expression it checks agrees with the code by construction; the lift, the predicted luminance under the whole-radiance and the albedo-free-fixed splits, and the 49% albedo-free share all come from those plus the tone curve and the calibrated `radiance = A + K*albedo` fit. The noon pin is the load-bearing one for the tone review: `dark` is 0 with the sun up, so the cartographic noon crossing band's 169.80 of 255 cannot move, and the after-arm capture measures it at 167.2 mean in both arms with mean|d| 0.04 levels.
+
+**Bound.** It gates the lighting numbers, not the pixel. It converts the certified mean through three's ACES filmic curve at the preset's exposure and sRGB and asserts a *prediction*: 33.0 of 255 under the assumption that the whole road radiance follows the ambient, 25.6 under the assumption that the 49% albedo-free share does not. The pixel is the appearance lane's evidence, and the delivered value on the after arm is **27.78 mean, 0.0% of its pixels under 12, 3.580% of albedo between neighbouring pixels against the same frame's pavement control at 5.891%** - between the two predictions, as the pair of cases was written to bracket. What it does not gate, and cannot: the surface's structure still reads at 91.0% of pixels indistinguishable from flat against the pavement's 70.7%, because the display step grows as about `R^0.35` and one level of grain on this albedo needs roughly 7x the radiance. That is a tile-amplitude question for the next change, not a lighting one, and it is in the register and the detailed devlog entry rather than claimed here.
