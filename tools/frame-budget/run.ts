@@ -21,6 +21,13 @@ import { fileURLToPath } from "node:url";
 
 import type { Page } from "@playwright/test";
 
+import { PROBE_QUERY, withProbe } from "./probe-switch.js";
+
+// Re-exported so a spec opens pages through this lane's own URL builder rather than
+// spelling the switch itself: the page's gate and the lane's URLs then come from
+// one definition and cannot disagree.
+export { PROBE_QUERY, withProbe };
+
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 /** This lane's own ignored directory. Nothing here is ever written anywhere else. */
 export const OUT_DIR = resolve(ROOT, "artifacts/frame-budget");
@@ -80,9 +87,10 @@ export async function readProbe(page: Page): Promise<ProbeState> {
     const probe = (globalThis as unknown as { __frameBudgetProbe?: ProbeState }).__frameBudgetProbe;
     if (!probe) {
       throw new Error(
-        "The frame-budget probe is not on the page. tools/frame-budget/probe-entry.ts is loaded by a script " +
-          "line in index.html ahead of /src/main.ts; without it the frame boundary and the tick cost are not " +
-          "observed and no number from this run would describe the app.",
+        `The frame-budget probe is not on the page. tools/frame-budget/probe-entry.ts is loaded by a script ` +
+          `line in index.html ahead of /src/main.ts, and it installs nothing unless the URL asks for it with ` +
+          `"${PROBE_QUERY}". Open the page with \`withProbe(url)\` from ./run.js, or no frame boundary and no ` +
+          "tick cost is observed and no number from this run describes the app.",
       );
     }
     return {

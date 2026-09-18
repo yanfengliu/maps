@@ -36,7 +36,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { OrbitDriver } from "../visual/orbit.js";
 import {
   buildDigest, interiorIntervals, intervalsFrom, machineFacts, readProbe, resetProbe, round,
-  statsOf, writeResult,
+  statsOf, withProbe, writeResult,
 } from "./run.js";
 
 /** The acceptance state, read from the target rather than restated: `?agents=1` is 3,000 and 200. */
@@ -61,7 +61,7 @@ interface PopulationSnapshot {
 }
 
 test("the frame interval at 1920x1080 with 3,000 animated pedestrians", async ({ page }) => {
-  await page.goto(POPULATED_URL, { timeout: 90_000 });
+  await page.goto(withProbe(POPULATED_URL), { timeout: 90_000 });
   const driver = new OrbitDriver(page);
   const status = await driver.waitForFirstFrame(120_000);
 
