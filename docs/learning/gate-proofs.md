@@ -1037,3 +1037,41 @@ The mutation leaves the judge silent about a stand that read 0.19 m, which is th
 The lowest recorded moment in the run is approach-009's 0.19419 m, so the run would need a clearance floor at or below 0.194 m to pass, and the floor is the existing 1.5 m the per-frame assertion has always used. Both offending frames are in the approach leg, whose own plan floor is `minClearanceM` 2, so reading the plan's per-leg floor instead fails the same two moments and needs the same 0.194 m to pass. The dip is real: that step's vertical control stood the camera 0.19 m above the ground on its way to a 4.5 m stand, and the captured 2.685 m is the `holdClearance` nudge that ran afterwards. A check made to pass this run would have to accept a camera 19 cm above the ground.
 
 **Bound.** The check reads only the moments the record kept: the captured clearance, and the stand's `heightBeforeM` and `heightAfterM` where the plan dispatched a vertical control. A path that dips below the floor *between* two recorded moments, or during a step whose plan ran no stand, is invisible here, and the message says so — the claim is exactly the case's name and not that the continuous path never dipped. It also fails by name a frame whose record carries no captured clearance at all, so a record that drops the field reports "did not run" rather than reading as a pass. The floor itself is one constant shared with the per-frame assertion and is **not** the plan's per-leg `minClearanceM`: the legs set 40 m (overview) and 2 m (the three street legs) while the assertion has always used 1.5 m, and this unit did not change which floor the lane holds itself to.
+
+## The flythrough's vertical control finishes its correction inside the step, so the stand never reads below the leg's floor
+
+**Gate:** `npm test` — six cases in `test/flythrough-stand.test.ts`, over `runVerticalCorrection` and `standConverge` in `tools/flythrough/driver.ts`. The central two are "converges to the height the step is aiming at, above the floor, within the drag budget" and "fails a stand whose correction stopped after one drag, by name, even though its capture is clear of the floor". Both drive the **shipped** loop, `runVerticalCorrection`, with a camera and a ground profile in place of a browser, so the convergence they assert is the loop the lane runs and not a copy of it.
+
+**Landed:** 2026-09-17 in the worktree `artifacts/stand-repair/wt` off `999a15b`. Not merged: the coordinator lands the branch.
+
+**Why.** The clearance check that landed as `17082fc` reported the recorded run's two sub-floor moments correctly, and this is the mechanism behind them, measured in the browser on 2026-09-17. The stand drove one capped drag a step, and `OrbitControls` applies a drag's spherical delta with `_sphericalDelta.phi *= (1 - dampingFactor)` every frame (`three/examples/jsm/controls/OrbitControls.js`, `dampingFactor` 0.95), so a drag delivers part of the angle it asked for; the rest lands as a tail. Measured on the approach leg: step 10 asked for 0.03128 rad and the camera's polar moved 0.0165 rad before the next step's zoom ran. The zoom is the rest of it, and it is exact — `_spherical.radius *= _scale` scales the camera's whole offset from the target, the vertical term included. At 4.5 m of offset a 0.788 factor is 3.41 m, and over the crowd's ground, which climbs from 21.56 m to 26.41 m along that stretch, the camera lands under the terrain. The run before the fix, on the repaired scene, recorded `approach-010` at `heightBeforeM` **0.6557 m** and a captured clearance of **3.052 m**: the frame was over the floor and the moment the same step's vertical control saw was not.
+
+**Fix.** The correction is iterated to its aim within the step (`runVerticalCorrection`, bounded by `MAX_STAND_DRAGS` 8, stopping at `STAND_CONVERGENCE_M` 0.05 m); the aim is clamped to the leg's floor, carried per step as `standFloorM` from `APPROACH_FLOOR_M` 2 in `tools/flythrough/plan.ts`; and the floor is answered **inside** the step, between the zoom that lowers the camera and the pan that moves it on, by `raiseToFloor`. That order is the mechanism rather than a detail: a pan's two axes are horizontal (`screenSpacePanning` is false), so a camera that clears the floor after the zoom clears it for the rest of the step. The floor aim is held above the floor by `max(0.1, 0.03 * distance)` metres, because the height a drag's return reports is read while that gesture is still landing.
+
+**Mutation:** the iteration loop disabled — `while (state.commanded && state.iteration < MAX_STAND_DRAGS) {` → `while (false) {` in `tools/flythrough/driver.ts`, one occurrence, nothing else changed. It was applied from a script that asserts the marker count and re-reads the file to confirm the bytes changed before running, because a PowerShell `Set-Content -NoNewline` in this session failed on an unknown parameter and the "mutation" it reported as green had never been written.
+
+**Failure:** `npx vitest run test/flythrough-stand.test.ts`, exit status 1, three of six cases red:
+
+```
+ × the flythrough's vertical control inside one step > converges to the height the step is aiming at, above the floor, within the drag budget
+   → expected 0.34130161639351186 to be greater than or equal to 2
+ × the flythrough's vertical control inside one step > fails a stand whose correction stopped after one drag, by name, even though its capture is clear of the floor
+   → expected -0.7786983836064856 to be greater than 1.5
+ × the flythrough's vertical control inside one step > holds a rung that would descend below the leg's floor at the floor instead
+   → expected false to be true // Object.is equality
+```
+
+The first is the lowest recorded moment the run's own case now reads — 0.341 m against the leg's 2 m floor — and it is the whole claim. The second is the same leg with the judge read over it: with the loop dead the fixture's rescue leaves the camera at **-0.78 m** above the ground, and the case fails on its own floor assertion before its `judgeSequence` expectation is reached, which is why the message is the fixture's and not the judge's. Restoring the bytes makes all six green.
+
+**The run this was fixed for, re-flown on the frozen tree (2026-09-17, `npm run visual:flythrough`, 46 frames, port 4323):** `judgeSequence` reported **zero failures**, and the manifest carries no `failures` key. Per-leg lowest recorded moment, new beside the old:
+
+| leg | before (`artifacts/flythrough2`, pre-fix) | after (this run) |
+| --- | --- | --- |
+| overview | 68.084 m (captured) | 57.241 m (captured) |
+| approach | **0.194 m** (stand before) | **2.908 m** (captured) |
+| crowd | 3.640 m (stand before) | 2.899 m (stand before) |
+| ascent | 4.400 m (stand before) | 3.550 m (stand before) |
+
+The approach's own floor is 2 m and its lowest recorded moment is now above it. The two frames the check failed by name read 4.626 m and 3.431 m at their captures, against 2.68534 m and 3.10093 m before, while the moments that failed — the stand's 0.19419 m and 1.07751 m — are gone: those steps' stands now read 4.339 m and 3.333 m before their corrections.
+
+**Bound.** The fixture models the drag's damping as a constant fraction of the commanded angle, 0.52, measured once on 2026-09-17; the browser's own delivery is asserted only by `npm run visual:flythrough`, which this unit does not run. The ground profile is the served terrain's shape over the crowd's knot, not the mesh itself, so the fixture proves the loop converges under that model and the judge names a stand left under the floor — it does not prove what the controls deliver, and it opens no frame. The 0.002 rad stopping rule inside `standConverge` is not exercised by any case: at a 0.05 m tolerance the pointer's resolution always fires first, which the case says in as many words rather than asserting a branch it never reaches.
