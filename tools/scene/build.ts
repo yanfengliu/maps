@@ -50,6 +50,7 @@ import { buildTerrain } from "./build-terrain.ts";
 import { cleanSceneGeometry } from "./clean-geometry.ts";
 import { writeMarkings } from "./build-markings.ts";
 import { buildPavementPresentation, writePavementPresentation } from "./pavement-recipe.ts";
+import { sceneManifest } from "./scene-manifest.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const DATA_ROOT = join(REPO_ROOT, "data");
@@ -189,9 +190,11 @@ async function main(): Promise<void> {
   log("cross-check — PLATEAU CityGML, the source of record");
   await crossCheckAgainstCityGml(index.buildings);
 
-  const manifest: SceneManifest = {
-    version: 1,
-    builtAt: new Date().toISOString(),
+  // `sceneManifest` and not an object literal here, because the manifest is served
+  // and `sceneTreeDigest` folds it into the certificate's scene binding: it has to
+  // be a function of these facts alone, with no clock in it. See
+  // tools/scene/scene-manifest.ts.
+  const manifest: SceneManifest = sceneManifest({
     terrain: {
       triangleCount: terrain.result.triangleCount,
       insideAoiTriangleCount: terrain.result.insideAoiTriangleCount,
@@ -218,12 +221,12 @@ async function main(): Promise<void> {
       missingHeightCount: buildings.missingHeightCount,
       missingStoreysCount: buildings.missingStoreysCount,
       triangleCount: buildings.triangleCount,
-      textureMegapixels: Number(buildings.textureMegapixels.toFixed(1)),
+      textureMegapixels: buildings.textureMegapixels,
       largestTexture: buildings.largestTexture,
-      geoidUndulationM: Number(buildings.geoidUndulationM.toFixed(3)),
+      geoidUndulationM: buildings.geoidUndulationM,
     },
     landmarks,
-  };
+  });
   await writeFile(join(SCENE_ROOT, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
   console.log(
