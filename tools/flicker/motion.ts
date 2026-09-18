@@ -23,13 +23,17 @@
  * A path is walked as a run of short gestures: press, a few moves in the same
  * direction, release - repeated while the capture runs, so the camera is always
  * mid-motion when `page.screenshot()` opens its shutter. The gestures are small
- * enough (a few CSS pixels each) that the picture crawls rather than sweeps,
- * which is the regime the criterion names.
+ * enough that the picture crawls rather than sweeps, which is the regime the
+ * criterion names - and the scale is measured rather than asserted, so see
+ * `GESTURE_PX` for the number and where it comes from.
  *
  * The pointer is walked within a box at the centre of the canvas, and the
  * azimuth it produces is bounded by the arc's own radius: a bounded drag is what
  * keeps the camera inside the leg instead of turning past the pose the record
- * claims to be about.
+ * claims to be about. The radius is also half of the input tuning, because the
+ * orbit's angular step is the drag divided by it - a wider circle turns the same
+ * pointer pixels into a smaller rotation, which is how a gesture that stays
+ * inside Chromium's pointer resolution still produces a visible crawl.
  */
 
 import type { Page } from "@playwright/test";
@@ -59,16 +63,40 @@ export function isMotionPattern(value: string): value is MotionPattern {
  * How far each gesture moves the pointer, in CSS pixels, and how many moves it
  * is split into.
  *
- * 4 px of drag is about 0.035 rad of azimuth on this canvas, which at the hero
- * pose moves the picture by a few pixels - a slow crawl rather than a sweep.
+ * **Measured, and 8x smaller than the value this lane first shipped.** The first
+ * run's record (`artifacts/flicker/RUN-01-REPORT.md`, `2cdc349`) had `GESTURE_PX`
+ * at 4 and a comment claiming that "4 px of drag is about 0.035 rad of azimuth
+ * on this canvas, which at the hero pose moves the picture by a few pixels". Both
+ * numbers were wrong in the same direction: the pose deltas the run recorded are
+ * 0.0320-0.0368 rad and 1.44-1.64 m of camera travel between adjacent stills,
+ * which at the 45 m hero stand is a ~30-35 px picture move per pair - about ten
+ * times the `SEARCH_RADIUS` the judge searches, so the estimator could not follow
+ * the picture and returned `0, 0` on four of nine pairs.
+ *
+ * 0.5 px of drag on the radius below is a 0.0056 rad step in the path parameter,
+ * which is the scale the estimator is built for. It is also close to the floor of
+ * Chromium's pointer coordinates, so the radius is what carries the rest of the
+ * reduction: `PATH_RADIUS_FRACTION` is 0.30 of the canvas's short side rather
+ * than 0.05, and a drag on a six-times wider circle turns the camera six times
+ * less for the same pointer pixels.
+ *
  * The gesture is split into four moves so the incremental path `OrbitControls`
  * takes per `pointermove` is the path being exercised, not one jump.
  */
-const GESTURE_PX = 4;
+const GESTURE_PX = 0.5;
 const MOVES_PER_GESTURE = 4;
 
-/** The circle the pointer walks on, as a fraction of the canvas box. */
-const PATH_RADIUS_FRACTION = 0.05;
+/**
+ * The circle the pointer walks on, as a fraction of the canvas box's short side.
+ *
+ * 0.05 in the first version, where it made the same 4 px drag a 0.111 rad turn.
+ * 0.30 is 6x wider: the gesture's angular step is the drag over this radius, and
+ * the picture's motion is proportional to the angular step, so this is the other
+ * factor in the 10x cut. It is bounded from above by the canvas itself - the
+ * pointer must stay on the canvas for the drag to reach the controls - and 0.30
+ * leaves a 0.20-of-short-side margin on every side.
+ */
+const PATH_RADIUS_FRACTION = 0.3;
 
 export interface MotionConfig {
   pattern: MotionPattern;
@@ -171,9 +199,9 @@ export class MotionPath {
 
     const centreX = box.x + box.width / 2;
     const centreY = box.y + box.height / 2;
-    // One full turn of the path would be a large rotation, so the radius is
-    // small and the angle advances by the gesture's own arc. `angle` is the
-    // path parameter and is not an azimuth: what the camera does with it is
+    // One full turn of the path would be a large rotation, so the angle
+    // advances by the gesture's own arc - the drag over this radius. `angle` is
+    // the path parameter and is not an azimuth: what the camera does with it is
     // measured from the bridge, never computed here.
     const radius = Math.min(box.width, box.height) * PATH_RADIUS_FRACTION;
     this.angle += (GESTURE_PX / radius) * 1;
@@ -188,11 +216,14 @@ export class MotionPath {
 
     if (this.config.pattern === "ascent") {
       // Wheel ticks interleaved with the drags, so the camera is changing
-      // distance at the same time as it turns. The tick is applied every few
-      // steps rather than every one: a tick is a 5% change of radius, which
-      // over a second is a dolly rather than a crawl.
+      // distance at the same time as it turns. Every sixteenth gesture rather
+      // than every fourth: the first run's `ascent` walked 45.0 to 41.0 m over
+      // twelve stills at one tick per four gestures, so a whole 1.4 m distance
+      // step fell inside a single 6-to-8-frame pair - a larger picture change
+      // than the entire turn it rides on. Spacing the ticks four times further
+      // apart keeps the two the same order and still moves the hero stand.
       this.wheelAccumulator += 1;
-      if (this.wheelAccumulator >= 4) {
+      if (this.wheelAccumulator >= 16) {
         this.wheelAccumulator = 0;
         await this.page.mouse.wheel(0, -60);
       }

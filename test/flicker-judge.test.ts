@@ -37,7 +37,20 @@ import {
   type FramePose,
 } from "../tools/flicker/judge.js";
 import { decodePng } from "../tools/visual/png.js";
+import { sampleField, shiftedFrame } from "./flicker-synthetic.js";
 import { FRAME_WIDTH, crawlingRecord, frameAt, frozenRecord, movingRecord, oscillatingRecord, windowFrame } from "./flicker-frames.js";
+
+/**
+ * The frame size the lane captures, for the one case whose defect is a function
+ * of the array's length rather than of the pixels.
+ *
+ * Measured from the lane's own manifest rather than assumed: `orbit-00.png` and
+ * every other frame it writes is 1280x720 at deviceScaleFactor 1. The unit
+ * frames are 192x108 because they are predicates rather than pictures, and that
+ * difference is exactly what let the byte-offset defect below go unseen.
+ */
+const FLICKER_FRAME_WIDTH = 1280;
+const FLICKER_FRAME_HEIGHT = 720;
 
 const has = (failures: string[], fragment: string): boolean => failures.some((line) => line.includes(fragment));
 
@@ -51,7 +64,7 @@ describe("the flicker judge", () => {
     // that edit is a deliberate act with a red case beside it rather than a
     // quiet number change.
     expect(CRAWL_FRACTION_PER_FRAME).toBe(0.005);
-    expect(FLICKER_CADENCE).toEqual({ cadenceFrames: 2, maxPairGapFrames: 18 });
+    expect(FLICKER_CADENCE).toEqual({ cadenceFrames: 2, maxPairGapFrames: 26 });
     expect(MINIMUM_FLICKER_FRAMES).toBe(8);
   });
 
@@ -66,7 +79,19 @@ describe("the flicker judge", () => {
     // inferred from the empty failure list.
     for (const pair of report.pairs_) {
       expect(pair.digestDiffers, `${pair.to} repeats its predecessor's bytes`).toBe(true);
-      expect(pair.changedFraction, `${pair.to} did not change at all`).toBeGreaterThan(0.5);
+      // **A pure shift is almost nothing changed, and this assertion used to say
+      // the opposite.** It read `toBeGreaterThan(0.5)`, which is what the
+      // byte-offset defect in `channelDelta` produced - it made every frame look
+      // 60-97% changed, and a case that asserted the wrong number was part of why
+      // nobody looked. A picture translated by whole pixels and then shifted back
+      // onto itself is the *same picture*: the fraction that still differs is the
+      // seam the valid region excludes and the resampling at the edges. The low
+      // number is the correct one, and it is what makes `changedFraction` a
+      // measurement rather than the 1.0000 the first real run recorded.
+      expect(
+        pair.changedFraction,
+        `${pair.to} changed far more than a pure translation can explain`,
+      ).toBeLessThan(0.05);
       expect(pair.frameGap, `${pair.to} spans more frames than the cadence allows`).toBeLessThanOrEqual(
         FLICKER_CADENCE.maxPairGapFrames,
       );
@@ -109,13 +134,67 @@ describe("the flicker judge", () => {
   it("fails a stalled render counter by name", () => {
     const frames = movingRecord(10).map((frame) => ({
       ...frame,
-      frameCountBefore: 1_000,
-      frameCountAfter: 1_000,
+      frameCountMid: 1_000,
+      shutterOpenedAtFrame: 1_000,
+      shutterClosedAtFrame: 1_000,
     }));
     const report = judgeFlicker(frames);
 
     expect(has(report.failures, "render counter did not advance")).toBe(true);
-    expect(report.failures.join("\n")).toMatch(/\(1000 to 1000\)/);
+    expect(report.failures.join("\n")).toMatch(/\(1000 before the first shutter to 1000 before the second\)/);
+  });
+
+  it("fails a pair the estimator could not model by name, instead of returning 0,0 as a still picture", () => {
+    // The defect this case exists for, in the shape the first real run produced
+    // (`artifacts/flicker/RUN-01-REPORT.md`): the picture moved further between
+    // two stills than the estimator searches, so the best shift it could find was
+    // the edge of its own window - and a shift of (0, 0) from that failed search
+    // is the same two numbers as a shift of (0, 0) from a picture that did not
+    // move. The run was labelled clean on four such pairs.
+    //
+    // 30 px a frame against a 24 px radius, over eight frames so the record is
+    // long enough to judge and the whole walk still fits inside the 260x160
+    // synthetic field. The estimator is expected to find the shift *and* to say
+    // the answer is at its edge, which is the honest report: the true motion is a
+    // few pixels past what it searched, and a pair whose answer sits there cannot
+    // be distinguished from one whose answer is further still.
+    const runaway = Array.from({ length: 8 }, (_, index) =>
+      frameAt(index, { offset: { x: index * 30, y: 0 } }),
+    );
+    const report = judgeFlicker(runaway);
+
+    expect(
+      has(report.failures, "could not be modelled"),
+      `a pair beyond the estimator's search was not refused:\n${report.failures.join("\n")}`,
+    ).toBe(true);
+    // Named and actionable: the pair, the shift, the radius searched, and the two
+    // readings the message exists to separate.
+    expect(report.failures[0]).toMatch(/the pair syn-00\.png -> syn-01\.png could not be modelled/);
+    expect(report.failures[0]).toMatch(/px, which sits on the edge of the ±24 px region it searches/);
+    expect(report.failures[0]).toMatch(
+      /a shift of \(0, 0\) from a failed search and a shift of \(0, 0\) from a picture that did not move/,
+    );
+    // The estimator found the real translation rather than a zero, so this case
+    // is about the boundary and not about a search that collapsed: a judge that
+    // failed anything reporting (0, 0) would pass this assertion and be measuring
+    // nothing.
+    expect(report.pairs_[0]!.estimatedShift).toEqual({ dx: 30, dy: 0 });
+    expect(report.pairs_.every((pair) => pair.shiftAtSearchBoundary)).toBe(true);
+    // The crawl indicator must not also report: the number it would print is a
+    // consequence of the misalignment, and two failures for one cause read as two
+    // defects. It is a real number all the same - the shift is at the edge, not
+    // the picture - so a judge that only checked the bar would report a crawl
+    // figure for a pair it cannot model.
+    expect(has(report.failures, "the crawl indicator reads")).toBe(false);
+    expect(Math.max(...report.pairs_.map((pair) => pair.crawl))).toBeGreaterThan(0);
+    // The other side of the distinction, on the same field: a record whose shift
+    // is well inside the search is not refused, and its answer is not at the
+    // edge. Without this half the case would pass on a judge that failed every
+    // pair it saw.
+    const inside = judgeFlicker(movingRecord(10));
+    expect(has(inside.failures, "could not be modelled")).toBe(false);
+    expect(inside.pairs_.every((pair) => pair.shiftAtSearchBoundary)).toBe(false);
+    expect(inside.pairs_.every((pair) => pair.estimatedShift.dx === 3)).toBe(true);
   });
 
   it("flags a synthetic high-frequency change that a shift cannot explain, and not a pure shift", () => {
@@ -165,6 +244,50 @@ describe("the flicker judge", () => {
     const refused = judgeFlicker(stale);
     expect(has(refused.failures, "byte-identical")).toBe(true);
     expect(refused.failures.join("\n")).toMatch(/syn-05\.png is byte-identical to syn-04\.png/);
+  });
+
+  it("counts changed pixels at the size the lane actually captures, not only at the unit frame's size", () => {
+    // The defect this case exists for, and the one a 192x108 unit frame cannot
+    // see. `channelDelta` reads **bytes** and its caller passed **pixel indices**,
+    // and `comparePair` never multiplied by four. Inside a synthetic frame's
+    // 82,944-byte RGBA array no pixel index can leave the buffer, so every case in
+    // this file passed while the real lane was reading the wrong byte for every
+    // pixel: on `artifacts/flicker/capture/orbit-00.png` against `orbit-01.png` it
+    // reported `changedFraction` 0.9703 where the true figure at the same
+    // estimated shift is 0.1871. `Uint8Array` returns `undefined` past its end
+    // rather than throwing, so nothing failed loudly - the number was simply not
+    // the number it claimed to be.
+    //
+    // The picture is the same structured field the other cases use, at the lane's
+    // own 1280x720: the array length is the whole difference, and a two-tone
+    // picture would not do because the estimator finds a spurious alignment in a
+    // frame with only one edge in it.
+    const fieldWidth = FLICKER_FRAME_WIDTH + 40;
+    const fieldHeight = FLICKER_FRAME_HEIGHT + 40;
+    const field = sampleField(fieldWidth, fieldHeight, 424_242);
+    const base = frameAt(0, {
+      image: shiftedFrame(FLICKER_FRAME_WIDTH, FLICKER_FRAME_HEIGHT, field, fieldWidth, fieldHeight, 0, 0),
+    });
+    const moved = frameAt(1, {
+      image: shiftedFrame(FLICKER_FRAME_WIDTH, FLICKER_FRAME_HEIGHT, field, fieldWidth, fieldHeight, 1, 0),
+    });
+
+    const report = judgeFlicker([base, moved]);
+    const pair = report.pairs_[0]!;
+
+    expect(pair.estimatedShift).toEqual({ dx: 1, dy: 0 });
+    // One pixel of a structured picture is almost entirely the same picture, so
+    // after the shift a correct count leaves a thin seam and nothing else - a few
+    // percent of the frame at the very most, against the 60%+ the byte-offset read
+    // produces. The bar is loose on purpose: what this case is about is the order
+    // of magnitude, not the last tenth of a percent.
+    expect(
+      pair.changedFraction,
+      `changed pixels were counted at the wrong byte offset: ${pair.changedFraction} of the frame`,
+    ).toBeLessThan(0.1);
+    // And the picture's own change is not a crawl: after the shift the two frames
+    // still line up, so the feature-inconsistency count stays far below the bar.
+    expect(pair.crawl).toBeLessThan(CRAWL_FRACTION_PER_FRAME);
   });
 
   it("fails a camera that never moved, even when every frame is a distinct real picture", () => {
@@ -345,8 +468,9 @@ function realFrame(record: MotionRecord, name: string, index: number): FlickerFr
   return {
     file: name,
     sha256: createHash("sha256").update(bytes).digest("hex"),
-    frameCountBefore: frameCount,
-    frameCountAfter: frameCount + 1,
+    frameCountMid: frameCount,
+    shutterOpenedAtFrame: frameCount,
+    shutterClosedAtFrame: frameCount + 1,
     tick: frameCount,
     pose: known?.camera ?? frameAt(0).pose,
     image: decodePng(bytes),
