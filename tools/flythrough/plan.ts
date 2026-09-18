@@ -30,7 +30,7 @@
  *
  * | Leg | Frames | Target | Camera height | Distance | What moves |
  * | --- | --- | --- | --- | --- | --- |
- * | `overview` | 11 | origin to the crowd's corner | 675 to 60 m | 620 to 170 m | pan 593 m south-east, zoom, bearing held |
+ * | `overview` | 11 | origin to the crowd's corner | 675 to 60 m | 620 to 170 m | pan 619 m south-east, zoom, bearing held |
  * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 26 m | descent and a 37.5 degree swing onto the crowd |
  * | `crowd` | 12 | through the crowd | 3 m | 26 to 18.8 m | a slow push, 1.2 m a step, then six frames with no input |
  * | `ascent` | 11 | the crowd, back to the crossing | 18.8 to 110 m | 18.8 to 620 m | climb, swing, and a pan home |
@@ -42,17 +42,17 @@
  * `populationFromQuery` falls back to the scene seed unless `?seed=` is present,
  * so this lane captures with no `?seed=` at all — the crowd is not at the
  * crossing. It stands in knots along the edges of the area of interest. The
- * crossing itself holds almost nobody, and vehicles thin out with time (59 active
- * at tick 2,400, 45 at 7,200, 14 at 20,000), so the flight leaves early and aims at
+ * crossing itself holds almost nobody, and vehicles thin out with time (63 active
+ * at tick 3,000, 38 at 6,000, 14 at 20,000), so the flight leaves early and aims at
  * a knot rather than at the middle of the map.
  *
- * The anchor this leg flies is a scored one. The first scoring tool ranked a knot
- * on the area of interest's margin ring first, and the flight carried that pose for
- * a whole run: its camera stood on 26.4 m of ground, and the leg pointed 34.7
- * degrees down at pavement because the controls' target height is pinned at the
- * app's origin datum, 15.2 m. The audit is
- * `artifacts/quality-audit/register.md` §2.2. The tool was wrong in two ways, and
- * both are fixed:
+ * The anchor this leg flies is a scored one, and the scoring tool has been wrong
+ * twice. The first version ranked a knot on the area of interest's margin ring
+ * first, and the flight carried that pose for a whole run: its camera stood on
+ * 26.4 m of ground and the leg pointed 34.7 degrees down at pavement, because the
+ * controls' target height is pinned at the app's origin datum, 15.2 m. The audit is
+ * `artifacts/quality-audit/register.md` §2.2, and the tool was wrong in two ways,
+ * both fixed:
  *
  * - it scored every visible body at `TARGET_Y_M + 0.9` — a constant 16.1 m in world
  *   Y, whatever the terrain under the body said — so a knot on 26 m ground scored
@@ -63,52 +63,55 @@
  *   anchor those two rays are 25 m apart at the target, so the tool reported a
  *   level view of a pose whose frames put the crowd on the bottom edge.
  *
- * `tools/flythrough/aim-score.ts` carries both rules, and
- * `test/flythrough-aim.test.ts` pins them.
+ * `tools/flythrough/aim-score.ts` carries both rules and `test/flythrough-aim.test.ts`
+ * pins them. The second wrong choice was the *anchor*, not the arithmetic: the
+ * re-planned leg was flown on 2026-09-17 and the lane refused the run, because the
+ * anchor had been picked on its best tick and the machine was loaded. That is the
+ * ## The clock below.
  *
- * Re-measure with a dump taken at the tick this leg actually captures at, which is
- * about 3,000 rather than the 5,400 the first scoring used:
+ * Re-measure across the whole window rather than at one tick:
  *
- *   node tools/populated/probe.ts --ticks 3000 --dump-tick 3000 --dump-file artifacts/crowd-aim-fix/dump-current-t3000.json
- *   node tools/flythrough/aim.ts --dump artifacts/crowd-aim-fix/dump-current-t3000.json
+ *   node tools/populated/probe.ts --ticks 3000 --dump-tick 3000 --dump-file artifacts/crowd-aim-fix/dump-t3000.json
+ *   node tools/flythrough/aim.ts --dump artifacts/crowd-aim-fix/dump-t3000.json
  *
- * The tool now reports a pitch and a median body distance with every anchor, and
- * the anchor below is the pose it ranks first that the approach can also reach:
- * camera `(452.1, 353.9)` on 14.49 m of ground, target `(455.5, 379.7)` at 26 m,
- * 330 moving bodies of which 225 are inside 45 m, 17 vehicles, a 5.0 degree axis
- * and a 27 px figure at the median 43 m — way `walk:664819019:3:0:ground0:f`.
+ * `tools/flythrough/aim.ts` reports a pitch and a median body distance with every
+ * anchor, so an anchor can be read as framing rather than as a count. The anchor
+ * below is not the one it ranks first at any single tick: it is the one that holds
+ * the most walking bodies inside 45 m at its **worst** tick in the window, which is
+ * the property a leg whose tick depends on the machine's load actually needs.
  *
- * `CROWD_TARGET` and `CROWD_CAMERA` below are that pose: the ray's far end, and the
- * camera position on a walking way that its scoring accepted. They are **aim
- * anchors**: the flight moves the controls' target to the first and stands the
- * camera at the second, and the frames say where the camera actually ended up.
- * `CROWD_DISTANCE_M` is the separation the tool scored, 26 m; the route pulls in to
- * that figure rather than to a number written here, and the crowd leg's 7.2 m push
- * then takes the camera to 18.8 m.
+ * `CROWD_CAMERA` and `CROWD_TARGET` are that pose: the camera on a walking way, and
+ * the controls' target 26 m along the direction it looks. They are **aim anchors**:
+ * the flight pans the controls' target to the second and stands the camera at the
+ * first, and the frames say where it actually ended up. `CROWD_DISTANCE_M` is the
+ * separation they were scored at, and the crowd leg's 7.2 m push then takes the
+ * camera to 18.8 m.
  *
  * The bearing below is the **controls'** azimuth, which is the direction from the
- * target to the camera; the view direction is the opposite one. The tool requires
- * its candidate target to be the frame's centre, so the controls' target is what it
- * aimed its ray at. This anchor's bearing is 7.5 degrees, so the approach turns 37.5
- * degrees instead of the old 82.5, and the swing's own arithmetic — the short-way
- * interpolation, whose long-way version cost a run — is in the approach leg below.
+ * target to the camera; the view direction is the opposite one. This anchor's
+ * bearing is 7.5 degrees, so the approach turns 37.5 degrees instead of the old
+ * 82.5, and the swing's own arithmetic — the short-way interpolation, whose
+ * long-way version cost a run — is in the approach leg below.
  *
  * ## The clock
  *
- * Frames are captured as the movement runs, so the simulated clock advances at
- * whatever rate the machine pays for. Nothing here waits on a tick inside a leg:
+ * Frames are captured as the movement runs, so the simulated clock advances with
+ * wall time and not with the step count. Nothing here waits on a tick inside a leg:
  * a leg is a fixed number of steps, each step a small input plus a frame, and the
  * ticks each frame landed on are recorded beside it. The one tick bound is
- * `holdToTick`, used once at the start so the first leg does not cross a city
- * whose crowd has not formed.
+ * `holdToTick`, used once at the start so the first leg does not cross a city whose
+ * crowd has not formed.
  *
- * The crowd leg is left where it was in the flight: it captures at about tick
- * 3,000, and this anchor is measured there. That is deliberate rather than lucky.
- * The re-aim's dump at tick 3,000 holds 1,979 moving positions against 1,607 at
- * 5,400, and the anchor itself is livelier early — 107 moving bodies within 25 m of
- * it at 3,000 against 6 at 5,400 — so a `holdToTick` that pushed the leg later would
- * buy a worse crowd, not a better one. The clock decision is recorded in
- * `docs/devlog/detailed/`.
+ * **A leg's tick is not a property of this route.** The 2026-09-17 run took 127 s of
+ * wall clock against 72 s for the run before it, because eight inspection lanes were
+ * loading the machine, and its crowd leg captured at ticks 4,899-5,332 instead of
+ * ~3,000. An anchor chosen on a tick-3,000 peak therefore photographed nothing: five
+ * of that run's six held pairs were byte-identical, and the lane refused it. The
+ * anchor above is chosen on its worst tick across 3,000 to 7,200 precisely so that
+ * the leg works at either end of that spread, and **no `holdToTick` is added**: a
+ * hold cannot help, because the thing that moved is not where the leg starts but how
+ * much wall time — and so how many ticks — each of its steps costs. The measurement
+ * and the run are in `docs/devlog/detailed/`.
  */
 
 import type { LegStep } from "./driver.js";
@@ -159,42 +162,71 @@ export const OPENING_AZIMUTH = Math.PI * 0.25;
 export const OPENING_DISTANCE_M = 620;
 
 /**
- * The crowd: the knot the aim measurement scores first, re-planned onto low ground.
+ * The crowd: an anchor whose walking crowd holds through the whole tick window.
  *
- * A scored pose of `tools/flythrough/aim.ts`, re-measurable with
- * `--dump artifacts/crowd-aim-fix/dump-current-t3000.json`. It scores every
- * candidate camera on a walking way by the number of *distinct positions* in frame
- * and by how many of them are moving, because the population stacks several bodies
- * on one position and a camera sees positions.
+ * The scorer is `tools/flythrough/aim.ts` over dumps from
+ * `tools/populated/probe.ts --ticks N --dump-tick N`, measured at 3,000, 4,000,
+ * 4,900, 5,400, 6,000 and 7,200 — the window a loaded and an unloaded run span.
  *
- * This pair replaces one whose camera stood on 26.4 m of ground at
- * `(-386.2, -496.3)`. The tool that chose it scored every body at a constant 16.1 m
- * and never asked whether the camera's axis was usable, so it ranked a knot on the
- * margin ring whose real crowd sat on the frame's bottom edge: the audit is
- * `artifacts/quality-audit/register.md` §2.2. The scorer now reads each body's
- * height off the terrain mesh, projects it into the camera's own frame, and refuses
- * a pose whose axis is steeper than 20 degrees or which holds no walking body
- * inside 45 m.
+ * That window is the whole reason this pair replaced the one before it, and the
+ * first attempt is the evidence. The anchor merged on 2026-09-17 stood at
+ * `(452.07, 353.95)` and was chosen on a peak: 225 walking bodies inside 45 m at
+ * tick 3,000, and **4** at 5,400. Its own run then took 127 s of wall clock
+ * instead of 72 s because eight inspection lanes were loading the machine, so the
+ * crowd leg captured at ticks 4,899-5,332 instead of ~3,000, the held frames
+ * photographed a scene with no walking crowd in it, and five of the six held pairs
+ * came back byte-identical. The lane refused the run, correctly. Ticks advance
+ * with wall time, so a leg's tick is not a property of the route — a plan that
+ * needs a peak is a plan that only works unloaded.
  *
- * The camera below stands on 14.49 m of ground — 0.47 m above the ground under the
- * target — so its axis to the app's pinned 15.2 m target is 5.0 degrees down where
- * the old anchor's was 34.7. At tick 3,000 this pose holds 330 moving bodies in
- * frame, 225 of them inside 45 m, the nearest 5.5 m out and the median at 43 m,
- * where a 1.7 m figure is 27 px tall. The old anchor held 457 moving bodies and not
- * one of them inside 45 m.
+ * A peak is what the score rewards, so the anchor was re-picked on the **worst**
+ * tick instead: over every walking-way position and every tick in the window, the
+ * one below holds the most walking bodies inside 45 m at its *worst* tick, and it
+ * holds them because it stands in the middle of a plateau rather than beside a
+ * knot. Measured through the scorer at 26 m:
+ *
+ * | tick | near (in frame, <=45 m) | moving | nearest | median | 1.7 m figure |
+ * | --- | --- | --- | --- | --- | --- |
+ * | 3,000 | 152 | 218 | 4.0 m | 9 m | 131 px |
+ * | 4,000 | 99 | 105 | 22.9 m | 33 m | 36 px |
+ * | 4,900 | 95 | 101 | 18.5 m | 21 m | 55 px |
+ * | 5,400 | 100 | 103 | 19.8 m | 22 m | 55 px |
+ * | 6,000 | 100 | 103 | 11.7 m | 30 m | 39 px |
+ * | 7,200 | 10 | 104 | 19.8 m | 46 m | 25 px |
+ *
+ * The leg's own runs have landed at 2,996 and at 3,985-4,328, so what it needs is
+ * the 95-to-152 band from 3,000 to 6,000, and the 7,200 reading is the slack beyond
+ * any run measured so far. The anchor before it, measured the same way, reads
+ * 225 / 131 / 70 / 4 / 4 / 6 — which is why the run at 3,985 found the crowd gone.
+ *
+ * The camera stands on 13.99 m of ground and the target on 13.78, so the axis to
+ * the app's pinned 15.2 m target is 3.9 degrees down. The old margin-ring anchor's
+ * was 34.7: the audit is `artifacts/quality-audit/register.md` §2.2, and the scorer
+ * now reads each body's height off the terrain mesh, projects it into the camera's
+ * own frame, and refuses a pose steeper than 20 degrees or holding fewer than 10
+ * walking bodies inside 45 m.
  *
  * The bearing is the swing's business as well as the framing's. The approach can
- * turn at most `40 px * 2*PI/720 = 0.3491` rad in one step, so its six turning steps
- * deliver at most 2.095 rad. This anchor's controls bearing is 0.1309 rad, a swing
- * of 0.654 rad from `OPENING_AZIMUTH` — 0.109 rad a step, seven times inside the
- * cap. A pair with a slightly higher count whose bearing asked for 0.3927 rad a step
- * was rejected for that reason alone.
+ * turn at most `40 px * 2*PI/720 = 0.3491` rad in one step, so its six turning
+ * steps deliver at most 2.095 rad. The bearing below is 0.1309 rad, a swing of
+ * 0.654 rad from `OPENING_AZIMUTH` — 0.109 rad a step, seven times inside the cap.
+ * The bearing is deliberately the same one the failed run flew, so this change moves
+ * the crowd and not the route: what a run has to reproduce is the framing, and it
+ * did.
  */
 export const CROWD_AZIMUTH = (7.5 * Math.PI) / 180;
 /** The separation the scoring tool scored this pose at, metres. */
 export const CROWD_DISTANCE_M = 26;
-export const CROWD_CAMERA = Object.freeze({ x: 452.07064295232846, z: 353.94944548056134 });
-/** The ray's far end: the camera's own way point, 26 m along the bearing it looks down. */
+export const CROWD_CAMERA = Object.freeze({ x: 456.0, z: 389.7 });
+/**
+ * The controls' target: 26 m from the camera along the direction the camera looks.
+ *
+ * `bearing` is measured from the target **to** the camera, so the camera stands at
+ * `target + (sin, cos) * distance` and the view direction is the other way. The
+ * failed run's own final pose confirms the sign: camera `(458.3, 405.9)` against
+ * target `(454.9, 380.2)`, an offset of `(+3.4, +25.7)`, which is this formula at
+ * 7.5 degrees.
+ */
 export const CROWD_TARGET = Object.freeze({
   x: CROWD_CAMERA.x + Math.sin(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
   z: CROWD_CAMERA.z + Math.cos(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
@@ -563,7 +595,7 @@ export const LEGS: readonly Leg[] = Object.freeze([
     captureEvery: 1,
     minClearanceM: 2,
     panLimitPx: 200,
-    panNote: "long drags again as the camera climbs: the target travels about 700 m home",
+    panNote: "long drags again as the camera climbs: the target travels about 780 m home",
     steps: ASCENT_STEPS,
   },
 ]);
