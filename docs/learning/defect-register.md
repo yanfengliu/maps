@@ -1,5 +1,15 @@
 # Defect register
 
+## 2026-09-18 — an `npm ci` through a worktree's `node_modules` junction emptied the primary's dependencies
+
+Observed symptom: a lane went to re-run its gates and found the primary checkout's `node_modules` at **zero top-level entries**, which broke its own worktree and every other worktree junctioned to the same tree at once. `git status` was clean and no tracked file had changed.
+
+Investigation: the worktree convention junctions `node_modules` to the primary, and `npm ci` deletes and rewrites the directory it installs into. Run inside a junctioned worktree it therefore emptied the primary's dependency tree rather than the worktree's. Two lanes were working at the time and both junction `node_modules`; the lane that found it installed into its own worktree and then re-ran `npm ci` in the primary to restore it, which brought back 74 packages / 61 top-level entries with `vite` and `vitest` present. Nothing tracked was touched.
+
+Root cause: the same junction-write class as the two incidents recorded below — the convention is safe for reading and for gates, and a write through it lands in the primary. `npm ci` is the most destructive of the three because it deletes its target wholesale.
+
+Checked from now on: `docs/policies/local-rules.md` carries the rule beside the data rule — a lane that needs to install or reinstall dependencies must not have `node_modules` junctioned; it installs in the primary or gives its worktree a real `node_modules` of its own. The three incidents together (a `data:scene` write, a seven-junction recursive delete, and this `npm ci`) are the case for treating the junction convention as read-only inside every worktree, which is how the rule now reads.
+
 ## 2026-09-18 — the near-field road at dusk was a flat dark fill because the ambient on a horizontal surface at dusk was short of what the surface needs, and light is not the lever for its grain
 
 Observed symptom, from the certified frames and the inspections bound to them (certificate runId `14cdadbafba82120`, `artifacts/inspection-gpu3/`): at the plaza pose the satellite near-field road is a featureless dark fill — the `near-pavement` rect (320,540 640x180, which the camera's own geometry puts on the `roads:plateau-tran` mesh, not the pavement) read mean luminance 17.80 of 255, 0.3% of its pixels under 12 and **86.8% of neighbouring pixel pairs bit-identical**, while the pavement in the same frame measured 43.77. The appearance lane's own verdict was "the near-field road is lifted, not given structure", and its arithmetic said the illumination-driven term needed about 2.5x to put the surface at 30.
