@@ -1252,3 +1252,33 @@ The fourth case, the noon pin, stays green under that mutation, which is the poi
 **What the cases hold, and the one number in them that is not derived from the code.** The certified road rect's mean (17.8) and the two pre-change ambient values at dusk (hemisphere 0.2403, environment 2.8048) are written out rather than recomputed from the daylight ramp, because a case that derives its reference from the same expression it checks agrees with the code by construction; the lift, the predicted luminance under the whole-radiance and the albedo-free-fixed splits, and the 49% albedo-free share all come from those plus the tone curve and the calibrated `radiance = A + K*albedo` fit. The noon pin is the load-bearing one for the tone review: `dark` is 0 with the sun up, so the cartographic noon crossing band's 169.80 of 255 cannot move, and the after-arm capture measures it at 167.2 mean in both arms with mean|d| 0.04 levels.
 
 **Bound.** It gates the lighting numbers, not the pixel. It converts the certified mean through three's ACES filmic curve at the preset's exposure and sRGB and asserts a *prediction*: 33.0 of 255 under the assumption that the whole road radiance follows the ambient, 25.6 under the assumption that the 49% albedo-free share does not. The pixel is the appearance lane's evidence, and the delivered value on the after arm is **27.78 mean, 0.0% of its pixels under 12, 3.580% of albedo between neighbouring pixels against the same frame's pavement control at 5.891%** - between the two predictions, as the pair of cases was written to bracket. What it does not gate, and cannot: the surface's structure still reads at 91.0% of pixels indistinguishable from flat against the pavement's 70.7%, because the display step grows as about `R^0.35` and one level of grain on this albedo needs roughly 7x the radiance. That is a tile-amplitude question for the next change, not a lighting one, and it is in the register and the detailed devlog entry rather than claimed here.
+
+## The road tile's spectrum shape: the gate the step floor alone could not make
+
+**Gate:** `test/surface-detail.test.ts` - the case "keeps the road's weight in the fine octaves, which is the lever the frame bar needed", plus the raised mip-0/mip-1 floors in "puts at least 5% of albedo between neighbouring texels on the road" (0.045/0.025 to 0.08/0.045) and the strengthened modulation ceiling (0.5 to 0.8).
+
+**Landed:** 2026-09-18, branch `grain/amplitude` off `a7f865d`. Not merged: the coordinator lands it.
+
+**The defect it gates.** The previous spectrum (0.35, 0.45, 0.6, 0.85, 1.2, 1.7) at strength 0.45 cleared its own 0.045 floor - it measured 6.35% of albedo at mip 0 - and the certified satellite `plaza-az000` frame still drew the road flat: **0.304 display levels, 3.580% of albedo against the pavement control's 5.891% in the same frame, 82.2% of neighbouring pixel pairs bit-identical**. The old floor was a step floor and the defect was a *shape*: the contrast was in 1-4 m octaves that a viewer at the near field integrates, and at strength 1.1 the same spectrum reads as 4 m blotches rather than aggregate. The fix moves the weight into the 64- and 128-cell octaves and raises the strength to 0.72, which measures **0.613 levels and 7.241% of albedo against the control's 6.255%**.
+
+**Mutations, two, each exit status 1 in under a second.**
+
+(1) `OCTAVE_AMPLITUDE.road` and `SURFACE_DETAIL_STRENGTH.road` restored to the previous spectrum and strength (the values certificate `685d0eaeb5669287` was drawn with). Two cases fail:
+
+```
+AssertionError: road: mean neighbouring-texel step is 6.35% of albedo at mip 0 (p95 14.82%); the shipped-and-invisible
+tile measured 0.36% on the road and 0.40% on the ground, and under about 3% is less than one display level:
+expected 0.06354591245947225 to be greater than or equal to 0.08
+
+AssertionError: the road's fine octaves must outweigh the coarse ones: expected 2.678571428571429 to be greater than 5
+```
+
+(2) Only the vector reverted, the strength left at the shipped 0.72. The floors pass - the old vector at 0.72 measures 10.17% at mip 0 - and the shape case is the one that fires:
+
+```
+AssertionError: the road's fine octaves must outweigh the coarse ones: expected 2.678571428571429 to be greater than 5
+```
+
+**Why the second mutation is the one that matters.** It is the mutation the first gate could not see: a tree that satisfies every step floor, with the strength raised to compensate, and a near field that reads as blotches. The case pins the vector itself, which is why it is exported (`ROAD_OCTAVE_AMPLITUDE`) rather than restated in the test: a check built from a copy of the constant agrees with the test file and not with the code.
+
+**Bound.** It gates a property of the generated texels: the octave weights rise by at least 1.2x each, the fine half outweighs the coarse half by at least 5x, the mip-1 albedo step stays at or above the 3.97% the previous spectrum gave, and the mip-0 step stays above 1.5x the mip-1. It does not compile a shader, does not render, and cannot see a repeat lattice, aliasing or a surface that reads as noise: those are the frame set's evidence, and the frames this claim rests on are the 44 certified under `b9d02f80d450203a` with their 1:1 crops preserved at `artifacts/grain/crops/`. The step it measures is tile-space, and the frame's own step was 2.4x lower than the tile-space prediction on the road rect, so the floors are a proxy with a measured offset rather than a measurement of the pixel.
