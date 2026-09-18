@@ -21,9 +21,10 @@
  * 2. It then walks a continuous pointer path and takes a still every time round
  *    the loop, *without settling*, so the camera is always moving when the
  *    shutter opens.
- * 3. It records, per frame, the render counter before and after the shutter, the
- *    simulation step, the camera pose and the PNG's SHA-256, and it binds the
- *    judgement to those bytes.
+ * 3. It records, per frame, the render counter on both sides of the shutter, the
+ *    camera pose on both sides of it and the midpoint between them, the
+ *    simulation step, and the PNG's SHA-256, and it binds the judgement to those
+ *    bytes.
  * 4. It hands the frames to `tools/flicker/judge.ts`, which decides - off the
  *    pixels, not off this spec's opinion of them - whether the sequence held
  *    still.
@@ -42,12 +43,22 @@
  * ## What it cannot reach, stated rather than implied
  *
  * - **The cadence is the screenshot's, not the frame's.** A screenshot costs
- *   about 250 ms on this renderer, so about fifteen frames are drawn while the
- *   shutter is open and the closest two stills this lane can take are roughly
- *   that far apart. The frame counter is read on both sides of every shot and
- *   written into the record, so the cadence actually achieved is measured rather
- *   than claimed; `judgeFlicker` refuses a pair that spans more than
+ *   about 300-400 ms on this renderer, so 27 to 34 rendered frames are drawn while
+ *   the shutter is open and the closest two stills this lane can take are roughly
+ *   that far apart - measured 19.5 to 23 rendered frames between midpoints, against
+ *   the criterion's `cadenceFrames: 2`. The frame counter is read on both sides of
+ *   every shot and written into the record, so the cadence actually achieved is
+ *   measured rather than claimed; `judgeFlicker` refuses a pair that spans more than
  *   `maxPairGapFrames` frames and reports the span it saw.
+ * - **The recorded pose is the pose of the recorded pixels, as far as a
+ *   screenshot can say.** One pose read before a 27-to-34-frame shutter describes a
+ *   picture that no longer exists by the time the buffer is read, and a pair's
+ *   motion divided by the idle gap between two shutters is not a rate. Each still
+ *   therefore records the pose before the shutter, the pose after it, and the
+ *   midpoint between them; the frame's `pose` is the midpoint and a pair's span is
+ *   measured midpoint to midpoint, so the motion and the gap it is divided by
+ *   describe the same window. The pre- and post-shutter poses are kept beside it, so
+ *   what the shutter covered is visible in the record instead of being modelled.
  * - **It judges the non-accumulating path.** With the camera moving, TAA is off
  *   by construction, so what this lane sees is the post chain without its
  *   temporal accumulator. Whether the accumulator engages at all is
@@ -81,6 +92,8 @@ import {
   type FramePose,
 } from "./judge.js";
 import { MotionPath, isMotionPattern, type MotionPattern } from "./motion.js";
+import { midpointPose } from "./shutter.js";
+import { deriveStep } from "./step.js";
 
 const HERE = import.meta.dirname;
 const REPO_ROOT = path.resolve(HERE, "..", "..");
@@ -126,7 +139,7 @@ const CONTRACT: FlickerContract = {
 interface CapturedFrame extends Omit<FlickerFrame, "image"> {
   /** The file's path relative to the lane root. */
   relative: string;
-  /** Metres the camera stood from its target at the shutter. */
+  /** Metres the camera stood from its target at the midpoint of the shutter. */
   distanceM: number;
 }
 
@@ -137,9 +150,16 @@ interface Capture {
   sha256: string;
   frameCountBefore: number;
   frameCountAfter: number;
-  /** The step index derived from the page clock by `deriveStep`, or null. */
+  /** The frame count at the midpoint of the shutter, which is what the record's span uses. */
+  frameCountMid: number;
+  /** The step index derived from the page clock by `deriveStep` at the mid-shutter instant, or null. */
   tick: number | null;
+  /** The camera at the midpoint of the shutter: the pose the recorded pixels are nearest. */
   pose: FramePose;
+  /** The camera immediately before the shutter opened, kept so the span it covered is visible. */
+  poseBefore: FramePose;
+  /** The camera immediately after the shutter closed. */
+  poseAfter: FramePose;
   distanceM: number;
 }
 
@@ -170,14 +190,16 @@ test("holds still over a moving sequence: consecutive frames of a moving dusk ca
   await driver.waitForTilesIdle();
 
   const build = readBuildIdentity();
-  // The page's own time origin, read once, before any still. A step index can
-  // then be derived per frame from `performance.now()` without asking the app
-  // for a clock it does not publish. See `deriveStep` for the derivation and for
-  // the bound it carries.
-  const timeOrigin = await page.evaluate<number | null>(() =>
-    typeof performance.timeOrigin === "number" && Number.isFinite(performance.timeOrigin)
-      ? performance.timeOrigin
-      : null,
+  // The page's own clock, read once, before any still, so a step index can be
+  // derived per frame without asking the app for a clock it does not publish.
+  // It has to be `performance.now()` and not `performance.timeOrigin`: the
+  // origin is an epoch timestamp, so subtracting it gives minus fifty-six years
+  // rather than an elapsed time. That mistake is what `tick ≈ -1.07e11` was in
+  // every frame of the first run; `deriveStep` in `./step.js` carries the
+  // derivation, the fix and its two bounds, and `test/flicker-step.test.ts`
+  // drives it.
+  const startedAtMs = await page.evaluate<number | null>(() =>
+    typeof performance.now === "function" && Number.isFinite(performance.now()) ? performance.now() : null,
   );
   const patterns = patternsForThisRun();
   const failures: string[] = [];
@@ -197,7 +219,7 @@ test("holds still over a moving sequence: consecutive frames of a moving dusk ca
     // then the next one before the camera has stopped gliding.
     while (Date.now() - openedAt < budget.seconds * 1_000 && stills.length < budget.frames) {
       await run.step();
-      stills.push(await shoot(page, outDir, `${pattern}-${String(stills.length).padStart(2, "0")}`, timeOrigin));
+      stills.push(await shoot(page, outDir, `${pattern}-${String(stills.length).padStart(2, "0")}`, startedAtMs));
     }
 
     const samples = await run.collectSamples();
@@ -209,8 +231,12 @@ test("holds still over a moving sequence: consecutive frames of a moving dusk ca
         file: `${still.name}.png`,
         relative: still.relative,
         sha256: still.sha256,
-        frameCountBefore: still.frameCountBefore,
-        frameCountAfter: still.frameCountAfter,
+        // The judge's span is midpoint to midpoint, because that is the window
+        // the recorded poses describe. The real shutter edges go with it, so the
+        // record keeps what the midpoint stands in for.
+        frameCountMid: still.frameCountMid,
+        shutterOpenedAtFrame: still.frameCountBefore,
+        shutterClosedAtFrame: still.frameCountAfter,
         tick: still.tick,
         pose: still.pose,
         distanceM: still.distanceM,
@@ -252,9 +278,11 @@ test("holds still over a moving sequence: consecutive frames of a moving dusk ca
         report.pairs_
           .map(
             (pair) =>
-              `  ${pair.from} -> ${pair.to}: gap ${pair.frameGap}, changed ${pair.changedFraction.toFixed(4)}, ` +
+              `  ${pair.from} -> ${pair.to}: span ${pair.frameGap}, changed ${pair.changedFraction.toFixed(4)}, ` +
               `crawl ${pair.crawl.toExponential(3)}, travel ${pair.cameraTravelM.toFixed(4)} m, ` +
-              `turn ${pair.cameraRotationRad.toFixed(4)} rad, shift ${pair.estimatedShift.dx},${pair.estimatedShift.dy}`,
+              `turn ${pair.cameraRotationRad.toFixed(4)} rad, shift ${pair.estimatedShift.dx},${pair.estimatedShift.dy}` +
+              `${pair.shiftAtSearchBoundary ? " AT SEARCH BOUNDARY" : ""}, shutter ${pair.shutterFrames} frames, ` +
+              `idle ${pair.idleGapFrames} frames, ticks ${pair.tickGap ?? "unrecorded"}`,
           )
           .join("\n") +
         (report.failures.length === 0 ? "\n  no failures" : `\n  FAILURES:\n${report.failures.map((line) => `  - ${line}`).join("\n")}`),
@@ -297,51 +325,41 @@ interface Observation {
 }
 
 /**
- * The simulation step index a captured frame was drawn at, derived from the
- * page's own clock, or null when it cannot be named.
+ * One still, with the render counter and the pose read on **both** sides of the
+ * shutter.
  *
- * **Why it is derived rather than read, and why it is not a tick.** The bridge
- * publishes the frame counter, the pose, the tiles, the post chain, the
- * population and the signals, and no fixed-step clock. The obvious substitute -
- * `population().ticks`, which is what the flythrough lane records - does not work
- * here: this lane captures `?agents=`-free on purpose, so a vehicle crossing the
- * frame cannot be counted as a crawl, and with no `?agents=` there is no
- * population at all. `src/app.ts` calls `agents.attach(...)` only when
- * `populationWanted`, and `src/agents/agents.ts` registers `population?.update`
- * against a `population` that stays `null` otherwise, so `status()` returns
- * `emptyPopulationStatus()` and its `ticks` is **0 for the whole run**. A tick
- * read from there would be a constant presented as a measurement.
+ * The shutter spans 16-18 rendered frames on this renderer, so a single reading
+ * taken before it describes a picture that has moved on by the time the bytes
+ * exist. That is the defect this function used to have: it stored the
+ * pre-shutter pose as the frame's pose, so a pair's `cameraTravelM` was a
+ * pre-shutter-to-pre-shutter window while its span was the idle gap between two
+ * shutters - neither the same interval nor a fixed fraction of it, because the
+ * camera accelerates and decelerates inside each gesture. The file even printed a
+ * `distanceM` "at the shutter" that had been read before it.
  *
- * **What it is instead.** `RenderLoop` advances its fixed step by `stepSeconds`
- * (1/60 s) once per rendered frame of wall time, so the step index at a moment is
- * `elapsed seconds * 60`, and `performance.now()` is the page's own clock since
- * `timeOrigin`. The index is clamped to the frame counter, because the loop can
- * never have run more simulation steps than it has drawn frames.
- *
- * **The bound.** This is a claim about the clock, not a reading of the loop, and
- * it cannot see a run whose fixed-step clock stopped while frames kept being
- * drawn. That is why the judge's stalled-render-counter predicate, not this
- * field, is what carries the sequence's aliveness. A capture that cannot read
- * `timeOrigin` records `null` rather than zero, so an absent step is never read
- * as a step of zero.
+ * What the frame carries now is the midpoint: the pose and the frame counter are
+ * each averaged over the two readings, so the pose, the span and the step index
+ * all describe the same window, and the two real poses are kept beside them so a
+ * reader can see the span the midpoint stands in for. Averaging a pose is a model
+ * - the camera's path between the two readings is not known to be straight - and
+ * it is stated as one: what it removes is a bias of half a shutter, and what it
+ * cannot remove is the shutter's own width.
  */
-function deriveStep(pageMs: number, timeOrigin: number | null, frameCount: number): number | null {
-  if (timeOrigin === null) return null;
-  return Math.min(frameCount, Math.floor(((pageMs - timeOrigin) / 1_000) * 60));
-}
-
-/** One still, with the render counter read on both sides of the shutter. */
 async function shoot(
   page: Page,
   outDir: string,
   name: string,
-  timeOrigin: number | null,
+  startedAtMs: number | null,
 ): Promise<Capture> {
   const before = await readObservation(page);
   const file = path.join(outDir, `${name}.png`);
   await page.screenshot({ path: file, animations: "disabled" });
   const after = await readObservation(page);
   const bytes = new Uint8Array(readFileSync(file));
+
+  const frameCountMid = (before.frameCount + after.frameCount) / 2;
+  const pageMsMid = (before.pageMs + after.pageMs) / 2;
+  const pose = midpointPose(before.camera, after.camera);
 
   return {
     name,
@@ -350,9 +368,18 @@ async function shoot(
     sha256: sha256(bytes),
     frameCountBefore: before.frameCount,
     frameCountAfter: after.frameCount,
-    tick: deriveStep(before.pageMs, timeOrigin, before.frameCount),
-    pose: before.camera,
-    distanceM: before.camera.distance,
+    frameCountMid,
+    // The step is derived from the mid-shutter reading of the page clock, so it
+    // is the step of the instant the frame's pose belongs to. `deriveStep` takes
+    // the position the clock started at, which is `performance.now()` read once
+    // before the first still - never `performance.timeOrigin`, which is an epoch
+    // timestamp and produced the `-1.07e11` every frame of the first run
+    // recorded.
+    tick: deriveStep(pageMsMid, startedAtMs, frameCountMid),
+    pose,
+    poseBefore: before.camera,
+    poseAfter: after.camera,
+    distanceM: pose.distance,
   };
 }
 

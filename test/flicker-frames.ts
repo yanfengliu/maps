@@ -43,9 +43,9 @@ export function frameAt(
     offset?: { x: number; y: number };
     /** Override the image outright, for the frozen-scene case. */
     image?: DecodedPng;
-    /** Rendered frames before the shutter, defaulting to 40 frames a step. */
+    /** Rendered frames before the shutter, defaulting to five frames a step. */
     frameCountBefore?: number;
-    /** Rendered frames after the shutter, defaulting to the before count plus 15. */
+    /** Rendered frames after the shutter, defaulting to the before count plus one. */
     frameCountAfter?: number;
     /** Fixed simulation steps, defaulting to six a step. */
     tick?: number;
@@ -55,16 +55,31 @@ export function frameAt(
 ): FlickerFrame {
   const offset = parts.offset ?? { x: index * 3, y: index };
   const image = parts.image ?? windowFrame(offset.x, offset.y);
-  // The frame counter advances while the shutter is open, so a pair spans the
-  // earlier frame's "after" reading to the later frame's "before" one. A step of
-  // 20 rendered frames with 15 of them inside the shutter is a five-frame span,
-  // which is inside the cadence bound this lane asks for.
-  const frameCountBefore = parts.frameCountBefore ?? 1_000 + index * 20;
+  // The span a judged pair is measured over is shutter-midpoint to
+  // shutter-midpoint, because that is the window the capture's recorded poses
+  // describe.
+  //
+  // **Five frames, and the number is load-bearing.** The bar in `judge.ts` is per
+  // rendered frame, so a pair's bound is the bar times this span, while the crawl
+  // indicator's own signal - the flattened field's feature-inconsistent fraction -
+  // is about 0.26 of the frame whatever the span is. That makes the bound a
+  // function of the span and nothing else: at five frames it is 0.025 and the
+  // positive control reads ~0.05, so the case fires; at the 20-odd frames the real
+  // lane achieves it is ~0.11 and the same control reads ~0.013, so the crawl case
+  // would stop firing and the suite would report that as a pass. The span here is
+  // therefore kept at the value these controls were measured at rather than
+  // widened to match a real capture, and the real lane's own cadence is recorded
+  // in its run report instead of being asserted here. **This coupling is a defect
+  // in the bar and is carried as an open bound in the run report**: a bar written
+  // as a per-frame rate should not become looser because a screenshot got slower.
+  const shutterOpenedAtFrame = parts.frameCountBefore ?? 1_000 + index * 5;
+  const shutterClosedAtFrame = parts.frameCountAfter ?? shutterOpenedAtFrame + 1;
   return {
     file: `syn-${String(index).padStart(2, "0")}.png`,
     sha256: createHash("sha256").update(Buffer.from(image.rgba)).digest("hex"),
-    frameCountBefore,
-    frameCountAfter: parts.frameCountAfter ?? frameCountBefore + 15,
+    frameCountMid: (shutterOpenedAtFrame + shutterClosedAtFrame) / 2,
+    shutterOpenedAtFrame,
+    shutterClosedAtFrame,
     tick: parts.tick ?? 3_000 + index * 6,
     pose: poseAt(offset.x, offset.y, parts.distanceM ?? 45),
     image,
@@ -135,10 +150,18 @@ export function frozenRecord(count: number): FlickerFrame[] {
  * The flattened image is computed once from the first frame and written under
  * every odd name, so the odd frames differ from each other only by the camera
  * moving: the only crawl in the record is the one this case is about.
+ *
+ * **The walk is slower than the other records', and it has to be.** This case is
+ * about the crawl indicator, and a pair the *estimator* cannot model is refused
+ * before the crawl bar is read, so a ten-frame walk at 3 px a step accumulates a
+ * 27 px span against a 24 px search radius and the last pair of it stops being
+ * about crawl at all. 2 px a step keeps every frame of the record inside what the
+ * estimator searches.
  */
-export function crawlingRecord(count: number, source: FlickerFrame[] = movingRecord(count)): FlickerFrame[] {
-  const flattened = flattenDetail(source[0]!.image);
-  return source.map((frame, index) => (index % 2 === 1 ? { ...frame, image: flattened } : frame));
+export function crawlingRecord(count: number): FlickerFrame[] {
+  const slow = Array.from({ length: count }, (_, index) => frameAt(index, { offset: { x: index * 2, y: 0 } }));
+  const flattened = flattenDetail(slow[0]!.image);
+  return slow.map((frame, index) => (index % 2 === 1 ? { ...frame, image: flattened } : frame));
 }
 
 /**

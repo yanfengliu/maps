@@ -1307,6 +1307,71 @@ span. ...
 
 **The whole lane is `tools/` and `test/`.** No file under `src/`, `index.html` or `vite.config.ts` is touched, which was a requirement rather than a coincidence: any `src/` change moves `dist` and strands the certificate `685d0eaeb5669287` issued at `a7f865d`. The first version of this lane added `RenderStatus.simulatedSeconds` to `src/harness/bridge.ts` to carry a frame's simulation step; it was removed, and the migration is recorded because the substitute is not the obvious one. `population().ticks`, which the flythrough lane records, is **0 for a whole `?agents=`-free run** - `src/app.ts` calls `agents.attach(...)` only when a population is requested, and `src/agents/agents.ts` registers `population?.update` against a `population` that stays `null` otherwise, so `status()` returns `emptyPopulationStatus()` - and this lane captures `?agents=`-free on purpose so a crossing vehicle cannot be read as a crawl. The step is therefore derived from the page's own clock (`(performance.now() - performance.timeOrigin) * 60`, clamped to the frame counter) and `FlickerFrame.tick` is `number | null`, with `null` recorded rather than 0 so an absent step is never read as a step of zero. The bound is in the field's own docstring: it cannot see a fixed-step clock that stopped while frames kept being drawn, which is why the stalled-render-counter predicate is what carries the sequence's aliveness. Verified by building both revisions on this machine on 2026-09-18: `9795fc4` and the lane's tree both emit `dist/assets/index-_LQ7yEQN.js`, 981,039 bytes, sha256 `a5b9d4146308fea52447fbba8eee0b01bddaaf21d83fae1ae49f0237bb374364e`.
 
+**Superseded in part by the entry below.** The paragraph above describes the lane as RUN-01 left it, including the epoch subtraction it calls the step's derivation. That arithmetic was the defect, and it read `tick ≈ -1.07e11` on every frame of both runs. The heading below replaces it; this text is kept because it is what the gate was believed to prove at the time, which is what an audit needs to reach.
+
+## The flicker judge's second wave: the gesture, the shutter, the estimator and the clock
+
+**Gate:** `test/flicker-judge.test.ts` (13 cases), `test/flicker-step.test.ts` (5), `test/flicker-shutter.test.ts` (3), over `tools/flicker/{judge,motion,step,shutter}.ts` and `tools/flicker/capture.spec.ts`.
+
+**Landed:** 2026-09-18, branch `flicker/measure`, commit `559bd3f`, off `4efaea6`. Subject: the four items of RUN-01's blocking problem, plus one defect found while answering a review of the result. Each gate below was made to go red by reintroducing its defect on this revision; the messages are verbatim.
+
+**M1 - the boundary check removed** (`const atBoundary = Math.abs(refined.dx) >= radius || Math.abs(refined.dy) >= radius;` → `= false`). Exit 1, 1 of 13 red, and only the case that exists for it:
+
+```
+AssertionError: a pair beyond the estimator's search was not refused:
+FAIL  test/flicker-judge.test.ts > the flicker judge > fails a pair the estimator could not model by name, instead of returning 0,0 as a still picture
+```
+
+**M2 - `channelDelta` called with pixel indices instead of byte offsets** (`at * 4, source * 4` → `at, source`). Exit 1, 2 of 13 red. **This is the mutation of the defect that was live in `main`**, and the second message is the one a 192x108 fixture could never produce - the first is the case whose assertion the bug had inverted:
+
+```
+AssertionError: changed pixels were counted at the wrong byte offset: 0.9812977430555555 of the frame: expected 0.9812977430555555 to be less than 0.1
+FAIL  test/flicker-judge.test.ts > the flicker judge > counts changed pixels at the size the lane actually captures, not only at the unit frame's size
+
+AssertionError: syn-01.png changed far more than a pure translation can explain: expected 0.9801169590643275 to be less than 0.05
+FAIL  test/flicker-judge.test.ts > the flicker judge > passes a moving camera whose frames differ only by the expected shift
+```
+
+**M3 - the cadence bound put back below the fixture's span** (`maxPairGapFrames: 26` → `4`). Exit 1, 2 of 13 red - the pinned contract and the cadence assertion:
+
+```
+AssertionError: expected { cadenceFrames: 2, …(1) } to deeply equal { cadenceFrames: 2, …(1) }
+AssertionError: syn-01.png spans more frames than the cadence allows: expected 5 to be less than or equal to 4
+```
+
+**M4 - `deriveStep` subtracting the epoch origin again** (the RUN-01 arithmetic, `timeOrigin = 1_789_702_869_047.3`). Exit 1, 5 of 5 red. The first message reproduces RUN-01's recorded tick to the digit, which is what makes this a proof about the real defect and not about a synthetic one:
+
+```
+AssertionError: expected -107382172011 to be 60
+FAIL  test/flicker-step.test.ts > deriveStep > names a plausible step from elapsed page time
+
+AssertionError: expected -107382171471 to be 42
+AssertionError: expected -107382172071 to be +0
+```
+
+**M5 - the frame's pose put back to the pre-shutter reading** (`midpointPose` returns `before`). Exit 1, 3 of 3 red:
+
+```
+AssertionError: expected 0.3999733338666616 to be close to 0.47995008170083475
+FAIL  test/flicker-shutter.test.ts > midpointPose > is the componentwise mean of the two readings
+
+AssertionError: expected +0 to be close to 0.004
+FAIL  test/flicker-shutter.test.ts > midpointPose > measures a pair's motion over the pair's own window, not one shutter wider
+
+AssertionError: expected +0 to be close to 0.004
+FAIL  test/flicker-shutter.test.ts > midpointPose > keeps the recorded distance and turn on the mid-shutter instant
+```
+
+**What each gate can and cannot see, stated as its bound.**
+
+- The byte-offset case gates the arithmetic at the size the lane captures (1280x720). The class it belongs to - a unit conversion whose wrongness depends on the array being long enough to index out of bounds - is only ever caught by exercising the real dimensions, so this gate covers this conversion at this size and nothing at another. Every other unit fixture in this repository shares the same structural blind spot at its own dimensions.
+- The boundary case gates the estimation, not the picture. A pair it refuses is one whose crawl figure is not usable; a pair it passes has a shift inside the search and the shift being *right* is a separate claim, carried by the pure-shift case's exact `{dx: 3, dy: 1}` and by RUN-02's hand search of the whole shift space.
+- The cadence case gates a constant. It cannot see what a pair actually spanned, which is the run report's measured `frameGap`, and it deliberately spans 5 frames in the fixture rather than the ~21 the lane achieves: a per-rendered-frame bar multiplied by a 21-frame span gives a bound four times looser, and at that span the crawl case's own positive control falls *below* its bound and stops firing. That coupling is a defect in the bar, carried in the run report.
+- The step cases drive arithmetic, not a browser. They cannot see a capture that never reads the page clock, and they cannot see a fixed-step clock that stopped while frames kept being drawn - the judge's stalled-render-counter predicate is what carries that.
+- The shutter cases drive arithmetic, not a browser. They pin that the recorded pose is the midpoint of the two readings and that the motion and the span describe one window. They cannot remove the shutter's own width, and the mid-point itself is a model: the camera's path between the two readings is not known to be straight. On a constant-speed path a probe run while the case was written measured the pre-to-pre and mid-to-mid windows at 1.000008x each other, so this case cannot demonstrate the size of the bias - only the window the record now uses, and the wider window it no longer uses.
+
+**Measured after the fix**, from the lane's own two runs on the final scene (frames bound by SHA-256 in `artifacts/flicker/capture/manifest-*.json`): the picture moves 1-2 px per pair by the estimator's own answer, 0.1911-0.2016 m and 0.0042-0.0045 rad of camera motion, and `changedFraction` reads 0.1871-0.2206 where the defect made it 0.97. The worst real pair reads `crawl` **1.351e-3 per frame** against the shipped `0.005`. The bar is still provisional and this file does not claim it is calibrated: see `artifacts/flicker/RUN-02-REPORT.md` for why the available controls cannot calibrate it.
+
 ## The road tile's spectrum shape: the gate the step floor alone could not make
 
 **Gate:** `test/surface-detail.test.ts` - the case "keeps the road's weight in the fine octaves, which is the lever the frame bar needed", plus the raised mip-0/mip-1 floors in "puts at least 5% of albedo between neighbouring texels on the road" (0.045/0.025 to 0.08/0.045) and the strengthened modulation ceiling (0.5 to 0.8).
