@@ -112,7 +112,16 @@ export interface Actor {
 export interface Candidate {
   camera: Point;
   way: string;
-  /** The controls' bearing: the azimuth from the target to the camera, radians. */
+  /**
+   * The azimuth the camera **looks**, radians: the direction from the camera to the
+   * target, since `scorePose` builds the target as `camera + (sin, cos) * distance`.
+   *
+   * This is not `CameraSnapshot.azimuth`, which is `controls.getAzimuthalAngle()` and
+   * measures from the target to the camera. The two are a half turn apart, so a pose
+   * this tool ranks first flies on the far side of its own target when its azimuth is
+   * handed to the route unchanged. `tools/flythrough/plan.ts` carries the run's
+   * numbers for that and `test/flythrough-crowd-anchor.test.ts` pins them.
+   */
   azimuth: number;
   distance: number;
 }
