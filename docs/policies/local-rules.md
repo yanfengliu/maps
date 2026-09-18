@@ -130,6 +130,12 @@ The other four are deliberate references to revisions that have not landed, and 
 
 The corrections the five need land in a later record pass and are not made by this rule, so a reader should not expect the four files that carry them — `quality-register.md`, `docs/learning/gate-proofs.md`, `docs/devlog/summary.md` and `docs/devlog/detailed/2026-09-17_phase-b-appearance-batch.md` — to change with it.
 
+## A tracked document is written with the line endings it already has
+
+These documents are CRLF, `core.autocrlf=true` is set and the repository has no `.gitattributes`, so a tool that rewrites a tracked document with LF-only endings produces a whole-file diff that buries the line that changed: `git diff` reports every line removed and every line added, and the correction inside it is invisible. Measured on 2026-09-18: a correction to two lines of `plan.md` reported **469 insertions and 469 deletions**, and `git diff --ignore-cr-at-eol` reduced the same file to the two hunks that were real.
+
+Write a tracked document with the endings it already has, and when a diff shows every line changed, suspect the endings before believing the content changed. `git diff --ignore-cr-at-eol` is the check that separates the two, and it is what established what actually changed here rather than an argument about which copy was current.
+
 ## The visual gate is two lanes, and each one names its renderer
 
 `npm run visual` clears the previous certificate, builds once, pins those build bytes, the scene data the preview server will serve, the harness that will drive the browser and the GPU the frames will be drawn on, runs the appearance lane, runs the lifecycle lane, then certifies the complete 44-frame set against both lanes' evidence. The chain is `node tools/visual/verify-output.ts --reset && npm run build && node tools/visual/verify-output.ts --begin && playwright test --config playwright.config.ts && playwright test --config playwright.lifecycle.config.ts --repeat-each=3 && node tools/visual/verify-output.ts --end`. The two lanes differ by question rather than by renderer: both draw on the GPU, and each asserts the renderer it got and names it in its records.
