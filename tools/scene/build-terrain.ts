@@ -24,6 +24,7 @@ import { planeRectangularToWorld } from "../../src/world/frame.ts";
 import { encodeMesh, type MeshData } from "../../src/world/mesh.ts";
 import { geographicToPlaneRectangular } from "../geo/plane-rectangular.ts";
 import { streamTinTriangles } from "../geo/plateau-tin.ts";
+import { capTerrainHoles, censusBoundaries, describeLoopForFailure, type CapSummary } from "./terrain-watertight.ts";
 
 /**
  * How far past the area of interest the ground is kept, in degrees of latitude.
@@ -38,7 +39,11 @@ const MARGIN_DEGREES = 0.0025;
 export interface TerrainBuildResult {
   /** Triangles in the whole 10 km cell, as read. */
   sourceTriangleCount: number;
-  /** Triangles kept, including the margin outside the box. */
+  /** Triangles of the kept ground, before capping. */
+  clippedTriangleCount: number;
+  /** Triangles the cap added to close the ground's holes. */
+  capTriangleCount: number;
+  /** Triangles written, including the margin outside the box and the cap. */
   triangleCount: number;
   /** Triangles whose centroid is inside the area of interest box itself. */
   insideAoiTriangleCount: number;
@@ -49,6 +54,8 @@ export interface TerrainBuildResult {
   /** Ground at the world origin — the Scramble Crossing — metres above sea level. */
   groundAtOriginM: number;
   bytes: number;
+  /** What closing the ground's holes found and added. */
+  holes: CapSummary;
 }
 
 export interface TerrainSampler {
@@ -62,9 +69,22 @@ export interface TerrainBuild {
   sampler: TerrainSampler;
 }
 
+export interface TerrainBuildOptions {
+  /**
+   * Leave the source TIN's interior rims open and hand back the uncapped mesh.
+   *
+   * This exists so the watertightness gate can be watched to refuse: a gate on the
+   * F1 terrain hole that has never been made to go red proves nothing about
+   * whether it can see a hole. `capTerrainHoles` is skipped, and so is
+   * `verifyTerrainIsWatertight` — a refusal here would defeat the purpose.
+   */
+  leaveHolesOpen?: boolean;
+}
+
 export async function buildTerrain(
   demPath: string,
   log: (line: string) => void = () => {},
+  options: TerrainBuildOptions = {},
 ): Promise<TerrainBuild> {
   const keep = {
     south: AOI_BOUNDS_WGS84.south - MARGIN_DEGREES,
@@ -144,8 +164,26 @@ export async function buildTerrain(
 
   const positionArray = new Float32Array(positions);
   const indexArray = new Uint32Array(indices);
-  const normals = computeNormals(positionArray, indexArray);
-  const sampler = buildSampler(positionArray, indexArray);
+  const clippedTriangleCount = indexArray.length / 3;
+
+  // The kept ground carries the source TIN's own holes: PLATEAU's relief is not a
+  // closed surface, and a hole in it renders as a patch of sky or of the far side
+  // of the city seen from underneath. They are closed here, before the normals are
+  // computed, so the cap is shaded as the ground it fills.
+  const capped = options.leaveHolesOpen === true
+    ? { positions: positionArray, indices: indexArray, summary: censusOnly(positionArray, indexArray) }
+    : capTerrainHoles({ positions: positionArray, indices: indexArray }, undefined, log);
+  const cappedPositions = capped.positions;
+  const cappedIndices = capped.indices;
+  log(
+    `      ground rims: ${capped.summary.boundaryEdgeCount} rim edges, outer rim ` +
+      `${capped.summary.outerLoopVertices} vertices / ${capped.summary.outerLoopPerimeterM.toFixed(1)} m, ` +
+      `${capped.summary.holes.length} holes closed with ${capped.summary.addedTriangleCount} triangles, ` +
+      `${capped.summary.capTrianglesFacingUp} facing up / ${capped.summary.capTrianglesFacingDown} down`,
+  );
+
+  const normals = computeNormals(cappedPositions, cappedIndices);
+  const sampler = buildSampler(cappedPositions, cappedIndices);
 
   const groundAtOrigin = sampler.heightAt(0, 0);
   if (groundAtOrigin === undefined) {
@@ -156,37 +194,97 @@ export async function buildTerrain(
     );
   }
 
-  const bounds = boundsOf(positionArray);
+  const bounds = boundsOf(cappedPositions);
   const mesh: MeshData = {
     header: {
       version: 1,
       name: "terrain",
-      vertexCount: positionArray.length / 3,
-      triangleCount: indexArray.length / 3,
+      vertexCount: cappedPositions.length / 3,
+      triangleCount: cappedIndices.length / 3,
       bounds,
       note:
         "PLATEAU dem:TINRelief 533935, 2.5 m triangles, EPSG:6697 to the world frame. Heights are " +
-        "orthometric metres above Tokyo Bay mean sea level and pass through untouched.",
+        "orthometric metres above Tokyo Bay mean sea level and pass through untouched. Interior rims " +
+        "of the source TIN are closed with a centroid fan; see tools/scene/terrain-watertight.ts.",
     },
-    positions: positionArray,
+    positions: cappedPositions,
     normals,
-    indices: indexArray,
+    indices: cappedIndices,
   };
 
   const bytes = encodeMesh(mesh);
+  // The builder refuses to hand back a mesh with a hole in it, and the
+  // `data:scene` gate refuses to publish one. Both run the same census: this one
+  // catches a cap that did not cover a rim, and the gate catches a mesh that
+  // reached disk by some other route. The uncapped build skips it on purpose, so
+  // the gate has something to refuse.
+  if (options.leaveHolesOpen !== true) verifyTerrainIsWatertight(mesh, "The terrain mesh this build produced");
   return {
     bytes,
     sampler,
     result: {
       sourceTriangleCount,
-      triangleCount: indexArray.length / 3,
+      clippedTriangleCount,
+      capTriangleCount: capped.summary.addedTriangleCount,
+      triangleCount: cappedIndices.length / 3,
       insideAoiTriangleCount: insideAoi,
-      vertexCount: positionArray.length / 3,
+      vertexCount: cappedPositions.length / 3,
       minimumHeightM: minimumHeight,
       maximumHeightM: maximumHeight,
       groundAtOriginM: groundAtOrigin,
       bytes: bytes.byteLength,
+      holes: capped.summary,
     },
+  };
+}
+
+/**
+ * Refuse a terrain mesh that still carries a hole.
+ *
+ * This is the gate `npm run data:scene` owns, and it reads the mesh it is about to
+ * publish rather than trusting the cap that produced it: a census run inside the
+ * builder would prove only that the builder agrees with itself. The measurement is
+ * a rim-edge census — a directed edge with no opposite is a rim, and any rim but
+ * the ground's own outer edge is a hole in it.
+ *
+ * **The claim is topological, and it stops there.** It says the ground is closed and
+ * that the rim bounding it is the only one left. It does not say the surface the fan
+ * added resembles the source survey, because the apex is the rim's own vertex mean
+ * and the triangles around it need not lie on the TIN; it does not check that the
+ * projection is covered; and a hole whose rim was welded into a seam is not a rim,
+ * so this census cannot see it. The mesh's outer silhouette is out of scope.
+ *
+ * It fails by name. The message carries each hole's rim vertex count, perimeter,
+ * position and turn, because the defect it exists for was reported as "the F1
+ * terrain hole and its 13 siblings" and a reader who cannot see which rim failed
+ * has to run the census by hand to find out.
+ */
+export function verifyTerrainIsWatertight(
+  arrays: { positions: Float32Array; indices: Uint32Array },
+  where: string,
+): CapSummary {
+  const census = censusBoundaries(arrays);
+  if (census.interiorLoops.length > 0) {
+    const named = census.interiorLoops.map((loop) => `  - ${describeLoopForFailure(loop)}`).join("\n");
+    throw new Error(
+      `${where} carries ${census.interiorLoops.length} hole${census.interiorLoops.length === 1 ? "" : "s"} ` +
+        "in the ground: a terrain rim that is not the mesh's outer edge. A hole in the ground renders as " +
+        "whatever is under the city, so the scene is refused rather than written.\n" +
+        `The ground's outer rim is ${describeLoopForFailure(census.outerLoop)}.\n` +
+        `Holes, worst first:\n${named}\n` +
+        "Close them in tools/scene/build-terrain.ts — `capTerrainHoles` does it — and re-run " +
+        "`npm run data:scene`.",
+    );
+  }
+  return {
+    holes: [],
+    outerLoopVertices: census.outerLoop.vertices.length,
+    outerLoopPerimeterM: census.outerLoop.perimeterM,
+    boundaryEdgeCount: census.boundaryEdgeCount,
+    addedVertexCount: 0,
+    addedTriangleCount: 0,
+    capTrianglesFacingUp: 0,
+    capTrianglesFacingDown: 0,
   };
 }
 
@@ -230,6 +328,21 @@ function computeNormals(positions: Float32Array, indices: Uint32Array): Float32A
     normals[index + 2] = normals[index + 2]! / length;
   }
   return normals;
+}
+
+/** What the census finds without changing anything: for the deliberate uncapped build. */
+function censusOnly(positions: Float32Array, indices: Uint32Array): CapSummary {
+  const census = censusBoundaries({ positions, indices });
+  return {
+    holes: census.interiorLoops,
+    outerLoopVertices: census.outerLoop.vertices.length,
+    outerLoopPerimeterM: census.outerLoop.perimeterM,
+    boundaryEdgeCount: census.boundaryEdgeCount,
+    addedVertexCount: 0,
+    addedTriangleCount: 0,
+    capTrianglesFacingUp: 0,
+    capTrianglesFacingDown: 0,
+  };
 }
 
 function boundsOf(positions: Float32Array): { min: [number, number, number]; max: [number, number, number] } {

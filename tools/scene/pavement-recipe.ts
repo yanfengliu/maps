@@ -15,8 +15,14 @@ import { composePavement } from "./compose-pavement.ts";
 
 const hash = (bytes: Uint8Array | string): string => createHash("sha256").update(bytes).digest("hex");
 const REVIEWED_INPUTS: Readonly<Record<string, string>> = {
-  "terrain.mesh": "fef57d0960c3d08c5d31f0f56f64cff3b046b6d577b36473b7c046295249b381",
-  "roads.mesh": "3fe126cd675949daf4b337b890c99478c730a4f956c7f4241e7fe883cf967490",
+  // Re-bound 2026-09-18 by the terrain cap (branch worker/f1-terrain-cap). The cap
+  // appends one centroid vertex and one triangle per interior rim edge and removes
+  // nothing, and the roads drape 123 polygons that used to be dropped for reaching
+  // past the terrain; the pavement output moves with them because the ground under
+  // its source paths is the same ground it was measured against. Every other input
+  // below is untouched. Review 34 owns whether this binding is still meaningful.
+  "terrain.mesh": "c39d49edd405e266373e0b48e0202967a01f546e7d11d2dffd5497c14d692773",
+  "roads.mesh": "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
   "53393585_tran_6697_op.gml": "8457ce05ff6aab157e36bb614582478ae8d0b0db320e0a95e6552d6ac7108921",
   "53393586_tran_6697_op.gml": "18b8b0c1afb307546073c6b0910bba171a5aea82e9cac06215e1a6be7bd3746b",
   "53393595_tran_6697_op.gml": "a74cc75aa06a9a57dd2d9ecae644267779eb6ac1e2ca43dc53f04eb6b2fa86ee",

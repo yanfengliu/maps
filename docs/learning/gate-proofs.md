@@ -1402,3 +1402,102 @@ AssertionError: the road's fine octaves must outweigh the coarse ones: expected 
 
 **Bound.** It gates a property of the generated texels: the octave weights rise by at least 1.2x each, the fine half outweighs the coarse half by at least 5x, the mip-1 albedo step stays at or above the 3.97% the previous spectrum gave, and the mip-0 step stays above 1.5x the mip-1. It does not compile a shader, does not render, and cannot see a repeat lattice, aliasing or a surface that reads as noise: those are the frame set's evidence, and the frames this claim rests on are the 44 certified under `b9d02f80d450203a` with their 1:1 crops preserved at `artifacts/grain/crops/`. The step it measures is tile-space, and the frame's own step was 2.4x lower than the tile-space prediction on the road rect, so the floors are a proxy with a measured offset rather than a measurement of the pixel.
 
+## The terrain gate refuses an uncapped ground, and the cap closes it
+
+**Gate:** `npm test` — `test/terrain-watertight.test.ts` (8 cases) for the census, the cap, the gate read off disk and the pipeline's own use of it; `test/plateau-tin-stream.test.ts` (3 cases) for the TIN reader's chunk tail; `test/scene-manifest.test.ts` (5 cases, two of them new) for the payload's record of the invented ground. The gate itself is `verifyTerrainIsWatertight` in `tools/scene/build-terrain.ts`, and the step `npm run data:scene` owns is `tools/scene/build.ts` reading `data/scene/terrain.mesh` back off disk and verifying those bytes.
+
+**Landed:** 2026-09-18 on branch `worker/f1-terrain-cap`, off `main` at `4efaea6` — the cap, the gate and the payload record in `f1b3bc9`, cherry-picked from `phase-b-terrain-cap` at `0c76789`; the TIN reader fix in `38bb0ac`. Not merged: the coordinator lands it with the pavement-input review that the moving pins need. Every mutation below was run against `38bb0ac` and reverted byte-identically with `git restore`; the working tree was empty afterwards.
+
+**Bound, stated in the gate's own header.** The claim is **topological**: a closed surface uses every directed edge both ways, so the census counts the edges used once and identifies the single rim that bounds the mesh. What it establishes is that the ground is closed — every rim but the outer one is gone — and nothing past that. It does not claim the fan's surface resembles the source survey (the apex is the rim's own vertex mean and the triangles around it need not lie on the TIN), it does not check that the projection is covered, it **cannot see a hole whose rim was welded into a seam or a T-junction**, and the mesh's outer silhouette is out of scope. The smaller fixture cases add their own bound: a square hole in a flat grid says nothing about the two real rims that double back on themselves, where 9 of the cap's 227 triangles face down.
+
+**The refusal, verbatim, on the ground the primary serves today** (183,188 triangles, 1,441 rim edges, 15 rims, 14 of them holes), from `node artifacts/f1-cap-probe/census.ts data/scene/terrain.mesh`:
+
+```
+data/scene/terrain.mesh carries 14 holes in the ground: a terrain rim that is not the mesh's outer edge. A hole in the ground renders as whatever is under the city, so the scene is refused rather than written.
+The ground's outer rim is 1214 rim vertices, 6061.3 m perimeter, centroid (2.8, 2.5) at 27.75 m, XZ area -2264083.6 m².
+Holes, worst first:
+  - 54 rim vertices, 369.4 m perimeter, centroid (426.8, 391.3) at 11.83 m, XZ area 1325.0 m²
+  - 28 rim vertices, 189.7 m perimeter, centroid (533.1, 500.5) at 11.33 m, XZ area 650.0 m²
+  - 24 rim vertices, 169.7 m perimeter, centroid (329.3, 308.9) at 12.35 m, XZ area 550.0 m²
+  - 22 rim vertices, 155.6 m perimeter, centroid (276.8, 251.4) at 12.25 m, XZ area 500.0 m²
+  - 16 rim vertices, 109.0 m perimeter, centroid (586.5, 568.9) at 10.80 m, XZ area 350.0 m²
+  - 14 rim vertices, 99.0 m perimeter, centroid (656.8, 636.4) at 10.37 m, XZ area 300.0 m²
+  - 14 rim vertices, 99.0 m perimeter, centroid (621.8, 606.4) at 10.34 m, XZ area 300.0 m²
+  - 15 rim vertices, 89.5 m perimeter, centroid (579.0, -403.1) at 26.42 m, XZ area 512.5 m²
+  - 8 rim vertices, 56.6 m perimeter, centroid (694.3, 673.9) at 9.74 m, XZ area 150.0 m²
+  - 8 rim vertices, 52.4 m perimeter, centroid (707.4, 693.9) at 10.57 m, XZ area 150.0 m²
+  - 6 rim vertices, 42.4 m perimeter, centroid (496.8, 461.4) at 10.37 m, XZ area 100.0 m²
+  - 6 rim vertices, 42.4 m perimeter, centroid (566.8, 541.4) at 10.35 m, XZ area 100.0 m²
+  - 6 rim vertices, 42.4 m perimeter, centroid (681.8, 656.4) at 9.95 m, XZ area 100.0 m²
+  - 6 rim vertices, 38.3 m perimeter, centroid (714.3, 711.4) at 10.55 m, XZ area 100.0 m²
+Close them in tools/scene/build-terrain.ts — `capTerrainHoles` does it — and re-run `npm run data:scene`.
+```
+
+The eight lines the message has to carry are all there: what happened (holes in the ground and what a hole renders as), which input (the path), and what would satisfy it (the file to close them in, the function, the command). Capping that same mesh in memory gives `+14 vertices, +227 triangles, 218 up / 9 down, interior loops 0, boundary edges 1214`, and the gate then passes.
+
+**Mutations, six, each exit status 1** (`npx vitest run <file>` from the lane worktree):
+
+(1) **The cap is removed from the pipeline** — `build-terrain.ts`'s `options.leaveHolesOpen === true` replaced by `true`, so every build takes the census-only branch. This is the mutation that mattered most, because the first version of this file's cases all passed under it: they drove `capTerrainHoles` and `verifyTerrainIsWatertight` directly, so nothing in the suite noticed that the pipeline had stopped capping. The case that catches it drives `buildTerrain` over a fixture DEM with one missing cell and reads the bytes it hands back:
+
+```
+Error: The terrain mesh this build produced carries 1 hole in the ground: a terrain rim that is not the mesh's outer edge. A hole in the ground renders as whatever is under the city, so the scene is refused rather than written.
+Tests  1 failed | 7 passed (8)
+```
+
+(2) **The census skips a rim** — `interiorLoops` becomes `loops.filter((loop) => loop !== outer).slice(1)`. Six of the eight cases fail, among them the fixture's own census, the gate's refusal and the served-mesh census:
+
+```
+AssertionError: expected [] to have a length of 1 but got +0
+AssertionError: expected +0 to be 4 // Object.is equality
+AssertionError: expected [Function] to throw an error
+AssertionError: expected [Function] to throw an error
+AssertionError: expected +0 to be 4 // Object.is equality
+AssertionError: expected [ { …(8) }, { …(8) }, { …(8) }, …(10) ] to have a length of 14 but got 13
+Tests  6 failed | 2 passed (8)
+```
+
+(3) **The TIN reader keeps an already-parsed triangle in its tail** — `tail` cut back to the last opening tag again, which is the pre-fix rule verbatim. All three reader cases fail; the first case's own red control (a copy of the same rule inside the test) is what says the fixture still reproduces the boundary:
+
+```
+AssertionError: the stream yielded 4 triangles from a document holding 3: expected 4 to be 3 // Object.is equality
+AssertionError: a chunk boundary inside <gml:Triangle> lost triangles: the document holds 3 and the stream yielded 4: expected 4 to be 3 // Object.is equality
+AssertionError: at chunkSize 1 the stream disagrees with parseTin over the same document: expected [ …(101) ] to deeply equal [ …(3) ]
+Tests  3 failed (3)
+```
+
+(4) **The scene gate verifies the builder's own array again** — `verifyTerrainIsWatertight(decodeMesh(new Uint8Array(await readFile(join(SCENE_ROOT, "terrain.mesh")))), …)` replaced by `decodeMesh(terrain.bytes),`, which is the cherry-picked branch's shape. One case fails:
+
+```
+AssertionError: tools/scene/build.ts must read data/scene/terrain.mesh back before it verifies it: expected +0 to be 1 // Object.is equality
+Tests  1 failed | 7 passed (8)
+```
+
+(5) **The manifest records the rims unrounded** — `apexX: Number(rim.apexX.toFixed(2))` replaced by `apexX: rim.apexX`:
+
+```
+AssertionError: expected 426.80001 to be 426.8 // Object.is equality
+Tests  1 failed | 4 passed (5)
+```
+
+(6) **The manifest stops checking that its cap facts agree** — the `closedRims.length !== closedHoleCount` guard replaced by `if (false)`:
+
+```
+AssertionError: expected [Function] to throw an error
+Tests  1 failed | 4 passed (5)
+```
+
+**Why mutation 1 is the one to keep.** The gate's own function can be perfect and the pipeline can still stop calling it; a suite that drives the function directly cannot see the difference, and this file's first version was exactly that. The case that now holds it drives `buildTerrain` on a fixture DEM whose ground has one missing cell, asserts the bytes it hands back carry no interior rim, and asserts the `leaveHolesOpen` arm of the same build still carries that rim — if the control arm ever stops carrying it, the case fails rather than passing for the wrong reason.
+
+**What the reader mutation measures.** The reader fix is not a cosmetic one: on the real `533935_dem_6697_op.gml` the old tail rule returned 1,101,417 triangles from a document holding 1,101,033, and 65 of the double-counted triangles survived the clip. `node artifacts/terrain-holes/mesh-doctor.mjs` over the three meshes:
+
+| mesh | triangles | duplicate= | nonManifold(>2 faces)= | boundary edges | loops |
+| --- | --- | --- | --- | --- | --- |
+| served `data/scene/terrain.mesh`, pre-fix reader | 183,188 | 65 | 195 | 1,441 | 15 (14 holes) |
+| rebuilt uncapped, fixed reader | 183,123 | 0 | 0 | 1,441 | 15 (14 holes) |
+| rebuilt capped, fixed reader | 183,350 | 0 | 0 | 1,214 | 1 |
+
+The hole census does not move — 14 interior rims and 1,441 rim edges either way — so the cap needed no adjustment, which is the check that says the two defects are independent rather than one hiding the other.
+
+**A case that invalidates itself on purpose.** `test/terrain-watertight.test.ts`'s served-mesh case asserts the *pre-batch* state: the ground on disk is still the uncapped one, the F1 rim is among its interior rims, and the gate must refuse it by name. The moment `npm run data:scene` writes a capped scene that case goes red, which is the safe direction. Phase 2 flips it to assert the new state — watertight, one loop, the manifest's `closedHoleCount` 14 and `capTriangleCount` 227, and fourteen `closedRims` records matching a re-derived census — and must not relax it into something that passes in both states.
+
+

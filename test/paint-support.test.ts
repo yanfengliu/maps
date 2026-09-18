@@ -89,9 +89,9 @@ it("rejects the actual legacy highest-layer callback at the source crossing", as
   const inputs = await Promise.all(paths.map(path => readFile(path).catch(cause => { throw new Error(`Paint regression requires ${path}; restore the recorded cached data with data:fetch, data:scene and data:network before npm test.`, { cause }); })));
   expect(inputs.map(bytes => createHash("sha256").update(bytes).digest("hex"))).toEqual([
     "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
-    "3fe126cd675949daf4b337b890c99478c730a4f956c7f4241e7fe883cf967490",
-    "5d2a915047b0e8719e624f14f600c81c0a6c6342c4e8ce5b383bdfa987bcbc24",
-    "fef57d0960c3d08c5d31f0f56f64cff3b046b6d577b36473b7c046295249b381",
+    "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
+    "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62",
+    "c39d49edd405e266373e0b48e0202967a01f546e7d11d2dffd5497c14d692773",
   ]);
   const network = JSON.parse(inputs[0]!.toString()) as NetworkData;
   const feature = network.physical.crossings.find(c => c.id === "osm:way:1419311959:crossing");
@@ -112,8 +112,8 @@ it("rejects the actual legacy highest-layer callback at the source crossing", as
 it("censuses all actual zebra and continuous tactile triangles without upper-layer jumps", async () => {
   const pins = [
     ["data/network/network.json", "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"],
-    ["data/scene/roads.mesh", "3fe126cd675949daf4b337b890c99478c730a4f956c7f4241e7fe883cf967490"],
-    ["data/scene/pavements.mesh", "5d2a915047b0e8719e624f14f600c81c0a6c6342c4e8ce5b383bdfa987bcbc24"],
+    ["data/scene/roads.mesh", "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc"],
+    ["data/scene/pavements.mesh", "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62"],
   ] as const;
   const inputs = await Promise.all(pins.map(async ([path, pin]) => {
     const bytes = await readFile(path).catch(cause => { throw new Error(`Paint regression requires cached ${path}; run npm run data:fetch, npm run data:scene and npm run data:network using the recorded source before npm test. No input is fetched or skipped by this test.`, { cause }); });

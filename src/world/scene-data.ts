@@ -26,6 +26,29 @@ export const SCENE_FILES = Object.freeze({
   buildingIndex: `${SCENE_DATA_BASE}/buildings/buildings.json`,
 });
 
+/**
+ * One interior rim the terrain cap closed, as it was measured before the fan.
+ *
+ * The fan adds exactly one vertex per rim — the rim's own vertex mean — and one
+ * triangle per rim edge. That apex is **invented**: no survey measured it, and the
+ * triangles between it and the rim do not have to lie on the source TIN. The record
+ * exists so the invention is nameable in the shipped payload, where the cap vertices
+ * are otherwise just appended after the source vertices and cannot be told apart
+ * from surveyed ground.
+ */
+export interface ClosedTerrainRim {
+  /** Rim vertices the fan walked, and therefore triangles it added. */
+  rimVertexCount: number;
+  /** Closed length of the rim in metres. */
+  rimPerimeterM: number;
+  /** The invented apex: the rim vertices' mean position, world metres. */
+  apexX: number;
+  apexY: number;
+  apexZ: number;
+  /** Magnitude of the rim's projected area, m². */
+  rimAreaM2: number;
+}
+
 export interface SceneManifest {
   /** Bumped when the shape of anything under `data/scene/` changes. */
   version: 1;
@@ -45,6 +68,26 @@ export interface SceneManifest {
     minimumHeightM: number;
     maximumHeightM: number;
     groundAtOriginM: number;
+    /**
+     * Interior rims of the source TIN's relief that the build closed with a fan.
+     *
+     * These count **invented** surface, not recovered ground. The gate that
+     * measures them (`verifyTerrainIsWatertight`) is topological: it counts rim
+     * edges and identifies the mesh's outer rim, so it says the ground is closed.
+     * It does not claim the added triangles resemble the source survey, does not
+     * check that the projection is covered, and cannot see a hole whose rim was
+     * welded into a seam. The mesh's outer silhouette is outside its scope.
+     */
+    closedHoleCount: number;
+    /** Triangles that fan cost. Zero for a source whose relief is already closed. */
+    capTriangleCount: number;
+    /**
+     * Where that invention is, rim by rim, so a reviewer can find it without
+     * re-running the census. Each record is measured on the rim *before* the fan
+     * was added: the apex is the rim's own vertex mean, and it is a new vertex that
+     * no survey measured.
+     */
+    closedRims: readonly ClosedTerrainRim[];
   };
   roads: {
     roadCount: number;
