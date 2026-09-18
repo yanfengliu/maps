@@ -35,6 +35,10 @@ const EXPECTATIONS: SequenceExpectations = {
   // so a synthetic leg holds nothing unless a case says otherwise.
   heldPairs: {},
   redControl: false,
+  // The floor `flythrough.spec.ts` asserts each captured frame's clearance
+  // against, read by the judge over the stand's own readings as well as the
+  // capture, so the record cannot dip below it between two frames' captures.
+  clearanceFloorM: 1.5,
 };
 
 /** One leg of synthetic frames that passes every check, so a case can break one thing. */
@@ -55,6 +59,8 @@ function frames(count: number, leg = "overview"): SequenceFrame[] {
     vehiclesDrawn: 20,
     structuredPixels: 0.6,
     targetY: 15.2,
+    // Above any floor a case here uses, so a case can lower it deliberately.
+    clearanceM: 3.65,
   }));
 }
 
@@ -322,6 +328,46 @@ describe("judgeSequence", () => {
     const failures = judgeSequence(set, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
     expect(failures.join("\n")).toMatch(/the controls' target at a height other than 15.2 m/);
     expect(failures.join("\n")).toMatch(/a frame where the camera was set rather than driven/);
+  });
+
+  it("fails a recorded moment below the clearance floor even when the captured clearance passes, by name", () => {
+    // The recorded run's own numbers, from `artifacts/flythrough2/manifest.json`:
+    // `frames/approach/approach-009.png` was captured 2.685 m above the ground
+    // after the step's vertical control had run — clear of the 1.5 m floor — but
+    // the same step's stand read 0.194 m *before* that control ran. The per-frame
+    // assertion reads the camera at the capture only, so this frame passed it.
+    const dipped = frames(10, "approach").map((frame, index) =>
+      index === 9
+        ? { ...frame, clearanceM: 2.685, stand: { heightBeforeM: 0.19419, heightAfterM: 2.35018 } }
+        : frame,
+    );
+    const failures = judgeSequence(dipped, [{ name: "approach", frames: 10 }], FLOORS, EXPECTATIONS);
+    expect(failures.join("\n")).toMatch(/no recorded moment of this leg put the camera below the leg's clearance floor/);
+    expect(failures.join("\n")).toMatch(/approach-009\.png: 0\.19 m at the stand's height before the vertical control ran/);
+    expect(failures.join("\n")).toMatch(/the camera's path between two recorded moments is not sampled here/);
+
+    // The same leg with that dip lifted clear: the captured clearance was never
+    // the problem, and the stand's own reading is the whole of what the check added.
+    const lifted = dipped.map((frame, index) =>
+      index === 9 ? { ...frame, stand: { heightBeforeM: 2.1, heightAfterM: 2.35 } } : frame,
+    );
+    expect(judgeSequence(lifted, [{ name: "approach", frames: 10 }], FLOORS, EXPECTATIONS)).toEqual([]);
+
+    // A capture itself below the floor is reported in the same terms: the floor is
+    // over the worst the record kept, not over the stand's readings alone.
+    const lowCapture = frames(10, "approach").map((frame, index) => (index === 3 ? { ...frame, clearanceM: 1.2 } : frame));
+    expect(judgeSequence(lowCapture, [{ name: "approach", frames: 10 }], FLOORS, EXPECTATIONS).join("\n")).toMatch(
+      /approach-003\.png: 1\.20 m at the captured clearance/,
+    );
+  });
+
+  it("fails a record that says nothing about the camera's clearance, rather than reading silence as a pass", () => {
+    const unrecorded = frames(6).map((frame, index) => (index === 2 ? { ...frame, clearanceM: null } : frame));
+    const failures = judgeSequence(unrecorded, [{ name: "overview", frames: 6 }], FLOORS, EXPECTATIONS);
+    expect(failures.join("\n")).toMatch(
+      /1 of 6 frames record no captured clearance at all \(frames\/overview\/overview-002\.png\)/,
+    );
+    expect(failures.join("\n")).toMatch(/cannot be reported as one that stood above the floor/);
   });
 
   it("fails frames captured at the wrong size", () => {

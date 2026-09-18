@@ -56,6 +56,22 @@ export interface SequenceFrame {
   structuredPixels: number;
   /** The controls' target height, which no input can move. */
   targetY: number;
+  /**
+   * The camera's height above the highest terrain under it at the instant of the
+   * capture, metres. Absent when the record kept none, which the clearance check
+   * reports by name rather than reading as a pass.
+   */
+  clearanceM?: number | null;
+  /**
+   * What the step's vertical control read, where the plan asked it to run.
+   *
+   * Both are readings rather than aims: `heightBeforeM` is where the camera
+   * stood when that control ran and `heightAfterM` where the same step left it,
+   * so together they bracket one step of the only input that moves the camera
+   * vertically. The clearance check reads them beside the captured clearance; a
+   * step that dispatched no vertical control contributes no such reading.
+   */
+  stand?: { heightBeforeM: number; heightAfterM: number } | null;
 }
 
 export interface SequenceFloors {
@@ -91,6 +107,17 @@ export interface SequenceExpectations {
   minimumTravelM: number;
   /** The least fraction of a leg's frames whose digests must differ. */
   minimumDistinctFraction: number;
+  /**
+   * The least height above the ground beneath it the camera may be recorded at,
+   * metres — the leg's clearance floor.
+   *
+   * The specification asserts this beside every capture, against the clearance
+   * read at that instant; this expectation is the same floor read over every
+   * moment the record kept, so a vertical control that dipped below it between
+   * two captures is reported instead of passing on the frame that followed. The
+   * claim stays bounded to those moments: see the check in `judgeSequence`.
+   */
+  clearanceFloorM: number;
   /**
    * The held pairs the plan itself wrote, per leg, keyed by leg name.
    *
@@ -152,6 +179,68 @@ export function judgeSequence(
       );
     }
     return failures;
+  }
+
+  // The clearance floor, read over every moment the record kept rather than at
+  // the capture alone. The specification's per-frame assertion reads the camera
+  // once, at the instant of the shot, so a leg whose vertical control drops the
+  // camera below its floor and lifts it again before that shot passes the
+  // assertion; the recorded 2026-09-17 run did exactly that, capturing
+  // `approach-009` 2.685 m above the ground with the same step's stand reading
+  // 0.194 m before the control ran. What is asserted here is exactly "no
+  // recorded moment of this leg put the camera below the leg's clearance floor",
+  // and not that the continuous path never dipped: the capture is one instant
+  // and the stand's two heights bracket one step, so a dip between two recorded
+  // moments is still invisible, and the failure message says so.
+  const belowFloor: { file: string; reading: string; valueM: number }[] = [];
+  const unrecordedClearance: string[] = [];
+  for (const frame of frames) {
+    const readings: { reading: string; valueM: number }[] = [];
+    if (typeof frame.clearanceM === "number" && Number.isFinite(frame.clearanceM)) {
+      readings.push({ reading: "the captured clearance", valueM: frame.clearanceM });
+    } else {
+      unrecordedClearance.push(frame.file);
+    }
+    if (frame.stand) {
+      if (Number.isFinite(frame.stand.heightBeforeM)) {
+        readings.push({
+          reading: "the stand's height before the vertical control ran",
+          valueM: frame.stand.heightBeforeM,
+        });
+      }
+      if (Number.isFinite(frame.stand.heightAfterM)) {
+        readings.push({ reading: "the stand's height after the vertical control ran", valueM: frame.stand.heightAfterM });
+      }
+    }
+    for (const reading of readings) {
+      if (reading.valueM < expectations.clearanceFloorM) belowFloor.push({ file: frame.file, ...reading });
+    }
+  }
+  if (belowFloor.length > 0) {
+    const worst = belowFloor.reduce((lowest, moment) => (moment.valueM < lowest.valueM ? moment : lowest));
+    const files = new Set(belowFloor.map((moment) => moment.file));
+    const listed = belowFloor
+      .slice(0, 4)
+      .map((moment) => `${moment.file}: ${moment.valueM.toFixed(2)} m at ${moment.reading}`)
+      .join("; ");
+    failures.push(
+      `${belowFloor.length} recorded ${belowFloor.length === 1 ? "moment" : "moments"} across ${files.size} ` +
+        `${files.size === 1 ? "frame" : "frames"} sit${belowFloor.length === 1 ? "s" : ""} below the ` +
+        `${expectations.clearanceFloorM.toFixed(1)} m clearance floor (${listed}${belowFloor.length > 4 ? "; ..." : ""}); ` +
+        `the lowest is ${worst.valueM.toFixed(2)} m at ${worst.file}. What this asserts is exactly "no recorded moment of ` +
+        `this leg put the camera below the leg's clearance floor", and not that the path never dipped: the captured ` +
+        `clearance is read at the instant of the shot, and the stand's two heights bracket the one step whose vertical ` +
+        `control produced them, so the camera's path between two recorded moments is not sampled here. Raise that leg's ` +
+        `vertical control, or lower its clearance floor, if the moment was intended.`,
+    );
+  }
+  if (unrecordedClearance.length > 0) {
+    failures.push(
+      `${unrecordedClearance.length} of ${frames.length} frames record no captured clearance at all ` +
+        `(${unrecordedClearance.slice(0, 3).join(", ")}${unrecordedClearance.length > 3 ? ", ..." : ""}), so the ` +
+        "clearance floor cannot be read over them. A frame whose record says nothing about how high the camera stood " +
+        'cannot be reported as one that stood above the floor: that is this check reporting "did not run" as "passed".',
+    );
   }
 
   // The hold is the plan's, so it is bounded by the plan. Counting the record's

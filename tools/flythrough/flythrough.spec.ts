@@ -48,7 +48,9 @@
  * - the sequence is not one frame written N times (distinct digests, and the
  *   fraction of pixels that changed between neighbours, both recorded);
  * - the frames are at the capture size, the camera stayed above the ground, and
- *   the app reported no error;
+ *   the app reported no error — the clearance floor read over every moment the
+ *   record kept, which is the captured clearance and the stand's own before/after
+ *   readings, so a vertical control that dipped between two captures is reported;
  * - the population was attached and drawing in every frame, and the ticks it
  *   advanced are recorded per frame;
  * - the preset is the dusk one the post criterion is written against, and the
@@ -137,6 +139,18 @@ const EXPECTED_FRAMES = SELECTED.reduce(
   0,
 );
 
+/**
+ * The least height above the ground beneath it the camera may be recorded at, metres.
+ *
+ * One number read in two places: the per-frame assertion beside each capture,
+ * and `judgeSequence`'s check over the stand's own readings as well, so the two
+ * cannot drift apart. The per-frame assertion sees the camera at the instant of
+ * the shot only; the recorded 2026-09-17 run is why that is half a check —
+ * `approach-009` was captured 2.685 m above the ground, over this floor, while
+ * the same step's stand read 0.194 m before its vertical control ran.
+ */
+const CLEARANCE_FLOOR_M = 1.5;
+
 /** A frame with everything that was true of the app when it was taken. */
 interface FrameRecord extends SequenceFrame {
   step: number;
@@ -160,7 +174,15 @@ interface FrameRecord extends SequenceFrame {
   };
   /** What the bearing and vertical controls did, when the step asked them to. */
   turn: { wantedAzimuth: number; azimuthAfter: number; adjustRad: number; remainingRad: number; idle: string } | null;
-  stand: { wantedAboveGroundM: number; heightAfterM: number; adjustRad: number; settled: boolean; idle: string } | null;
+  /** What the vertical control read and did: both heights are readings, not aims. */
+  stand: {
+    wantedAboveGroundM: number;
+    heightBeforeM: number;
+    heightAfterM: number;
+    adjustRad: number;
+    settled: boolean;
+    idle: string;
+  } | null;
   /** Highest terrain near the camera, how far above it the camera is, and the radius that answered. */
   groundBelowM: number;
   groundRadiusM: number;
@@ -472,13 +494,15 @@ test.describe("flythrough", () => {
         // The camera has to stay on the scene. A frame taken from inside the hill
         // shows the city from underneath with sky behind it, which reads as a
         // rendering fault and is really a framing one; it must not be counted as a
-        // frame that judged anything.
+        // frame that judged anything. This reads the camera at the capture only;
+        // `judgeSequence` reads the same floor over the stand's own readings too,
+        // which is what sees a dip between two captures.
         expect(
           record.clearanceM,
           `${record.file} was captured with the camera ${record.clearanceM.toFixed(1)} m above the highest terrain ` +
             `under it (${before.camera.position.x.toFixed(0)}, ${before.camera.position.z.toFixed(0)}), so the frame ` +
             "is of the inside of the ground rather than of the city.",
-        ).toBeGreaterThan(1.5);
+        ).toBeGreaterThan(CLEARANCE_FLOOR_M);
         expect(record.renderState.renderer, `${record.file} does not name the renderer it was drawn on`).not.toBe("");
         expect(
           record.stats.width === CAPTURE_VIEWPORT.width && record.stats.height === CAPTURE_VIEWPORT.height,
@@ -544,6 +568,9 @@ test.describe("flythrough", () => {
         targetToleranceM: 0.05,
         minimumTravelM: 0.001,
         minimumDistinctFraction: 0.95,
+        // The same floor the per-frame assertion uses, read over the stand's own
+        // readings too: one number, asserted in both places.
+        clearanceFloorM: CLEARANCE_FLOOR_M,
         // The plan's own hold, read off its `holdsCamera` steps rather than the
         // records: a held frame is exempt from the travel floor, so the count the
         // plan wrote is what bounds the exemption. `holdsCamera` marks a step,
