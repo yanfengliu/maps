@@ -1,0 +1,46 @@
+# Quality work register — the Shibuya 1km deliverable
+
+Status: active, 2026-09-17. Owner: the lead (coordinator). This register is the prioritized list the quality goal asks for: what is fixed, what is prescribed and why it waits, and what is rejected. Its evidence home is the plan's dated status block; the audit that produced the ranking and the file:line verification is `artifacts/quality-audit/register.md` (ignored), summarized here so a reader of `main` sees it.
+
+The organizing rule is the certificate: the 44 certified frames and their native inspection are the deliverable's headline evidence, so a change that moves `dist/index.html`, the bundle hashes, or `data/scene` strands that evidence and must be batched into a single re-capture rather than landed alone. Phase A is everything that does not; Phase B is the one batch that does.
+
+## Fixed, with evidence
+
+| Item | Where | Evidence |
+| --- | --- | --- |
+| The flythrough's sequence judge counted pairs that did not exist, had no concept of a planned hold, and read a dark facade as blank | `f06aaf8` | 7 mutations watched red; 3 gate-proofs entries; the run then failed honestly on the repaired check |
+| The approach leg's swing could not converge (7.7231 rad commanded against a 0.3491 rad/step cap), so the crowd leg opened on a hill face | `39ca459` | `test/flythrough-plan.test.ts` watched red; the passing run's `crowd-000` at azimuth 2.2250 against the scored 2.2253, 3.64 m clearance |
+| The review's six findings and the record corrections it caught | `f160fe9` | each verified against the real bytes; the structure metric's dark-surface flaw reproduced with a two-pixel-block dither, `approach-005` unchanged at 17.4% |
+| The session's two independent reviews were only in ignored artifacts | `6929b2a` | tracked as [round 32](reviews/32_implementation.md) and [round 33](reviews/33_implementation.md) with provenance and dispositions |
+| Three record claims the audit falsified: guardrails are placed; TAA cannot accumulate while moving; the certified payload is not agent-free | `368f92c` | `vegetation.ts` builds four `guard_rail` ways 364–460 m out; `src/app.ts` feeds `cameraStill` into `post.setStill`; `data/scene/agents` holds the four vehicle assets in the certified payload |
+
+## Phase A — in flight or prescribed, none of it recapture-bound
+
+| Item | Change | Why it matters | State |
+| --- | --- | --- | --- |
+| The aim scorer scored bodies at a constant 15.2 + 0.9 m, ignoring terrain, and never checked standability | `tools/flythrough/aim.ts` (+ `plan.ts` re-plan, tests) | This is why the passing flight's crowd leg points 34.7° down at pavement: the anchor was chosen by a scorer that believed a 27.5 m knot stood at 16 m. Low-ground anchors do exist — `aim.json`'s own best-overall pose sits on 14.97 m ground | in flight |
+| The clearance check reads only captured instants, so a path dipping to 0.194 m between frames passes | `tools/flythrough/{frames.ts,flythrough.spec.ts}` + tests | The check's claim should be "no recorded moment of this leg put the camera below the floor", asserted over the record's own stand readings | in flight |
+| No lane has captured consecutive rendered frames, so the dusk criterion's flicker/crawl half is judged from pairs 285–2,202 ms apart | a capture mode judged on the non-accumulating path (the app cannot accumulate TAA while moving) | The criterion's temporal clause must be judged on the path that exists; a video or consecutive-frame capture is the missing instrument | prescribed |
+| The crowd leg's unlisted findings: no contact shadow under the knots (`castShadow` is near-level only, `renderedNear` 0), a quarter of the frame carrying no image, `standAt`'s 0.75 m tolerance accepting 3.64 m for a 3 m ask | lane-level, tools | Small, but they are why the crowd frames judge less than they could | prescribed, partly served by the aim re-plan |
+| `guardrailPosts: 0` is a dead field read by nothing | `src/scene/street-details.ts:230` (delete) | It reported nothing either way and misled a criterion note; removing it is a `src/` change, so it rides the Phase B batch | prescribed (Phase B) |
+
+## Phase B — the one batched re-capture
+
+Nothing here lands alone. Each moves what the certificate pins, so they land together, then all five gates run once, the 44 frames are re-captured once, and they are re-inspected once.
+
+| Item | Change | Cost, measured | Why batched |
+| --- | --- | --- | --- |
+| The mid-ground ground and road materials carry no texture map (`terrain.ts:48` "ground", `roads.ts:52` "road" are bare `MeshStandardMaterial`; ground albedo is a ±3% sinusoid at ~20 m, road grain fades above 0.015–0.08 m/px) | `src/scene/terrain.ts`, `src/scene/roads.ts` | the largest single visual-quality gap recorded | It is also the cause of the certified plaza near-field wash-out, so it is one change with two findings |
+| The F1 terrain hole and its 13 siblings | `tools/scene/build-terrain.ts` capping + a watertightness gate in `npm run data:scene` | F1 is 15 rim vertices, 89.5 m perimeter, 30×25 m at (579.0, −403.1), 80.43 m outside the AOI; a centroid-fan cap costs +227 triangles, +14 vertices, ~3 KB (0.069%) | Moves `data/scene`, so it strands the certificate |
+| The frame-budget lane cannot measure the delivered build: the probe seam has never existed on `main`, and **no seam shape is pin-free** | `index.html` + a query-gated `tools/frame-budget/probe-entry.ts` + a unit case asserting the script line | measured: adding the line rebuilds `dist/index.html` to 2.03 kB and renames the bundle to `index-CyjzInZt.js` (`11c5d868…`), because Vite merges the probe into the entry chunk and `verify-output.ts` pins every `dist/assets` file | Same reason; the certificate must be re-issued anyway |
+
+## Rejected or deferred, with the reason
+
+- **Satisfying the dusk criterion's TAA clause over a moving sequence.** The app cannot do it: `src/app.ts` feeds `cameraStill` into `post.setStill` and `post.ts` resets the sample index, so accumulation and motion are mutually exclusive by construction. The criterion has to be judged on the non-accumulating path, or the app's stillness policy has to change — which is a product decision, not a quality fix.
+- **Landing F1 or the probe seam alone.** Each strands the certified frame set and the week's digest-bound inspection; the batched re-capture is the cheap way to have both.
+- **The signature shot's routing fix.** It needs `src/agents` work plus a fresh populated capture, and the plan already records the measurement it must carry (the crossing change's after-arm at the acceptance population). It is a scope decision for the owner, not a quality-lane change.
+- **Re-capturing the 44 frames without a Phase B change.** The current certificate's build and harness bindings re-derive exactly, so a re-capture would buy new frame bytes and strand the inspection for no evidential gain.
+
+## The bound on this register
+
+Every cost figure above is the audit's measurement, not an estimate, and every recapture dependency was verified in `vite.config.ts`, `index.html` or the digest algorithm rather than assumed. What the register does not claim: that the Phase B batch is free of risk — a materials change touches every frame and could move the hero look enough to invalidate the tone judgments of round 30 and this session's inspection, which is exactly why the batch is re-inspected rather than assumed.
