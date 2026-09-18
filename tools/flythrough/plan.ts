@@ -80,18 +80,50 @@
  * the most walking bodies inside 45 m at its **worst** tick in the window, which is
  * the property a leg whose tick depends on the machine's load actually needs.
  *
- * `CROWD_CAMERA` and `CROWD_TARGET` are that pose: the camera on a walking way, and
- * the controls' target 26 m along the direction it looks. They are **aim anchors**:
- * the flight pans the controls' target to the second and stands the camera at the
- * first, and the frames say where it actually ended up. `CROWD_DISTANCE_M` is the
- * separation they were scored at, and the crowd leg's 7.2 m push then takes the
- * camera to 18.8 m.
+ * `CROWD_AIM_CAMERA` and `CROWD_TARGET` are that pose: the camera on a walking way,
+ * and the target 26 m along the direction it looks. They are **aim anchors**:
+ * `CROWD_TARGET` is also the point the flight pans the controls' target to, and
+ * `CROWD_AIM_CAMERA` is where the *scoring tool* stood its camera, which is not
+ * where the flight's camera goes. `CROWD_DISTANCE_M` is the separation they were
+ * scored at, and the crowd leg's 7.2 m push then takes the camera to 18.8 m.
  *
- * The bearing below is the **controls'** azimuth, which is the direction from the
- * target to the camera; the view direction is the opposite one. This anchor's
- * bearing is 7.5 degrees, so the approach turns 37.5 degrees instead of the old
- * 82.5, and the swing's own arithmetic — the short-way interpolation, whose
- * long-way version cost a run — is in the approach leg below.
+ * ## The two azimuths, which are the same number meaning opposite things
+ *
+ * The scorer and the controls both call their angle an azimuth, and they measure
+ * it from opposite ends of the same ray.
+ *
+ * - **`tools/flythrough/aim-score.ts`** builds its target as
+ *   `camera + (sin az, cos az) * distance`: its azimuth is the direction the camera
+ *   **looks**, so `CROWD_AIM_CAMERA` sits 26 m *behind* `CROWD_TARGET`.
+ * - **The controls** (and `CameraSnapshot.azimuth`, read from
+ *   `controls.getAzimuthalAngle()`) put the camera at
+ *   `target + (sin az, cos az) * distance`: their azimuth is the direction from the
+ *   target **to** the camera, so the same `CROWD_AZIMUTH` the plan commands flies a
+ *   camera 26 m *beyond* `CROWD_TARGET`, on the far side.
+ *
+ * Both are in the passing run's own manifest, `artifacts/flythrough2/manifest.json`.
+ * The app's opening pose has target `(0, 0)` and `azimuth` 0.7853982, and its camera
+ * is at `(216.341, 554.452, 216.341)` — the controls' formula, `target + (sin, cos)`
+ * `* 620` at 45 degrees, to the millimetre. The crowd leg's opening frame is then
+ * camera `(462.439, 17.232, 442.423)` against target `(459.056, 15.200, 416.724)`,
+ * `azimuth` 0.1308997 and `distance` 26.000001: the camera is 26.0000 m from that
+ * target at a bearing of 187.50 degrees, and 7.50 degrees from it puts the camera at
+ * `(462.439, 442.423)` — the frame's own position. So `CROWD_AZIMUTH` is the
+ * scorer's 7.50 degrees, handed unchanged to a control that reads it as the
+ * controls' 7.50 degrees, and the flight's own bearing is that plus 180 degrees.
+ *
+ * The flight's behaviour is read off those numbers and is not to be changed by a
+ * later edit: `CROWD_TARGET` is the pan the approach closes on, and the crowd leg's
+ * push direction is the `CROWD_AIM_CAMERA -> CROWD_TARGET` unit vector, so both
+ * depend on this pair. Swapping the two roles — moving `CROWD_TARGET` to the far
+ * side so the pair's own bearing equals `CROWD_AZIMUTH` — would move the flown pose
+ * 53.1 m, which is the tension recorded in `test/flythrough-plan.test.ts` rather
+ * than a change this file makes. What the flight's camera is, from the same
+ * controls' formula, is `CROWD_FLOWN_CAMERA` below.
+ *
+ * This anchor's bearing is 7.5 degrees, so the approach turns 37.5 degrees instead
+ * of the old 82.5, and the swing's own arithmetic — the short-way interpolation,
+ * whose long-way version cost a run — is in the approach leg below.
  *
  * ## The clock
  *
@@ -162,28 +194,26 @@ export const OPENING_AZIMUTH = Math.PI * 0.25;
 export const OPENING_DISTANCE_M = 620;
 
 /**
- * The crowd: an anchor whose walking crowd holds through the whole tick window.
+ * The crowd, as two poses that face the same way along one line.
  *
- * The scorer is `tools/flythrough/aim.ts` over dumps from
- * `tools/populated/probe.ts --ticks N --dump-tick N`, measured at 3,000, 4,000,
- * 4,900, 5,400, 6,000 and 7,200 — the window a loaded and an unloaded run span.
+ * `CROWD_AIM_CAMERA` is the walking-way point whose pose the scoring tool accepted:
+ * it is the camera of the scored frame, and the numbers in the table above are its
+ * — measured 2026-09-18 at 26 m through `tools/flythrough/aim.ts`, which reports the
+ * same near counts (152 / 99 / 95 / 100 / 100 / 10 walking bodies inside 45 m), the
+ * same 3.9 degree axis and the same 131 / 36 / 55 / 55 / 39 / 25 px figures. Its
+ * ground is 13.99 m, so standing 3 m on it looks 2.04 m down at the pinned 15.2 m
+ * target, and it is not a pose the run can stand: `standAt`'s clearance floor is
+ * 2 m of *clearance*, and this camera keeps 1.91 m to the surface.
  *
- * That window is the whole reason this pair replaced the one before it, and the
- * first attempt is the evidence. The anchor merged on 2026-09-17 stood at
- * `(452.07, 353.95)` and was chosen on a peak: 225 walking bodies inside 45 m at
- * tick 3,000, and **4** at 5,400. Its own run then took 127 s of wall clock
- * instead of 72 s because eight inspection lanes were loading the machine, so the
- * crowd leg captured at ticks 4,899-5,332 instead of ~3,000, the held frames
- * photographed a scene with no walking crowd in it, and five of the six held pairs
- * came back byte-identical. The lane refused the run, correctly. Ticks advance
- * with wall time, so a leg's tick is not a property of the route — a plan that
- * needs a peak is a plan that only works unloaded.
+ * `CROWD_AZIMUTH` is that scored pose's own azimuth, in the scorer's convention:
+ * the direction from `CROWD_AIM_CAMERA` **to** `CROWD_TARGET`. The controls read the
+ * same field the other way round, so the flight carries this unchanged and the
+ * camera it flies lands on the far side of `CROWD_TARGET` — `CROWD_FLOWN_CAMERA` at
+ * a bearing of `CROWD_AZIMUTH + PI`. The header above carries the manifest numbers
+ * that settle it.
  *
- * A peak is what the score rewards, so the anchor was re-picked on the **worst**
- * tick instead: over every walking-way position and every tick in the window, the
- * one below holds the most walking bodies inside 45 m at its *worst* tick, and it
- * holds them because it stands in the middle of a plateau rather than beside a
- * knot. Measured through the scorer at 26 m:
+ * The pair is the one chosen on its **worst** tick across the window a loaded and an
+ * unloaded run span, measured through the scorer at 26 m:
  *
  * | tick | near (in frame, <=45 m) | moving | nearest | median | 1.7 m figure |
  * | --- | --- | --- | --- | --- | --- |
@@ -199,58 +229,74 @@ export const OPENING_DISTANCE_M = 620;
  * any run measured so far. The anchor before it, measured the same way, reads
  * 225 / 131 / 70 / 4 / 4 / 6 — which is why the run at 3,985 found the crowd gone.
  *
- * The camera stands on 13.99 m of ground and the target on 13.78, so the axis to
- * the app's pinned 15.2 m target is 3.9 degrees down. The old margin-ring anchor's
- * was 34.7: the audit is `artifacts/quality-audit/register.md` §2.2, and the scorer
- * now reads each body's height off the terrain mesh, projects it into the camera's
- * own frame, and refuses a pose steeper than 20 degrees or holding fewer than 10
- * walking bodies inside 45 m.
- *
- * The bearing is the swing's business as well as the framing's. The approach can
- * turn at most `40 px * 2*PI/720 = 0.3491` rad in one step, so its six turning
- * steps deliver at most 2.095 rad. The bearing below is 0.1309 rad, a swing of
- * 0.654 rad from `OPENING_AZIMUTH` — 0.109 rad a step, seven times inside the cap.
- * The bearing is deliberately the same one the failed run flew, so this change moves
- * the crowd and not the route: what a run has to reproduce is the framing, and it
- * did.
+ * Neither value can be moved on its own. `CROWD_TARGET` is the pan the overview and
+ * approach legs close on, and the crowd leg's push direction is this pair's own unit
+ * vector, so an edit that swapped the roles to make the pair's mutual bearing equal
+ * `CROWD_AZIMUTH` would carry the approach's target 53.1 m onto the other side of
+ * the crowd and fly the crowd leg from the aim camera instead of from the pose that
+ * photographed ~100 walking bodies inside 45 m. That is the tension
+ * `test/flythrough-plan.test.ts` names; this file keeps the flown pose.
  */
 export const CROWD_AZIMUTH = (7.5 * Math.PI) / 180;
 /** The separation the scoring tool scored this pose at, metres. */
 export const CROWD_DISTANCE_M = 26;
-export const CROWD_CAMERA = Object.freeze({ x: 456.0, z: 389.7 });
+export const CROWD_AIM_CAMERA = Object.freeze({ x: 456.0, z: 389.7 });
 /**
- * The controls' target: 26 m from the camera along the direction the camera looks.
+ * The scored frame's centre: 26 m from the aim camera, along the direction it looks.
  *
- * `bearing` is measured from the target **to** the camera, so the camera stands at
- * `target + (sin, cos) * distance` and the view direction is the other way. The
- * failed run's own final pose confirms the sign: camera `(458.3, 405.9)` against
- * target `(454.9, 380.2)`, an offset of `(+3.4, +25.7)`, which is this formula at
- * 7.5 degrees.
+ * The scorer builds it as `camera + (sin, cos) * distance`, and this is that
+ * arithmetic for `CROWD_AZIMUTH`. It is also the point the flight pans its controls'
+ * target to, which is why the two legs' own records sit within a metre of it.
  */
 export const CROWD_TARGET = Object.freeze({
-  x: CROWD_CAMERA.x + Math.sin(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
-  z: CROWD_CAMERA.z + Math.cos(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
+  x: CROWD_AIM_CAMERA.x + Math.sin(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
+  z: CROWD_AIM_CAMERA.z + Math.cos(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
 });
 /**
  * The anchor's own separation, measured between the two points above.
  *
  * Derived rather than written down a second time: the crowd leg's push divides by
  * it to get a unit direction, and a constant that disagrees with the pair it
- * divides is a push that changes the distance the pose was scored at. The two
- * points are constructed from `CROWD_DISTANCE_M`, so this can only disagree if a
- * later edit types one of them out by hand — which is exactly the edit it is here
- * to catch.
+ * divides is a push that moves the camera along a direction the scored pose was not
+ * taken at. The two points are constructed from `CROWD_DISTANCE_M`, so this can
+ * only disagree if a later edit types one of them out by hand — which is exactly
+ * the edit it is here to catch.
  */
-export const CROWD_ANCHOR_DISTANCE_M = Math.hypot(CROWD_CAMERA.x - CROWD_TARGET.x, CROWD_CAMERA.z - CROWD_TARGET.z);
+export const CROWD_ANCHOR_DISTANCE_M = Math.hypot(CROWD_AIM_CAMERA.x - CROWD_TARGET.x, CROWD_AIM_CAMERA.z - CROWD_TARGET.z);
 if (Math.abs(CROWD_ANCHOR_DISTANCE_M - CROWD_DISTANCE_M) > 0.5) {
   throw new Error(
     `The crowd anchor's two points are ${CROWD_ANCHOR_DISTANCE_M.toFixed(2)} m apart and the scored pose is at ` +
       `${CROWD_DISTANCE_M} m, so this pair is not the pose the scoring tool reported. Its camera and its target travel ` +
       "together: moving one without the other moves the camera, re-aims the approach and the ascent, and lands the crowd " +
       "leg somewhere nobody scored. Re-run `node tools/flythrough/aim.ts --dump " +
-      "artifacts/crowd-aim-fix/dump-current-t3000.json`.",
+      "artifacts/crowd-aim-fix/dump-t3000.json`.",
   );
 }
+/**
+ * The pose the flight actually flies, from the controls' own formula.
+ *
+ * `CameraSnapshot.azimuth` is `controls.getAzimuthalAngle()`, and the controls read
+ * their azimuth as the direction from the target to the camera — the opposite end of
+ * the ray from the scorer. The scorer's offset from the camera to the target is
+ * `(sin, cos) * distance` at `CROWD_AZIMUTH`, so the controls' own offset from the
+ * target to the camera is the negative of it, and the flown camera is the aim camera
+ * plus twice that offset. Both ends lie on one line through `CROWD_TARGET`, which is
+ * the property the case in `test/flythrough-crowd-anchor.test.ts` pins; reading the
+ * derivation as `CROWD_TARGET` minus the offset returns the aim camera itself, which
+ * is the mistake that case caught in its own first draft.
+ *
+ * It is derived rather than written down because it is a *consequence* of the pair
+ * above and not a second anchor: the three shared values are `CROWD_TARGET` (the pan
+ * the approach closes on), `CROWD_AZIMUTH` (the bearing both legs turn to) and
+ * `CROWD_DISTANCE_M` (the zoom ladder's last two rungs). The passing run's crowd leg
+ * opened at `(462.439, 442.423)` on 14.21 m of ground, 3.04 m above it, against this
+ * formula's `(462.788, 441.254)` — 1.24 m away, which is the approach's own pan
+ * residual (`panErrorAfter` 0.909 m on its last step) rather than a second pose.
+ */
+export const CROWD_FLOWN_CAMERA = Object.freeze({
+  x: CROWD_AIM_CAMERA.x + 2 * Math.sin(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
+  z: CROWD_AIM_CAMERA.z + 2 * Math.cos(CROWD_AZIMUTH) * CROWD_DISTANCE_M,
+});
 export const CROWD_STAND_M = 3;
 
 /** A point on the way back to the crossing, which the ascent pans through. */
@@ -459,9 +505,13 @@ export const CROWD_END_DISTANCE_M = CROWD_DISTANCE_M - CROWD_PUSH_M * CROWD_PUSH
 const CROWD_STEPS: readonly LegStep[] = [
   ...Array.from({ length: CROWD_PUSH_STEPS }, (_, index) => {
     const push = CROWD_PUSH_M * (index + 1);
+    // The unit vector from the aim camera to the target, which is the direction
+    // the flight's camera looks; divided by the pair's measured separation rather
+    // than by `CROWD_DISTANCE_M`, so the push is a unit vector whatever a later
+    // edit does to the two points.
     const direction = {
-      x: (CROWD_TARGET.x - CROWD_CAMERA.x) / CROWD_DISTANCE_M,
-      z: (CROWD_TARGET.z - CROWD_CAMERA.z) / CROWD_DISTANCE_M,
+      x: (CROWD_TARGET.x - CROWD_AIM_CAMERA.x) / CROWD_ANCHOR_DISTANCE_M,
+      z: (CROWD_TARGET.z - CROWD_AIM_CAMERA.z) / CROWD_ANCHOR_DISTANCE_M,
     };
     return {
       panToX: CROWD_TARGET.x + direction.x * push,

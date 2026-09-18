@@ -35,7 +35,31 @@
  * refused too. `tools/flythrough/aim-score.ts` carries both rules and the unit
  * case that pins them.
  *
- *   node tools/flythrough/aim.ts --dump artifacts/flythrough2/reference-dump-t5400.json
+ * ## The convention this tool scores in is its own, and it is not the controls'
+ *
+ * A candidate's `azimuth` here is the direction the camera **looks**: this file and
+ * `aim-score.ts` build each candidate's target as
+ * `camera + (sin az, cos az) * distance`, so the target is 26 m ahead of the camera.
+ * `CameraSnapshot.azimuth` is `controls.getAzimuthalAngle()`, which measures the
+ * other way round — from the target to the camera — so a pose scored here flies on
+ * the far side of its target when the same number is handed to the route.
+ * `tools/flythrough/plan.ts` carries the passing run's own numbers for that, and
+ * `test/flythrough-crowd-anchor.test.ts` pins them; nothing in this tool moves.
+ *
+ *   node tools/flythrough/aim.ts --dump artifacts/crowd-aim-fix/dump-t5400.json
+ *
+ * A dump is good for the revision and the population that produced it, and nothing
+ * on the file's face says which those were. The two retained
+ * `artifacts/flythrough2/reference-dump-*.json` files were written on 2026-09-16 and
+ * the population has moved since: at tick 5,400 the current probe reports 42
+ * vehicles against their 56 and 1,111 standing rows against their 407. The register
+ * entry "the flythrough's aim scored a population that no longer existed" records the
+ * two anchors that were perpetuated from them, and the gate it owes — a dump that
+ * carries its revision and a population digest, refused by the consumer that cannot
+ * reproduce them — is still owed and still belongs in `tools/populated/probe.ts`,
+ * which writes the dump. Until it lands, re-measure in the session that aims and
+ * state the command and the revision beside the numbers, as the plan does for the
+ * six dumps under `artifacts/crowd-aim-fix/`.
  *
  * The score is a count and nothing else, so the report carries the geometry
  * beside it: every anchor named prints the ground under the camera and under the
