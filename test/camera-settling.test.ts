@@ -406,6 +406,20 @@ describe("an iteration lane cannot be certified", () => {
     expect(() => activeLane()).toThrow(/requires MAPS_VISUAL_GPU=hardware/);
   });
 
+  it("gives the flicker lane its own directory, its own renderer requirement and its own refusal", () => {
+    // The lane whose subject is a *pair* of frames rather than a frame. It writes
+    // beside the verdict set at its own root, and its refusal has to say why its
+    // frames cannot be the reviewed ones: every frame of the 44-frame set is a
+    // still taken from a settled camera, which is the one case the criterion it
+    // judges is already satisfied by.
+    vi.stubEnv("MAPS_VISUAL_LANE", "flicker-iteration");
+    vi.stubEnv("MAPS_VISUAL_GPU", "hardware");
+    expect(activeLane()).toBe("flicker-iteration");
+    expect(laneDir()).toBe("artifacts/flicker");
+    expect(() => assertCertifiable("flicker-iteration")).toThrow(
+      /Refusing to certify the "flicker-iteration" lane: its frames are consecutive renders of a camera that was deliberately still moving/);
+  });
+
   it("defaults to the verdict directory and rejects an unknown lane", () => {
     expect(activeLane()).toBe("verdict");
     expect(laneDir()).toBe("artifacts/visual");

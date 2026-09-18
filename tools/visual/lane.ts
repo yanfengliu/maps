@@ -35,9 +35,16 @@
  * more than taste: the appearance sweep runs `?agents=`-free by design, so the
  * reviewed 44 frames contain no agent at all. `populated-iteration` captures the
  * population and is the only lane whose frames can show a pedestrian.
+ *
+ * `flicker-iteration` is the fourth, and it is the only lane whose subject is two
+ * frames at once: the deliverable's dusk criterion asks for a preset that "holds
+ * still - no flicker or crawl over a moving sequence", and neither a still frame
+ * nor a settled camera can contain flicker. It therefore refuses to settle the
+ * camera at all and captures while the controls are still moving, judging each
+ * adjacent pair from the PNG bytes.
  */
 
-export const LANES = ["verdict", "frame-budget", "populated-iteration", "flythrough-iteration"] as const;
+export const LANES = ["verdict", "frame-budget", "populated-iteration", "flythrough-iteration", "flicker-iteration"] as const;
 
 export type Lane = (typeof LANES)[number];
 
@@ -99,6 +106,29 @@ export const FLYTHROUGH_ITERATION_ENV: Readonly<Record<string, string>> = Object
 });
 
 /**
+ * The environment `tools/flicker/playwright.config.ts` pins for its own run.
+ *
+ * A fifth lane, and the first iteration lane whose unit is a *pair* of frames
+ * rather than a frame. It exists because the deliverable's dusk criterion has two
+ * halves and only the first has ever been judged: `tools/post-chain/` measures
+ * whether the temporal accumulator engages, and this lane measures whether the
+ * picture holds still while the camera moves. That question cannot be asked of
+ * the verdict set, whose 44 frames are all stills taken from a settled camera,
+ * nor of the flythrough, whose frames are 285-2,202 ms and 39 to 119 rendered
+ * frames apart - too far to see anything that changes between one frame and the
+ * next.
+ *
+ * Hardware, for the populated lane's reason: a screenshot costs about 250 ms on
+ * this renderer and seconds on SwiftShader, and the cadence this lane can reach
+ * is bounded by that cost. On a software rasteriser the frames would be a
+ * different, much coarser sequence of a different renderer's pixels.
+ */
+export const FLICKER_ITERATION_ENV: Readonly<Record<string, string>> = Object.freeze({
+  MAPS_VISUAL_LANE: "flicker-iteration",
+  MAPS_VISUAL_GPU: "hardware",
+});
+
+/**
  * The ignored directory each lane writes into.
  *
  * Deliberately not a full path: all are resolved against the working directory
@@ -109,6 +139,7 @@ const LANE_ROOT: Readonly<Record<Lane, string>> = Object.freeze({
   "frame-budget": "artifacts/frame-budget",
   "populated-iteration": "artifacts/populated-capture",
   "flythrough-iteration": "artifacts/flythrough2",
+  "flicker-iteration": "artifacts/flicker",
 });
 
 function isLane(value: string): value is Lane {
@@ -182,6 +213,10 @@ const LANE_REFUSAL: Readonly<Record<Exclude<Lane, typeof VERDICT_LANE>, string>>
   "flythrough-iteration":
     "its frames are a moving sequence from a populated scene the reviewed set never contained, and its " +
     "subject is what changes between adjacent frames, which no still frame of the reviewed set can show",
+  "flicker-iteration":
+    "its frames are consecutive renders of a camera that was deliberately still moving, captured to judge " +
+    "flicker and crawl between adjacent frames; every frame of the reviewed set is a still taken from a " +
+    "settled camera, and a settled camera is the one case the criterion is already satisfied by",
 });
 
 /**
