@@ -33,6 +33,7 @@
     "capture:render-defects": "playwright test --config playwright.render-defects.config.ts",
     "visual:smoke": "playwright test --config playwright.smoke.config.ts",
     "visual:post-chain": "playwright test --config tools/post-chain/playwright.config.ts",
+    "visual:flicker": "playwright test --config tools/flicker/playwright.config.ts",
     "visual:install": "playwright install chromium",
     "audit": "npm audit --audit-level=high",
     "artifacts:size": "node tools/storage/artifact-size.ts",
