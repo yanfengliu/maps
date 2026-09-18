@@ -180,6 +180,54 @@ export function lightingForPreset(id: TimePresetId): TimeOfDayLighting {
 }
 
 /**
+ * The dusk ambient fill: how much ambient light a horizontal surface gets from the
+ * twilight sky, over and above what the daylight ramp leaves it.
+ *
+ * **The defect this is here for.** The certified satellite `plaza-az000` frame
+ * (certificate runId `14cdadbafba82120`) draws its near field as a dark fill:
+ * measured from that frame's own bytes, the road rect (320,540 640x180) has mean
+ * luminance 17.8 of 255, 0.3% of its pixels under 12 and 86.7% of neighbouring
+ * pixel pairs identical. The pavement in the same frame — the control — measures
+ * 43.8. The road's albedo was already lifted to 0x474d55 in `a2282f8` (linear
+ * 0.063, dry asphalt) and that alone took it from 10.4 to 17.8, which is short of
+ * the 20 floor the appearance work uses, so the surface's albedo is not the lever
+ * that remains; the light falling on it is.
+ *
+ * **The arithmetic, on the two certified measurements.** Radiance on the road is
+ * `A + K * albedo` with A 0.0052 (the albedo-free part: the wet road's specular
+ * reflection of the dusk sky and the post chain's bloom) and K 0.0736, fitted in
+ * `test/road-tone.test.ts` from the certified 10.4 (satellite, albedo 0.032) and
+ * 52.4 (cartographic, 0.41) of the same pose and hour. Through the renderer's own
+ * ACES curve at this preset's exposure 1.50697, 17.8 of 255 is scene-linear
+ * 0.011721 and 30 is 0.019101: the whole radiance has to rise 1.63x, and if only
+ * the illumination-driven share of it rises — A held fixed, which is the
+ * pessimistic split — then K has to rise 2.58x, which is the 2.5x the appearance
+ * lane recorded. This fill is sized at the low end of that range, not the middle:
+ * both terms rise about 1.75x at dusk, which is 1.75x on the whole road if the
+ * ambient is what its radiance follows and about 25 of 255 if only the K term
+ * follows.
+ *
+ * **Why `dark` and not `1 - daylight`.** `dark` is this file's own "how dark is
+ * it" ramp and it is exactly 0 in full daylight, so the noon ambient is bit-for-bit
+ * what it was before this term existed: `lightingForPreset("noon")` still reports
+ * hemisphere 0.58 and environment 1.5, which is the pin in `test/road-tone.test.ts`
+ * and the reason the cartographic noon crossing band (mean 169.80 in the
+ * superseded capture) cannot move with this change. The fill is a floor at the dark
+ * end rather than a multiplier on the ramp: at the dusk preset, whose solar
+ * elevation solves to -3.48 degrees, `dark` is 0.870, so the hemisphere goes 0.240
+ * to 0.414 (1.72x) and the environment 2.805 to 5.023 (1.79x).
+ *
+ * **What it is not.** It is global: it lifts the pavement, the facades and the
+ * buildings at dusk by the same 1.7-1.8x, and whether that is acceptable is a tone
+ * judgment on the captured frames, not something this constant can assert. The
+ * alternative the appearance lane listed next — the road's own `wetness`, which
+ * drives its roughness — is local to the road and changes the wet look the
+ * satellite style is named for; it was not taken here.
+ */
+const DUSK_HEMISPHERE_FILL = 0.2;
+const DUSK_ENVIRONMENT_FILL = 2.55;
+
+/**
  * Everything the scene needs, for one instant.
  *
  * Exported separately from the presets so a test can walk the whole day and check
@@ -256,7 +304,7 @@ export function lightingForInstant(id: string, label: string, instant: Date): Ti
     .lerp(sky.horizon, 0.45)
     .multiplyScalar(1 / Math.max(0.02, 0.02 + 0.33 * daylight));
   const hemisphereGround = new Color(0.1, 0.09, 0.085).multiplyScalar(0.35 + 1.5 * daylight);
-  const hemisphereIntensity = 0.16 + 0.42 * daylight;
+  const hemisphereIntensity = 0.16 + 0.42 * daylight + DUSK_HEMISPHERE_FILL * dark;
 
   // Haze. Enough to separate the far side of a square kilometre from the near
   // side; not enough to fog a street.
@@ -284,7 +332,7 @@ export function lightingForInstant(id: string, label: string, instant: Date): Ti
     // dark because by then the environment is nearly all there is: the key light
     // is a stand-in and the hemisphere is small, so a facade turned away from the
     // west would otherwise be black rather than dim.
-    environmentIntensity: 1.5 + 1.5 * dark,
+    environmentIntensity: 1.5 + 1.5 * dark + DUSK_ENVIRONMENT_FILL * dark,
     fogColour,
     fogDensity,
     // Daylight is a much brighter world than dusk, so exposure falls as the sun

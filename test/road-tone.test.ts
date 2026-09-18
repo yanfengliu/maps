@@ -38,6 +38,15 @@
  * poses with only the palette changed measures the albedo-driven sensitivity directly,
  * and if it comes back near the lower end then the palette is not the lever and the
  * light on horizontal surfaces at dusk is.
+ *
+ * **The measurement came back near the lower end.** The re-capture with the palette
+ * lifted and nothing else changed (certificate runId `14cdadbafba82120`,
+ * `sweep/satellite/plaza-az000.png`) measures the same rect at **mean 17.8, 0.3% of
+ * its pixels under 12, 86.7% of neighbouring pixel pairs identical** — between the two
+ * fits' predictions and short of the 20 floor. So the palette is not the lever that
+ * remains and the light on horizontal surfaces at dusk is: the second describe block
+ * below gates that, and the albedo cases above keep their meaning as the calibration
+ * both fits are built from.
  */
 import { describe, expect, it } from "vitest";
 import { Color } from "three";
@@ -164,5 +173,100 @@ describe("the road reads as asphalt rather than black at the darkest preset", ()
     for (const style of WORLD_STYLES) {
       expect(linearAlbedo(style.palette.road), style.id).toBeLessThan(linearAlbedo(style.palette.sidewalk));
     }
+  });
+});
+
+/**
+ * The other half of the same defect: the light, not the albedo.
+ *
+ * **What this block gates, and its bound.** These cases check the *lighting numbers*
+ * against the certified pixel, through the same tone curve the renderer uses. They do
+ * not check a pixel, and they cannot: whether the delivered frame clears the floor is
+ * the appearance lane's measurement (`npm run visual`), and the numbers it returned are
+ * recorded where this change's own record lives. Two assumptions are named here rather
+ * than hidden, because the cases are only as good as they are:
+ *
+ * 1. The road's rendered radiance rises with the ambient. It does so only as far as the
+ *    ambient is what its radiance follows: the albedo-free part A (the wet road's
+ *    specular reflection of the dusk sky, plus the post chain's bloom) may be partly
+ *    bloom, which the ambient does not move. The first case assumes all of it rises, the
+ *    second holds A fixed and is the pessimistic split, so the pair brackets the answer
+ *    instead of asserting one.
+ * 2. The certified rect's mean is the quantity in question. It is a region mean over
+ *    the road at one pose and hour, and the streak of pavement or marking inside it
+ *    would move a mean that the median does not.
+ *
+ * Both cases were watched red against the pre-change lighting (hemisphere 0.218,
+ * environment 2.837 at dusk), where the pessimistic one reads below the floor; the
+ * mutation and its message are in `docs/learning/gate-proofs.md`.
+ */
+describe("the dusk ambient is what lifts the dark near field", () => {
+  /** The satellite road rect's own mean at `plaza-az000`, runId `14cdadbafba82120`. */
+  const CERTIFIED_ROAD_MEAN = 17.8;
+
+  /**
+   * The two ambient terms this change lifts, at dusk, as the certified frame was drawn.
+   *
+   * Written out rather than recomputed from the daylight ramp on purpose: this is the
+   * measured starting point the lift is a delta on, and a test that derives it from the
+   * same expression it is checking would agree with the code by construction. The preset
+   * is 17:20 JST on 15 October, which solves to a solar elevation of -3.48 degrees, so
+   * `daylight` is 0.191 and `dark` is 0.870 and the pre-change formulas give these two.
+   */
+  const CERTIFIED_DUSK_AMBIENT = Object.freeze({ hemisphereIntensity: 0.2403, environmentIntensity: 2.8048 });
+
+  /** How far the shipped dusk ambient rises over the certified one. */
+  const ambientLift = DUSK.environmentIntensity / CERTIFIED_DUSK_AMBIENT.environmentIntensity;
+
+  it("raises both dusk ambient terms, within a bounded factor", () => {
+    expect(
+      ambientLift,
+      `the dusk environment is ${DUSK.environmentIntensity.toFixed(3)} against the certified ` +
+        `${CERTIFIED_DUSK_AMBIENT.environmentIntensity}: a lift of ${ambientLift.toFixed(2)}x. The certified ` +
+        `satellite near-field road is ${CERTIFIED_ROAD_MEAN} of 255 at this preset with ${(
+          (0.0052 / (0.0052 + 0.0736 * linearAlbedo(worldStyle("satellite").palette.road))) *
+          100
+        ).toFixed(0)}% of its radiance albedo-free, so a lift that does not move the ambient does not move the rect.`,
+    ).toBeGreaterThan(1.5);
+    const hemisphereLift = DUSK.hemisphereIntensity / CERTIFIED_DUSK_AMBIENT.hemisphereIntensity;
+    expect(hemisphereLift, `hemisphere ${DUSK.hemisphereIntensity.toFixed(3)} vs ${CERTIFIED_DUSK_AMBIENT.hemisphereIntensity}`).toBeGreaterThan(1.5);
+    // Bounded: a two-stop lift would take the pavement and the facades with it, and the
+    // tone review on the captured frames is what would have to accept that.
+    expect(ambientLift, "the dusk ambient lift is bounded at 2x").toBeLessThanOrEqual(2);
+    expect(hemisphereLift, "the dusk hemisphere lift is bounded at 2x").toBeLessThanOrEqual(2);
+  });
+
+  it("puts the road over the floor with its whole radiance following the ambient", () => {
+    const predicted = display(radianceFor(CERTIFIED_ROAD_MEAN, DUSK.exposure) * ambientLift, DUSK.exposure);
+    expect(
+      predicted,
+      `the certified satellite near-field road is ${CERTIFIED_ROAD_MEAN} of 255 at dusk; the shipped ambient's ` +
+        `${ambientLift.toFixed(2)}x lift puts it at ${predicted.toFixed(1)} against a floor of ${BLACK_FLOOR}`,
+    ).toBeGreaterThanOrEqual(BLACK_FLOOR);
+  });
+
+  it("still clears the floor when only the illumination-driven share of that radiance rises", () => {
+    // The pessimistic split: A is fixed, because if it is bloom the ambient does not move
+    // it. This is the case that has to hold for the change to be worth its tone risk.
+    const road = worldStyle("satellite").palette.road;
+    const albedo = linearAlbedo(road);
+    const albedoFree = 0.0052 / (0.0052 + 0.0736 * albedo);
+    const predicted = display(radianceFor(CERTIFIED_ROAD_MEAN, DUSK.exposure) * (albedoFree + (1 - albedoFree) * ambientLift), DUSK.exposure);
+    expect(
+      predicted,
+      `with ${(albedoFree * 100).toFixed(0)}% of the certified ${CERTIFIED_ROAD_MEAN} of 255 held fixed as ` +
+        `albedo-free and the rest lifted ${ambientLift.toFixed(2)}x, the road lands at ${predicted.toFixed(1)} ` +
+        `against a floor of ${BLACK_FLOOR}`,
+    ).toBeGreaterThanOrEqual(BLACK_FLOOR);
+  });
+
+  it("leaves the noon ambient exactly where it was, so the daylight tone cannot move", () => {
+    // The tone review's binding number: the cartographic noon crossing band measured
+    // 169.80 of 255 in the superseded capture, and a daylight term here would move it.
+    // `dark` is 0 with the sun up, so the fill contributes nothing and these two are the
+    // values the pre-change formula produced.
+    const noon = lightingForPreset("noon");
+    expect(noon.hemisphereIntensity, "noon hemisphere intensity").toBeCloseTo(0.58, 9);
+    expect(noon.environmentIntensity, "noon environment intensity").toBeCloseTo(1.5, 9);
   });
 });
