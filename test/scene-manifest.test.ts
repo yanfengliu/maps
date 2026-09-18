@@ -51,7 +51,7 @@ const CLOSED_RIMS: readonly ClosedTerrainRim[] = [
   { rimVertexCount: 16, rimPerimeterM: 109.0, apexX: 586.5, apexY: 10.8, apexZ: 568.9, rimAreaM2: 350.0 },
   { rimVertexCount: 14, rimPerimeterM: 99.0, apexX: 656.8, apexY: 10.37, apexZ: 636.4, rimAreaM2: 300.0 },
   { rimVertexCount: 14, rimPerimeterM: 99.0, apexX: 621.8, apexY: 10.34, apexZ: 606.4, rimAreaM2: 300.0 },
-  { rimVertexCount: 15, rimPerimeterM: 89.5, apexX: 579.0, apexY: 26.42, apexZ: -403.1, rimAreaM2: 512.5 },
+  { rimVertexCount: 15, rimPerimeterM: 89.5, apexX: 578.98, apexY: 26.42, apexZ: -403.06, rimAreaM2: 512.5 },
   { rimVertexCount: 8, rimPerimeterM: 56.6, apexX: 694.3, apexY: 9.74, apexZ: 673.9, rimAreaM2: 150.0 },
   { rimVertexCount: 8, rimPerimeterM: 52.4, apexX: 707.4, apexY: 10.57, apexZ: 693.9, rimAreaM2: 150.0 },
   { rimVertexCount: 6, rimPerimeterM: 42.4, apexX: 496.8, apexY: 10.37, apexZ: 461.4, rimAreaM2: 100.0 },
@@ -147,9 +147,9 @@ describe("the scene manifest is a function of its facts", () => {
     expect(f1).toEqual({
       rimVertexCount: 15,
       rimPerimeterM: 89.5,
-      apexX: 579,
+      apexX: 578.98,
       apexY: 26.42,
-      apexZ: -403.1,
+      apexZ: -403.06,
       rimAreaM2: 512.5,
     });
     // The records are rounded the way the other measured facts are, so a rebuild

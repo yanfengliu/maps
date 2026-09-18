@@ -1,7 +1,9 @@
 {
   "source": "Derived test coordinates from the authored scramble path and pinned PLATEAU road triangles; presentation-only seam allowance, no movement support authority.",
   "evidenceSha256": "91f98cf9ee34ff20d0c614a36803c1f543b6b4bc8d77e47eebd0aaf589d76a75",
-  "roadsSha256": "3fe126cd675949daf4b337b890c99478c730a4f956c7f4241e7fe883cf967490",
+  "reDerived": "Re-derived 2026-09-18 against the terrain cap's roads (0d429c31) and pavements (3b24c5ef). The eleven probe points are the original ones; their seam identities moved by exactly the 123 road triangles the cap drapes, and the gap widths moved by about 1e-10 m, below the test's 1e-6 m tolerance.",
+  "roadsSha256": "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
+  "pavementsSha256": "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62",
   "probes": [
     {
       "x": -9.6966761662623,
@@ -10,16 +12,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.00922070071268712
+      "gapWidthM": 0.009220700632347001
     },
     {
       "x": -8.592773151609595,
@@ -28,16 +30,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54526,
-          "edge": 2
+          "triangle": 54641,
+          "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54518,
-          "edge": 0
+          "triangle": 54649,
+          "edge": 2
         }
       ],
-      "gapWidthM": 0.00886910031427633
+      "gapWidthM": 0.008869100224218695
     },
     {
       "x": -7.488870136956889,
@@ -46,16 +48,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54526,
-          "edge": 2
+          "triangle": 54641,
+          "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54518,
-          "edge": 0
+          "triangle": 54649,
+          "edge": 2
         }
       ],
-      "gapWidthM": 0.008517499915863884
+      "gapWidthM": 0.008517499869131848
     },
     {
       "x": -6.518746679116793,
@@ -64,16 +66,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.008207489889708796
+      "gapWidthM": 0.008207489833464298
     },
     {
       "x": -4.77668167292784,
@@ -82,16 +84,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.00765231705297151
+      "gapWidthM": 0.007652316978550267
     },
     {
       "x": -1.9307136520861778,
@@ -100,16 +102,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54526,
-          "edge": 2
+          "triangle": 54641,
+          "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54518,
-          "edge": 0
+          "triangle": 54649,
+          "edge": 2
         }
       ],
-      "gapWidthM": 0.006745543817819581
+      "gapWidthM": 0.006745543800248961
     },
     {
       "x": -0.9605901942460824,
@@ -118,16 +120,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.006435533791666893
+      "gapWidthM": 0.006435533761433503
     },
     {
       "x": 0.14331282040662524,
@@ -136,16 +138,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.006083933393252875
+      "gapWidthM": 0.006083933330515568
     },
     {
       "x": 1.8853778265955774,
@@ -154,16 +156,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54526,
-          "edge": 2
+          "triangle": 54641,
+          "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54518,
-          "edge": 0
+          "triangle": 54649,
+          "edge": 2
         }
       ],
-      "gapWidthM": 0.005528760556514788
+      "gapWidthM": 0.0055287605152807015
     },
     {
       "x": 3.321242307552137,
@@ -172,16 +174,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54518,
+          "triangle": 54641,
           "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54526,
+          "triangle": 54649,
           "edge": 2
         }
       ],
-      "gapWidthM": 0.0050707225702768385
+      "gapWidthM": 0.005070722520641368
     },
     {
       "x": 5.856716312982826,
@@ -190,16 +192,16 @@
       "edges": [
         {
           "mesh": "roads",
-          "triangle": 54526,
-          "edge": 2
+          "triangle": 54641,
+          "edge": 0
         },
         {
           "mesh": "roads",
-          "triangle": 54518,
-          "edge": 0
+          "triangle": 54649,
+          "edge": 2
         }
       ],
-      "gapWidthM": 0.004262634641848102
+      "gapWidthM": 0.004262634609197594
     }
   ]
 }

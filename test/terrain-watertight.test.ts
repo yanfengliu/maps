@@ -280,62 +280,103 @@ describe("the pipeline's own build closes the rim it finds", () => {
 });
 
 describe("the terrain the scene build wrote", () => {
-  it("is either watertight or refused by name with every rim listed", async () => {
-    const bytes = await readFile("data/scene/terrain.mesh").catch((cause: unknown) => {
-      throw new Error(
-        "The terrain watertightness gate needs cached data/scene/terrain.mesh; run npm run data:fetch and " +
-          "npm run data:scene before npm test. This test does not build the scene implicitly and does not skip " +
-          "a missing source.",
-        { cause },
+  it("is watertight, and its manifest records the fourteen rims the cap closed", async () => {
+    const read = async (path: string): Promise<Uint8Array> =>
+      new Uint8Array(
+        await readFile(path).catch((cause: unknown) => {
+          throw new Error(
+            `The terrain watertightness gate needs cached ${path}; run npm run data:fetch and ` +
+              "npm run data:scene before npm test. This test does not build the scene implicitly and does " +
+              "not skip a missing source.",
+            { cause },
+          );
+        }),
       );
-    });
-    const mesh = decodeMesh(new Uint8Array(bytes));
+
+    const mesh = decodeMesh(await read("data/scene/terrain.mesh"));
     const census = censusBoundaries(mesh);
     expect(census.triangleCount).toBeGreaterThan(100_000);
 
-    if (census.interiorLoops.length === 0) {
-      // One rim, and it is the ground's own edge: the fourteen holes the source TIN
-      // carried are closed. The perimeter bound is what separates the two, since a
-      // hole in this mesh is tens of metres and the clipped edge is kilometres.
-      expect(census.loops).toHaveLength(1);
-      expect(census.outerLoop.perimeterM).toBeGreaterThan(1000);
-      return;
-    }
+    // One rim, and it is the ground's own edge. This is the state the cap landed in:
+    // the fourteen holes the source TIN carried are closed, and the perimeter bound
+    // separates the two because a hole here is tens of metres and the edge is
+    // kilometres. Before the batch this case asserted the opposite state on purpose;
+    // it now asserts this one, and it is the only thing standing between a future
+    // `data:scene` run and an uncapped ground reaching the payload.
+    expect(census.interiorLoops).toHaveLength(0);
+    expect(census.loops).toHaveLength(1);
+    expect(census.outerLoop.perimeterM).toBeGreaterThan(1000);
+    expect(census.boundaryEdgeCount).toBe(census.outerLoop.vertices.length);
+    expect(() => verifyTerrainIsWatertight(mesh, "data/scene/terrain.mesh")).not.toThrow();
 
-    // The served ground is still the uncapped one. The census is the fourteen holes
-    // the 2026-09-15 diagnosis measured, and the gate must name every one of them
-    // rather than refuse with a count.
-    expect(census.interiorLoops).toHaveLength(14);
-    expect(census.boundaryEdgeCount).toBe(1441);
-    const f1 = census.interiorLoops.find((loop) => Math.abs(loop.centroidX - 579.0) < 0.1 && Math.abs(loop.centroidZ + 403.1) < 0.1);
+    // The manifest is where a reader of the served payload meets the invention, so it
+    // has to agree with the mesh. The cap is additive — one apex per rim appended after
+    // the source vertices, one triangle per rim edge — so the uncapped ground can be
+    // reconstructed from the served one by dropping the apexes, and the rims recovered
+    // from it are the census the manifest's records must match.
+    const manifest = JSON.parse(new TextDecoder().decode(await read("data/scene/manifest.json"))) as {
+      terrain: {
+        closedHoleCount: number;
+        capTriangleCount: number;
+        closedRims: readonly {
+          rimVertexCount: number;
+          rimPerimeterM: number;
+          apexX: number;
+          apexY: number;
+          apexZ: number;
+          rimAreaM2: number;
+        }[];
+      };
+    };
+    expect(manifest.terrain.closedHoleCount).toBe(14);
+    expect(manifest.terrain.capTriangleCount).toBe(227);
+    expect(manifest.terrain.closedRims).toHaveLength(14);
+
+    const apexes = manifest.terrain.closedHoleCount;
+    const sourceVertices = mesh.positions.length / 3 - apexes;
+    const uncappedIndices: number[] = [];
+    for (let corner = 0; corner < mesh.indices.length; corner += 3) {
+      const triangle = [mesh.indices[corner]!, mesh.indices[corner + 1]!, mesh.indices[corner + 2]!];
+      if (triangle.some((index) => index >= sourceVertices)) continue;
+      uncappedIndices.push(...triangle);
+    }
+    const uncapped = censusBoundaries({
+      positions: mesh.positions.slice(0, sourceVertices * 3),
+      indices: new Uint32Array(uncappedIndices),
+    });
     expect(
-      f1,
-      "the F1 rim at (579.0, -403.1) is not among the served ground's interior rims",
-    ).toBeDefined();
-    expect(describeLoopForFailure(f1!)).toMatch(/^15 rim vertices, 89\.5 m perimeter, centroid \(579\.0, -403\.1\)/);
+      uncapped.interiorLoops.length,
+      "the served ground is not the cap's own output: dropping the manifest's apexes did not leave the " +
+        `${uncapped.interiorLoops.length} interior rims it records`,
+    ).toBe(14);
+    expect(manifest.terrain.closedRims.reduce((total, rim) => total + rim.rimVertexCount, 0)).toBe(227);
 
-    let message = "";
-    try {
-      verifyTerrainIsWatertight(mesh, "data/scene/terrain.mesh");
-    } catch (error) {
-      message = (error as Error).message;
-    }
-    expect(message, "the gate passed a ground mesh every rim of which is a hole").not.toBe("");
-    expect(message).toContain(`carries ${census.interiorLoops.length} holes in the ground`);
-    for (const loop of census.interiorLoops) {
-      expect(message, `the refusal does not name the rim ${describeLoopForFailure(loop)}`).toContain(
-        describeLoopForFailure(loop),
+    const unmatched = [...uncapped.interiorLoops];
+    for (const record of manifest.terrain.closedRims) {
+      const at = unmatched.findIndex(
+        (loop) =>
+          Math.abs(loop.centroidX - record.apexX) < 0.5 && Math.abs(loop.centroidZ - record.apexZ) < 0.5,
       );
+      expect(
+        at,
+        `the manifest records a rim at (${record.apexX}, ${record.apexZ}) that the re-derived census does not have`,
+      ).toBeGreaterThanOrEqual(0);
+      const loop = unmatched.splice(at, 1)[0]!;
+      expect(record.rimVertexCount).toBe(loop.vertices.length);
+      expect(record.rimPerimeterM).toBeCloseTo(loop.perimeterM, 1);
+      expect(record.apexY).toBeCloseTo(loop.centroidY, 2);
+      expect(record.rimAreaM2).toBeCloseTo(Math.abs(loop.signedAreaXZ), 1);
     }
+    expect(unmatched, "a rim the cap closed is missing from the manifest").toHaveLength(0);
 
-    // And the cap this gate is paired with closes exactly this mesh: every rim gone,
-    // one outer rim left, one vertex and one triangle per rim edge.
-    const cap = capTerrainHoles(mesh);
-    const capped = censusBoundaries({ positions: cap.positions, indices: cap.indices });
-    expect(capped.interiorLoops).toHaveLength(0);
-    expect(cap.summary.addedVertexCount).toBe(14);
-    expect(cap.summary.addedTriangleCount).toBe(227);
-    expect(capped.boundaryEdgeCount).toBe(census.outerLoop.vertices.length);
-    expect(() => verifyTerrainIsWatertight({ positions: cap.positions, indices: cap.indices }, "the capped ground")).not.toThrow();
+    // The rim the defect was reported from, at the digits the diagnosis measured. The
+    // manifest rounds the apex to centimetres, so the world point reads 578.98 /
+    // -403.06 here where the refusal message prints the rim's own 1 dp centroid.
+    const f1 = manifest.terrain.closedRims.find((rim) => rim.rimVertexCount === 15);
+    expect(f1).toBeDefined();
+    expect(f1!.rimPerimeterM).toBeCloseTo(89.5, 1);
+    expect(f1!.apexX).toBeCloseTo(579.0, 1);
+    expect(f1!.apexY).toBeCloseTo(26.42, 2);
+    expect(f1!.apexZ).toBeCloseTo(-403.1, 1);
   });
 });
