@@ -87,11 +87,13 @@ export async function createRoads(style: WorldStyle = worldStyle(DEFAULT_WORLD_S
     setStyle(next): void { treatment.apply(next); paving.apply(next); markingMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); },
     dispose(): void {
       geometry.dispose();
-      material.dispose();
       pavementGeometry.dispose();
-      paving.material.dispose();
       markingGeometry.dispose();
       markingMaterial.dispose();
+      // Through the treatments, not their materials: both own a world-space surface
+      // texture that a bare `material.dispose()` would leave on the GPU.
+      treatment.dispose();
+      paving.dispose();
     },
   };
 }
