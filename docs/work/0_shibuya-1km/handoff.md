@@ -1,6 +1,6 @@
 # Handoff — the Shibuya 1km deliverable, 2026-09-18
 
-This note is the session-to-session delta. The canonical status is [`plan.md`](plan.md) — its closing dated block, "Coordinator status, 2026-09-18 — the cap is merged, the certificate is re-issued, and the eight-lane re-inspection finds the holes closed and the spill prediction not reading", and the acceptance criteria status subsection are current, and the dated blocks above that one are the history of how the finding got here. The standing defect list is [`../../learning/defect-register.md`](../../learning/defect-register.md) and the prioritized work list is [`quality-register.md`](quality-register.md). Read those after this note.
+Resumed 2026-09-19: the canonical status and delegation list are the [current queue in `plan.md`](plan.md#current-queue--2026-09-19), owned by the root orchestrator. That queue supersedes the older priority list and current-state claims below. This note retains the 2026-09-18 handoff and its evidence bounds as history. The standing defect list is [`../../learning/defect-register.md`](../../learning/defect-register.md); [`quality-register.md`](quality-register.md) retains the detailed findings and prior dispositions.
 
 ## 0. Where the tree is, and what a reader would otherwise get wrong
 
