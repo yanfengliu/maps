@@ -1,0 +1,23 @@
+# Survivor-observer candidate: preparation only
+
+Owner: native_instrument_correction. Isolated checkout: artifacts/native-survivor-observer/wt at d7c8eea43c1cbfc6e85bcd01306fd43898be6b66. Root approved the concrete 28+6 preparation design. Independent source review and separate native execution admission remain pending. No native fixture, browser, CDP, GPU, server, dependency installation, primary edit or commit occurred.
+
+## Review target
+
+DESIGN.md contains the ownership diagram and acquisition/failure table. source.patch is the complete change against the exact corrected run-02 source. Candidate source SHA-256 83ef7ed5bf917cc24249441f28e01285c94c64e9cfa849351e933f3d1a96c68e; executable b068a95dd98adb466bf4668323a0f63e1d5921b4cb9066d531552ae01438c681; patch a9b02167d8229daac0c5d5bc3da8a78c30d3b8c5d92b8dbf762dcafc276574c3. The 28-case runner and its wait/accounting/status helpers remain byte-identical. Shared structure gains a bounded observer mailbox; guarded publication hooks are no-ops in the baseline. Those changes mean the new binary itself is different, even though the baseline case list, schedules and checks are preserved.
+
+The six cases form a separate observer6 group: post-assignment negative/candidate at checkpoint 12, leaked-job negative/candidate at 14, and actual escaped/ordinary descendant negative/candidate at 16. The runner pulls original process-handle duplicates while their source handles are held. Final observers have SYNCHRONIZE only; the breakaway bridge has PROCESS_DUP_HANDLE | SYNCHRONIZE. The child release acknowledgement is a separate interlocked mailbox field, never the original advance event. Acquisition is ledgered before output or acknowledgement. No tested inner job crosses the boundary; no PID open or stop exists.
+
+After owner signal and unchanged raw accounting, WaitForSingleObject(observer,0) distinguishes signaled candidates from unsignaled negatives before rescue. The raw accounting and liveness records stay separate. A missing or failed observation cannot pass. Explicit close records both Win32 errors and retains failures; destructor cleanup keeps any still-owned handle until closure. Extra transfer duration, publication/acknowledgement events and wait results are recorded. Process-object retention and logging may affect accounting or timing; the six cases are not claimed to leave the original native timing unchanged. Their evidence never rewrites the baseline's raw negative labels. The combined run remains partial if the baseline remains partial, including the creation-window UNAVAILABLE.
+
+## Checks and limits
+
+Both compilation attempts passed /std:c++20 /EHsc /W4 /WX /O2 on MSVC 19.50.35727.0, Windows/SDK 10.0.26100.0. The second added explicit close-error recording. Nineteen source-extracted CPU handle-model cases passed. They cover root/child and candidate/negative identities, missing publication, owner/root exit, first/second duplication failure, actual-child refusal, pre/post-cut wait errors, wrong live/dead verdicts, retained close failure and a rejected early-ACK mutation. The scalar-handle reuse example shows why publication without a held source lifetime is invalid; it is not a new PID or native reuse experiment. These controls do not establish Windows transfer timing or native disposal.
+
+The complete corrected-baseline 76-member freeze was checked before preparation and again at handoff, unchanged. The tracked checkout is clean. The no-index whitespace check reports expected different-file exit 1 with zero diagnostics. Four secret-pattern checks match zero candidate strings. An approved read-only exact-task-path process census found zero processes. No junctions were created. The expendable compiler object was removed; all source, binary, CPU controls and build logs are retained for review.
+
+## Next command, not executed
+
+NEXT-COMMAND.txt gives the exact proposed frozen command from this checkout. It directly invokes the executable and propagates LASTEXITCODE as the tool process exit before any JSON reporting. Native stdout/stderr go to separate raw files. The tool return itself must then be preserved verbatim, independently of the C++ self-report. The original broken receipt wrapper and run-02 missing OS exit remain counterevidence; they are not silently repaired or reclassified here.
+
+Root should obtain independent review of the original-handle pull, source lifetime barriers, acquisition-failure cleanup, the actual breakaway descendant target, finally closure and the 28/6 separation before admitting one run. This candidate does not retire F32, admit a pipe experiment, or certify the primitive or launcher.
