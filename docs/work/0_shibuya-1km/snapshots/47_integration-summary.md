@@ -1,6 +1,6 @@
 # Devlog Summary
 
-- 2026-09-19: Applied the Review 45 preservation guard with its three source hashes unchanged. All five integration gates pass: 618 tests and hardware certificate `8d70420e07afbfa7` for 44 frames; prior visual/build evidence is preserved and owned cleanup is clear. Root accepted Review 47 and all 44 native inspections and authorized scoped delivery. Exact rejected Review 46 history remains preserved; source authority and clean-city reconstruction remain open. [Current disposition](../work/0_shibuya-1km/plan.md)
+- 2026-09-19: Applied the Review 45 preservation guard with its three source hashes unchanged. All five integration gates pass: 618 tests and hardware certificate `8d70420e07afbfa7` for 44 frames; prior visual/build evidence is preserved and owned cleanup is clear. Review 47 and native acceptance remain pending. Source authority and clean-city reconstruction remain open. [Current disposition](../work/0_shibuya-1km/plan.md)
 
 - 2026-09-19: **Scene rebuilds now refuse silent authored-paint loss before cleanup.** The isolated preservation guard admits absent or consistent published-only markings pairs; 23 refusal fixtures keep every byte and never call the writer. Both old/late-preflight mutations fail all 23, and the restored focused suite passes 27 cases. Source authority and clean-city rebuild acceptance remain open. [Detail](detailed/2026-09-19_rebuild-preservation.md).
 

@@ -11,7 +11,8 @@
  *
  * The step is not part of `npm run build`, because it takes about a minute and
  * reads 500 MB. It is what the plan's "rebuild from a clean checkout" criterion
- * runs: delete `data/scene/`, run this, render again.
+ * runs on an absent or published-only markings pair. Existing authored or
+ * unrecognised markings are refused before cleanup, with their bytes retained.
  *
  * Three checks are run here rather than left to a test, because each one needs
  * the whole 500 MB of source and none of them can run in the unit suite:
@@ -48,7 +49,7 @@ import { geographicToPlaneRectangular } from "../geo/plane-rectangular.ts";
 import { buildBuildings } from "./build-buildings.ts";
 import { buildRoads } from "./build-roads.ts";
 import { buildTerrain, verifyTerrainIsWatertight } from "./build-terrain.ts";
-import { cleanSceneGeometry } from "./clean-geometry.ts";
+import { runSceneRebuild } from "./rebuild-preservation.ts";
 import { writeMarkings } from "./build-markings.ts";
 import { buildPavementPresentation, writePavementPresentation } from "./pavement-recipe.ts";
 import { sceneManifest } from "./scene-manifest.ts";
@@ -96,8 +97,10 @@ function log(line: string): void {
 
 async function main(): Promise<void> {
   console.log(`Scene root: ${SCENE_ROOT} (gitignored, rebuilt by this command)\n`);
-  await cleanSceneGeometry(SCENE_ROOT);
+  await runSceneRebuild(SCENE_ROOT, buildScene);
+}
 
+async function buildScene(): Promise<void> {
   log("terrain — PLATEAU dem:TINRelief");
   const terrain = await buildTerrain(
     join(DATA_ROOT, "plateau", "udx", "dem", `${AOI_MESH_CODES.level2}_dem_6697_op.gml`),
