@@ -1,5 +1,7 @@
 # Devlog Summary
 
+- 2026-09-19: No runtime behavior changed. Preserved exact Reviews 54/56 and targets: v4 PID-reuse rejection and a bounded native-proof direction. Recorded facts delivery `9272500`, 685 tests, exact prior visual transfer and five archived/removed trees. Native run01 failed; contact design awaits Review 57. No contact implementation or capture is admitted. [Current disposition](../work/0_shibuya-1km/plan.md)
+
 - 2026-09-19: **Offline historical walking facts now have an independently reviewed producer and actionable errors.** Applied the exact Review 53 component; four fresh primary gates pass, including 685 tests. Rebuilt browser bytes, served data and harness match 05ad, transferring its existing 8d704 still-image evidence without a new capture. Review 55 and root accept the bounded integration; delivery remains pending, with no source-pair or walking-support adoption. [Detail](detailed/2026-09-19_historical-walking-facts.md).
 
 - 2026-09-19: No runtime behavior changed. Preserved exact Reviews 48–51 and their authored targets: bounded F26/F27 CPU acceptance, historical payload equality with two truthful provenance changes, and launcher v2/v3 F28 rejection. Recorded Q4 delivery `05ad1a4` and four SHA-verified tree removals. Review51 blocks GPU capture; a separate v4 cleanup design and the approved offline-facts implementation remain isolated from source/mesh adoption. [Current disposition](../work/0_shibuya-1km/plan.md)
