@@ -1,5 +1,15 @@
 # Gate proofs
 
+## 2026-09-19 — visual certification refuses disposable linked checkouts
+
+Gate: `test/visual-checkout.test.ts`, eight cases over real temporary Git checkout metadata and the real wrapper CLI. The new guard admits a primary root, refuses a subdirectory or non-repository, and refuses each of `--reset`, `--begin` and `--end` in a linked worktree before changing either checkout's evidence. One case verifies alternate Windows path casing and is Windows-only.
+
+Mutation: remove only `assertPrimaryVisualCheckout()` from the wrapper CLI. The three linked-checkout cases fail: `--reset` returns 0 (`expected +0 to be 1`), `--begin` reaches its missing build instead of the checkout refusal, and `--end` tries to parse the retained sentinel run instead of refusing. Restore the exact source bytes: seven of seven pass. The scoped visual suites then pass 51 tests across three files, and TypeScript passes. The mutation log is retained under ignored `artifacts/certificate-primary/red-control.log` while this task needs it. No queued lesson is retired by this fix.
+
+Bound: these checks establish the CLI output-location boundary and unchanged sentinel evidence, not rendering or the lifetime of primary artifacts after an explicit deletion. The primary CLI's accepted reset is also exercised. The existing digest, freshness, GPU and lifecycle tests remain unchanged.
+
+Independent review found F21: the same Windows primary was refused when its path used alternate case because the JavaScript realpath resolver preserved that spelling. The repair uses the native resolver for every compared path. Restoring the old resolver makes the new case fail with `expected [Function] to not throw an error`, followed by the erroneous linked-worktree refusal; seven other cases stay green. Restoring the repair passes all eight, the three visual unit files pass 52 tests, and TypeScript passes. The failing control is retained at `artifacts/certificate-primary/case-red-control.log` while the task needs it.
+
 A gate that has never been made to go red is not yet a gate. Each entry below names the gate, the mutation that broke it, the failure the mutation produced, and where the gate landed.
 
 `docs/learning/lessons.md` exists and holds two queued entries, neither retired, with their measurements in `docs/learning/lessons-evidence.md`.

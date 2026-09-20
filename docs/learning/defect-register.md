@@ -1,5 +1,15 @@
 # Defect register
 
+## 2026-09-19 — the visual wrapper could certify into a worktree that its merge removes
+
+Observed symptom: the 2026-09-18 plan and handoff prescribe an instrument fix because `npm run visual` writes its ignored `complete.json`, frames and lifecycle records wherever it runs. Merging that checkout preserves code while worktree removal loses the evidence the certificate refers to.
+
+Root cause: the CLI resolved `artifacts/visual` from its working directory without checking whether Git identifies that directory as the primary checkout root. The existing frame, build, scene, harness and renderer checks could all pass in a disposable worktree.
+
+Fix: `tools/visual/checkout.ts` asks Git for the current checkout, its common directory and the primary checkout. `tools/visual/verify-output.ts` calls it before any of the three CLI steps touches evidence. A linked checkout or subdirectory is refused with the primary location and the command to run after integration. Missing Git or repository metadata fails closed. Refused runs preserve evidence in both checkouts; the primary's accepted `--reset` still clears its own previous certificate before the build.
+
+Checked from now on: `test/visual-checkout.test.ts` drives the real CLI against disposable primary and linked Git checkouts. Removing the CLI call makes all three linked-checkout cases fail. Independent review found that the initial resolver wrongly refused the primary under alternate Windows path casing; native path resolution fixes this and the new casing test was watched red on the old resolver. Eight cases pass on Windows; the casing case is Windows-only. This gates output location, not arbitrary future deletion in the primary, successful rendering or visual appearance. Imported verifier functions remain available for synthetic unit fixtures.
+
 ## 2026-09-18 — the flicker judge read byte offsets with pixel indices, so every changed-pixel fraction was computed from the wrong byte and RUN-01 published the result
 
 Observed symptom, from RUN-01's own record (`artifacts/flicker/RUN-01-REPORT.md`, `2cdc349`): `changed` read **exactly 1.0000 on six of nine orbit pairs** and 0.6254-0.6859 on the rest, while the pairs were 6-8 rendered frames and a ~30 px picture move apart. RUN-01 read that as its own estimator failing and wrote the arithmetic to match — "a correct alignment leaves smooth dusk gradients well under 8/255, so a true 100%-changed reading is not reachable", which is reasoning from the number rather than checking it. The number was not reachable for a different reason.

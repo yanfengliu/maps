@@ -5,6 +5,8 @@
  * 1280x720, captured in the lane this process names — the verdict lane. Every
  * other lane is refused by name: an iteration lane's frames or numbers are not
  * the appearance set the reviews are bound to, and it produces no certificate.
+ * The two style-return approach frames are lane evidence only; neither belongs
+ * to the certified 44-frame set.
  *
  * The certificate is issued by `certifyVisualRun`, which is `verifyVisualRun`
  * plus the evidence a pixel set cannot carry about itself: that three hardware
@@ -47,6 +49,7 @@ import {
 import { LIFECYCLE_RECORD_DIR, LIFECYCLE_RUNS, type LifecycleRecord } from "./lifecycle-record.ts";
 import { decodePng } from "./png.ts";
 import { teardownRecordRefusal } from "../../src/harness/teardown.ts";
+import { assertPrimaryVisualCheckout } from "./checkout.ts";
 
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
@@ -854,6 +857,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   // here, by name, before any artifact is written.
   assertCertifiable(activeLane());
   const phase = visualRunPhase(process.argv);
+  // Refuse before --reset too: a rejected worktree run must preserve its old
+  // evidence, and must fail before npm's chain starts a build or browser.
+  assertPrimaryVisualCheckout();
   const root = resolve(laneDir("verdict"));
   if (phase === "reset") await resetVisualRun(root);
   else if (phase === "begin") await beginVisualRun(root);
