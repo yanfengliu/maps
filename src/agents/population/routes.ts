@@ -32,6 +32,7 @@ import type { NetworkData, NetworkEdge } from "../../world/network-data.ts";
 import { PEDESTRIAN_CADENCE_MPS, VEHICLE_DYNAMICS } from "./config.ts";
 import { CENTRAL_RADIUS_M, MovementGraph } from "./graph.ts";
 import type { RefusalCounts } from "./status.ts";
+import { clearPedestrianTerminal } from "./pedestrian-terminal.ts";
 
 /**
  * The shortest route a slot will accept, in sections. Below this the population
@@ -60,10 +61,11 @@ export const REDUCING_PREFERENCE = 0.45;
  *  - `centre` enters at a boundary portal and ends on the world origin's own
  *    block. The origin is the Shibuya Scramble Crossing, so this is the shape
  *    that puts the population where the deliverable is judged. It is legal under
- *    the contract's own rule because the rule's first disjunct is satisfied: the
- *    route's last conflict occurrence is the scramble, and the section after it
- *    is an ungoverned sidewalk of the central block. It needs no boundary
- *    retirement, because a walker retires where it stands.
+ *    the contract's outside-occurrence rule is satisfied and its terminal body
+ *    clears every physical conflict primitive. A null-junction sidewalk can
+ *    remain inside a primitive, so the chosen prefix gains the shortest legal
+ *    continuation needed for full-body clearance before passages are assembled.
+ *    Interior retirement then needs no boundary envelope.
  *
  *    **A `centre` route crosses the scramble when the graph lets it.** The shape
  *    is a descent to the authored diagonal, the diagonal itself, and then the
@@ -262,6 +264,10 @@ export class RouteLibrary {
    * wrong route rather than a refusal.
    */
   private readonly caches = new Map<string, PlannedRoute>();
+  /** Preserve the first chosen central prefix when another body size requests it. */
+  private readonly centrePrefixes = new Map<string, readonly string[]>();
+  /** One fitted plan per portal, rather than an unbounded cache of random scales. */
+  private readonly centreCacheKeys = new Map<string, string>();
   refused = 0;
 
   constructor(network: NetworkData, refusals: RefusalCounts) {
@@ -273,33 +279,53 @@ export class RouteLibrary {
 
   invalidate(): void {
     this.caches.clear();
+    this.centrePrefixes.clear();
+    this.centreCacheKeys.clear();
   }
 
   /**
    * Build (or reuse) the route one slot drives, placed at that slot's own lateral
    * position.
    *
-   * The *plan* is cached and shared — every slot drawing the same portal and
-   * destination drives the same sections, the same gates and the same `RoutePassage`
-   * objects, which is what makes the passage bookkeeping an identity across actors.
-   * The *placement* is not: each call returns a view of that plan carrying the
-   * calling slot's lateral offsets, so two walkers on one plan stand in two places.
-   * Sharing the passages is deliberate and load-bearing: `tick.ts` compares a held
-   * lease with `route.passages[i]` by object identity, so a per-slot copy of the
-   * passage objects would break admission rather than spread a crowd.
+   * The chosen central prefix is shared per portal and destination. Gate stops
+   * and the clear terminal are fitted to the requesting body's radius; only the
+   * latest such fit is cached per portal, keeping random scales from growing the
+   * cache over generations. Lateral placement is per actor. A live actor retains
+   * its complete plan and passage identities even when another fit replaces the
+   * cache entry; a held lease never borrows a later caller's passage.
    */
   route(kind: ActorKind, slot: number, generation: number, entryEdgeId: string, request: RouteRequest): PlannedRoute | null {
     const destination = request.destination ?? "exit";
-    const key = `${destination}\u0000${entryEdgeId}`;
+    const prefixKey = `${destination}\u0000${entryEdgeId}`;
+    const central = kind === "pedestrian" && destination === "centre";
+    const key = central ? `${prefixKey}\u0000${request.footprintRadiusM}` : prefixKey;
     const streamSeed = actorSeed(0, kind, slot, generation);
-    const cached = this.caches.get(key);
+    // A callback can change between calls, even when its function identity and
+    // body radius are unchanged. Refit constrained requests against it now.
+    const cached = request.viable ? undefined : this.caches.get(key);
     if (cached) return placeOnCorridor(cached, kind, streamSeed, request.footprintRadiusM);
     const graph = kind === "vehicle" ? this.vehicleGraph : this.pedestrianGraph;
-    const built = this.plan(graph, kind, entryEdgeId, streamSeed, request);
-    if (!built.route) return null;
+    const prefix = central ? this.centrePrefixes.get(prefixKey) : undefined;
+    const built = prefix
+      ? this.assembleCentre(graph, prefix, request)
+      : this.plan(graph, kind, entryEdgeId, streamSeed, request, central ? prefixKey : undefined);
+    if (!built.route) {
+      if (prefix) {
+        this.refusals.add(built.reason ?? `pedestrian route from ${entryEdgeId} has no clear terminal for this body`);
+        this.refused += 1;
+      }
+      return null;
+    }
     // Only a route with no gate-length constraint is reusable across body sizes;
     // a constrained walk depends on the radius it was planned for.
-    if (!request.viable) this.caches.set(key, built.route);
+    if (!request.viable) {
+      if (central) {
+        const oldKey = this.centreCacheKeys.get(prefixKey);
+        if (oldKey) this.caches.delete(oldKey);
+        this.centreCacheKeys.set(prefixKey, key);
+      }
+      this.caches.set(key, built.route);
+    }
     return placeOnCorridor(built.route, kind, streamSeed, request.footprintRadiusM);
   }
 
@@ -340,7 +366,7 @@ export class RouteLibrary {
     return drivable;
   }
 
-  private plan(graph: MovementGraph, kind: ActorKind, entryEdgeId: string, streamSeed: number, request: RouteRequest): RouteAttempt {
+  private plan(graph: MovementGraph, kind: ActorKind, entryEdgeId: string, streamSeed: number, request: RouteRequest, centrePrefixKey?: string): RouteAttempt {
     const entry = graph.edges.get(entryEdgeId);
     if (!entry) return { route: null, reason: `entry portal ${entryEdgeId} is not an edge of the ${kind} graph` };
     if (!(request.footprintRadiusM > 0) || !Number.isInteger(request.maxEdges) || request.maxEdges < 1) {
@@ -363,12 +389,31 @@ export class RouteLibrary {
         break;
       }
       const built = this.assemble(graph, kind, walk, request.footprintRadiusM);
-      if (built.route) return built;
+      if (built.route) {
+        if (centrePrefixKey && !request.viable) this.centrePrefixes.set(centrePrefixKey, Object.freeze([...walk]));
+        if (kind === "pedestrian" && request.destination === "centre") {
+          const cleared = this.assembleCentre(graph, walk, request);
+          if (!cleared.route) {
+            this.refusals.add(cleared.reason!);
+            this.refused += 1;
+          }
+          return cleared;
+        }
+        return built;
+      }
       reason = built.reason;
     }
     this.refusals.add(reason ?? `${kind} route from ${entryEdgeId} was refused by the real passage builder`);
     this.refused += 1;
     return { route: null, ...(reason === undefined ? {} : { reason }) };
+  }
+
+  private assembleCentre(graph: MovementGraph, prefix: readonly string[], request: RouteRequest): RouteAttempt {
+    const forbidden = request.viable ? prefix.find(id => !request.viable!(id)) : undefined;
+    if (forbidden !== undefined) return { route: null, reason: `pedestrian route from ${prefix[0]} cannot use its selected prefix: the current viable constraint forbids edge ${forbidden}; request an allowed route or permit that edge before planning this body` };
+    const complete = clearPedestrianTerminal(this.network, graph, prefix, request.footprintRadiusM, request.maxEdges, MAXIMUM_CENTRE_ROUTE_LENGTH_M, request.viable);
+    if (!complete) return { route: null, reason: `pedestrian route from ${prefix[0]} ends at ${prefix.at(-1)} without physical clearance and has no directed continuation${request.viable ? " allowed by the current viable constraint" : ""} for its ${request.footprintRadiusM.toFixed(3)} m body within ${request.maxEdges} sections and ${MAXIMUM_CENTRE_ROUTE_LENGTH_M} m; retain the route only after a clear terminal can be planned` };
+    return this.assemble(graph, "pedestrian", complete, request.footprintRadiusM);
   }
 
   /**

@@ -40,15 +40,7 @@ import { decodePng } from "../tools/visual/png.js";
 import { sampleField, shiftedFrame } from "./flicker-synthetic.js";
 import { FRAME_WIDTH, crawlingRecord, frameAt, frozenRecord, movingRecord, oscillatingRecord, windowFrame } from "./flicker-frames.js";
 
-/**
- * The frame size the lane captures, for the one case whose defect is a function
- * of the array's length rather than of the pixels.
- *
- * Measured from the lane's own manifest rather than assumed: `orbit-00.png` and
- * every other frame it writes is 1280x720 at deviceScaleFactor 1. The unit
- * frames are 192x108 because they are predicates rather than pictures, and that
- * difference is exactly what let the byte-offset defect below go unseen.
- */
+/** Native captured size, beside the small synthetic controls. */
 const FLICKER_FRAME_WIDTH = 1280;
 const FLICKER_FRAME_HEIGHT = 720;
 
@@ -64,7 +56,7 @@ describe("the flicker judge", () => {
     // that edit is a deliberate act with a red case beside it rather than a
     // quiet number change.
     expect(CRAWL_FRACTION_PER_FRAME).toBe(0.005);
-    expect(FLICKER_CADENCE).toEqual({ cadenceFrames: 2, maxPairGapFrames: 26 });
+    expect(FLICKER_CADENCE).toEqual({ cadenceFrames: 1, maxPairGapFrames: 1 });
     expect(MINIMUM_FLICKER_FRAMES).toBe(8);
   });
 
@@ -186,7 +178,10 @@ describe("the flicker judge", () => {
     // the picture - so a judge that only checked the bar would report a crawl
     // figure for a pair it cannot model.
     expect(has(report.failures, "the crawl indicator reads")).toBe(false);
-    expect(Math.max(...report.pairs_.map((pair) => pair.crawl))).toBeGreaterThan(0);
+    // The exact translation has no changed interior feature once both complete
+    // 3x3 neighbourhoods share the same support. The exhausted-search refusal
+    // still rejects it independently of the zero residual.
+    expect(Math.max(...report.pairs_.map((pair) => pair.crawl))).toBe(0);
     // The other side of the distinction, on the same field: a record whose shift
     // is well inside the search is not refused, and its answer is not at the
     // edge. Without this half the case would pass on a judge that failed every
@@ -247,21 +242,9 @@ describe("the flicker judge", () => {
   });
 
   it("counts changed pixels at the size the lane actually captures, not only at the unit frame's size", () => {
-    // The defect this case exists for, and the one a 192x108 unit frame cannot
-    // see. `channelDelta` reads **bytes** and its caller passed **pixel indices**,
-    // and `comparePair` never multiplied by four. Inside a synthetic frame's
-    // 82,944-byte RGBA array no pixel index can leave the buffer, so every case in
-    // this file passed while the real lane was reading the wrong byte for every
-    // pixel: on `artifacts/flicker/capture/orbit-00.png` against `orbit-01.png` it
-    // reported `changedFraction` 0.9703 where the true figure at the same
-    // estimated shift is 0.1871. `Uint8Array` returns `undefined` past its end
-    // rather than throwing, so nothing failed loudly - the number was simply not
-    // the number it claimed to be.
-    //
-    // The picture is the same structured field the other cases use, at the lane's
-    // own 1280x720: the array length is the whole difference, and a two-tone
-    // picture would not do because the estimator finds a spurious alignment in a
-    // frame with only one edge in it.
+    // Pixel indices passed as byte offsets read unrelated in-bounds bytes at
+    // both sizes. The old assertion expected the wrong high changed fraction;
+    // this real-size pure-translation control independently pins a low one.
     const fieldWidth = FLICKER_FRAME_WIDTH + 40;
     const fieldHeight = FLICKER_FRAME_HEIGHT + 40;
     const field = sampleField(fieldWidth, fieldHeight, 424_242);

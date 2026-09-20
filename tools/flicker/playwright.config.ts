@@ -1,30 +1,8 @@
 /**
- * The flicker lane's own Playwright configuration.
- *
- * It is not the gate and it does not write `complete.json`. It exists because
- * the deliverable's dusk criterion - a preset that "holds still - no flicker or
- * crawl over a moving sequence" - has a half that no lane could judge: flicker
- * is a property *between* two frames, and until this lane existed every capture
- * in this repository settled the camera first. `tools/post-chain/motion.spec.ts`
- * is the nearest existing instrument and it was reused rather than paralleled:
- * its launch shape, its native-resolution screenshot and its digest-bound
- * verdict are all kept, and the one thing this lane changes is that it must not
- * settle.
- *
- * The environment is declared here rather than in an npm script, so a launch
- * cannot leave the lane out. Without `MAPS_VISUAL_LANE` the output would land in
- * the verdict lane's directory, and a sequence of moving frames written beside
- * the reviewed 44-frame still set is indistinguishable from it to a later
- * reader. Without `MAPS_VISUAL_GPU=hardware` `orbit.ts` would let Chromium
- * quietly pick a rasteriser, and a frame on this lane costs seconds there
- * against milliseconds here - which would put a wall-clock bound on the cadence
- * the lane exists to reach.
- *
- * Port 4324 is its own: 4319 is the verdict gate's, 4321 the populated lane's,
- * 4322 the render-defects capture's, 4323 the flythrough's. `reuseExistingServer:
- * false` means whatever is on the port is this run's own server or the run
- * fails, because a stale build of this app on the port would be photographed
- * under this lane's name.
+ * Agent-free GPU iteration lane, never a certificate. The existing app input
+ * path and read-only bridge are reused. Canvas copies are made inside RAF;
+ * native PNG encoding follows each bounded burst. Port4324 is task-owned and
+ * reuseExistingServer:false refuses an unrelated or stale server.
  */
 
 import path from "node:path";
@@ -56,10 +34,8 @@ export default defineConfig({
   retries: 0,
   maxFailures: 1,
   reporter: [["list"]],
-  // Generous, because the motion is walked in small synthesised gestures and
-  // each still is a native-resolution screenshot: the two-pattern default costs
-  // about a minute of gesture time and about thirty screenshots.
-  timeout: 20 * 60_000,
+  // Setup/refinement dominates the bounded 12-frame bursts.
+  timeout: 7 * 60_000,
   expect: { timeout: 30_000 },
 
   use: {

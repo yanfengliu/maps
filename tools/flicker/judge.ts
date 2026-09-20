@@ -9,14 +9,15 @@
  * moves, in any run**. The second half therefore has to be judged on the
  * non-accumulating path - consecutive rendered frames of a moving camera,
  * compared for high-frequency change that the motion does not explain - and
- * until this lane existed no run had captured two consecutive rendered frames of
- * a moving camera, so it had never been judged at all.
+ * the earlier screenshot lane did not reach adjacency. This lane now requires
+ * an exact one-frame gap; old screenshot records remain historical evidence.
  *
  * This module is the judge and it is pure: frames arrive as decoded pixels
  * beside their metadata, so `test/flicker-judge.test.ts` can drive every
  * predicate over synthetic records and watch each one go red without a browser.
  * The capture specification next door writes the records; this file is the only
- * thing that decides whether a record holds still.
+ * thing that evaluates the bounded residual. It cannot certify scene flicker:
+ * legitimate fractional, rotated and depth-varying motion exceeds its bar.
  *
  * ## What it reports, per adjacent pair
  *
@@ -42,15 +43,15 @@
  * A hard local feature is a pixel more than 24 of 255 brighter or darker than its
  * own 3x3 neighbourhood - a sign edge, a window mullion, a lane marking. The test
  * is persistence rather than a luminance residual, and that is the whole design:
- * a camera translation moves a picture without changing it, so after the shift
+ * an integer image translation moves a picture without changing it, so after the shift
  * every feature is still a feature at the same point of the picture, while what
  * does not survive a shift is detail that *appears, disappears or jumps one pixel
  * against its neighbours* - a temporal sample re-jittering, a bloom, SSAO or LOD
  * threshold flipping between two frames, a shader's own stochastic term
  * resampling. Counting luminance residuals instead would have counted every
- * feature that moved by less than a whole pixel, which is every feature in a
- * slow crawl, and the indicator would have measured the camera rather than the
- * picture.
+ * feature that moved by less than a whole pixel. The feature-persistence test
+ * also changes under legitimate subpixel resampling; calibration records that
+ * limitation instead of treating the residual as a rendering defect.
  *
  * **One bound, stated rather than implied.** The estimator finds one rigid
  * translation for the whole frame. Real camera motion also rotates, dollies and
@@ -96,75 +97,21 @@ export const CHANGED_CHANNEL_DELTA = 8;
 export const LOCAL_MEAN_DELTA = 24;
 
 /**
- * The most the crawl indicator may read, as a fraction of the mean frame's
- * pixels per rendered frame of camera motion.
- *
- * Per rendered frame and not per pair: the capture's frame gap is a property of
- * how long a screenshot costs on this machine, not of the scene, so a threshold
- * on a pair's total would make the verdict a function of the capture harness. A
- * pair's bound is this value times its own measured frame gap.
- *
- * **Measured on 2026-09-18 against two synthetic controls, and never yet met by
- * a real frame set.** A pure 3 px per-step translation over ten frames of the
- * synthetic field - the negative control - measures 1.2e-4 to 1.6e-3 per frame,
- * and a field with its detail collapsed on alternate frames - the positive
- * control - measures 3.7e-2 to 3.9e-2. This bar sits between them: 3.1x above
- * the worst the pure shift reached and 7.4x below the least the crawl reached.
- * Both numbers are in `test/flicker-judge.test.ts`, which asserts the separation
- * rather than only the two individual verdicts.
- *
- * It is deliberately loose. The first real run's numbers are what should set it:
- * a real frame carries noise, anti-aliasing and sub-pixel motion that the
- * synthetic field has none of, so a bar tuned on the synthetic controls would be
- * tuned on the easier of the two populations.
+ * Fixed unexplained-feature fraction per adjacent pair. No division or
+ * multiplication by a capture gap may dilute a pixel defect. This 0.005 bound
+ * remains provisional for real scenes: synthetic controls calibrate sensitivity
+ * to collapsed detail, not human perception or the rotation/parallax residual.
  */
 export const CRAWL_FRACTION_PER_FRAME = 0.005;
 
-/**
- * The cadence the capture asked for, and the bound it is checked against.
- *
- * `cadenceFrames` is the number of rendered frames between one still and the
- * next that the capture *asked* for, and it is the criterion's own number: two.
- * `maxPairGapFrames` is the most it will accept, and it is a real bound rather
- * than a formality.
- *
- * **It is 26, and the reading it bounds is the mid-shutter one.** A
- * native-resolution screenshot costs about 250 to 400 ms on this renderer, so the
- * shutter is open for most of the interval between one still and the next and the
- * closest two stills this instrument can take are one still cycle apart. That
- * cycle is the bound. Measured on RUN-02's two runs: **19.5 to 23 rendered frames
- * between midpoints**, with the shutters themselves spanning 27 to 34 frames each
- * and 5 to 7 frames of idle time between them. 26 is one frame of jitter above the
- * worst of that, which is deliberately tight: the bound's job is to refuse a pair
- * that has drifted out of the walk, and a pair at 23 frames still describes one
- * gesture. If a future scene or renderer pushes the cycle past 26 the instrument
- * should fail and be re-bounded deliberately rather than absorb it.
- *
- * **The number this replaces was 18 and it was bounding the wrong reading.** The
- * first version measured a pair's span from the earlier shot's close to the later
- * shot's open, which is the 6-8 frames of *idle* time between two shutters, and
- * divided a full shutter-to-shutter motion by it. 18 was a loose bound on an
- * interval that excluded most of the motion, so the cadence check passed without
- * saying anything about the span the crawl number was computed over. Both
- * intervals are now in the record: `frameGap` is the mid-to-mid span this bound
- * applies to, and `idleGapFrames` is the old reading, reported rather than used.
- *
- * The gap that was actually achieved is recorded per pair and in the report, so
- * the instrument's own cadence is visible in its evidence instead of implied.
- */
-export const FLICKER_CADENCE = Object.freeze({
-  cadenceFrames: 2,
-  maxPairGapFrames: 26,
-});
+/** Exactly adjacent rendered frames. Slow capture is refused, never tolerated. */
+export const FLICKER_CADENCE = Object.freeze({ cadenceFrames: 1, maxPairGapFrames: 1 });
 
 /**
  * The fewest frames a judged record may hold.
  *
- * A record of two frames has one pair, and one pair cannot tell a still picture
- * from a held one: an instrument that reports "holds still" from a pair is
- * reporting "did not run" as "passed". Eight frames is four pairs at the cadence
- * above - a quarter of a second of motion - which is the least that can show a
- * camera that was moving and a scene that kept up with it.
+ * Eight frames give seven adjacent pairs. This is a finite minimum, not proof
+ * that longer motion, other camera poses or occasional defects are covered.
  */
 export const MINIMUM_FLICKER_FRAMES = 8;
 
@@ -175,47 +122,16 @@ export interface FlickerFrame {
   /** SHA-256 of the PNG on disk. */
   sha256: string;
   /**
-   * Frames drawn since boot at the **midpoint of the shutter**.
-   *
-   * This is the reading a pair's span is measured between, and the instrument's
-   * own cadence is why: a native-resolution screenshot spans 27-34 rendered
-   * frames, so a pose and a counter read before the shutter describe a picture
-   * that no longer exists by the time the bytes are taken. The capture reads the
-   * counter on both sides of the shutter and this is their midpoint, which is the
-   * instant the recorded pixels are nearest to. `shutterOpenedAtFrame` and
-   * `shutterClosedAtFrame` carry the real edges beside it, so what the midpoint
-   * stands in for is visible in the record rather than modelled.
+   * Render count bound to copied pixels. The legacy field name is retained so
+   * archived records can be diagnosed, but new copies require both edges equal
+   * this integer count. A screenshot midpoint is not accepted as that proof.
    */
   frameCountMid: number;
   /** Frames drawn since boot immediately before the shutter opened. */
   shutterOpenedAtFrame: number;
   /** Frames drawn since boot immediately after the shutter closed. */
   shutterClosedAtFrame: number;
-  /**
-   * Fixed simulation step index the frame was drawn at, from the page's own
-   * clock, or null when the capture could name no step at all.
-   *
-   * **Read this as a clock, not as a reading of the simulation.** The harness
-   * bridge publishes no fixed-step clock, and the substitute a populated lane
-   * would use - `population().ticks` - is not available to this one: the flicker
-   * lane captures `?agents=`-free on purpose so that a vehicle crossing the frame
-   * cannot be read as a crawl, and with no `?agents=` there is no population at
-   * all (`createAgents` holds `population === null`), so those ticks read **0 for
-   * the whole run**. What the capture derives instead is
-   * `(performance.now() - startedAtMs) * 60`, clamped to the frame counter,
-   * because `RenderLoop` advances one fixed step per rendered frame of wall time.
-   * `startedAtMs` is `performance.now()` read once when the capture began, and
-   * **not** `performance.timeOrigin`: the origin is an epoch timestamp, so
-   * subtracting it measures minus fifty-six years and wrote `-1.07e11` into every
-   * frame of the first run. `tools/flicker/step.ts` carries the derivation and
-   * `test/flicker-step.test.ts` drives it.
-   *
-   * Its bound, stated where the field is read: it cannot see a run whose
-   * fixed-step clock stopped while frames kept being drawn - the clock is the
-   * thing being assumed - and that is why the sequence's aliveness rests on the
-   * render counter's own predicate rather than on this. `null` is recorded
-   * rather than 0 so an absent step is never read as a step of zero.
-   */
+  /** Legacy optional step metadata. New agent-free captures record null. */
   tick: number | null;
   /** The camera, read beside the frame counter. */
   pose: FramePose;
@@ -236,7 +152,7 @@ export interface FramePose {
 
 /** The crawl bar and the cadence the capture was asked for. */
 export interface FlickerContract {
-  /** The most crawl a pair may show, as a fraction of pixels per rendered frame. */
+  /** Fixed maximum unexplained-pixel fraction per pair; field name kept for archived records. */
   crawlFractionPerFrame: number;
   /** The largest per-channel difference at which two pixels count as the same. */
   changedChannelDelta: number;
@@ -253,19 +169,7 @@ export interface FlickerContract {
 export interface FlickerPair {
   from: string;
   to: string;
-  /**
-   * Rendered frames between the two stills, measured **shutter midpoint to
-   * shutter midpoint**.
-   *
-   * The midpoint is the one reading that stands in the same relation to both
-   * frames: it is the instant the recorded pixels are nearest to, and
-   * `cameraTravelM` and `cameraRotationRad` are measured between the same two
-   * midpoints, so the motion and the span it is divided by describe the same
-   * window. Measuring the span between the idle gaps instead - which is what the
-   * first version did - divides a full shutter-to-shutter motion by the 6-8
-   * frames of idle time between two shutters, and the resulting rate is not a
-   * rate of anything.
-   */
+  /** Difference between the exact render counts. Must equal one. */
   frameGap: number;
   /**
    * Rendered frames the two shutters themselves were open, added together. The
@@ -295,7 +199,11 @@ export interface FlickerPair {
   signatureDistance: number;
   /** Fraction of pixels that are a hard local feature in one frame and changed anyway. */
   unexplainedFraction: number;
-  /** The crawl indicator: pixels that changed after the motion is taken out, as a fraction per rendered frame. */
+  /** Full 3x3 neighbourhoods shared by both shifted frames; the denominator. */
+  comparedFeaturePixels: number;
+  /** Frame pixels outside that common interior. They are not judged. */
+  excludedFeaturePixels: number;
+  /** Diagnostic rate only. The verdict uses unexplainedFraction directly. */
   crawl: number;
   /** Metres the camera itself travelled between the two shots. */
   cameraTravelM: number;
@@ -326,6 +234,9 @@ export interface FlickerPair {
 }
 
 export interface FlickerReport {
+  /** This estimator cannot separate image resampling/parallax from a defect. */
+  sceneVerdict: "not-established";
+  motionModel: "integer-rigid-translation";
   frames: number;
   pairs: number;
   /** Pairs whose span met the cadence bound, and the worst span seen. */
@@ -334,6 +245,8 @@ export interface FlickerReport {
   cameraMoved: boolean;
   /** The null when the record holds still, as a list of failures in the record's own terms. */
   failures: string[];
+  /** Capture/record refusals only; residual and estimator failures stay separate. */
+  captureFailures: string[];
   pairs_: FlickerPair[];
 }
 
@@ -369,23 +282,35 @@ export function judgeFlicker(
   },
 ): FlickerReport {
   const failures: string[] = [];
+  const captureFailures: string[] = [];
+  const refuseCapture = (message: string): void => {
+    captureFailures.push(message);
+    failures.push(message);
+  };
+  if (!Number.isFinite(contract.crawlFractionPerFrame) || contract.crawlFractionPerFrame <= 0 || contract.crawlFractionPerFrame >= 1 ||
+      !Number.isFinite(contract.changedChannelDelta) || contract.changedChannelDelta < 0 || contract.changedChannelDelta > 255 ||
+      !Number.isFinite(contract.localMeanDelta) || contract.localMeanDelta <= 0 || contract.localMeanDelta >= 255 ||
+      contract.cadenceFrames !== 1 || contract.maxPairGapFrames !== 1 || !Number.isInteger(contract.minimumFrames) || contract.minimumFrames < 2) {
+    refuseCapture("the flicker contract is not finite and adjacent: require a fractional bound inside (0,1), channel bars inside their byte range, one-frame cadence and at least two frames");
+  }
 
   if (frames.length === 0) {
+    refuseCapture("the record is empty: no frame was captured at all, so this record is a run that did not happen " +
+      "rather than a sequence that held still");
     return {
+      sceneVerdict: "not-established", motionModel: "integer-rigid-translation",
       frames: 0,
       pairs: 0,
       cadence: { withinBound: 0, worstGapFrames: 0 },
       cameraMoved: false,
-      failures: [
-        "the record is empty: no frame was captured at all, so this record is a run that did not happen " +
-          "rather than a sequence that held still",
-      ],
+      failures,
+      captureFailures,
       pairs_: [],
     };
   }
 
   if (frames.length < contract.minimumFrames) {
-    failures.push(
+    refuseCapture(
       `${frames.length} frame(s) is fewer than the ${contract.minimumFrames} a judged record needs: at the ` +
         `${contract.cadenceFrames}-frame cadence a record this short is at most ${frames.length - 1} pair(s), and one ` +
         "pair cannot tell a still picture from a held one. This is the check reporting 'did not run' as 'passed', which " +
@@ -393,6 +318,12 @@ export function judgeFlicker(
     );
   }
 
+  for (const frame of frames) {
+    if (!Number.isInteger(frame.frameCountMid) || frame.frameCountMid < 1 ||
+        frame.shutterOpenedAtFrame !== frame.frameCountMid || frame.shutterClosedAtFrame !== frame.frameCountMid) {
+      refuseCapture(`${frame.file} is not bound to one rendered frame: count ${frame.frameCountMid}, copy edges ${frame.shutterOpenedAtFrame}/${frame.shutterClosedAtFrame}; use a synchronous canvas copy`);
+    }
+  }
   const wrongSize: string[] = [];
   const first = frames[0]!;
   for (const frame of frames) {
@@ -401,7 +332,7 @@ export function judgeFlicker(
     }
   }
   if (wrongSize.length > 0) {
-    failures.push(
+    refuseCapture(
       `${wrongSize.length} frame(s) are not at ${first.image.width}x${first.image.height} ` +
         `(${wrongSize.slice(0, 3).join(", ")}${wrongSize.length > 3 ? ", ..." : ""}), so they cannot be compared ` +
         "pixel for pixel with the frames beside them and every pair involving them would be a comparison of two " +
@@ -434,7 +365,10 @@ export function judgeFlicker(
     // numbers are reported - `idleGapFrames` is the old one - because the
     // difference between them is the instrument's own cadence.
     const gap = pair.frameGap;
-    if (gap <= contract.maxPairGapFrames) withinBound += 1;
+    if (gap === 1) withinBound += 1;
+    if (gap !== 1) {
+      refuseCapture(`the pair ${previous.file} -> ${frame.file} is not adjacent: render count gap ${gap}; capture every rendered frame inside RAF`);
+    }
     if (gap > worstGapFrames) worstGapFrames = gap;
 
     const digestDiffers = previous.sha256 !== frame.sha256;
@@ -447,7 +381,7 @@ export function judgeFlicker(
     //    buffer twice or a render loop that stopped between the two shots, and
     //    both are named rather than counted as zero change.
     if (!digestDiffers && moved) {
-      failures.push(
+      refuseCapture(
         `${frame.file} is byte-identical to ${previous.file} (sha256 ${frame.sha256.slice(0, 12)}) while the camera ` +
           `moved ${pair.cameraTravelM.toFixed(4)} m and turned ${pair.cameraRotationRad.toFixed(4)} rad between the two ` +
           "shots. A held camera drawing the same bytes twice is the criterion satisfied; a *moving* camera drawing the " +
@@ -463,7 +397,7 @@ export function judgeFlicker(
     //    midpoint that does not advance still means the loop stopped, and the
     //    edges are the two readings that say *when* it stopped.
     if (frame.shutterOpenedAtFrame <= previous.shutterOpenedAtFrame) {
-      failures.push(
+      refuseCapture(
         `the render counter did not advance between ${previous.file} and ${frame.file} ` +
           `(${previous.shutterOpenedAtFrame} before the first shutter to ${frame.shutterOpenedAtFrame} before the second) ` +
           `while ${pair.tickGap === null ? "the simulation step was not recorded" : `${pair.tickGap} simulation step(s) passed`}. ` +
@@ -501,13 +435,12 @@ export function judgeFlicker(
     //    "report changedFraction alongside the shift rather than only after it"
     //    half of the same fix: the record keeps the number, and only the verdict
     //    declines to read it.
-    const allowed = contract.crawlFractionPerFrame * Math.max(1, pair.frameGap);
-    if (!pair.shiftAtSearchBoundary && pair.crawl > allowed) {
+    const allowed = contract.crawlFractionPerFrame;
+    if (!pair.shiftAtSearchBoundary && pair.unexplainedFraction > allowed) {
       failures.push(
-        `the crawl indicator reads ${pair.crawl.toExponential(3)} of the frame's pixels per rendered frame between ` +
-          `${previous.file} and ${frame.file}, above the contract's ${allowed.toExponential(3)} (the bar of ` +
-          `${contract.crawlFractionPerFrame.toExponential(3)} per frame over this pair's measured ${pair.frameGap}-frame ` +
-          `span). ${pair.unexplainedFraction.toExponential(3)} of the frame's pixels are a hard local feature - more than ` +
+        `the crawl indicator reads ${pair.unexplainedFraction.toExponential(3)} of the frame's pixels between ` +
+          `${previous.file} and ${frame.file}, above the fixed pair bound ${allowed.toExponential(3)}. ` +
+          `The measured ${pair.frameGap}-frame gap does not scale this bound. Pixels counted are a hard local feature - more than ` +
           `${contract.localMeanDelta} of 255 from their own 3x3 neighbourhood - in one frame of the pair and not in the ` +
           `other, after the earlier frame was shifted onto the later one by the best rigid translation the estimator could ` +
           `find (${pair.estimatedShift.dx}, ${pair.estimatedShift.dy} px), at which ${pair.changedFraction.toFixed(4)} of ` +
@@ -522,7 +455,7 @@ export function judgeFlicker(
   }
 
   if (pairs.length === 0) {
-    failures.push(
+    refuseCapture(
       "no pair of frames could be compared: every adjacent pair either had no predecessor at the same size or the " +
         "record holds a single frame, so the sequence claims below are claims about a sequence that does not exist.",
     );
@@ -531,7 +464,7 @@ export function judgeFlicker(
   // A record whose camera never moved has not exercised the one thing this lane
   // exists for. The frames may still be a correct photograph of a city.
   if (!cameraMoved && pairs.length > 0) {
-    failures.push(
+    refuseCapture(
       `no pair of the ${pairs.length} shows camera travel above ${(MOTION_BAR_M * 1000).toFixed(1)} mm, so the camera ` +
         "never moved and this record is a sequence of stills. The criterion this lane judges is about a picture that " +
         "holds still *while the camera moves*, and a held camera is the case the criterion is already satisfied by - " +
@@ -540,11 +473,13 @@ export function judgeFlicker(
   }
 
   return {
+    sceneVerdict: "not-established", motionModel: "integer-rigid-translation",
     frames: frames.length,
     pairs: pairs.length,
     cadence: { withinBound, worstGapFrames },
     cameraMoved,
     failures,
+    captureFailures,
     pairs_: pairs,
   };
 }
@@ -599,6 +534,8 @@ function comparePair(previous: FlickerFrame, frame: FlickerFrame, contract: Flic
     changedFraction: pixels === 0 ? 0 : changed / pixels,
     signatureDistance: signatureDistance(measureFrame(previous.image), measureFrame(frame.image)),
     unexplainedFraction: full.validPixels === 0 ? 0 : full.unexplained / full.validPixels,
+    comparedFeaturePixels: full.validPixels,
+    excludedFeaturePixels: width * height - full.validPixels,
     crawl: full.validPixels === 0 ? 0 : full.unexplained / full.validPixels / Math.max(1, frameGap),
     cameraTravelM: motion.travelM,
     cameraRotationRad: motion.rotationRad,
@@ -665,32 +602,10 @@ const COARSE_CELLS = 32;
 const SAMPLE_STRIDE = 2;
 
 /**
- * The largest per-channel difference between two pixels of two frames.
- *
- * A function rather than an inline expression so the same arithmetic is used by
- * both the changed-pixel count and the unexplained count: two copies of it could
- * disagree while both look correct.
- */
-/**
- * The largest per-channel difference between two pixels of two frames.
- *
- * A function rather than an inline expression so the same arithmetic is used by
- * both the changed-pixel count and the unexplained count: two copies of it could
- * disagree while both look correct.
- *
- * **`leftAt` and `rightAt` are byte offsets, not pixel indices, and the first
- * version's caller passed pixel indices.** Every index was therefore read at a
- * quarter of its intended position - inside the buffer for a 192x108 synthetic
- * frame, where the whole array is 82,944 bytes and a pixel index cannot leave it,
- * and out of bounds for a 1280x720 frame, whose pixel indices run to 921,599
- * against a 3,686,400-byte array. `Uint8Array` returns `undefined` past its end
- * rather than throwing, `Math.abs(undefined - undefined)` is `NaN`, and the
- * comparisons that follow are all false, so the largest difference came back as
- * the *later* of the three channels' byte reads. The synthetic cases never
- * noticed, because every index stayed inside the buffer; the real orbit pair
- * measured `changedFraction` 0.9703 where the true figure at the same estimated
- * shift is 0.1871. Named as bytes in the signature below so the unit is not a
- * thing a caller has to guess.
+ * Arguments are byte offsets. The old caller passed pixel indices, sampling
+ * unrelated channels at one quarter of the intended address. Those indices
+ * stayed inside the buffer at every size; no out-of-bounds or NaN explained the
+ * error. The old unit assertion expected the faulty high changed fraction.
  */
 function channelDelta(left: Uint8Array, right: Uint8Array, leftByte: number, rightByte: number): number {
   const dr = Math.abs(left[leftByte]! - right[rightByte]!);
@@ -727,25 +642,14 @@ function estimateShift(
   height: number,
   radius: number,
 ): { shift: { dx: number; dy: number }; atBoundary: boolean; refineWindow: number } {
-  // The fine pass's window is the coarse grid's own resolution plus one, so the
-  // coarse pass only has to be right about which cell the shift is in - it does
-  // not have to be right about the cell's boundary - and a correct shift inside
-  // the search radius is always reachable. On a 1280x720 frame that is 41 px; on
-  // the 192x108 synthetic field it is 7. Measuring it from the frame rather than
-  // fixing it is what keeps a smaller unit frame from searching with a window
-  // wider than its own picture.
+  // Smaller coarse-cell dimension plus one: 23 px at 1280x720 and 4 px
+  // at 192x108. This is not a full 40 px horizontal coarse cell. Reaching
+  // either edge of this local window is therefore also an unmodelable pair.
   const refineWindow = Math.floor(Math.min(width, height) / COARSE_CELLS) + 1;
   const coarse = coarseShift(previous, frame, width, height, radius);
   const refined = refineShift(previous, frame, width, height, coarse, refineWindow);
-  // The failure signal is the answer itself sitting on the radius, and nothing
-  // else. The coarse pass reaching its outermost cell is *not* enough: with a
-  // 40 px cell on 1280x720, a true shift of 22 px against a 24 px radius lands
-  // there and is perfectly reachable, so refusing it would fail a pair the
-  // estimator modelled. What the fine pass does or does not reach is likewise not
-  // a signal - with a window at or above the coarse error it cannot fail. So the
-  // question asked is the only one that is well posed: does the shift this
-  // estimator is prepared to report end exactly at the edge of what it searched?
-  const atBoundary = Math.abs(refined.dx) >= radius || Math.abs(refined.dy) >= radius;
+  const atBoundary = Math.abs(refined.dx) >= radius || Math.abs(refined.dy) >= radius ||
+    Math.abs(refined.dx - coarse.dx) >= refineWindow || Math.abs(refined.dy - coarse.dy) >= refineWindow;
   return { shift: refined, atBoundary, refineWindow };
 }
 
@@ -936,8 +840,11 @@ function countUnexplained(
   let unexplained = 0;
   let validPixels = 0;
 
-  for (let y = valid.y0; y <= valid.y1; y += 1) {
-    for (let x = valid.x0; x <= valid.x1; x += 1) {
+  // Both 3x3 neighbourhoods must be fully inside the shared region. Different
+  // clipped boundary neighbourhoods otherwise look like disappearing detail
+  // even for an exact integer translation of unchanged pixels.
+  for (let y = valid.y0 + 1; y < valid.y1; y += 1) {
+    for (let x = valid.x0 + 1; x < valid.x1; x += 1) {
       validPixels += 1;
       const here = localFeature(frameLuma, width, height, x, y, contract.localMeanDelta);
       const there = localFeature(previousLuma, width, height, x + shift.dx, y + shift.dy, contract.localMeanDelta);

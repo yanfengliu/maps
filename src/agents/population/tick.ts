@@ -38,7 +38,7 @@ import {
   stepLateral, vehicleAcceleration, vehicleFootprint, type Leader, type VehicleFrame,
 } from "./vehicles.ts";
 import {
-  createPedestrianCrowd, occurrenceAt, orcaVelocity, pedestrianFootprint, placePedestrian,
+  createPedestrianCrowd, orcaVelocity, pedestrianFootprint, placePedestrian,
   refreshPedestrianHash, type PedestrianCrowd,
 } from "./pedestrians.ts";
 import { RouteLibrary, populationActorRng, sampleRoute, vehicleScale, vehicleSpeedFactor, type PlannedRoute } from "./routes.ts";
@@ -1477,11 +1477,12 @@ export function createPopulation(options: PopulationOptions): Population {
       }
       const next = Math.min(state.travelledM + forward * step, route.totalLengthM);
       state.travelledM = Math.max(state.travelledM, next);
+      placePedestrian(table, slot);
+      observePedestrianCommitment(slot);
       if (state.travelledM >= route.totalLengthM - 1e-6) {
         retirePedestrian(slot);
         continue;
       }
-      placePedestrian(table, slot);
       counters.longestWait.pedestrian = Math.max(counters.longestWait.pedestrian, state.stoppedSeconds);
     }
     counters.moving = moving;
@@ -1512,9 +1513,26 @@ export function createPopulation(options: PopulationOptions): Population {
 
   function retirePedestrian(slot: number): void {
     const state = table.pedestrians[slot]!;
-    // Anything this slot still holds at the authority goes before the slot is
-    // cleared, so its next generation never inherits a commitment.
-    admissions.cancelPending(actorId("pedestrian", slot));
+    const id = actorId("pedestrian", slot);
+    const footprint = pedestrianCurrentFootprint(slot);
+    const occupied = [...junctionsById.values()].find(junction => footprintOccupies(junction, footprint));
+    const held = admissions.commitmentFor(id);
+    if (occupied || held?.entered) {
+      const route = table.pedestrianRoutes[slot]!;
+      // A stale or impossible route must not erase the body or stop the world's
+      // render loop. Keep its identity and authority while naming the blocked
+      // lifecycle. Central plans prevent this before spawn; AOI egress remains a
+      // separate boundary operation, never an implicit cancellation here.
+      state.speedMps = 0;
+      state.queued = true;
+      crowd.velocityX[slot] = 0;
+      crowd.velocityZ[slot] = 0;
+      refusals.add(`pedestrian slot ${slot} generation ${state.generation} cannot retire at ${route.edges.at(-1)!.id}: its actual terminal body ${occupied ? `still occupies ${occupied.id}` : `still holds ${held!.junctionId}`}. Plan a physically clear continuation, or use the boundary egress lifecycle at an AOI exit; this body and its route remain present until it clears`);
+      return;
+    }
+    // Only an unused grant can be cancelled. An entered lease has already been
+    // released by observing the actual post-integration body, or retirement fails.
+    admissions.cancelPending(id);
     heldPassages[slot] = undefined;
     if (!populationInvariants.leakRetiredBody) retireSlot(table.poses.pedestrians, slot);
     state.committed = false;
@@ -1611,24 +1629,29 @@ export function createPopulation(options: PopulationOptions): Population {
     for (const state of table.pedestrians) {
       const slot = state.slot;
       if (!table.poses.pedestrians.active[slot] || !state.committed) continue;
-      const route = table.pedestrianRoutes[slot];
-      if (!route) continue;
-      // The walk reports the occurrence its body has actually reached, exactly as a
-      // vehicle does. A pedestrian that always reported its passage's entry
-      // occurrence could never satisfy the authority's release test, because that
-      // test needs an occurrence past the crossing's last conflict occurrence: the
-      // walker would hold the crossing's lease forever and `crossed` would stay at
-      // zero however many people walked over the scramble.
-      const occurrence = occurrenceAtDistance(route, state.travelledM);
-      const local = Math.max(0, Math.min(route.edges[occurrence]!.lengthM - 1e-7, state.travelledM - route.starts[occurrence]!));
-      const at = sampleRoute(route, occurrence, local);
-      const footprint = pedestrianFootprints[slot] ?? pedestrianFootprint(at, at.heading, state.scale);
-      if (admissions.observe(actorId("pedestrian", slot), { routeIndex: occurrence, distanceM: local, footprint })) {
-        state.committed = false;
-        crowd.committed[slot] = 0;
-        heldPassages[slot] = undefined;
-        counters.crossed.pedestrian += 1;
-      }
+      observePedestrianCommitment(slot);
+    }
+  }
+
+  /** The authority observes the body actually published, never a previous plan's cached footprint. */
+  function pedestrianCurrentFootprint(slot: number): ActorFootprint {
+    const pose = table.poses.pedestrians.current;
+    return pedestrianFootprint({ x: pose.position[slot * 3]!, y: pose.position[slot * 3 + 1]!, z: pose.position[slot * 3 + 2]! }, pose.yaw[slot]!, table.pedestrians[slot]!.scale);
+  }
+
+  function observePedestrianCommitment(slot: number): void {
+    const state = table.pedestrians[slot]!;
+    if (!state.committed) return;
+    const route = table.pedestrianRoutes[slot];
+    if (!route) return;
+    const occurrence = occurrenceAtDistance(route, state.travelledM);
+    const local = Math.max(0, Math.min(route.edges[occurrence]!.lengthM, state.travelledM - route.starts[occurrence]!));
+    const footprint = pedestrianCurrentFootprint(slot);
+    if (admissions.observe(actorId("pedestrian", slot), { routeIndex: occurrence, distanceM: local, footprint })) {
+      state.committed = false;
+      crowd.committed[slot] = 0;
+      heldPassages[slot] = undefined;
+      counters.crossed.pedestrian += 1;
     }
   }
 
@@ -1850,14 +1873,10 @@ export function createPopulation(options: PopulationOptions): Population {
     for (const state of table.pedestrians) {
       const slot = state.slot;
       if (!pedestrianPoses.active[slot]) continue;
-      const route = table.pedestrianRoutes[slot]!;
       const forward = state.queued ? 0 : Math.max(0, Math.min(state.cadenceMps, avoidedX[slot]! * directionX[slot]! + avoidedZ[slot]! * directionZ[slot]!));
       crowd.velocityX[slot] = directionX[slot]! * forward;
       crowd.velocityZ[slot] = directionZ[slot]! * forward;
-      const occurrence = occurrenceAt(route, state.travelledM);
-      const local = Math.max(0, Math.min(route.edges[occurrence]!.lengthM, state.travelledM - route.starts[occurrence]!));
-      const at = sampleRoute(route, occurrence, local);
-      pedestrianFootprints[slot] = pedestrianFootprint(at, at.heading, state.scale);
+      pedestrianFootprints[slot] = pedestrianCurrentFootprint(slot);
     }
     mark?.("plan.pedestrians.place");
     // Measurement-only readings of this step: how many bodies it held at a gate and

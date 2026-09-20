@@ -16,10 +16,10 @@
  *    back to the rectangle it came from. `--tile-check` goes further and
  *    reassembles the whole frame from the crops; if that comes back
  *    byte-identical to the source, the slicing and the encoder are both exact.
- * 2. **The regions are named by what is looked at.** Centre, near, upper, left,
- *    bottom, right-ui — not by coordinates. At the 1280x720 capture size the
- *    six tile the frame with no overlap, so a review that opens all six has seen
- *    every pixel of it at 1:1, which is the thing a preview cannot offer.
+ * 2. **Region names describe screen rectangles, not scene materials.** A box
+ *    named near-pavement or left-ground can contain roofs, facades or sky at
+ *    another pose. Classify the pixels themselves; a crop label is not evidence
+ *    of what material was drawn. The six rectangles tile a 1280x720 frame.
  * 3. **The manifest carries the digest.** Each crop's SHA-256 is recorded beside
  *    the frame's, so a review can be bound to the bytes it inspected and
  *    regenerating the crops strands that review instead of inheriting it.

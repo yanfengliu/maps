@@ -443,7 +443,7 @@ How it is checked from now on: `test/flythrough-crowd-anchor.test.ts` pins the p
 
 **Root cause and check:** capture scheduling and its claimed frame/pose binding did not match the recorded pixels; the predicate became vacuous as capture got slower. `flicker-adjacency.test.ts` now requires exact one-frame gaps, exact copy binding and a fixed direct residual bound. `flicker-burst.test.ts` covers blank copies, post binding and real input dispatch. The first new input iteration held the pointer during wheel events, which OrbitControls ignores; removing the final release again fails the named state assertion. Three retained hardware attempts establish the corrected capture/input path, with all 24 final frames adjacent and non-accumulating.
 
-**Remaining bound:** `flicker-calibration.test.ts` proves that legitimate fractional, rotated and depth-varying image motion exceeds the fixed bar with unchanged texture. The residual is unresolved motion-model error and `sceneVerdict` remains `not-established`; no renderer defect or flicker acceptance follows. [Exact evidence and frame review](../work/0_shibuya-1km/snapshots/q3-motion-capture-review43.md).
+**Remaining bound:** `flicker-calibration.test.ts` proves that legitimate fractional, rotated and depth-varying image motion exceeds the fixed bar with unchanged texture. The residual is unresolved motion-model error and `sceneVerdict` remains `not-established`; no renderer defect or flicker acceptance follows. [Exact evidence and frame review](../work/0_shibuya-1km/q3-motion-capture.md).
 
 ## 2026-09-19 - pedestrians vanished while an entered scramble lease remained
 

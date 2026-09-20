@@ -1,6 +1,6 @@
 # Devlog Summary
 
-- 2026-09-19: Applied the independently accepted terminal and capture repairs to primary with all 16 non-document hashes preserved. All five gates pass: 592 unit tests and hardware certificate `7f68c3883cc3f1ce` for 44 frames. Prior visual/build evidence is preserved; owned cleanup is clear. Root accepted Review 44 and all 44 native inspections; F25's two evidence links are repaired. This accepts the scoped components while Q1 stalls/AOI egress and Q3 temporal flicker remain open. [Current disposition](../work/0_shibuya-1km/plan.md)
+- 2026-09-19: Applied the independently accepted terminal and capture repairs to primary with all 16 non-document hashes preserved. All five gates pass: 592 unit tests and hardware certificate `7f68c3883cc3f1ce` for 44 frames. Prior visual/build evidence is preserved; owned cleanup is clear. Combined Review 44, native-frame acceptance and commit remain pending. [Current disposition](../work/0_shibuya-1km/plan.md)
 
 - 2026-09-19: Pedestrian central routes now plan a physically clear terminal, and retirement retains any still-occupied body and lease while rendering continues. The isolated moderate run has 27 clear retirements, 27 safe reuses and no terminal holds; four over-budget central routes take the existing exit fallback. See [the detailed entry](detailed/2026-09-19_pedestrian-terminal-clearance.md).
 

@@ -55,25 +55,8 @@ export function frameAt(
 ): FlickerFrame {
   const offset = parts.offset ?? { x: index * 3, y: index };
   const image = parts.image ?? windowFrame(offset.x, offset.y);
-  // The span a judged pair is measured over is shutter-midpoint to
-  // shutter-midpoint, because that is the window the capture's recorded poses
-  // describe.
-  //
-  // **Five frames, and the number is load-bearing.** The bar in `judge.ts` is per
-  // rendered frame, so a pair's bound is the bar times this span, while the crawl
-  // indicator's own signal - the flattened field's feature-inconsistent fraction -
-  // is about 0.26 of the frame whatever the span is. That makes the bound a
-  // function of the span and nothing else: at five frames it is 0.025 and the
-  // positive control reads ~0.05, so the case fires; at the 20-odd frames the real
-  // lane achieves it is ~0.11 and the same control reads ~0.013, so the crawl case
-  // would stop firing and the suite would report that as a pass. The span here is
-  // therefore kept at the value these controls were measured at rather than
-  // widened to match a real capture, and the real lane's own cadence is recorded
-  // in its run report instead of being asserted here. **This coupling is a defect
-  // in the bar and is carried as an open bound in the run report**: a bar written
-  // as a per-frame rate should not become looser because a screenshot got slower.
-  const shutterOpenedAtFrame = parts.frameCountBefore ?? 1_000 + index * 5;
-  const shutterClosedAtFrame = parts.frameCountAfter ?? shutterOpenedAtFrame + 1;
+  const shutterOpenedAtFrame = parts.frameCountBefore ?? 1_000 + index;
+  const shutterClosedAtFrame = parts.frameCountAfter ?? shutterOpenedAtFrame;
   return {
     file: `syn-${String(index).padStart(2, "0")}.png`,
     sha256: createHash("sha256").update(Buffer.from(image.rgba)).digest("hex"),
