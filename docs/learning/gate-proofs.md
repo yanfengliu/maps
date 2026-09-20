@@ -1,5 +1,13 @@
 # Gate proofs
 
+## 2026-09-19 — finite shoe contact accounts for changed band membership
+
+Gate: `test/finite-shoe-contact.test.ts` includes seven F34 regression cases beside eight original cases. The finite supplied-triangle checks cover the assumed-error and measured Float32 false passes, both signed normal-band edges, empty inner regions, possible support beyond an edge, bank uncertainty, point/segment possible hulls and the strict unchanged contact threshold. The query load is exact; packing error bounds shoe vertices only.
+
+The author and independent [Review 64](../work/0_shibuya-1km/reviews/64_implementation.md) actually reran rejected source `ad97626dde72452a2d0e7e537fbedd97ab5e185ebbe5e1c593eeb9553a5a8625` with preserved regression file `341e5e7e1764adfb886c850ad424e8b72ea7de02cb8e16aa39340531cfe2e969`: exit 1, four failures and nine passes. Both false passes, the lower-normal-band hull and possible support-edge case fail; all eight original tests pass. Repaired source passes 15/15 and focused types. The old regression file has thirteen cases; it is distinct from the final fifteen-case file. Exact logs and inputs remain under `artifacts/shoe-observer-v2-review/wt/artifacts/review64/old-red.*` and the author's frozen `artifacts/contact/` evidence. [Review 60](../work/0_shibuya-1km/reviews/60_implementation.md) preserves the original rejection.
+
+Bound: finite supplied-pose contact/hull uncertainty for fixed upward support planes and the exact load point. Clearance, source membership, real plant lifecycle and continuous collision retain separate bounds. The arithmetic guard is not directed interval arithmetic. No queued lesson is retired. Primary build, types, 85 files / 738 unit tests and high-threshold audit pass, with exact original visual transfer; Review 66 and root accept the bounded integration; delivery remains pending.
+
 ## 2026-09-19 — historical-facts filesystem refusals explain recovery
 
 Gate: `test/historical-walking-facts.test.ts` adds 17 F29 cases through the real CLI and its exported authoring function. They cover eight missing required files, two native missing-input executions, injected read denial with bounded text and retained cause, output existence/stat/realpath failures, directory/write denial and a native dangling junction. Successful creation, validation-before-output and preservation of an existing output remain covered by the prior cases.
