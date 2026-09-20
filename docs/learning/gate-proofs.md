@@ -1,5 +1,13 @@
 # Gate proofs
 
+## 2026-09-19 — historical-facts filesystem refusals explain recovery
+
+Gate: `test/historical-walking-facts.test.ts` adds 17 F29 cases through the real CLI and its exported authoring function. They cover eight missing required files, two native missing-input executions, injected read denial with bounded text and retained cause, output existence/stat/realpath failures, directory/write denial and a native dangling junction. Successful creation, validation-before-output and preservation of an existing output remain covered by the prior cases.
+
+The exact frozen old CLI (SHA-256 `4866821dbcdfb0e7cd9f1c167eeb43d68e52ef848eb49e7506dff61bc3316c6e`) paired privately with the new tests fails all 17 F29 cases, exit 1. The v2 file passes 67/67 and typecheck exits 0. Review 52's unchanged three-probe instrument also observes recovery for both actual native missing-input errors and the injected write-denial error. Evidence: `artifacts/historical-walking-facts-v2/wt/artifacts/facts-v2/` contains `old-red.stdout.log`, `old-red.stderr.log`, `results.json`, `cli-error-result.json` and the frozen source/patch. [Review 52](../work/0_shibuya-1km/reviews/52_implementation.md) retains the original rejection; [Review 53](../work/0_shibuya-1km/reviews/53_implementation.md) independently repeats 67 focused passes, typecheck, all 17 old-source failures and the unchanged three probes, and accepts the bounded repair.
+
+Bound: named synchronous filesystem failures and finite input/output cases, not a native ACL experiment or hostile concurrent writer. Denial cases inject errors; no ACL was changed. The initial author run's six immutable-ESM-spy setup failures are retained as test instrumentation, not product evidence. Source/helper/roster checks, exclusive creation and artifact-only output are unchanged. No queued lesson is retired by this gate.
+
 ## 2026-09-19 — scene markings are admitted before destructive cleanup
 
 Gate: `test/scene-rebuild-preservation.test.ts` calls the same `runSceneRebuild` orchestration boundary used by `tools/scene/build.ts`, with the real `cleanSceneGeometry` and a counted fixture writer. It covers three admitted inputs and 23 refusals, including authored mesh/provenance combinations, missing partners, malformed JSON/mesh/source records, unknown producer markers/functions, inconsistent triangle counts and an existing directory at a markings path. Every refusal compares all existing file bytes and asserts zero writer calls. The fixture includes all seven cleanup-owned names and three companion subtrees/files.
