@@ -1,0 +1,17 @@
+# Pedestrian movement contract search
+
+Owner: root orchestrator. Status: benchmark preparation; no runtime repair admitted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
+
+The fixed evidence is the sealed first-loss and material-jump traces plus the two-actor prototype in the crowd-admission worktree. Review154's existing command is `node artifacts/crowd-offset-continuity-20260927/trimmed.mjs`; it must never be rerun into its sealed outputs. Benchmark owner157 must preserve those bytes and publish one bounded command, immutable inputs, output schema and checker before competing approaches are dispatched or scored.
+
+The benchmark must cover the exact151 acceleration/rounding loss,152 offset seam,154 segment-limit and changed-direction failures, actual denied/granted passage entry, and generation reset. It must distinguish a literal recorded transition from a two-actor simulation with an independently specified clock. Missing observations or unpopulated counters are not passes. Any correction of the inherited instrument requires independent scrutiny before comparison.
+
+Done for this component: initially clear nominal bodies stay separated in the actual published Float32 poses; every executed move is continuous and charged to its selected physical budget, with any arithmetic bound derived explicitly; both actors make finite positive progress through the join by the fixed5717-step bound. Source progress stays monotone, and actual requests, footprints and held passages remain truthful. This is neither anatomical contact nor a whole-population or native appearance certificate.
+
+Freeze additional independent inputs and failure controls before candidate results are seen. A held-out result must identify its actual exposure history; a disclosed comparison is never called blind. Source meshes, seeds, scales, routes, demand and geometric thresholds stay fixed. The inherited source-height mismatch remains disclosed; no new floor ownership or contact tolerance follows from this search.
+
+Disqualify a relocated starting pose, uncharged smoothing, radius/count reduction, reroll, skipped gate or lease cancellation, hidden actor, indefinite freeze, relaxed separation assertion, truncated run, missing artifact, or success that merely moves the unresolved motion problem into another unimplemented layer. Absence of penetration above0.02m is not acceptance. A reduced fixture cannot be reported as3000/200 population evidence.
+
+The untrimmed plateau connector is blocked by its13.787598mm pair overlap. The half-metre trim is blocked as a complete movement rule: raw lower-bound constraints can already be infeasible, post-solve shortening worsens them, and changed intent escapes empty prior-velocity constraints. Its continuous geometry and real-grant traversal remain useful proved parts; neither route reopens through trim tuning alone.
+
+After the benchmark is fixed, use fresh independent owners for genuinely different mechanism families within available slots. Compare measured results and exact remaining gaps before combining proposals. Require the hard-problem playbook's named failure-mode audit and independent review of any selected implementation. Root owns the eventual integrated checks and native crowd review; product files stay unchanged during this search.
