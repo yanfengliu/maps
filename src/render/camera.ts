@@ -19,14 +19,14 @@ export interface CameraRig {
   controls: OrbitControls;
 }
 
-/** Where the camera starts: a low three-quarter view over the crossing. */
+/** Start with the whole square in view, centred on the crossing. */
 export const INITIAL_VIEW = Object.freeze({
   /** Metres from the target. */
-  distance: 620,
+  distance: 1800,
   /** Radians clockwise from north, matching OrbitControls' azimuthal angle. */
   azimuth: Math.PI * 0.25,
   /** Radians down from straight up, matching OrbitControls' polar angle. */
-  polar: Math.PI * 0.34,
+  polar: 0.50,
 });
 
 export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {

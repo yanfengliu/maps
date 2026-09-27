@@ -205,7 +205,7 @@ describe("the damped controls come to rest", () => {
     try {
       const offset = new Vector3().copy(rig.camera.position).sub(rig.controls.target);
       expect(rig.controls.getDistance()).toBeCloseTo(offset.length(), 6);
-      expect(rig.controls.getDistance()).toBeCloseTo(620, 3);
+      expect(rig.controls.getDistance()).toBeCloseTo(1800, 3);
     } finally {
       rig.controls.dispose();
     }

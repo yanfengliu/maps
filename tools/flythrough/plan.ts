@@ -146,6 +146,7 @@
  * and the run are in `docs/devlog/detailed/`.
  */
 
+import { INITIAL_VIEW } from "../../src/render/camera.js";
 import type { LegStep } from "./driver.js";
 
 export interface Leg {
@@ -189,9 +190,9 @@ export interface Leg {
   panNote: string;
 }
 
-/** Where the app opens: `INITIAL_VIEW` in `src/render/camera.ts`, restated. */
-export const OPENING_AZIMUTH = Math.PI * 0.25;
-export const OPENING_DISTANCE_M = 620;
+/** The first relative input starts from the app's actual opening pose. */
+export const OPENING_AZIMUTH = INITIAL_VIEW.azimuth;
+export const OPENING_DISTANCE_M = INITIAL_VIEW.distance;
 
 /**
  * The crowd, as two poses that face the same way along one line.
@@ -338,8 +339,8 @@ function ladder(distances: readonly number[], heights: readonly number[]): reado
 /**
  * Leg 1: the opening aerial travel, from over the crossing to over the crowd.
  *
- * The camera starts where the app opens — 620 m out at 45 degrees over the
- * crossing, 543 m up — and the leg does three things at once: it zooms out to the
+ * The first input moves from the app opening to the preserved route: 620 m
+ * out over the crossing, 543 m up. The leg then zooms out to the
  * whole area of interest and back in to 170 m, it pans the target onto the crowd's
  * corner, and it holds the bearing. Holding the bearing is not laziness: at 620 m
  * the camera stands 543 m from its target on the 45-degree diagonal, and a bearing
@@ -352,8 +353,8 @@ function ladder(distances: readonly number[], heights: readonly number[]): reado
  * diagonal, and the bearing still does not have to move. The crowd arrives from the
  * north-west corner of the frame instead of the south-east one.
  *
- * The first step is the only one that moves nothing in the ground plane: it is the
- * zoom out to the whole box, 675 m above the ground, and it is the frame that says
+ * The first step keeps the controls' target at the crossing. It is the
+ * move to the route's 620 m distance and 543 m height, and it is the frame that says
  * whether the district reads as a city from the air before the flight starts.
  */
 const OVERVIEW_LADDER = ladder(
@@ -372,7 +373,7 @@ const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => 
     turnToAzimuth: OPENING_AZIMUTH,
     note:
       index === 0
-        ? `the app's own opening pose, zooming out to ${rung.distance.toFixed(0)} m and ${rung.standM} m up`
+        ? `from the app opening to the route: ${rung.distance.toFixed(0)} m out and ${rung.standM} m up`
         : `flying south-east: target (${(CROWD_TARGET.x * t).toFixed(0)}, ${(CROWD_TARGET.z * t).toFixed(0)}), ` +
           `${rung.distance.toFixed(0)} m out, ${rung.standM} m up`,
   };
@@ -542,9 +543,9 @@ const CROWD_STEPS: readonly LegStep[] = [
  * nothing and cannot leave the scene, and at 620 m the same turn would be a 620 m
  * sweep of the camera's position.
  *
- * The camera ends where the app opened — 620 m out at 45 degrees over the
- * crossing — so the flight is a closed loop and the last frame is comparable with
- * the first.
+ * The camera ends at the route's opening distance — 620 m out over the
+ * crossing. Its target and distance return; the final height remains 110 m,
+ * below the first route frame's 543 m.
  */
 const ASCENT_LADDER = ladder(
   // The first rung is where the crowd leg left the camera, and the rest are the

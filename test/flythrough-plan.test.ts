@@ -25,6 +25,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { createCameraRig } from "../src/render/camera.js";
 
 import { rotateStepRadians, shortestAngle } from "../tools/flythrough/driver.js";
 import { CROWD_AZIMUTH, LEGS, OPENING_AZIMUTH, type Leg } from "../tools/flythrough/plan.js";
@@ -90,5 +91,26 @@ describe("the flythrough plan's swings", () => {
       `the ascent leg delivers the camera to azimuth ${ascentEnd.toFixed(4)} rad and the flight has to close at ` +
         `the app's opening bearing ${OPENING_AZIMUTH.toFixed(4)} rad, so the last frame is comparable with the first`,
     ).toBeLessThan(TOLERANCE_RAD);
+  });
+});
+
+/** CPU route check only: it does not prove that browser wheel input reaches a pose. */
+describe("the flythrough's opening zoom", () => {
+  it("preserves the overview distances when the app's opening camera changes", () => {
+    const document = new EventTarget();
+    const canvas = Object.assign(new EventTarget(), {
+      clientWidth: 1280, clientHeight: 720, style: {}, getRootNode: () => document,
+    });
+    const rig = createCameraRig(canvas as unknown as HTMLCanvasElement);
+    try {
+      let distance = rig.controls.getDistance();
+      const reached = leg("overview").steps.map((step) => distance *= step.zoom ?? 1);
+      // These are the reviewed route distances, independent of the new app pose.
+      const reviewed = [620, 950, 760, 600, 470, 370, 290, 220, 175, 170, 170];
+      expect(reached).toHaveLength(reviewed.length);
+      reached.forEach((value, index) => expect(value).toBeCloseTo(reviewed[index]!, 8));
+    } finally {
+      rig.controls.dispose();
+    }
   });
 });
