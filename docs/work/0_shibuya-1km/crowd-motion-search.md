@@ -1,6 +1,6 @@
 # Pedestrian movement contract search
 
-Owner: root orchestrator. Status: instrument157 is blocked by independent160; successor162 repairs the four proved gaps before scoring. No runtime repair is admitted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
+Owner: root orchestrator. Status: independent163 resolves all four160 instrument findings in successor162. Root admits bounded component scoring; fresh owner166 is dispatched for joint feasibility selection. No runtime repair is admitted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
 
 The fixed evidence is the sealed first-loss and material-jump traces plus the two-actor prototype in the crowd-admission worktree. Review154's existing command is `node artifacts/crowd-offset-continuity-20260927/trimmed.mjs`; it must never be rerun into its sealed outputs. Benchmark owner157 must preserve those bytes and publish one bounded command, immutable inputs, output schema and checker before competing approaches are dispatched or scored.
 
@@ -17,3 +17,9 @@ The untrimmed plateau connector is blocked by its13.787598mm pair overlap. The h
 After the benchmark is fixed, use fresh independent owners for genuinely different mechanism families within available slots. Compare measured results and exact remaining gaps before combining proposals. Require the hard-problem playbook's named failure-mode audit and independent review of any selected implementation. Root owns the eventual integrated checks and native crowd review; product files stay unchanged during this search.
 
 Independent160 qualifies the current scope as cadence-capped point motion only. It does not impose or verify acceleration, braking, jerk or heading-rate limits. Keep those runtime and visual obligations explicit; a component pass cannot be promoted into full locomotion acceptance. No new kinematic threshold is inferred from the passing controls.
+
+Before any candidate result, root reserves three distinct approaches for fresh owners, in slot-sized waves: joint feasibility selection in the two physical-arc advances; prospective reciprocal constraints that include the actual route projection and publication; and deterministic pair-local scheduling through the bend. The scheduling rule cannot manufacture a network lease. These are search assignments, not selected runtime architecture. Each owner receives the same admitted instrument and preserves the other families' independence.
+
+Candidates must respond to actual context and geometry, not hardcode the case ID, known failure tick, recorded grant tick or expected output. Return measurements for all three starts, imported reset evidence, finite execution cost, exact code hashes and a named failure-mode audit. Report acceleration, heading, swept-body and general-population gaps explicitly. A point-component result remains bounded even if every local check passes.
+
+Execution admission: use the immutable162 `run.mjs --candidate <owned-adapter>` path for comparison, with the actual imported reset result and all required traces. The full `mutations.mjs` reproduction rewrites ten mutant modules at its root and must run in an owned copy when preserving sealed evidence. Review163 retains that distinction and the missing-output rejection.
