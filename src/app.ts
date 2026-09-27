@@ -28,7 +28,8 @@
  * is item 20, and it is why `src/render/post.ts` owns the draw call.
  */
 
-import { FogExp2, Scene, type WebGLRenderTarget } from "three";
+import { FogExp2, Group, Scene, type WebGLRenderTarget } from "three";
+import { clipCityRoot } from "./scene/aoi-cutout.js";
 
 import { createAgents, type AgentSystem } from "./agents/agents.js";
 import { createAgentRenderer } from "./agents/render/agents.js";
@@ -123,6 +124,12 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
 
   const lights: Lighting = createLighting(lighting);
   scene.add(lights.root);
+  const city = new Group(); city.name = "city:complete-cutout"; city.visible = false; scene.add(city);
+  const loading = canvas.ownerDocument.createElement("div");
+  loading.id = "scene-loading"; loading.setAttribute("role", "status");
+  loading.textContent = "Loading Shibuya…";
+  Object.assign(loading.style, { position: "fixed", inset: "45% 15% auto", textAlign: "center", padding: "18px", borderRadius: "10px", background: "#17202bea", color: "#e4e9ee", font: "16px/1.5 system-ui", whiteSpace: "pre-wrap", pointerEvents: "none" });
+  canvas.ownerDocument.body.append(loading);
 
   // Image-based lighting off the same dome. This is where most of the realism at
   // dusk comes from: these towers are largely glass, and glass with nothing to
@@ -145,7 +152,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   const signageIntensity = { value: lighting.signageIntensity * style.signage };
   const signage: AuthoredSignage = createAuthoredSignage(options.seed ?? DEFAULT_SEED);
   signage.apply({ ...lighting, signageIntensity: signageIntensity.value });
-  scene.add(signage.root);
+  clipCityRoot(signage.root); city.add(signage.root);
 
   const { camera, controls } = createCameraRig(canvas);
 
@@ -173,7 +180,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   });
 
   const agents = createAgents(loop, options.population ?? { pedestrians: 0, vehicles: 0 });
-  scene.add(agents.root);
+  city.add(agents.root);
 
   // ?agents= asked for a population, so the frame it draws and the clock it
   // steps on have to start together. The population is built as soon as the
@@ -195,7 +202,8 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     style: facadeStyle,
     facade: options.facade,
   });
-  scene.add(buildings.root);
+  city.add(buildings.root);
+  styleConsumers.push(buildings.setStyle);
 
   // Whether the picture is holding still, which is what the temporal pass needs
   // to know. Two independent witnesses, and both have to agree: the camera's own
@@ -205,6 +213,15 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   let tilesWereStill = false;
   loop.onFrame(() => {
     buildings.update();
+    const visible = sceneLoaded && sceneError === null && buildings.displayReady();
+    if (city.visible !== visible) { city.visible = visible; post.invalidate(); }
+    loading.hidden = visible;
+    if (!visible) {
+      const failure = sceneError ?? buildings.failure();
+      const message = failure ? `Shibuya could not load.\n${failure}` : buildings.displayReady() ? "Preparing Shibuya streets…" : buildings.loadingMessage();
+      if (loading.textContent !== message) loading.textContent = message;
+      loading.setAttribute("role", failure ? "alert" : "status");
+    }
     let cameraStill = true;
     const elements = camera.matrixWorld.elements;
     for (let index = 0; index < 16; index += 1) {
@@ -212,7 +229,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
       lastCameraMatrix[index] = elements[index]!;
     }
     const tilesStill = buildings.settled();
-    if (tilesStill && !tilesWereStill) signage.mount(buildings.root);
+    if (tilesStill && !tilesWereStill) { signage.mount(buildings.root); clipCityRoot(signage.root); }
     tilesWereStill = tilesStill;
     // A populated scene is never still: thousands of pedestrians walking means the
     // picture changes every frame, so temporal accumulation stays off in populated
@@ -231,6 +248,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     () => post.dispose(),
     () => environment?.dispose(),
     () => signage.dispose(),
+    () => loading.remove(),
     () => { sky.mesh.geometry.dispose(); for (const material of Array.isArray(sky.mesh.material) ? sky.mesh.material : [sky.mesh.material]) material.dispose(); },
   ];
   const loadOwned = async <T extends { dispose(): void }>(loading: Promise<T>): Promise<T> => {
@@ -269,6 +287,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
           return;
         }
         agents.mountRenderer(renderer);
+        clipCityRoot(renderer.group);
         // The world can be drawn now, so its clock starts. Releasing here rather
         // than at the end of `ready` is the point: `ready` is already true
         // before the agent assets have finished arriving.
@@ -284,12 +303,12 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     const hardware = await loadControlHardware(network, roads.inputDigests);
     if (disposed) return;
     hardwareObservation = hardware.records;
-    scene.add(terrain.root);
-    scene.add(roads.root);
+    city.add(terrain.root);
+    clipCityRoot(roads.root); city.add(roads.root);
     const streets = createStreetDetails(network, style, roads.paintHeightAt, hardware.records);
     paintObservation = streets.paintPlacements;
     paintSeamObservation = roads.paintHeightAt.seamUses ?? [];
-    scene.add(streets.root);
+    clipCityRoot(streets.root); city.add(streets.root);
     // The signal lenses follow the simulation. `updateSignals` colours a lens
     // from the group the phase has active, and it reads the same snapshot the
     // bridge publishes, so what a frame shows and what a harness records are one
@@ -300,7 +319,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // keep the no-group colours they are built with.
     const stopLensUpdates = loop.onFrame(() => streets.updateSignals(agents.signalSnapshot()));
     disposers.push(stopLensUpdates);
-    scene.add(vegetation.root);
+    clipCityRoot(vegetation.root); city.add(vegetation.root);
     vegetation.setStyle(style);
     styleConsumers.push(vegetation.setStyle);
     styleConsumers.push(streets.setStyle);
@@ -343,9 +362,9 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // Those are different claims and the harness needs the stronger one: a sweep
     // that captured after the first frame would photograph an empty sky twelve
     // times and every check in the gate would pass.
-    isReady: () => loop.frameCount > 0 && !contextLost && sceneLoaded,
+    isReady: () => loop.frameCount > 0 && !contextLost && sceneLoaded && buildings.displayReady(),
     contextLost: () => contextLost,
-    error: () => sceneError,
+    error: () => sceneError ?? buildings.failure(),
     tiles: () => buildings.status(),
     lighting: () => ({
       preset: timePreset,

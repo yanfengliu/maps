@@ -17,7 +17,10 @@
  * this is enough to see the shape of it honestly.
  */
 
-import { Group, Mesh } from "three";
+import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial } from "three";
+import { AOI_CORNERS_WORLD } from "../world/aoi.js";
+import { clipCityRoot } from "./aoi-cutout.js";
+import { terrainSectionGeometry } from "./cutout-sections.js";
 import { DEFAULT_WORLD_STYLE_ID, worldStyle, type WorldStyle } from "../world/styles.js";
 import { createSurfaceMaterial } from "./surface-materials.js";
 
@@ -59,10 +62,30 @@ export async function createTerrain(style: WorldStyle = worldStyle(DEFAULT_WORLD
   group.name = "terrain";
   group.add(ground);
 
+  const floor = mesh.header.bounds.min[1] - 12;
+  const sections = terrainSectionGeometry(mesh, floor);
+  const sectionMaterial = new MeshStandardMaterial({ color: new Color(style.palette.ground).multiplyScalar(0.48), roughness: 1 });
+  sections.forEach((section, side) => {
+    // Each side owns clipping against the other three planes.
+    const face = new Mesh(section, sectionMaterial.clone());
+    face.name = `terrain:cutout-section-${side}`; face.userData.cutoutSectionSide = side;
+    face.receiveShadow = true; group.add(face);
+  });
+  sectionMaterial.dispose();
+  const bottom = new BufferGeometry();
+  bottom.setAttribute("position", new Float32BufferAttribute([0, 1, 2, 0, 2, 3].flatMap(index => [AOI_CORNERS_WORLD[index]![0], floor, AOI_CORNERS_WORLD[index]![1]]), 3));
+  bottom.computeVertexNormals(); sections.push(bottom);
+  const base = new Mesh(bottom, new MeshStandardMaterial({ color: new Color(style.palette.ground).multiplyScalar(0.48), roughness: 1 }));
+  base.name = "terrain:cutout-bottom"; group.add(base);
+  clipCityRoot(group);
+
   return {
     root: group,
     heightAt: surfaceSampler(mesh),
-    setStyle: treatment.apply,
+    setStyle(next): void {
+      treatment.apply(next);
+      for (const child of group.children) if (child instanceof Mesh && child !== ground) (child.material as MeshStandardMaterial).color.setHex(next.palette.ground).multiplyScalar(0.48);
+    },
     info: {
       triangleCount: mesh.header.triangleCount,
       vertexCount: mesh.header.vertexCount,
@@ -71,6 +94,8 @@ export async function createTerrain(style: WorldStyle = worldStyle(DEFAULT_WORLD
     },
     dispose(): void {
       geometry.dispose();
+      for (const section of sections) section.dispose();
+      for (const child of group.children) if (child instanceof Mesh && child !== ground) (child.material as MeshStandardMaterial).dispose();
       // Through the treatment, not `material.dispose()`: the ground's material owns
       // the world-space detail texture, and disposing only the material would leave
       // that texture on the GPU.

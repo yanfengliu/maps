@@ -1,0 +1,13 @@
+# Cutout loading and final-detail presentation
+
+Root approved this policy on 2026-09-27. Runtime measurements and visual acceptance remain required.
+
+Proposal: completely prepare the finite selected Shibuya tileset before showing its city. The 67 source tiles remain the source hierarchy. Its 44 final leaves supply the displayed building geometry and 150 cut sections; the 34 incomplete coarse sections are superseded by their descendants, never declared closed. The independently reviewed connector joins unchanged tips only in the single eligible open component with exactly two tips at distance at most 1 mm. Closed contours and the degree-4 touching contact in data510 batch 29 remain untouched.
+
+During initial loading, a whole-city group is invisible in every render pass and the page shows a loading message. The sky and attribution remain visible. Every required final leaf must finish facade preparation, cap validation and material setup before the group is revealed. `ready` must not mean merely that the root tileset JSON arrived. Missing, failed or invalid data produces a distinct error naming its URI and the recovery requirement.
+
+Warmup requests complete refinement using the existing tiles renderer plugin seam. After all final leaves are ready, camera-frustum traversal resumes with `errorTarget = 0`, so screen size or camera distance cannot choose an incomplete coarse representation. Offscreen GPU resources still unload through the existing plugin. The existing 640/768 MiB decoded cache remains bounded; measured final cache bytes must fit the retention floor and all new section resources must participate in tile accounting and disposal.
+
+Before each draw, readiness requires every final leaf to remain prepared and every selected visible tile to be a final leaf. If a leaf is evicted, the entire city returns to loading before any coarse substitute can draw. Warmup resumes until complete. A load or validation error leaves the whole city hidden and shows a named failure, never a success state or selective building holes. Style switches reuse caps and geometry. App disposal ends loading and frees every owned resource.
+
+This finite full-refinement policy avoids a separate boundary streaming scheduler. Existing visual checks that visible tile counts vary and GPU memory falls must still pass. Additional checks must observe initial loading, a missing tile, an invalid cap, a forced eviction/reload, a small viewport, distant pan and disposal. Startup, actual cache/GPU bytes and full-scene visual behavior remain unmeasured until implementation and the exclusive GPU lease are available.

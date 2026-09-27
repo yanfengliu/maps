@@ -77,3 +77,15 @@ MLIT Japan, PDL 1.0 with CC BY 4.0 permitted. Modified: selected raw rings and s
 ## `paint-road-seams.json` — measured paint-only seam controls
 
 Eleven exact failed hero paint queries retain expected source elevation, nearest road triangle/edge IDs and gap widths. They were measured against the SHA-bound PLATEAU roads mesh after the initial F10 finite-support renderer omitted central diagonal stripes. The raw road mesh remains ignored. PLATEAU Shibuya FY2025, PDL 1.0 with CC BY 4.0 permitted; modified by local-frame projection and selection of these geometric observations. Existing PLATEAU source and processing credits above apply. The JSON is 4,458 bytes; `test/paint-support.test.ts` uses its named probes with the full pinned cached mesh. It does not authorize bridging arbitrary roads or actor support.
+
+## `cutout-sections.json` — 23,104 bytes, SHA-256 `9fc9ee4ae173001a4c69582e6bb384966449582a34e1159ede2aa6fbce91e733`
+
+Small promoted section and Float32 quantization witnesses from the pinned PLATEAU Shibuya-ku FY2025 final-detail building tiles. `cases` embeds each source tile SHA-256, batch, GML ID and cut side: `data510.b3dm` batch 29 south retains a degree-4 touching contact; `data533.b3dm` batch 42 west retains the independently measured 0.550 mm open gap. The stored endpoints are unchanged and contain no added connector or cap. `quantization` records the independent `data458.b3dm` batch 116 north triangle whose first and third vertices collapse to the same Float32 position, plus its source SHA, original section triangle, observed Float32 positions and zero normals from the old constructor.
+
+Modified: cached scene reprojection into the local world frame, triangle/plane slicing into 2D section coordinates, and the explicitly labelled old-constructor quantization observation. The fixture proves bounded section topology and stored-triangle validity in `test/cutout-sections.test.ts`; it is not a complete building model, a rendered-pixel oracle or proof of city-wide visual quality. Raw tiles remain under ignored `data/`.
+
+出典：国土交通省 PLATEAUウェブサイト（https://www.mlit.go.jp/plateau/）
+
+「3D都市モデル（Project PLATEAU）渋谷区（2025年度）」（国土交通省）（https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025）を加工して作成
+
+PLATEAU / MLIT Japan and Shibuya-ku source data, PDL 1.0 with CC BY 4.0 permitted; processed by this repository. Detailed provenance is embedded in the fixture.

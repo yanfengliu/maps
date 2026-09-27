@@ -51,6 +51,17 @@ export const AOI_EXTENT_M = Object.freeze({
   eastWest: 997.3,
 });
 
+/** Projected geographic corners, NW clockwise, in local x/z metres. Straight
+ * edges between these corners define the authored model cut. Tests independently
+ * project AOI_BOUNDS_WGS84; the rounded diagonal extents above are not edge lengths.
+ */
+export const AOI_CORNERS_WORLD: readonly (readonly [number, number])[] = Object.freeze([
+  Object.freeze([-497.2709859191418, -499.9247261600467] as const),
+  Object.freeze([498.62090050177176, -498.5785901113413] as const),
+  Object.freeze([497.327296052732, 499.8966607737093] as const),
+  Object.freeze([-498.6763421607466, 498.5506683783242] as const),
+]);
+
 /**
  * The AOI centre in JGD2011 / Japan Plane Rectangular CS IX (EPSG:6677), metres.
  *

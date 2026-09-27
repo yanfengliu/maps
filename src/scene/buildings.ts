@@ -33,10 +33,11 @@
  * without replacing the surveyed geometry.
  */
 
-import type { Camera, Mesh, MeshStandardMaterial, Object3D, WebGLRenderer } from "three";
-import { Box3, Group, Matrix3, Raycaster, Vector2, Vector3 } from "three";
+import type { Camera, Object3D, WebGLRenderer } from "three";
+import { Box3, Group, Matrix3, Mesh, MeshStandardMaterial, Raycaster, Vector2, Vector3 } from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { TilesRenderer } from "3d-tiles-renderer";
+import type { Tile } from "3d-tiles-renderer/core";
 import { GLTFExtensionsPlugin, UnloadTilesPlugin } from "3d-tiles-renderer/plugins";
 
 import { SCENE_FILES } from "../world/scene-data.js";
@@ -49,17 +50,19 @@ import {
 } from "./facade-textures.js";
 import type { SignageUniform, FacadeStyleUniforms } from "./tile-materials.js";
 import { wholeByteAccounting } from "./tile-memory.js";
+import { clipCityRoot, FinalLeafReadiness } from "./aoi-cutout.js";
+import { buildingSections } from "./cutout-sections.js";
+import type { WorldStyle } from "../world/styles.js";
 
 /**
  * Screen-space error target, in pixels.
  *
- * A tile refines when its geometric error would cover more than this many pixels.
- * Lower is sharper and loads more; the default is 6. Sixteen was chosen by
- * looking at the sweep: at street level it still resolves the leaf tiles around
- * the crossing, and from 950 m up it stops the whole ward trying to be resident
- * at once. Phase 9 owns the frame budget and may move it.
+ * Final leaves alone have complete source sections. Zero keeps those leaves as
+ * the display representation at every viewport and distance. Whole-model
+ * warmup supplies them before reveal; ordinary camera culling and GPU unloading
+ * resume afterward. The fixed decoded cache still bounds memory.
  */
-const ERROR_TARGET = 16;
+const ERROR_TARGET = 0;
 
 /**
  * How many bytes of tile content may be resident before eviction starts.
@@ -96,6 +99,8 @@ const CACHE_BYTES = Object.freeze({
 const UNLOAD_DELAY_MS = 2_000;
 
 export interface BuildingsStatus {
+  /** The finite final-detail cutout preparation, independent of camera culling. */
+  cutout?: { ready: boolean; preparedLeaves: number; requiredLeaves: number; loadedLeafUris: string[]; requiredLeafUris: string[]; visibleTileUris: string[]; sectionMeshes: number; connectors: number };
   /** True once the root tileset has loaded and no tile is in flight. */
   idle: boolean;
   /** Tiles the traversal currently wants on screen. */
@@ -174,8 +179,12 @@ export interface Buildings {
   settled(): boolean;
   status(): BuildingsStatus;
   facadeSamples(rays?: readonly FacadeRay[]): FacadeSample[];
-  /** Resolves once the root tileset is up; rejects with a named failure. */
+  /** Resolves once every required final leaf is loaded; rejects with a named failure. */
   ready: Promise<void>;
+  displayReady(): boolean;
+  loadingMessage(): string;
+  failure(): string | null;
+  setStyle(style: WorldStyle): void;
   dispose(): void;
 }
 
@@ -222,6 +231,15 @@ export function createBuildings(
   draco.setDecoderPath("/draco/");
 
   const tiles = new TilesRenderer(SCENE_FILES.buildingsTileset);
+  const cutout = new FinalLeafReadiness();
+  const sectionMaterials = new Map<Tile, MeshStandardMaterial[]>();
+  const connectorCounts = new Map<Tile, number>();
+  let disposed = false;
+  const hasLiveContent = (node: { content?: { uri?: string } }): boolean => {
+    const tile = node as Tile & { engineData?: { scene?: Object3D | null } };
+    return tiles.lruCache.has(tile) && Boolean(tile.engineData?.scene) && sectionMaterials.has(tile);
+  };
+  const reconcileLoadedLeaves = (): void => { for (const tile of cutout.prepared) if (!hasLiveContent(tile)) cutout.removed(tile); };
   // Upstream mipmap estimates include fractional bytes. Its zero-budget LRU
   // disposal loop compares differently ordered floating sums without an item
   // bound. Whole bytes keep those sums exact and conservatively budget memory.
@@ -239,7 +257,38 @@ export function createBuildings(
     signageIntensity: options.signageIntensity,
     style: options.style,
   });
+  // The tiles renderer starts model hooks concurrently. Compose these two
+  // operations explicitly: the facade pass must finish its whole-scene walk
+  // before section meshes exist. Both still precede resource/byte accounting.
+  const prepareFacade = facade.processTileModel.bind(facade);
+  facade.processTileModel = async (scene: Object3D, sourceTile: unknown): Promise<void> => {
+      await prepareFacade(scene, sourceTile);
+      if (disposed) return;
+      const tile = sourceTile as Tile;
+      clipCityRoot(scene);
+      if (tile.children?.length) return;
+      const sections = buildingSections(scene, tile.content?.uri ?? "unknown building tile");
+      const materials: MeshStandardMaterial[] = []; let connectors = 0;
+      for (const section of sections) {
+        const material = new MeshStandardMaterial({ color: options.style.building.value.clone().multiplyScalar(0.58), roughness: 0.95 });
+        const cap = new Mesh(section.geometry, material);
+        cap.name = `building:cutout-section-${section.side}`;
+        cap.userData.cutoutSectionSide = section.side;
+        cap.receiveShadow = true; cap.castShadow = true;
+        scene.add(cap); materials.push(material); connectors += section.connectors;
+      }
+      sectionMaterials.set(tile, materials); connectorCounts.set(tile, connectors);
+      clipCityRoot(scene);
+  };
   tiles.registerPlugin(facade);
+  tiles.registerPlugin({
+    name: "MAPS_FINAL_LEAF_CUTOUT",
+    calculateTileViewError(tile: Tile, target: { inView: boolean; error: number; distance: number }): boolean {
+      if (!cutout.warming || cutout.error) return false;
+      target.inView = true; target.distance = 0; target.error = tile.children?.length ? Infinity : 0;
+      return true;
+    },
+  });
   const unloader = new UnloadTilesPlugin({ delay: UNLOAD_DELAY_MS });
   tiles.registerPlugin(unloader);
   tiles.errorTarget = ERROR_TARGET;
@@ -253,11 +302,17 @@ export function createBuildings(
   let revision = 0;
   let rootUp = false;
   let error: string | null = null;
+  let readyResolved = false;
+  let resolveReady: () => void;
+  let rejectReady: (reason: Error) => void;
 
   const ready = new Promise<void>((resolve, reject) => {
-    tiles.addEventListener("load-root-tileset", () => {
+    resolveReady = resolve; rejectReady = reject;
+    tiles.addEventListener("load-root-tileset", (event) => {
       rootUp = true;
-      resolve();
+      const root = (event as unknown as { tileset: { root: Tile } }).tileset.root;
+      cutout.register(root);
+      if (cutout.error) { error = cutout.error; reject(new Error(error)); }
     });
     tiles.addEventListener("load-error", (event) => {
       const detail = event as unknown as { url?: string | URL; error?: Error };
@@ -266,13 +321,15 @@ export function createBuildings(
         `${detail.error?.message ?? "no message"}. The tileset and its 67 tiles are built by ` +
         "`npm run data:scene` into data/scene/buildings/ and served from there.";
       if (error === null) error = message;
-      if (!rootUp) reject(new Error(message));
+      cutout.fail(message);
+      reject(new Error(message));
     });
   });
 
   tiles.addEventListener("load-model", (event) => {
     loaded += 1;
     revision += 1;
+    cutout.loaded((event as unknown as { tile: Tile }).tile);
     const scene = (event as unknown as { scene: { traverse(cb: (o: unknown) => void): void } }).scene;
     scene.traverse((object) => {
       const mesh = object as { isMesh?: boolean; castShadow?: boolean; receiveShadow?: boolean };
@@ -282,9 +339,11 @@ export function createBuildings(
       }
     });
   });
-  tiles.addEventListener("dispose-model", () => {
+  tiles.addEventListener("dispose-model", (event) => {
     unloaded += 1;
     revision += 1;
+    const tile = (event as unknown as { tile: Tile }).tile;
+    cutout.removed(tile); sectionMaterials.delete(tile); connectorCounts.delete(tile);
   });
 
   group.add(tiles.group);
@@ -324,7 +383,14 @@ export function createBuildings(
       // before the traversal decides what to load. Cheap, and skipping it is how
       // a tileset ends up refining against last frame's viewport.
       tiles.setResolutionFromRenderer(camera, renderer);
+      reconcileLoadedLeaves();
       tiles.update();
+      reconcileLoadedLeaves();
+      if (!cutout.warming && cachedBytesOf(tiles) > CACHE_BYTES.minimum && !cutout.error) {
+        error = `Prepared Shibuya cutout uses ${cachedBytesOf(tiles)} cache bytes, above its ${CACHE_BYTES.minimum}-byte retention floor. Review the source and cap allocation before displaying this scene.`;
+        cutout.fail(error); rejectReady(new Error(error));
+      }
+      if (!readyResolved && cutout.canDisplay(tiles.visibleTiles)) { readyResolved = true; resolveReady(); }
     },
     status(): BuildingsStatus {
       const stats = statsOf(tiles);
@@ -332,7 +398,8 @@ export function createBuildings(
       const drawn = measureDrawn(group);
       return {
         ...drawn,
-        idle: rootUp && pending === 0,
+        idle: rootUp && pending === 0 && cutout.canDisplay(tiles.visibleTiles),
+        cutout: { ready: cutout.canDisplay(tiles.visibleTiles), preparedLeaves: cutout.prepared.size, requiredLeaves: cutout.expected.size, loadedLeafUris: [...cutout.prepared].filter(hasLiveContent).map(tile => tile.content!.uri!).sort(), requiredLeafUris: [...cutout.expected].map(tile => tile.content!.uri!).sort(), visibleTileUris: [...tiles.visibleTiles].map(tile => tile.content?.uri ?? "unknown").sort(), sectionMeshes: [...sectionMaterials.values()].reduce((n, items) => n + items.length, 0), connectors: [...connectorCounts.values()].reduce((n, value) => n + value, 0) },
         visible: tiles.visibleTiles.size,
         active: tiles.activeTiles.size,
         pending,
@@ -349,8 +416,14 @@ export function createBuildings(
       };
     },
     ready,
+    displayReady: () => cutout.canDisplay(tiles.visibleTiles),
+    loadingMessage: () => cutout.message(),
+    failure: () => error ?? cutout.error,
+    setStyle(style): void { for (const materials of sectionMaterials.values()) for (const material of materials) material.color.setHex(style.palette.building).multiplyScalar(0.58); },
     dispose(): void {
+      disposed = true;
       tiles.dispose();
+      cutout.prepared.clear(); sectionMaterials.clear(); connectorCounts.clear();
       draco.dispose();
     },
   };
@@ -361,8 +434,8 @@ export function createBuildings(
  *
  * The cache's byte accounting is real but is not on the published type, so this
  * reads it defensively and reports 0 rather than throwing if the field moves
- * under a library upgrade. It is a diagnostic the harness prints, not a number
- * anything decides on — the eviction policy itself lives inside the library.
+ * under a library upgrade. The cutout admission check compares this measurement
+ * to its unchanged retention floor; eviction itself stays inside the library.
  */
 function cachedBytesOf(tiles: TilesRenderer): number {
   const cache = tiles.lruCache as unknown as { cachedBytes?: number };

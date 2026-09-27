@@ -36,6 +36,7 @@ export function createRenderer(canvas: HTMLCanvasElement): WebGLRenderer {
   renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio ?? 1, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.localClippingEnabled = true;
 
   // The output stage belongs to `src/render/post.ts`, which sets ACES filmic tone
   // mapping and the exposure for the time of day on this same renderer —

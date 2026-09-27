@@ -1561,3 +1561,19 @@ Three restored mutations were watched red. Replacing clearPedestrianTerminal wit
 ## Central terminal planning obeys current edge viability, 2026-09-19
 
 Review 39 F22 gate: the eight viability cases in test/pedestrian-terminal.test.ts, using the real planner, graph and passage factory. The exact rejected routes.ts (a06fa9c446321fd26ced29398d9ef1ae23982f92117c96f8eaf873a4f85e339a) and pedestrian-terminal.ts (36cecf040a499fcadcf7fe1659338794ea37969f3bcd3e7e4a5ca94a4758fe31) were restored only for the new cases. All eight failed: forbidden retained prefix at two radii, forbidden shortest tail with a legal alternative in fresh and cached calls, changed callback state, a forbidden edge in an already-clear prefix, no allowed tail, and a constrained first request poisoning the unconstrained prefix. The finally-restoring runner and red result are artifacts/lease-retirement/artifacts/lease-evidence/f22-red-control.ps1, f22-red-control.json and f22-old-red.log. The repaired focused suite passes 32 tests, typecheck passes, and the rejected patch/report/freeze remain unchanged. The ordinary no-callback runtime path was not re-benchmarked for this callback-only repair.
+
+## Stored cap validity proof
+
+Bound: the section constructor stores only nonzero-area Float32 triangles with finite unit plane normals. This check does not prove every rendered frame finite, the quality of a facade, or full app disposal.
+
+The independent actual-source witness is `data458.b3dm`, batch 116, north section, triangle 0. Its Float64 triangle has positive area, but its first and third world-coordinate vertices become exactly `[498.535400390625,28.32380485534668,-498.5787048339844]` after Float32 quantization. The original constructor retained all three vertices and computed zero normals. The small witness, source SHA, original section points and independent stored points are retained in `test/fixtures/cutout-sections.json` under `quantization`.
+
+Mutation: restore `src/scene/cutout-sections.ts` from `artifacts/square-cutout/frozen-diagnosis-01/src/scene/cutout-sections.ts` while leaving the new test unchanged. This is the actual old constructor, not a test-side imitation. The harness restored the repaired file in a PowerShell `finally` block afterward.
+
+Command: `npm exec -- vitest run test/cutout-sections.test.ts -t 'independently observed data458'`.
+
+Observed red result on 2026-09-27: `expected 6 to be 3 // Object.is equality` at the output position-count assertion. The constructor had retained the three vertices of the collapsed source triangle beside a valid comparison triangle. Exact output is retained under ignored `artifacts/square-cutout/cap-source-quantization-red.log`.
+
+Repair: transform authored section positions into their final local coordinates before one Float32 quantization; omit only triangles whose stored cross-product area is exactly zero; write the analytic outward plane normal transformed to the same local frame. Source contours, every nonzero-area stored triangle, holes and the sole approved connector remain unchanged.
+
+Observed green result after restoration: `npm run typecheck` passed; `npm exec -- vitest run test/cutout-sections.test.ts test/normal-pass.test.ts` passed 13 tests. The ignored independent-source check additionally built all 150 final-leaf regions into Float32 geometry and asserted each stored triangle has nonzero area and each normal has unit length. Its separate scope is recorded in the actual-source artifact.
