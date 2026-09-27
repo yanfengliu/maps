@@ -26,9 +26,11 @@ Delivered milestone: lighting and sky balance `39796b3` is verified, independent
 
 ### Next visual milestone — Satellite tonal balance
 
-- [ ] P1 — Visual implementation worker: moderate the photographic color correction and lift dark roof tones with local contrast preserved, limited to `src/scene/delight.ts` and `src/scene/tile-materials.ts`. Preserve colored signs, directional shadows, Cartographic appearance, source data and simulation; do not claim to repair atlas blur.
-- [ ] P2 — Independent critic and verification worker: judge matched noon/dusk crossing, approach and two block angles, including an untuned angle; then run the five primary gates on one frozen candidate. Avoid another motion-metric investigation unless an actual introduced visual defect appears.
+- [ ] P1 — `satellite_materials` (prepared, waiting for R0; base `fc6dab3`, managed `shibuya-quality` worktree): moderate the photographic color correction and lift dark roof tones with local contrast preserved, limited to `src/scene/delight.ts` and `src/scene/tile-materials.ts`. Preserve colored signs, directional shadows, Cartographic appearance, source data and simulation; do not claim to repair atlas blur.
+- [ ] P2 — `visual_critic` ([baseline review complete](reviews/98_baseline.md); candidate review pending) and the next verification worker: judge matched noon/dusk crossing, approach and two block angles, including an untuned angle; then run the five primary gates on one frozen candidate. Avoid another motion-metric investigation unless an actual introduced visual defect appears.
 - [ ] P3 — Root: accept the bounded visible improvement, commit, merge, push and clean owned resources, keeping this queue current.
+- [ ] R0 — `completion_audit`: restore the missing scene cache only from digest-matched retained bytes; runtime captures wait for recovery. Locked dependencies are restored with an unchanged lockfile.
+- [ ] S1 — `square_boundary` (design active): define the canonical square cutoff and coherent edge treatment across visible layers and render passes; root assigns isolated implementation after review. Simulation research stays deferred.
 
 ## Current queue — 2026-09-20
 
