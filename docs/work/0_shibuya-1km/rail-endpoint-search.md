@@ -1,0 +1,19 @@
+# Railway endpoint search — 2026-09-27
+
+Owner: root. Status: active reassessment after two endpoint candidates failed the same concealment condition. Product remains unchanged at the source of `0ec3dd0`.
+
+Done condition: a coherent source-aligned railway exterior in the square model, with supported structures, clear retained roads and actor paths, consistent station entrances, and no materially exposed arbitrary interior termination in normal exterior views. This is a visual reconstruction, not a surveyed station interior or railway simulation.
+
+Fixed counterevidence: Review130 receipt `042995fa4ed2eefc4308bdab45c61f286c574c2a6a37d553247a029249b26778` binds `artifacts/rail-station-design-20260927/`. Its `run-prototype.mjs` evaluates 560 terminal samples per candidate at 14 named cameras: short exposes 214, continued exposes 26. E1 independently found that only six cameras are shared; eight are candidate-derived, so these totals are not a paired improvement measurement. Preserve those outputs; reproduce only into a separate owned output. The clearest low exterior camera is (89.7360015119301,22,55), with 8/10 east-end samples visible. The isolated diagnostic projection is not an app screenshot.
+
+The strict zero-ray condition currently fails both candidates. An independent instrument review must settle whether and how it represents the user-facing done condition before candidates are scored under any corrected criterion. It may require a fixed native exterior-view matrix through actual controls, including the low witness and neighboring views in both styles/times; absence of that evidence is not a pass.
+
+Disqualifiers: hiding the end with an opaque painted door, rail/wall penetration, darkness chosen to conceal it, suppressing an inconvenient camera or source sample, moving source X/Z, changing roads or actor support, dropping tracks, reducing the sample set, accepting tuned views as independent coverage, or moving the unresolved problem into an unbuilt station framework.
+
+Registry: the short and Z145 candidates remain rejected for strict concealment; the supported profile remains independently accepted only at design level. Fresh lane E1 audits the criterion against actual control geometry and observable exterior quality. Fresh lane E2 examines a different geometric endpoint mechanism using existing source continuation and natural/model boundaries. Assignments are read-only with separate ignored output; no product prototype is admitted yet.
+
+Compare the lanes only after independent findings. Preserve positive and negative evidence, name missing inputs, and do not treat a source suggestion or an unrendered cut as appearance acceptance. Additional source retrieval must stay bounded and preserve provenance.
+
+Audit every candidate for changed assertions, one-view success, hidden failures, omitted work, tuning-only evidence, source drift and an equally hard missing dependency. Root must approve the fixed implementation and capture contract, obtain independent native review, and run the repository gates before integration. The active whole-map goal continues alongside this finite search.
+
+Root decision, 2026-09-27: frozen Reviews135 and136 were compared before selecting the south-AOI continuation for a bounded complete geometry candidate. E1 establishes the corrected instrument and preserves both strict failures; E2 establishes the endpoint mechanism but exposes seven more building adaptations and support unions. The quality worker owns these explicit dependencies. No appearance acceptance follows from either lane, and no Z145 termination is promoted. Preserve the fixed diagnostic eyes and earlier native witness obligations; an independent extension of the native matrix must cover the new south structures and square-edge sections before capture.
