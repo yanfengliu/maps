@@ -94,15 +94,17 @@ export interface DelightSettings {
  * collapsed, the frames say whether it looks like a city.
  */
 export const PLATEAU_DELIGHT: DelightSettings = Object.freeze({
-  airlight: [0.012, 0.016, 0.028] as const,
+  // A mild correction keeps neutral shadow detail and source sign colours; the
+  // earlier blue subtraction and chroma boost exaggerated the photographic cast.
+  airlight: [0.006, 0.007, 0.009] as const,
   hazeTransmittance: 0.88,
-  sunIlluminant: [1.03, 1.0, 0.94] as const,
-  skyIlluminant: [0.86, 0.998, 1.434] as const,
+  sunIlluminant: [1.02, 1.0, 0.97] as const,
+  skyIlluminant: [0.96, 1.0, 1.12] as const,
   shadowLuminance: 0.02,
   sunLuminance: 0.25,
   pivotLuminance: 0.18,
   compression: 0.6,
-  chromaGain: 1.22,
+  chromaGain: 1.06,
   albedoFloor: 0.02,
   albedoCeiling: 0.88,
 });

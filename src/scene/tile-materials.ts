@@ -266,7 +266,15 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
           // Local response compensates dark photographic albedo under a fresh
           // lighting rig; bright/saturated printed signs keep their source hues.
           float unlitWall = (1.0 - smoothstep(0.16, 0.38, lightness)) * mapsWall;
-          diffuseColor.rgb *= mix(1.20, 1.62, unlitWall);
+          // Lift dark roof albedo before lighting, with no additive light or
+          // spatial smoothing. The monotone curve keeps roof texture ordering;
+          // the smooth normal/chroma fades leave walls and coloured signs alone.
+          float photoPeak = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+          float photoSaturation = chroma / max(photoPeak, 0.001);
+          float neutralRoof = 1.0 - smoothstep(0.30, 0.65, photoSaturation);
+          float darkRoof = 1.0 - smoothstep(0.08, 0.32, lightness);
+          float roofLift = smoothstep(0.55, 0.92, mapsNormal.y) * neutralRoof * darkRoof;
+          diffuseColor.rgb *= mix(1.20, 1.62, unlitWall) * (1.0 + 0.65 * roofLift);
           float horizontal = abs(mapsNormal.x) > abs(mapsNormal.z) ? mapsWorld.z : mapsWorld.x;
           vec2 photoCell = vec2(horizontal / 2.9, (mapsWorld.y - mapsFloor.x) / max(mapsFloor.y, 0.1));
           vec2 photoFraction = fract(photoCell); vec2 photoAa = max(fwidth(photoCell), vec2(0.001));
@@ -312,7 +320,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         `,
       );
   };
-  material.customProgramCacheKey = () => `maps-facade-v6-periodic-coverage-${hasMask ? "photo" : "plain"}`;
+  material.customProgramCacheKey = () => `maps-facade-v7-photo-tones-${hasMask ? "photo" : "plain"}`;
 
   material.needsUpdate = true;
   return true;
