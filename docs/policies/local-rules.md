@@ -1,5 +1,9 @@
 # maps — repo-only rules
 
+## Visual quality first — 2026-09-26
+
+The owner directs the root orchestrator to maintain an explicit todo list, oversee overall progress, delegate detailed implementation and review, and continue in goal mode. Prioritize supreme visual quality for the current Shibuya work; detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main, with independent visual review and the existing gates.
+
 ## Preserve existing markings before a scene rebuild
 
 `npm run data:scene` checks `markings.mesh` and `markings-provenance.json` before geometry cleanup. It admits an absent pair as markings bootstrap, or a structurally valid and consistent pair in the existing published-only producer format. It refuses authored paint, unknown formats, missing partners and malformed or inconsistent records with the affected path and recovery requirements, leaving the existing scene bytes untouched. Restore a known pair when damaged; authored replacement needs a reviewed regeneration path. The preflight grants no new source authority and does not change `data:markings` or its provenance guard.

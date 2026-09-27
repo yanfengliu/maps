@@ -260,11 +260,9 @@ describe("the dusk ambient is what lifts the dark near field", () => {
     ).toBeGreaterThanOrEqual(BLACK_FLOOR);
   });
 
-  it("leaves the noon ambient exactly where it was, so the daylight tone cannot move", () => {
-    // The tone review's binding number: the cartographic noon crossing band measured
-    // 169.80 of 255 in the superseded capture, and a daylight term here would move it.
-    // `dark` is 0 with the sun up, so the fill contributes nothing and these two are the
-    // values the pre-change formula produced.
+  it("keeps the dusk fill out of the noon ambient intensity scalars", () => {
+    // This checks the dusk-only intensity ramp. Sky colour and the resulting
+    // rendered daylight tone remain subjects of the native visual review.
     const noon = lightingForPreset("noon");
     expect(noon.hemisphereIntensity, "noon hemisphere intensity").toBeCloseTo(0.58, 9);
     expect(noon.environmentIntensity, "noon environment intensity").toBeCloseTo(1.5, 9);

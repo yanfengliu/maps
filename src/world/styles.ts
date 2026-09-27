@@ -16,7 +16,7 @@ export const WORLD_STYLES: readonly WorldStyle[] = Object.freeze([
   Object.freeze({
     id: "cartographic", label: "Cartographic", description: "A clear, detailed city in a quiet map palette.",
     facade: "procedural" as const,
-    palette: Object.freeze({ ground: 0xd8dfcb, road: 0xa4adb1, sidewalk: 0xe6e4d9, building: 0xe1e1dc, roof: 0xc1c8cb, window: 0xa9bdc4, vegetation: 0x7da78a }),
+    palette: Object.freeze({ ground: 0xd8dfcb, road: 0xa4adb1, sidewalk: 0xd2d1c8, building: 0xe1e1dc, roof: 0xc1c8cb, window: 0xa9bdc4, vegetation: 0x7da78a }),
     signage: 0.35, bloom: 0.3, wetness: 0.12,
   }),
   Object.freeze({
@@ -46,7 +46,7 @@ export const WORLD_STYLES: readonly WorldStyle[] = Object.freeze([
     // re-capturing these poses with only the palette changed and measuring the
     // albedo-driven sensitivity. If it comes back near the lower end, the palette is not
     // the lever here and the light on horizontal surfaces at dusk is.
-    palette: Object.freeze({ ground: 0x737868, road: 0x474d55, sidewalk: 0x999991, building: 0xc4c0b7, roof: 0x646b70, window: 0x344e5a, vegetation: 0x3c5e44 }),
+    palette: Object.freeze({ ground: 0x737868, road: 0x474d55, sidewalk: 0x898982, building: 0xc4c0b7, roof: 0x646b70, window: 0x344e5a, vegetation: 0x3c5e44 }),
     signage: 1, bloom: 1, wetness: 0.72,
   }),
 ]);

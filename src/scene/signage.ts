@@ -358,14 +358,15 @@ const STREET_LIGHT_COLOUR = 0xffd9b0;
  *
  * three.js in physical mode gives a point light an irradiance of
  * `intensity / distance^2`, so this number has to be read against the sun's, which
- * peaks at about 3.1 in the same units. 70 puts 0.31 on a wall 15 m away and 0.019
- * on one 60 m away, keeping the authored fill subordinate to the environment.
+ * peaks at about 3.1 in the same units. 38 puts 0.17 on a wall 15 m away and 0.011
+ * on one 60 m away, keeping the authored fill subordinate to the environment. Native crossing views
+ * showed that the former 70 made the broad pavement brighter than the facades.
  *
  * The first value here was 9,000, chosen with no such arithmetic behind it. That
  * is 22 of irradiance at 20 m — seven times the midday sun — and it turned the
  * whole eye-level frame white.
  */
-const STREET_LIGHT_INTENSITY = 70;
+const STREET_LIGHT_INTENSITY = 38;
 const STREET_LIGHT_RANGE_M = 130;
 
 export interface AuthoredSignage {

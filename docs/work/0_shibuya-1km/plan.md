@@ -3,7 +3,26 @@
 Status: active
 Owner: root orchestrator
 Created: 2026-09-06
-Updated: 2026-09-20
+Updated: 2026-09-26
+
+## Visual-quality priority — 2026-09-26
+
+Owner directive: root orchestrates in goal mode, maintains this todo list, and delegates detailed work. Supreme visual quality is the current priority. The simulation research in the September 20 queue remains retained and deferred; it is not a prerequisite for visual delivery.
+
+- [x] V1 — Root and visual critic: inspect baseline native images and choose the largest visible improvement.
+- [x] V2 — Visual implementation worker: implement one coherent render/material/light improvement in an isolated worktree, with short before/after captures.
+- [x] V3 — Independent visual critic: Review 95 accepts the exact source and final native views in both styles at street, block and aerial scales, including dusk/noon; the visual gate exercised the real controls.
+- [x] V4 — Verification worker and root: all five primary gates pass, including 85 files / 738 unit tests; root inspected all 44 final native frames and accepts the bounded milestone with no blocking finding.
+- [ ] V5 — Root: delivery pending — commit, merge to main, push under the standing grant, and clean task-owned resources before starting the next visual milestone.
+
+Current milestone: the lighting and sky balance is verified and accepted, pending V5 delivery. Base main is `2871bd5`; implementation owns `codex/visual-quality`. Certificate `dd191bfcde4c14ed` binds 44 final frames and three hardware lifecycle repetitions. [Review 95](reviews/95_integration.md) accepts the exact source and bounded visual improvement; root inspected all 44 frames. Dusk pavement is less dominant, the sunset glow is narrower, and daylight has a paler horizon. Dark photographic roofs, green-tinted or blurred source textures and repetitive Cartographic facades remain unresolved; this is not full appearance acceptance.
+
+### Next visual milestone — approved, queued after V5
+
+- [ ] C1 — Visual implementation worker: use the existing stable building seed and floor data for three authored Cartographic facade treatments — punched windows, horizontal bands and curtain glazing — with a ground-floor/plinth band and distinct glazing/cladding response. Vary structure within the clean Cartographic palette, not random surface noise. Keep source data, geometry and simulation unchanged; preserve Satellite materials and texture attribution.
+- [ ] C2 — Visual implementation worker: compare matched crossing, approach, block and aerial views at noon/dusk through real controls; require visibly distinct adjacent facades and readable material depth without losing the clean palette or introducing sparkle, moire or distant pattern noise. Verify Satellite and the style switch remain intact.
+- [ ] C3 — Independent visual critic and verification worker: review the exact integrated candidate and native still/moving evidence, run the five primary gates, and resolve material findings within this scope.
+- [ ] C4 — Root: accept the bounded visual result, commit and deliver it on main, then clean its owned resources. Photo-roof grading, the rectangular AOI edge and detailed simulation remain separate work.
 
 ## Current queue — 2026-09-20
 

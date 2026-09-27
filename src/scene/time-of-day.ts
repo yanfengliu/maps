@@ -225,7 +225,9 @@ export function lightingForPreset(id: TimePresetId): TimeOfDayLighting {
  * satellite style is named for; it was not taken here.
  */
 const DUSK_HEMISPHERE_FILL = 0.2;
-const DUSK_ENVIRONMENT_FILL = 2.55;
+// The narrower sunset lobe uses a little more neutral environment fill to retain
+// shadow detail. This is an authored balance; the old pixel fit above is historical.
+const DUSK_ENVIRONMENT_FILL = 2.95;
 
 /**
  * Everything the scene needs, for one instant.
@@ -303,6 +305,9 @@ export function lightingForInstant(id: string, label: string, instant: Date): Ti
     .clone()
     .lerp(sky.horizon, 0.45)
     .multiplyScalar(1 / Math.max(0.02, 0.02 + 0.33 * daylight));
+  // Keep skylight luminance but restrain its blue cast on photographic facades.
+  const skyFillLuminance = luminance(hemisphereSky);
+  hemisphereSky.lerp(new Color(skyFillLuminance, skyFillLuminance, skyFillLuminance), 0.32 + 0.40 * high);
   const hemisphereGround = new Color(0.1, 0.09, 0.085).multiplyScalar(0.35 + 1.5 * daylight);
   const hemisphereIntensity = 0.16 + 0.42 * daylight + DUSK_HEMISPHERE_FILL * dark;
 
@@ -369,29 +374,26 @@ interface SkyInputs {
 function skyParameters(inputs: SkyInputs): SkyParameters {
   const { daylight, high, twilight, beamColour } = inputs;
 
-  // Every radiance below is scene-referred and is set from where ACES lands it,
-  // not from a sky-radiance model. A noon zenith of 0.10 comes out as a blue near
-  // display byte 110 at this file's exposure and a horizon of 0.34 near byte 205.
-  // Raise them and the sky goes white and takes the bloom with it, which is what
-  // the first version of this file did.
+  // Authored linear radiance: a pale daylight horizon gives way to a blue upper
+  // sky. A modest cool twilight floor keeps dark roof textures readable.
 
   // Zenith: a deep blue that brightens and desaturates as the sun climbs.
   const zenith = new Color(0.19, 0.4, 1.0)
-    .lerp(new Color(0.34, 0.56, 1.0), high)
-    .multiplyScalar(0.0055 + 0.098 * daylight);
+    .lerp(new Color(0.16, 0.39, 1.0), high)
+    .multiplyScalar(0.018 + 0.0855 * daylight + 0.025 * high);
 
   // Horizon away from the sun: paler, and never as dark as the zenith, because
   // that is where the sky's own scattered light piles up.
   const horizon = new Color(0.34, 0.46, 0.78)
-    .lerp(new Color(0.46, 0.66, 1.0), high)
-    .multiplyScalar(0.012 + 0.33 * daylight);
+    .lerp(new Color(0.65, 0.79, 1.0), high)
+    .multiplyScalar(0.020 + 0.322 * daylight + 0.060 * high);
 
   // The glow around the sun's azimuth. This is the band that says "sunset", and
   // it takes its hue from the same extinction that colours the beam.
   const glow = beamColour
     .clone()
     .lerp(new Color(1.0, 0.55, 0.28), 0.45)
-    .multiplyScalar(0.006 + 0.13 * daylight + 0.45 * twilight);
+    .multiplyScalar(0.006 + 0.13 * daylight + 0.36 * twilight);
 
   const ground = horizon.clone().multiplyScalar(0.35).lerp(new Color(0.02, 0.02, 0.025), 0.5);
 
@@ -400,11 +402,11 @@ function skyParameters(inputs: SkyInputs): SkyParameters {
     horizon,
     glow,
     ground,
-    // Wide near sunset, tight when the sun is high. Not as wide as it was: at an
+    // The sunset lobe stays close to the western horizon. At an
     // exponent of 2.2 the lobe covers half the dome, and half a dome of sunset
     // colour is a wash rather than a sunset.
-    glowExponent: 5.0 + 30 * high,
-    horizonExponent: 0.42 + 0.02 * daylight,
+    glowExponent: 9.0 + 26 * high,
+    horizonExponent: 0.32 - 0.08 * high,
     discRadiance: 26 * smoothstep(-0.5, 2, inputs.elevation) * (0.25 + 0.75 * high),
   };
 }
