@@ -131,3 +131,7 @@ The fleet canon above, the documents it asks for, and `docs/policies/local-rules
 ### Cached source for paint regression checks
 
 `test/paint-support.test.ts` checks the actual pinned network, road, pavement and terrain bytes produced by the reviewed data pipeline. Prepare `npm run data:fetch`, `npm run data:scene` and `npm run data:network` before the source-dependent unit gate. Missing or changed inputs fail with their names; the test never fetches or skips them. Fresh OSM data may differ from the reviewed fixture and requires source review. Final capture reproducibility binds the exact cached inputs and is distinct from successful fresh remote `data:setup`.
+
+### Cached source for mapped-tree regression checks
+
+test/vegetation.test.ts checks crown variety against the reviewed cached data/scene/decorations.json (80,890 bytes; SHA-256 f16d044aeefc16704f6bcd10c1e3d03039927d6226b68322631ea3edff1ac918). Restore that reviewed scene cache before the source-dependent unit gate. Missing or changed bytes fail with the restoration/review requirement; the test never downloads or skips source. Fresh decoration data needs source review before changing this pin.
