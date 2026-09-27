@@ -4,6 +4,14 @@
 
 The owner directs the root orchestrator to maintain an explicit todo list, oversee overall progress, delegate detailed implementation and review, and continue in goal mode. Prioritize supreme visual quality for the current Shibuya work; detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main, with independent visual review and the existing gates.
 
+## Keep visual review sampling small — 2026-09-27
+
+The owner asks for modest animation frame rates, around 30 or 60 fps, to limit tokens spent viewing individual frames. Default review clips to 30 fps when sufficient; use 60 fps only for a targeted motion question. Limit inspected images through sparse keyframes and short event-specific sequences, rather than opening every frame of a long animation. State the actual sampled frame/time gaps and keep uninspected footage outside appearance claims. Existing required static-view coverage stays explicit. Do not change the fixed 60 Hz simulation step merely to reduce review-image count.
+
+## Fresh strategy reviews — 2026-09-27
+
+The owner asks for periodic fresh subagents to identify fundamental mistakes and inefficiency. Dispatch a fresh-context critic at each meaningful product milestone or after two consecutive attempts produce no new substantive result. Give it the current queue, a compact evidence index and at most three relevant existing images; ask for a concise continue-or-redirect decision. Record and act on justified findings before repeating the approach. Do not add a strategy review to every mechanical handoff.
+
 ## Preserve existing markings before a scene rebuild
 
 `npm run data:scene` checks `markings.mesh` and `markings-provenance.json` before geometry cleanup. It admits an absent pair as markings bootstrap, or a structurally valid and consistent pair in the existing published-only producer format. It refuses authored paint, unknown formats, missing partners and malformed or inconsistent records with the affected path and recovery requirements, leaving the existing scene bytes untouched. Restore a known pair when damaged; authored replacement needs a reviewed regeneration path. The preflight grants no new source authority and does not change `data:markings` or its provenance guard.

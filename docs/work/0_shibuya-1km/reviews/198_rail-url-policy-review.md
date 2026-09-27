@@ -1,0 +1,41 @@
+# Review198 — admit exact197 URL-policy successor for a separately leased trial
+
+**No material finding remains in this bounded repair. Admit exact197 for one successor native trial only after root supplies a separate new lease and200 releases its resources.** This review supplies no lease and establishes no native collection, appearance, motion cadence, performance, integration or whole-task acceptance.
+
+Independent Astra/xhigh reviewer,2026-09-27. Target: quality worktree `C:/Users/38909/.codex/worktrees/shibuya-quality/maps`, detached `0ec3dd03831b605235302212b7d140cb35297071`; executor digest `c2ec839aea2db341fcf9c9fbc1c0660c5968820533c6f6a9f72bf9da2fd398fc`. Product, source and prior packets were read-only. Reviewer writes are confined to `artifacts/rail-capture-url-review-20260927/`. Root authorized the short CPU controls after200's unit phase; no browser, server, GPU, full gate, build, install, data command or Git mutation ran here. Prior107 CLI abstentions remain disclosed; neither CLI was retried. This is the independent source review actually performed.
+
+## Actual defect and narrow correction
+
+Read188's failure report, actual retained startup observation,187's authored review,197's report/contract/policy and all relevant URL callers. The failed188 attempt retains313 files,180 diagnostic trace JPEGs and zero planned native copies. The new policy does not retroactively qualify those JPEGs or make188 a successful run.
+
+Source outside the changed line confirms the ordinary flow. `capture.spec.ts:22` navigates the exact agents0/time URL, then clicks the real World style combobox and option before readiness. `src/ui/style-picker.ts:178–183,265–271` calls choose/onChange even when the pointer selects the already-current style. `src/main.ts:76–79` sets the style search parameter and replaces browser history. From this initial URL, the resulting suffix is exactly `&style=satellite` or `&style=cartographic`; no further URL form is needed by these callers. `native.ts:7,32` reads `location.href` directly.
+
+Only `policy.mjs:11` changes readiness behavior. It admits the exact initial URL or its exact matching style suffix, with requested time restricted to noon/dusk and style to satellite/cartographic. Strict string equality preserves scheme, host, port4333, root path, agents0, time, query order and absence of any additional query or fragment. There is no parser normalization. The next line still requires the observed style and lighting to equal the requested values. Unknown recorded states also fail when the final validator supplies the observation's state back to assertReady.
+
+The shared predicate still runs at initial readiness and after pose settling, for both observations of every still and motion copy, and during final receipt validation (`capture.spec.ts:18–19,27,35`; `bound-runner.mjs:30`). Post active/null-error, hardware renderer, layer/leaf/manifest/replacement identities, population0, dimensions, frame/matrix/revision and clearance observations remain unchanged. The URL correction neither removes an assertion nor broadens eligibility or appearance claims.
+
+## Independent controls actually run
+
+`review.mjs` passes the unmodified retained188 observation, SHA-256 `e28a0ab1ed05a8c183fafefa3e90584ec178df98285a140d3ac60d91b4371a0f`, to both actual policies. Original186 reproduces the exact expected-base/actual-style-suffix AssertionError. Exact197 passes the complete assertReady predicate on those same observation bytes. No observation field was repaired for this red/green comparison.
+
+Eight independent legal URL/state cases cover both forms for each of the four requested states. Seventy-eight malformed URL/unknown-state cases and two observation-state mismatches are refused. Controls cover duplicate agents/time/style, unknown extra input, wrong origin/port/path/scheme, fragments, changed ordering, encoded agents, wrong time/style, unknown recorded states, and non-string URL values. Applicable URL cases run through both requested-state and final recorded-state call signatures. These variants are explicitly synthetic; the retained-observation replay is old evidence, not a new live readiness observation. Results and exact policy/input pins are in `url-checks.json`.
+
+The exact197 bound-runner invoked without a lease exits1 at line7's independent198/root-authorization assertion. It creates no lease or run directory and never reaches a launch path. `missing-lease.log` and `missing-lease.json` retain the actual refusal. No positive native launch was attempted.
+
+## Exact transfer and preserved inputs
+
+Independently verified197 REPORT SHA-256 `8e887d9d5caf293310d2635448712d65c510f1a7180124fbd191e4391ad41d29`, HASHES `2bef212fb0c79454da4e06444ce9e70d114a4e7e460076da1ee98527bb415926` and manifest `7b9803ca1d6928dc23f9ca340b4415ac826385aa4d15de60f01d1c0246d8da89`, plus every sealed packet entry. Actual frozenExecutor recomputation passes for1,382 files. It recomputes the unchanged conservative dependency traversal and exact1,797-file dependency binding, including the new URL-control root and its imported original186 policy. No dependency guard or earlier admission pin was removed.
+
+The independent20-file comparison confirms six byte-identical files, nine differing only by the explicitly allowed task/marker/lease/review identities, and five separately inspected deltas. Those five are the one policy line, contract explanation, added dependency entry, added envelope roots/pins and freeze-description wording. `deltas.json` binds before/after/normalized hashes. Native copying, capture spec, self-test, subject points, tsconfig and wrapper provenance are byte-identical. Runner, retained-handle wrapper, config and preflight have only identity changes. The explicit workspace cwd and170 preview command remain intact. The new preservation helper is separately reviewed/frozen, not claimed as byte-identical186 code.
+
+This supports transfer of187's unchanged source/CPU coverage within its stated limits. It does not relabel earlier cwd, dependency mutation, post-fallback, fake-RAF or fake-CIM controls as198 executions.197's adjacent/type/syntax receipts were inspected as author evidence; there was no material reason to rerun those unchanged controls or audit unrelated geometry or launcher behavior.
+
+The27 poses,62 stills and four12-frame native RAF sequences remain required. N0 stays mandatory; known N2/N3 failures, unknown/ineligible views and N5 context-only remain diagnostic. H0/H1 remain disclosed reserved views. Pose tolerances0.10m/0.001rad, copy drift0.005m, frame adjacency, timeouts, no retry, native1280x720/DPR1, Chromium1243, ANGLE/D3D11, RTX4090/616.64 and retained-identity cleanup rules are unchanged. A3 color/temporal limits remain.
+
+Both independent preservation passes match833 sealed/prior-evidence records, including all313 failed188 run files and the consumed180/186 leases, original176/180 inventories, actual186 freeze, HEAD/status/binary diff and170's source/build/harness/overlay/served bindings. Source remains `fd1bfbea9248dbfb18686934134860d1d4a8bf1b4392520c600701f1142a79cc`; build remains `f88f0162b73a6348715ac1768b5ac5978db40bb49dd52d1f22c2ec0c0c8eb01c`. Separate before197/after197 records match all61 sealed197 records and its exact executor/dependency identity. No197 lease/run exists.
+
+## Cleanup and handoff
+
+Foreground controls completed. `cleanup.json` records the final scoped process/port check, zero process termination and removal of only the empty owned review temp directory after absolute containment/reparse checks. No browser, GUI, server or daemon was launched by198. Useful review receipts remain for root's handoff; the quality worktree remains frozen, uncommitted and unmerged under root ownership. Artifact writes used scoped sandbox escalation for the assigned worktree; no global configuration changed.
+
+Root may promote this report and bind its exact hash plus the exact197 executor digest into one new `root-authorized-rail197-native-execution` lease after200 cleanup. Old leases remain consumed. Full native collection, native image inspection, appearance decisions and final integrated acceptance remain outstanding. This review slot is released.
