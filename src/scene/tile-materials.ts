@@ -142,6 +142,18 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         varying float mapsSignGroup;
         varying vec2 mapsSourceUv;
         ${FACADE_EMISSION_GLSL}
+        // Integrate a periodic interval over a one-dimensional pixel footprint.
+        // Multiplying axis coverages approximates a skewed pixel by its box;
+        // this is not exact integration over the projected pixel parallelogram.
+        float mapsIntervalIntegral(float x, float low, float high) {
+          return floor(x) * (high - low) + clamp(fract(x) - low, 0.0, high - low);
+        }
+        float mapsFilteredInterval(float x, float width, float low, float high) {
+          float center = fract(x);
+          float halfWidth = 0.5 * width;
+          return clamp((mapsIntervalIntegral(center + halfWidth, low, high)
+            - mapsIntervalIntegral(center - halfWidth, low, high)) / width, 0.0, 1.0);
+        }
         void main() {
         `,
       )
@@ -151,7 +163,75 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         float mapsWall = smoothstep(0.65, 0.9, 1.0 - abs(mapsNormal.y));
         float mapsGrid = ${hasMask ? "mapsProcedural" : "1.0"};
         float mapsWindowMask = 0.0;
-        if (mapsGrid > 0.5) {
+        float mapsCartographicDetail = 1.0;
+        if (mapsProcedural > 0.5) {
+          // Three authored structures, stable per building. The separate legacy
+          // branch below remains the Satellite fallback for untextured tiles.
+          float banded = step(0.38, mapsFloor.z) * (1.0 - step(0.72, mapsFloor.z));
+          float curtain = step(0.72, mapsFloor.z);
+          float horizontal = abs(mapsNormal.x) > abs(mapsNormal.z) ? mapsWorld.z : mapsWorld.x;
+          float level = (mapsWorld.y - mapsFloor.x) / max(mapsFloor.y, 0.1);
+          float groundFloor = 1.0 - smoothstep(0.96, 1.04, level);
+          vec2 cell = vec2(horizontal / mix(2.6, 3.3, mapsFloor.z), level);
+          vec2 f = fract(cell);
+          vec2 aa = max(fwidth(cell), vec2(0.001));
+          float footprint = max(aa.x, aa.y);
+          // Integrate fine bays into their coverage when they become subpixel.
+          // Normal relief retires sooner than the larger window openings.
+          float resolved = 1.0 - smoothstep(0.16, 0.48, footprint);
+          mapsCartographicDetail = resolved;
+          float relief = 1.0 - smoothstep(0.025, 0.085, footprint);
+          vec2 inset = mix(vec2(0.20, 0.17), vec2(0.035, 0.23), banded);
+          inset = mix(inset, vec2(0.055, 0.065), curtain);
+          inset = mix(inset, vec2(0.075, 0.11), groundFloor);
+          vec2 frame = mix(vec2(0.032, 0.023), vec2(0.023, 0.018), curtain);
+          float opening = mapsFilteredInterval(cell.x, aa.x, inset.x, 1.0 - inset.x)
+            * mapsFilteredInterval(cell.y, aa.y, inset.y, 1.0 - inset.y);
+          vec2 paneInset = inset + frame;
+          float mullion = max(max(banded, curtain), groundFloor);
+          float wholePaneX = mapsFilteredInterval(cell.x, aa.x, paneInset.x, 1.0 - paneInset.x);
+          float splitPaneX = mapsFilteredInterval(cell.x, aa.x, paneInset.x, 0.5 - 0.012)
+            + mapsFilteredInterval(cell.x, aa.x, 0.5 + 0.012, 1.0 - paneInset.x);
+          float pane = mix(wholePaneX, splitPaneX, mullion)
+            * mapsFilteredInterval(cell.y, aa.y, paneInset.y, 1.0 - paneInset.y);
+          // The unresolved endpoint has the same area, including the mullion.
+          float coverage = (1.0 - 2.0 * paneInset.x - 0.024 * mullion) * (1.0 - 2.0 * paneInset.y);
+          float paneCoverage = mix(coverage, pane, resolved) * mapsWall;
+
+          vec3 wall = mapsBuilding * (0.88 + mapsFloor.z * 0.18);
+          wall *= mix(vec3(1.015, 1.0, 0.98), vec3(0.98, 1.0, 1.015), mapsFloor.z);
+          float base = 1.0 - smoothstep(0.075 - aa.y, 0.075 + aa.y, level);
+          float firstFloorCap = 1.0 - smoothstep(0.032 - aa.y, 0.032 + aa.y, abs(level - 1.0));
+          wall *= 1.0 - groundFloor * 0.11 - base * 0.18;
+          float floorEdge = 1.0 - smoothstep(0.018 - aa.y, 0.018 + aa.y, min(f.y, 1.0 - f.y));
+          wall *= 1.0 - floorEdge * mix(0.07, 0.15, banded) * resolved;
+          vec3 glazing = mapsWindow * mix(0.52, 0.65, curtain);
+          glazing *= mix(0.95, mix(0.83, 1.07, f.y), resolved);
+          vec3 facade = mix(wall, glazing, mix(coverage, pane, resolved));
+          float reveal = max(0.0, opening - pane) * resolved;
+          facade = mix(facade, wall * 0.64, reveal);
+          // The lower sill catches light while the upper reveal stays recessed.
+          float sill = opening * (1.0 - smoothstep(inset.y + frame.y - aa.y, inset.y + frame.y + aa.y, f.y));
+          facade = mix(facade, wall * 1.08, sill * resolved);
+          facade = mix(facade, mapsBuilding * 0.83, firstFloorCap * resolved);
+
+          // Keep the existing roof treatment; this milestone changes facades.
+          vec2 roofCell = abs(fract(mapsWorld.xz / 1.4) - 0.5);
+          vec2 roofAa = max(fwidth(mapsWorld.xz / 1.4), vec2(0.001));
+          float roofSeam = max(smoothstep(0.49 - roofAa.x, 0.49 + roofAa.x, roofCell.x), smoothstep(0.49 - roofAa.y, 0.49 + roofAa.y, roofCell.y));
+          vec3 roof = mapsRoof * (0.86 + mapsFloor.z * 0.23) * (1.0 - roofSeam * 0.08);
+          diffuseColor.rgb = mix(roof, facade, mapsWall);
+          roughnessFactor = mix(0.77, mix(0.82, 0.24, mix(coverage, pane, resolved)), mapsWall);
+          metalnessFactor = mix(0.12, mix(0.02, 0.16, mix(coverage, pane, resolved)), mapsWall);
+          mapsWindowMask = paneCoverage;
+
+          // Small reveal bevels change the light response, not source geometry.
+          // Their derivative fade prevents narrow specular edges at block scale.
+          vec2 bevel = sign(f - 0.5) * (1.0 - smoothstep(frame * 0.5, frame * 1.5 + aa, abs(abs(f - 0.5) - (0.5 - inset - frame * 0.5))));
+          vec3 alongWall = abs(mapsNormal.x) > abs(mapsNormal.z) ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+          vec3 reliefNormal = normalize(mapsNormal + (alongWall * bevel.x + vec3(0.0, bevel.y, 0.0)) * 0.22 * relief * mapsWall);
+          if (mapsWall > 0.0) normal = normalize(mat3(viewMatrix) * reliefNormal);
+        } else if (mapsGrid > 0.5) {
           float horizontal = abs(mapsNormal.x) > abs(mapsNormal.z) ? mapsWorld.z : mapsWorld.x;
           float curtain = step(0.88, mapsFloor.z);
           vec2 cell = vec2(horizontal / mix(2.4, 3.25, mapsFloor.z), (mapsWorld.y - mapsFloor.x) / max(mapsFloor.y, 0.1));
@@ -227,11 +307,12 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         diffuseColor.a = 1.0;
         // Even rows are occupied offices; deterministic and stable at every distance.
         float mapsLitFloor = step(4.5, mod(floor((mapsWorld.y - mapsFloor.x) / max(mapsFloor.y, 0.1)) * 3.0 + floor(mapsWorld.x / 5.8) + floor(mapsFloor.z * 17.0), 6.0));
+        if (mapsProcedural > 0.5) mapsLitFloor = mix(1.0 / 6.0, mapsLitFloor, mapsCartographicDetail);
         totalEmissiveRadiance += vec3(0.065, 0.055, 0.035) * mapsWindowMask * mapsLitFloor * mapsSignageIntensity * mapsGrid;
         `,
       );
   };
-  material.customProgramCacheKey = () => `maps-facade-v4-source-panels-${hasMask ? "photo" : "plain"}`;
+  material.customProgramCacheKey = () => `maps-facade-v6-periodic-coverage-${hasMask ? "photo" : "plain"}`;
 
   material.needsUpdate = true;
   return true;
