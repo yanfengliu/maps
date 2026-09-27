@@ -44,6 +44,7 @@ import {
 import { RouteLibrary, populationActorRng, sampleRoute, vehicleScale, vehicleSpeedFactor, type PlannedRoute } from "./routes.ts";
 import { createSlotTable, placeSlot, retireSlot, spawnSlot, stageSlot, stageVehicleSlots, type SlotTable } from "./slots.ts";
 import { RefusalCounts, emptyPopulationStatus, type PopulationKind, type PopulationStatus } from "./status.ts";
+import { PedestrianEntrySpace, pedestrianEntryBody, PEDESTRIAN_ENTRY_SCAN_BUDGET, type PedestrianEntryCandidate } from "./pedestrian-entry.ts";
 
 /* ------------------------------------------------------------ phase enforcement */
 
@@ -352,6 +353,10 @@ export function createPopulation(options: PopulationOptions): Population {
   const HALT_CAPTURE_M = 1.5;
   const HALT_CAPTURE_SPEED_MPS = 1.5;
   const pending = new Set<number>();
+  // Prepared pedestrians own no live route, pose, generation or authority.
+  const pendingPedestrians = new Map<number, PedestrianEntryCandidate>();
+  const pedestrianEntrySpace = new PedestrianEntrySpace();
+  let pedestrianEntryCursor = 0;
   const planQueue: { kind: PopulationKind; slot: number }[] = [];
   const intents: Intent[] = Array.from({ length: settings.vehicles }, () => ({ acceleration: 0, stopDistanceM: Number.POSITIVE_INFINITY, committed: false }));
   let frame: VehicleFrame | null = null;
@@ -624,26 +629,47 @@ export function createPopulation(options: PopulationOptions): Population {
         return false;
       }
     }
+    let candidate = pendingPedestrians.get(slot);
+    if (!candidate) {
+      const generation = table.poses.pedestrians.current.generation[slot]! + 1;
+      const rng = populationActorRng(settings.seed, kind, slot, generation);
+      const entry = pedestrianPortals[Math.min(pedestrianPortals.length - 1, Math.floor(rng() * pedestrianPortals.length))]!;
+      const scale = PEDESTRIAN_DYNAMICS.minimumScale + rng() * (PEDESTRIAN_DYNAMICS.maximumScale - PEDESTRIAN_DYNAMICS.minimumScale);
+      const variant = Math.floor(rng() * table.pedestrianVariants);
+      const route = planPedestrianCentreRoute(kind, slot, generation, entry, PEDESTRIAN_DYNAMICS.radiusM * scale);
+      if (!route) {
+        refusals.add(`pedestrian spawn at ${entry} planned neither a route to the central crossing nor a route to a true AOI exit inside its walking component`);
+        retry();
+        return false;
+      }
+      candidate = Object.freeze({ route, variant, scale, generation, travelledM: 0 });
+      pendingPedestrians.set(slot, candidate);
+    }
+    return activatePedestrian(slot, candidate);
+  }
+
+  /** First entry and generation reuse share this gate; an interior plan must too. */
+  function activatePedestrian(slot: number, candidate: PedestrianEntryCandidate): boolean {
     const state = table.pedestrians[slot]!;
-    const generation = table.poses.pedestrians.current.generation[slot]! + 1;
-    const rng = populationActorRng(settings.seed, kind, slot, generation);
-    const entry = pedestrianPortals[Math.min(pedestrianPortals.length - 1, Math.floor(rng() * pedestrianPortals.length))]!;
-    const scale = PEDESTRIAN_DYNAMICS.minimumScale + rng() * (PEDESTRIAN_DYNAMICS.maximumScale - PEDESTRIAN_DYNAMICS.minimumScale);
-    const variant = Math.floor(rng() * table.pedestrianVariants);
+    const { route, variant, scale, generation } = candidate;
+    if (generation !== table.poses.pedestrians.current.generation[slot]! + 1) {
+      throw new Error(`Pedestrian entry slot ${slot} prepared generation ${generation} does not follow its current generation; retire the prior body before preparing a replacement.`);
+    }
+    const occurrence = occurrenceAtDistance(route, candidate.travelledM);
+    const point = sampleRoute(route, occurrence, candidate.travelledM - route.starts[occurrence]!);
+    // Test the float32 origin and scale the renderer will actually receive.
+    const body = pedestrianEntryBody({ x: Math.fround(point.x), y: Math.fround(point.y), z: Math.fround(point.z) }, variant, Math.fround(scale));
+    if (!pedestrianEntrySpace.hasClearance(body)) {
+      state.retryTick = counters.ticks + RETRY_TICKS;
+      return false;
+    }
     state.variant = variant;
     state.scale = scale;
     state.cadenceMps = PEDESTRIAN_DYNAMICS.cadenceMps * scale;
     table.poses.pedestrians.variant[slot] = variant;
     table.poses.pedestrians.scale[slot] = scale;
-    const route = planPedestrianCentreRoute(kind, slot, generation, entry, PEDESTRIAN_DYNAMICS.radiusM * scale);
-    if (!route) {
-      refusals.add(`pedestrian spawn at ${entry} planned neither a route to the central crossing nor a route to a true AOI exit inside its walking component`);
-      retry();
-      return false;
-    }
     table.pedestrianRoutes[slot] = route;
-    state.generation = generation;
-    state.travelledM = 0;
+    state.travelledM = candidate.travelledM;
     state.observedM = -1e9;
     state.speedMps = 0;
     state.stoppedSeconds = 0;
@@ -653,7 +679,11 @@ export function createPopulation(options: PopulationOptions): Population {
     pedestrianFootprints[slot] = undefined;
     placePedestrian(table, slot);
     spawnSlot(table.poses.pedestrians, slot);
+    stageSlot(table.poses.pedestrians, slot);
     state.generation = table.poses.pedestrians.current.generation[slot]!;
+    state.retryTick = 0;
+    pendingPedestrians.delete(slot);
+    pedestrianEntrySpace.occupy(body);
     counters.spawned.pedestrian += 1;
     return true;
   }
@@ -727,12 +757,6 @@ export function createPopulation(options: PopulationOptions): Population {
       counters.completed.vehicle += 1;
       planQueue.push({ kind: "vehicle", slot });
     }
-    for (const state of table.pedestrians) {
-      const slot = state.slot;
-      if (table.poses.pedestrians.active[slot]) continue;
-      if (table.pedestrianRoutes[slot] === null) planQueue.push({ kind: "pedestrian", slot });
-      void state;
-    }
     // Two: reuse the freed slots. Nothing here writes a position.
     // A slot is planned once per tick whichever way it reached this queue, so a
     // retirement and the population-start sweep below cannot spawn one body twice.
@@ -758,15 +782,28 @@ export function createPopulation(options: PopulationOptions): Population {
       claimed.add((1 << 20) + slot);
       planSlot("vehicle", slot);
     }
-    for (const state of table.pedestrians) {
-      const slot = state.slot;
-      if (claimed.has(slot)) continue;
-      if (table.pedestrianRoutes[slot] !== null) continue;
-      if (table.poses.pedestrians.active[slot]) continue;
+    // Pedestrian candidates have one bounded, fair scheduling path. Queueing
+    // them above would bypass retryTick and privilege low slot indices.
+    pedestrianEntrySpace.clear();
+    const poses = table.poses.pedestrians;
+    for (let slot = 0; slot < poses.count; slot++) {
+      if (!poses.active[slot]) continue;
+      const at = slot * 3;
+      pedestrianEntrySpace.occupy(pedestrianEntryBody({ x: poses.current.position[at]!, y: poses.current.position[at + 1]!, z: poses.current.position[at + 2]! }, poses.variant[slot]!, poses.scale[slot]!));
+    }
+    for (const state of table.vehicles) {
+      if (table.poses.vehicles.active[state.slot]) pedestrianEntrySpace.occupyVehicle(vehicleFootprint(fleet, table, state.slot));
+    }
+    for (let inspected = 0; inspected < Math.min(PEDESTRIAN_ENTRY_SCAN_BUDGET, settings.pedestrians); inspected++) {
+      const slot = pedestrianEntryCursor;
+      pedestrianEntryCursor = (pedestrianEntryCursor + 1) % settings.pedestrians;
+      const state = table.pedestrians[slot]!;
+      if (poses.active[slot]) continue;
       if (state.retryTick > counters.ticks) continue;
       const offset = slot % settings.spawnIntervalTicks;
-      if ((counters.ticks - 1) % settings.spawnIntervalTicks !== offset) continue;
-      claimed.add(slot);
+      // Eligibility persists after the initial stagger. Requiring an exact
+      // modulo phase could alias with the bounded cursor and starve a slot.
+      if (counters.ticks < 1 + offset) continue;
       planSlot("pedestrian", slot);
     }
   }
@@ -1548,7 +1585,7 @@ export function createPopulation(options: PopulationOptions): Population {
     // plan, which is what a leaked slot is. Replanning it in the same tick would
     // heal the leak before any conservation reading could see it, and the gate
     // would pass while proving nothing.
-    if (!populationInvariants.leakRetiredBody) planQueue.push({ kind: "pedestrian", slot });
+    // The bounded pedestrian cursor finds this free slot after retirement.
   }
 
   /* --------------------------------------------------------------- observe */
@@ -2130,7 +2167,7 @@ export function createPopulation(options: PopulationOptions): Population {
     let pendingCount = 0;
     for (const state of states) {
       if (!poses.active[state.slot]) {
-        if (kind === "vehicle" && pending.has(state.slot)) pendingCount += 1;
+        if (kind === "vehicle" ? pending.has(state.slot) : pendingPedestrians.has(state.slot)) pendingCount += 1;
         continue;
       }
       active += 1;
@@ -2139,6 +2176,8 @@ export function createPopulation(options: PopulationOptions): Population {
       else if (live.queued || live.speedMps <= VEHICLE_DYNAMICS.idm.stoppedSpeedMps) queued += 1;
     }
     return {
+      requested: poses.count,
+      waiting: poses.count - active,
       active,
       queued,
       committed,
@@ -2172,7 +2211,7 @@ export function createPopulation(options: PopulationOptions): Population {
         spawned,
         retired,
         active,
-        reused: Math.max(0, spawned - enrolled()),
+        reused: reuses(),
         generations: generationsUsed(),
       };
       status.requestsLastTick = counters.requestsLastTick;
@@ -2209,6 +2248,8 @@ export function createPopulation(options: PopulationOptions): Population {
     dispose(): void {
       planQueue.length = 0;
       pending.clear();
+      pendingPedestrians.clear();
+      pedestrianEntrySpace.clear();
     },
     traceVehicle(slot: number): VehicleTickTrace[] {
       if (!Number.isInteger(slot) || slot < 0 || slot >= settings.vehicles) {
@@ -2237,14 +2278,15 @@ export function createPopulation(options: PopulationOptions): Population {
       const describe = (kind: PopulationKind, slot: number): ActorDiagnostic => {
         const state = kind === "vehicle" ? table.vehicles[slot]! : table.pedestrians[slot]!;
         const poses = kind === "vehicle" ? table.poses.vehicles : table.poses.pedestrians;
-        const route = kind === "vehicle" ? table.vehicleRoutes[slot] : table.pedestrianRoutes[slot];
+        const candidate = kind === "pedestrian" ? pendingPedestrians.get(slot) : undefined;
+        const route = kind === "vehicle" ? table.vehicleRoutes[slot] : table.pedestrianRoutes[slot] ?? candidate?.route;
         const index = route ? occurrenceAtDistance(route, state.travelledM) : 0;
         const at = slot * 3;
         return Object.freeze({
           slot,
           generation: poses.current.generation[slot]!,
           active: poses.active[slot] === 1,
-          pending: kind === "vehicle" && pending.has(slot),
+          pending: kind === "vehicle" ? pending.has(slot) : pendingPedestrians.has(slot),
           position: Object.freeze([poses.current.position[at]!, poses.current.position[at + 1]!, poses.current.position[at + 2]!] as const),
           speedMps: poses.speedMps[slot]!,
           travelledM: state.travelledM,
@@ -2254,8 +2296,8 @@ export function createPopulation(options: PopulationOptions): Population {
           routeLengthM: route ? route.totalLengthM : 0,
           routeIndex: index,
           junctionId: route ? (route.edges[index]!.junctionId ?? null) : null,
-          variant: poses.variant[slot]!,
-          scale: poses.scale[slot]!,
+          variant: candidate?.variant ?? poses.variant[slot]!,
+          scale: candidate?.scale ?? poses.scale[slot]!,
           footprint: kind === "vehicle" && poses.active[slot] ? vehicleFootprint(fleet, table, slot) : null,
           committed: state.committed,
           egressing: kind === "vehicle" ? table.vehicles[slot]!.egressing : false,
@@ -2271,12 +2313,17 @@ export function createPopulation(options: PopulationOptions): Population {
     },
   };
 
-  /** Slots that currently hold a plan, either active or waiting for a grant. */
-  function enrolled(): number {
-    let planned = 0;
-    for (const route of table.vehicleRoutes) if (route) planned += 1;
-    for (const route of table.pedestrianRoutes) if (route) planned += 1;
-    return planned;
+  /** Read-only: pedestrian generations advance only on successful activation. */
+  function reuses(): number {
+    // Preserve the vehicle contract: a prepared bound vehicle already participates
+    // in spawned/conservation accounting, unlike a waiting pedestrian candidate.
+    let registeredVehicles = 0;
+    for (const route of table.vehicleRoutes) if (route) registeredVehicles += 1;
+    let reused = Math.max(0, counters.spawned.vehicle - registeredVehicles);
+    // Include retired slots. Retirement or preparation of a next candidate must
+    // neither add a reuse nor erase an earlier successful later activation.
+    for (const generation of table.poses.pedestrians.current.generation) reused += Math.max(0, generation - 1);
+    return reused;
   }
 
   function generationsUsed(): number {

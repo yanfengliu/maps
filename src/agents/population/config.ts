@@ -82,13 +82,6 @@ export const PEDESTRIAN_DYNAMICS = Object.freeze({
    * advance at the fastest cadence is under two centimetres.
    */
   spacingQueryRadiusM: 1.5,
-  /**
-   * How far apart two walkers must be for a second one to materialize at a portal.
-   * The bound is the two collision envelopes: a body may not appear inside another
-   * body. Measured on the revision before this, 3,000 pedestrians spawned at 33
-   * portals piled an average of 65 neighbours inside 2 m of every walker.
-   */
-  spawnClearanceM: 0.5,
   /** Spatial hash cell edge, metres. */
   cellSizeM: 4,
   /** How far short of a governed gate an unadmitted actor halts, metres. */

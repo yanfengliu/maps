@@ -1,0 +1,58 @@
+# Review 147 — integrated entry source and native Satellite city regression
+
+Bound: six integrated pedestrian-entry files accepted in Review146, the final gate evidence, and each of the 22 Satellite PNGs in hardware run 1db7c07cfccd9906, inspected individually at native 1280×720. This is independent read-only source continuity and city-regression acceptance. The default appearance frames are population-free and cannot establish entry, populated flow, body contact or crowd quality.
+
+Reviewer: crowd_entry_independent, 2026-09-27. The existing fleet review runbook and Review107 CLI abstentions apply. Neither CLI was retried and no dual-CLI review is claimed. No browser, server, GPU job, replay or new test run was launched. Writes are confined to this ignored review artifact directory.
+
+## Verdict
+
+**Accept the exact integrated entry component and the Satellite city-regression slice within this bound. No new P1/P2 finding was found.** This source review preserves Review146's entry acceptance and closes this reviewer's final Satellite appearance assignment. Root still owns the separate Cartographic and actual populated-entry native reviews before final milestone acceptance. Whole-crowd motion remains held by the stored later-overlap evidence; this report does not close plan A4, A6, A8 as a whole, Q1/Q5 or final Shibuya acceptance.
+
+## Source and gate continuity
+
+All six integrated source/test files exactly match both Review146 and root's integration receipt, with no integration edits. Fresh independent hashes also match the gate's complete source roster (256 files), build roster (4 files), expanded capture/harness roster (33 files), and served scene/network roster (117 files, 301,782,754 bytes). The source, harness and served-data records agree before and after the gates. The build changes during the expected build step; its final bytes match the visual certificate and verified receipt. All 47 files in the verified output receipt (44 PNGs and three lifecycle records) match their recorded hashes. Only the 22 Satellite PNGs receive appearance judgment here. The certificate's narrower harness roster remains 24 files with digest 45aeaf15464fbc2a34e0252f3c06b6e8bd44969103aeb65bdd7d21dab53d0593; the expanded 33-file handoff roster is separately bound in integrity.json.
+
+Certificate SHA-256: af740d63f58548a733396e52044c68167cc11a635c1693f2c2c7084ba1bb4865. Verified receipt SHA-256: 973ef1489e566fb7d8e811f1dd3ae85a9d38287a4f5a73614dde2cbb302a16bd. Review146 freeze SHA-256: d8bbccc12afcf55e502a78537fc23143a1de3d501dfe304834f4ea1530c5ad96. Current source, build, served inputs, gate logs and all six per-file pins are recorded in integrity.json.
+
+The actual five-gate record is green: build, typecheck, 772 unit tests in 89 files, high-severity audit and hardware visual gate. Logs were read, not inferred from the summary alone. The visual certificate names the NVIDIA RTX 4090 hardware renderer/driver and contains three lifecycle records; the run's owned-process receipt reports no retained survivors or listeners. Build retains a chunk-size warning. Audit passes its high threshold but still reports two moderate Vitest-related vulnerabilities; it is not a zero-vulnerability result. The existing bounded overlap test and green suite do not outweigh the separate 3,000-demand later-motion counterexample.
+
+Review146 already independently reproduced 31 focused tests, the three specific repair failure controls, three lifecycle tests, an actual leaked-retired-body failure witness and typecheck. Those results transfer only because these exact six files match. Their tests were not redundantly rerun for this native review. The leak witness remains an explicit error rather than automatic retirement repair. Pedestrian successful spawn accounting excludes waiting unspawned candidates; the older lifecycle fixture's pending term is only safe at its observed zero-pending endpoint, as Review146 records.
+
+## Native observations
+
+Every frame below was opened individually with original detail. Crossing paint, tactile lines, pavement, building masses, lighting and the style control remain coherent across the assigned views. I saw no gross newly missing city section, exploded mesh, corrupted texture or entry-change regression. The exact-source scope makes an entry-induced city-rendering change unlikely, but this is not a pixel-identical before/after experiment.
+
+Visible limits remain: soft and sometimes stretched facade photography, blank or flat walls/roofs/ground patches, simplified vegetation, dark dusk surfaces, bright local glow, hard area-of-interest cuts, and incomplete corridor presentation. In satellite block az060, the large dark surface is a nearby vertical building facade obscuring the view. These observations do not certify photorealism or supreme whole-city quality. Still images do not establish temporal stability, continuous motion or complete interactive control behavior.
+
+| Native frame | SHA-256 | Inspection note |
+| --- | --- | --- |
+| hero/hero-satellite-dusk-crossing.png | a5f0dae7749ce8bb5de9a801cb1fd74b66c876ca744a9da433e9a80eede64504 | Crossing paint, tactile lines, pavement and recognizable frontage remain coherent. Soft facade photography and brighter sign glow remain visible; the crossing is empty. |
+| hero/hero-satellite-dusk-approach.png | aa4a6a93687c94cad3f7e629155998db22f94cd1a1adbcdcbf5d88ae46279554 | Skyline, crossing and building mass remain intact. Dark soft roofs and flat ground patches limit detail. |
+| hero/hero-satellite-noon-crossing.png | 8198e247a603a7eadd7b50452f56bc5efef83c338f3b9dcbddd5794291171b32 | Bright crossing paint, tactile lines, tree and frontage render coherently. Large facade photographs remain soft; the crossing is empty. |
+| hero/hero-satellite-noon-approach.png | 4874fb82c99bdf17b9aa9824858080d4fefc3a39143ddc934c85c08abb4668f7 | Roofs, streets and crossing remain intact. Blank walls and flat greenish land patches remain visible. |
+| sweep/satellite/plaza-az000.png | 32e1cb741556ab5107729a3a29d5145fe0d11c56452b37aad408ae0c4f08d1a9 | Asphalt grain, full crossing paint and continuous right pavement are visible. Soft billboards and local sign glow remain. |
+| sweep/satellite/plaza-az060.png | 3e2ef1f9ea60740613d65fba1512f75781229bfb2b4095f933dce5158bcdfabc | Tree partly occludes frontage; grid pavement, tactile lines and crossing paint remain coherent. Strong glare is present at the left. |
+| sweep/satellite/plaza-az120.png | f36c730a146e9acccccc205637c9aff0dfbe547f191fd48f8f687619da7b3370 | Broad matte greenish foreground surface ends at a visible pavement boundary. Crossing and right-road glare remain; frontage photography is soft. |
+| sweep/satellite/plaza-az180.png | 5c7d5ce2f790d0291f7676e76a9c5fa7bf8f67ea462d4ff56c779ee9d8e4b0ff | Broad greenish foreground inset, curb, crossing and station frontage are visible. Streets remain dark. |
+| sweep/satellite/plaza-az240.png | 1774e951223f0319a284c618c48362de2d8c01356c2f312d74790e342bf1b144 | Near building crops the right view. Signal pole, tactile lines and pavement remain coherent; left frontage glow remains. |
+| sweep/satellite/plaza-az300.png | 177b3c6ed33802cada7b8ef8c6ae5364dc490f547a9b7ee285f44809dcbc4adb | Crossing paint, foreground pole and aligned trees remain coherent. Soft street-wall photography and a glare spot remain. |
+| sweep/satellite/block-az000.png | 7e7bb0f22261bc8dabe10dc5ff00773a7923fcaae1468b0641371bad37ec1304 | Foreground roofscape and farther crossing remain intact. Roof photography is soft with blank surfaces. |
+| sweep/satellite/block-az060.png | 80ae1cdbd61265a37bd87d6d63945684f7156f0fbeed6bfab443ff4a50cea3c8 | A nearby dark vertical building facade obscures much of the centre/right view. It is building occlusion, not a road surface; surrounding roof mass remains intact. |
+| sweep/satellite/block-az120.png | aa8cab0765f7d040d19e085030a7480eb221d4234292c3c7f9691ff202bc0956 | Blank white walls and foreground roofs contrast with a dense coherent skyline. No gross missing tile mass is visible. |
+| sweep/satellite/block-az180.png | 97f0a274475ff1be32ef7550c5085e5635a4f7072150449c9387dd0b999662bf | Foreground roof equipment, a dark box wall and central street gap remain coherent. Photographs are soft. |
+| sweep/satellite/block-az240.png | d26a4cd256af50fcd04af6f7ef09da1c8966070d8877d53e8f26a196e364106b | Dense buildings and a narrow central street remain coherent. Blank left wall and simplified roof details remain. |
+| sweep/satellite/block-az300.png | 614785d83c40f10f232dccd543968490cbd74e20c1273445b0caf9cf3b4ba237 | Tall right structure crops the view; large soft facade imagery and central street canyon remain coherent. |
+| sweep/satellite/overhead-az000.png | 97ead8e79c75d49384da682702ce106977e6c55623175a016162adf07bea9eaa | Dense bounded city, central crossing and street/rail corridors remain readable. Hard area-of-interest edges and dim dusk detail remain. |
+| sweep/satellite/overhead-az060.png | 4b9f1fb87dd9960d2393544a1a7def304082b1b5febd5b489c42fe9afc4c7d9d | Rotated bounded city remains intact against the amber upper-left background. Broad flat corridor/ground presentation remains visible. |
+| sweep/satellite/overhead-az120.png | 045a988c766690b82ce5c21bce3740f90fc1375ecc18e90095c14278da59e450 | Dense dark city mass remains coherent with a sunset glow above. Broad corridor bands and blank land patches remain. |
+| sweep/satellite/overhead-az180.png | 9effb40387c1da6366d89b99450d9b3f2ad9db3c5779bb0b7d838895bec2d294 | Long flat foreground corridor and street grid remain coherent. The area-of-interest perimeter is visibly cut. |
+| sweep/satellite/overhead-az240.png | bfe789099d084ac441787fda7a14c61c892f5db16b7149e50aeec4c9e37632a9 | Dense tilted city and distant towers remain present. No newly missing quadrant is apparent; dusk detail is dark. |
+| sweep/satellite/overhead-az300.png | bf3c73e9ab2b703021f07d8c0057f87927e3570de903e544bb83c813109ed887 | Dense area, right-hand street/rail corridor and diagonal foreground pattern remain coherent. The area-of-interest crop remains visible. |
+
+## Remaining entry and motion boundaries
+
+The unchanged accepted component uses decoded drawn-body bounds, conservative clearance, stable waiting identities, live pedestrian/vehicle occupancy, immediate same-tick insertion, fair bounded retry and truthful demand = active + waiting. Requested/default demand remains 3,000 pedestrians and 200 vehicles. A temporarily smaller active population is intentional waiting, not hidden demand reduction. Review146's pedestrian reuse sum of generation minus one and unchanged vehicle contribution remain the exact integrated code.
+
+The empty default sweep contains no visible people or vehicles and provides no populated-entry clearance evidence. The separate native entry capture must carry that claim within its own finite observations. Review141's stored 5,050 deep nominal moving pairs at tick 5717 remain unresolved. Entry clearance does not establish later separation. The smallest next investigation remains the already agreed bounded rolling trace for slots 1/293 around their first loss of separation, retaining actual computed motion locals, neighbors, entry ages, poses, leases and passage decisions. Existing snapshots did not retain lease/passage state or continuous prehistory; no such facts are inferred here. No solver, route, support, authority, startup-capacity or demand change is approved by this review.
+
+All evidence is intentionally retained for the active handoff. The reviewer created no browser/GUI/server resources; only completed read-only hashing scripts ran. No shared cache or data was written, and no process owned by another worker was touched.

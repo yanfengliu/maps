@@ -11,6 +11,10 @@
 export type PopulationKind = "vehicle" | "pedestrian";
 
 export interface KindStatus {
+  /** Requested slots, including demand still waiting to enter. */
+  requested: number;
+  /** Requested slots without an active body; requested = active + waiting. */
+  waiting: number;
   /** Slots with an active byte, which is what the renderer draws. */
   active: number;
   /** Active actors held at a gate without an admission commitment. */
@@ -25,7 +29,7 @@ export interface KindStatus {
   longestWaitSeconds: number;
   /** Mean measured wait over every finished wait, seconds. */
   meanWaitSeconds: number;
-  /** Slots bound but not yet active: prepared at a portal, waiting for a grant. */
+  /** Prepared but inactive slots: waiting for entry space or a vehicle grant. */
   pending: number;
 }
 
@@ -74,7 +78,7 @@ export interface PopulationStatus {
 }
 
 export function emptyPopulationStatus(): PopulationStatus {
-  const kind = (): KindStatus => ({ active: 0, queued: 0, committed: 0, completed: 0, crossed: 0, longestWaitSeconds: 0, meanWaitSeconds: 0, pending: 0 });
+  const kind = (): KindStatus => ({ requested: 0, waiting: 0, active: 0, queued: 0, committed: 0, completed: 0, crossed: 0, longestWaitSeconds: 0, meanWaitSeconds: 0, pending: 0 });
   return {
     attached: false,
     simulatedSeconds: 0,
