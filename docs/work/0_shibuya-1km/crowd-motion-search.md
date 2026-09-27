@@ -1,6 +1,6 @@
 # Pedestrian movement contract search
 
-Owner: root orchestrator. Status: benchmark preparation; no runtime repair admitted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
+Owner: root orchestrator. Status: instrument157 is blocked by independent160; successor162 repairs the four proved gaps before scoring. No runtime repair is admitted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
 
 The fixed evidence is the sealed first-loss and material-jump traces plus the two-actor prototype in the crowd-admission worktree. Review154's existing command is `node artifacts/crowd-offset-continuity-20260927/trimmed.mjs`; it must never be rerun into its sealed outputs. Benchmark owner157 must preserve those bytes and publish one bounded command, immutable inputs, output schema and checker before competing approaches are dispatched or scored.
 
@@ -15,3 +15,5 @@ Disqualify a relocated starting pose, uncharged smoothing, radius/count reductio
 The untrimmed plateau connector is blocked by its13.787598mm pair overlap. The half-metre trim is blocked as a complete movement rule: raw lower-bound constraints can already be infeasible, post-solve shortening worsens them, and changed intent escapes empty prior-velocity constraints. Its continuous geometry and real-grant traversal remain useful proved parts; neither route reopens through trim tuning alone.
 
 After the benchmark is fixed, use fresh independent owners for genuinely different mechanism families within available slots. Compare measured results and exact remaining gaps before combining proposals. Require the hard-problem playbook's named failure-mode audit and independent review of any selected implementation. Root owns the eventual integrated checks and native crowd review; product files stay unchanged during this search.
+
+Independent160 qualifies the current scope as cadence-capped point motion only. It does not impose or verify acceleration, braking, jerk or heading-rate limits. Keep those runtime and visual obligations explicit; a component pass cannot be promoted into full locomotion acceptance. No new kinematic threshold is inferred from the passing controls.
