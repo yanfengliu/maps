@@ -74,9 +74,30 @@ const UNIFORM_DECLARATIONS: Readonly<Record<keyof SurfaceShaderUniforms, string>
 /** The marker each kind's injected body must leave behind, for the post-checks. */
 function markerFor(kind: SurfaceMaterialKind): string {
   return kind === "sidewalk"
-    ? "diffuseColor.rgb *= mix(0.75, 1.0, grout);"
+    ? "diffuseColor.rgb *= pavingTone;"
     : "diffuseColor.rgb *= 1.0 + (detail - 0.5) * mapsDetailStrength;";
 }
+
+/** Box-footprint coverage of the staggered pavers. This integrates both row
+ * phases; the box approximates a skewed projected pixel, not its parallelogram.
+ * Kept scalar so the bounded arithmetic tests can evaluate the emitted code.
+ */
+const PAVING_COVERAGE_GLSL = /* glsl */ `
+float mapsPavingIntegral(float x, float low, float high) {
+  return floor(x) * (high - low) + clamp(fract(x) - low, 0.0, high - low);
+}
+float mapsPavingInterval(float center, float width, float low, float high) {
+  float local = fract(center);
+  return clamp((mapsPavingIntegral(local + width * 0.5, low, high)
+    - mapsPavingIntegral(local - width * 0.5, low, high)) / width, 0.0, 1.0);
+}
+float mapsPavingCoverage(float x, float y, float widthX, float widthY) {
+  float evenRows = mapsPavingInterval(y * 0.5, widthY * 0.5, 0.006, 0.494);
+  float oddRows = mapsPavingInterval(y * 0.5, widthY * 0.5, 0.506, 0.994);
+  return mapsPavingInterval(x, widthX, 0.012, 0.988) * evenRows
+    + mapsPavingInterval(x + 0.5, widthX, 0.012, 0.988) * oddRows;
+}
+`;
 
 /**
  * Replace `anchor` exactly once, or throw naming the anchor.
@@ -132,7 +153,7 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
   shader.uniforms.mapsDetailMetres = uniforms.detailMetres;
   shader.uniforms.mapsDetailStrength = uniforms.detailStrength;
 
-  const declarations = Object.values(UNIFORM_DECLARATIONS).join("\n");
+  const declarations = Object.values(UNIFORM_DECLARATIONS).join("\n") + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL : "");
 
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
@@ -163,12 +184,14 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
           kind === "sidewalk"
             ? `
         vec2 cell = metres / vec2(0.6, 0.4);
-        cell.x += mod(floor(cell.y), 2.0) * 0.5;
-        vec2 seam = min(fract(cell), 1.0 - fract(cell));
+        // Differentiate the continuous coordinates before applying row phase.
         vec2 aa = max(fwidth(cell), vec2(0.001));
-        vec2 gap = smoothstep(vec2(0.012) - aa, vec2(0.012) + aa, seam);
-        float grout = gap.x * gap.y;
-        diffuseColor.rgb *= mix(0.75, 1.0, grout);
+        float grout = mapsPavingCoverage(cell.x, cell.y, aa.x, aa.y);
+        // Preserve the old resolved-cell mean while reducing joint contrast.
+        float meanGrout = 1.0 - 0.976 * 0.976;
+        float pavingTone = (1.0 - mapsDetailStrength * (1.0 - grout))
+          * (1.0 - 0.25 * meanGrout) / (1.0 - mapsDetailStrength * meanGrout);
+        diffuseColor.rgb *= pavingTone;
         roughnessFactor = 0.82;
         `
             : `
@@ -251,11 +274,12 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     patchSurfaceShader(kind, uniforms, shader as unknown as PatchableShader);
   };
-  material.customProgramCacheKey = () => `maps-surface-${kind}-v3`;
+  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "sidewalk" ? "v4-coverage" : "v3"}`;
   const apply = (next: WorldStyle): void => {
     material.color.setHex(next.palette[kind === "ground" ? "ground" : kind]);
     material.envMapIntensity = kind === "road" ? 0.7 : 0.45;
     wetness.value = next.wetness;
+    if (kind === "sidewalk") uniforms.detailStrength.value = next.facade === "photographic" ? 0.12 : 0.08;
   };
   apply(style);
   return {

@@ -94,7 +94,7 @@ describe("the patch reaches the surface's own colour, for every kind", () => {
       const mainAt = shader.fragmentShader.indexOf(ANCHORS.fragmentMain);
       const roughnessAt = shader.fragmentShader.indexOf(ANCHORS.fragmentRoughness);
       const marker = kind === "sidewalk"
-        ? "diffuseColor.rgb *= mix(0.75, 1.0, grout);"
+        ? "diffuseColor.rgb *= pavingTone;"
         : "diffuseColor.rgb *= 1.0 + (detail - 0.5) * mapsDetailStrength;";
       const markerAt = shader.fragmentShader.indexOf(marker);
       expect(markerAt, `${kind}: marker ${JSON.stringify(marker)} missing`).toBeGreaterThan(-1);
@@ -190,8 +190,83 @@ describe("the material wires the patch to the shader three compiles", () => {
       const bound = shader.uniforms as Record<string, { value: unknown }>;
       const hasTexture = bound.mapsDetailMap!.value !== null && bound.mapsDetailMap!.value !== undefined;
       expect(hasTexture, `${kind}`).toBe(expected);
-      expect((bound.mapsDetailStrength as { value: number }).value > 0, `${kind}`).toBe(expected);
+      if (expected) expect((bound.mapsDetailStrength as { value: number }).value, `${kind}`).toBeGreaterThan(0);
       treatment.dispose();
     }
+  });
+});
+
+/** Evaluate only the scalar paving arithmetic emitted by the real patch. GLSL
+ * scalar declarations become JS declarations; its builtins are supplied below.
+ * This is double-precision arithmetic evidence, not GPU linkage/precision or an
+ * exact integral over a skewed pixel. Expectations are independently known areas.
+ */
+function pavingArithmetic(): { coverage(x: number, y: number, widthX: number, widthY: number): number; tone(coverage: number, contrast: number): number } {
+  const shader = shaderSource();
+  patchSurfaceShader("sidewalk", uniforms(), shader);
+  const helpers = shader.fragmentShader.match(/float mapsPavingIntegral[\s\S]*?(?=void main\(\) \{)/)?.[0];
+  const call = shader.fragmentShader.match(/float grout = ([^;]+);/)?.[1];
+  const tone = shader.fragmentShader.match(/float meanGrout = [\s\S]*?(?=diffuseColor\.rgb \*= pavingTone;)/)?.[0];
+  if (!helpers || !call || !tone) throw new Error("The emitted sidewalk shader must contain its scalar coverage call and mean-tone calculation.");
+  const scalarJs = (glsl: string): string => glsl
+    .replace(/float (mapsPaving\w+)\(/g, "function $1(")
+    .replace(/float (\w+)(?=\s*[,\)])/g, "$1")
+    .replace(/float (\w+)\s*=/g, "let $1 =");
+  const evaluate = new Function("cell", "aa", "floor", "fract", "clamp", scalarJs(helpers) + "return " + call + ";") as (...args: unknown[]) => number;
+  const evaluateTone = new Function("grout", "mapsDetailStrength", scalarJs(tone) + "return pavingTone;") as (coverage: number, contrast: number) => number;
+  return {
+    coverage: (x, y, widthX, widthY) => evaluate({ x, y }, { x: widthX, y: widthY }, Math.floor, (value: number) => value - Math.floor(value), (value: number, low: number, high: number) => Math.max(low, Math.min(high, value))),
+    tone: evaluateTone,
+  };
+}
+
+describe("paving coverage over the emitted shader's box footprint", () => {
+  it.each([
+    ["inside an even-row paver", 0.25, 0.5, 0.1, 0.1, 1],
+    ["inside an even-row joint", 0, 0.5, 0.01, 0.1, 0],
+    ["across one 0.024-wide vertical joint", 0, 0.5, 0.1, 0.1, 0.76],
+    ["the same x is filled in the shifted row", 0, 1.5, 0.01, 0.1, 1],
+    ["the shifted row's joint", 0.5, 1.5, 0.01, 0.1, 0],
+    // Only the upper row fills this x; 0.038 of the 0.1 footprint is paved.
+    ["across the alternating-row boundary", 0, 1, 0.01, 0.1, 0.38],
+    ["negative coordinates retain row parity", 0, -0.5, 0.01, 0.1, 1],
+    ["one complete stagger period", 0.17, 0.31, 1, 2, 0.952576],
+    ["many complete cells at an arbitrary phase", -3.17, 2.31, 17, 24, 0.952576],
+  ] as const)("%s", (_name, x, y, widthX, widthY, expected) => {
+    expect(pavingArithmetic().coverage(x, y, widthX, widthY)).toBeCloseTo(expected, 10);
+  });
+
+  it("keeps the old resolved-area mean and a bounded reduced joint contrast", () => {
+    const { tone } = pavingArithmetic();
+    for (const contrast of [0.12, 0.08]) {
+      // A unit cell has 0.976 x 0.976 paved area; old grout was 25% darker.
+      const paved = tone(1, contrast), joint = tone(0, contrast);
+      expect(paved * 0.952576 + joint * 0.047424).toBeCloseTo(0.988144, 12);
+      expect(tone(0.952576, contrast)).toBeCloseTo(0.988144, 12);
+      expect(joint / paved).toBeCloseTo(1 - contrast, 12);
+      expect(joint).toBeGreaterThan(0);
+      expect(paved).toBeLessThan(1);
+    }
+  });
+
+  it("updates the bound pavement contrast through actual style application", () => {
+    const treatment = createSurfaceMaterial("sidewalk", worldStyle("satellite"));
+    try {
+      const shader = shaderSource();
+      treatment.material.onBeforeCompile(shader as never, {} as never);
+      const contrast = shader.uniforms.mapsDetailStrength as { value: number };
+      const key = treatment.material.customProgramCacheKey();
+      expect(contrast.value).toBe(0.12);
+      treatment.apply(worldStyle("cartographic"));
+      expect(contrast.value).toBe(0.08);
+      expect(treatment.material.color.getHex()).toBe(worldStyle("cartographic").palette.sidewalk);
+      expect(treatment.material.customProgramCacheKey()).toBe(key);
+      treatment.apply(worldStyle("satellite"));
+      expect(contrast.value).toBe(0.12);
+      expect(key).not.toBe("maps-surface-sidewalk-v3");
+      expect(shader.fragmentShader).toContain("roughnessFactor = 0.82;");
+      expect(shader.fragmentShader).toContain("max(fwidth(cell), vec2(0.001))");
+      expect(shader.fragmentShader).toContain("metres / vec2(0.6, 0.4)");
+    } finally { treatment.dispose(); }
   });
 });
