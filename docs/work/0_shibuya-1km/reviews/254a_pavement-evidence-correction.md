@@ -1,0 +1,11 @@
+# Review 254 evidence correction — closed
+
+2026-09-28. Review 254 correctly found that `HANDOFF.md` cited an absent `types-final.txt`. No original retained stdout/stderr/exit receipt exists in this artifact directory, so the original claim remains an owner report. The old handoff is preserved as `HANDOFF-before254-correction.md`; the current handoff now says this explicitly. Neither `freeze.json` nor the reviewed source/patch identity was changed or backfilled.
+
+Exactly one subsequent CPU-only command was executed in the reused checkout: `C:/Program Files/nodejs/node.exe node_modules/typescript/bin/tsc --noEmit --incremental false`, on Node v24.12.0. It started at `2026-09-28T04:10:27.664Z` and ended at `2026-09-28T04:10:31.456Z`, with actual exit code 0, no signal and no spawn error. Both stdout and stderr were empty and were explicitly retained as zero-byte files. The command and pre-run identity are in `typecheck254-invocation.json`; the real completion and output hashes are in `typecheck254-receipt.json`. `retain-typecheck254.mjs` is the exact runner and refuses to repeat once its receipt exists.
+
+TEMP/TMP point to this task's owned directory. Incremental caching was explicitly disabled, so the command writes no TypeScript build cache and no compiler output. No test suite, build, browser, GPU, server or port was launched. The synchronous compiler exited. No task-owned Node/browser process remained in the subsequent successful CIM query (`cleanup254.json`).
+
+Before and after the check, both candidate hashes matched review 254: source `f905020c983366b27a763fd3403d5ed50eab06904d15c0994133cbcfeaf886c6`, test `970eaf5b6ffa193f0c8ce5ba8ddab7a0eda83d85bda780df5fbe866c53cb01ea`. All 32 delivered rail files still matched the original preservation ledger. The original freeze SHA-256 remained `5d5ead049a8d58728c5bd95ed03949f90bd693e32cf72661f8d1ff58bea651d0`, and the reviewed patch remained `ebc050ae72569b7a6d19db5bc3941318db6a453d5bf02c5d2566361b8916a0a8`.
+
+This closes only the missing-typecheck-receipt finding. Source review 254's identity and approval bound remain intact. GPU linking, native appearance, draw cost, required integrated gates and final integration remain pending; this check does not change their status. No code, canonical document, Git or remote mutation occurred.
