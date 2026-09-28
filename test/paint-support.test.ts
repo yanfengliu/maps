@@ -90,7 +90,7 @@ it("rejects the actual legacy highest-layer callback at the source crossing", as
   expect(inputs.map(bytes => createHash("sha256").update(bytes).digest("hex"))).toEqual([
     "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
     "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
-    "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62",
+    "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6",
     "c39d49edd405e266373e0b48e0202967a01f546e7d11d2dffd5497c14d692773",
   ]);
   const network = JSON.parse(inputs[0]!.toString()) as NetworkData;
@@ -113,7 +113,7 @@ it("censuses all actual zebra and continuous tactile triangles without upper-lay
   const pins = [
     ["data/network/network.json", "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"],
     ["data/scene/roads.mesh", "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc"],
-    ["data/scene/pavements.mesh", "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62"],
+    ["data/scene/pavements.mesh", "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6"],
   ] as const;
   const inputs = await Promise.all(pins.map(async ([path, pin]) => {
     const bytes = await readFile(path).catch(cause => { throw new Error(`Paint regression requires cached ${path}; run npm run data:fetch, npm run data:scene and npm run data:network using the recorded source before npm test. No input is fetched or skipped by this test.`, { cause }); });
@@ -124,7 +124,7 @@ it("censuses all actual zebra and continuous tactile triangles without upper-lay
   const network = JSON.parse(inputs[0]!.toString()) as NetworkData;
   const support = createPaintSupport(decodeMesh(inputs[1]!), decodeMesh(inputs[2]!));
   const seams = JSON.parse(await readFile("test/fixtures/paint-road-seams.json", "utf8")) as { roadsSha256: string; probes: { x: number; z: number; expectedY: number; edges: { mesh: string; triangle: number; edge: number }[]; gapWidthM: number }[] };
-  expect(seams.roadsSha256).toBe(pins[1][1]); expect(seams.probes).toHaveLength(11);
+  expect(seams.roadsSha256).toBe(pins[1][1]); expect((seams as { pavementsSha256?: string }).pavementsSha256).toBe(pins[2][1]); expect(seams.probes).toHaveLength(11);
   for (const probe of seams.probes) {
     expect(support(probe.x, probe.z, probe.expectedY)).toBeDefined();
     const use = support.seamUses!.find(s => s.x === probe.x && s.z === probe.z)!;

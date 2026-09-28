@@ -11,6 +11,7 @@ import { buildRoads } from "./build-roads.ts";
 import { buildPavementSource } from "./build-pavement-source.ts";
 import { buildHeroPavement, HERO_PAVEMENT_PARENTS } from "./pavement-hero.ts";
 import { clipLowerPavement, LOWER_PAVEMENT_SOURCE, readLowerBridge } from "./pavement-lower.ts";
+import { buildFrontageInfill } from "./pavement-frontage.ts";
 import { composePavement } from "./compose-pavement.ts";
 
 const hash = (bytes: Uint8Array | string): string => createHash("sha256").update(bytes).digest("hex");
@@ -47,19 +48,21 @@ export async function buildPavementPresentation(terrainBytes: Uint8Array, roadBy
   const lowerSources = selection.pieces.filter((p) => p.source.polygonId === LOWER_PAVEMENT_SOURCE);
   if (lowerSources.length !== 1) throw new Error(`Expected one selected lower-passage source ${LOWER_PAVEMENT_SOURCE}, found ${lowerSources.length}; review its source ownership before publishing.`);
   const lower = clipLowerPavement(lowerSources[0]!, readLowerBridge(bridgeBytes.toString("utf8")));
-  const composed = composePavement(decodeMesh(base.bytes), hero.mesh, hero.selected, lower.lower), bytes = encodeMesh(composed.mesh);
-  if (bytes.length > 16_000_000 || composed.mesh.header.triangleCount > 500_000) throw new Error(`Bounded pavement recipe produced ${bytes.length} bytes and ${composed.mesh.header.triangleCount} triangles; investigate the source partition instead of expanding its 16 MB / 500,000 triangle budget.`);
+  const composed = composePavement(decodeMesh(base.bytes), hero.mesh, hero.selected, lower.lower);
+  const frontage = buildFrontageInfill(composed.mesh, terrain), bytes = encodeMesh(frontage.mesh);
+  if (bytes.length > 16_000_000 || frontage.mesh.header.triangleCount > 500_000) throw new Error(`Bounded pavement recipe produced ${bytes.length} bytes and ${frontage.mesh.header.triangleCount} triangles; investigate the source partition instead of expanding its 16 MB / 500,000 triangle budget.`);
   const selectionBytes = JSON.stringify(selection);
   const report = {
-    version: 1, scope: composed.mesh.header.note,
+    version: 1, scope: frontage.mesh.header.note,
     inputs: { terrain: hash(terrainBytes), roads: hash(roadBytes), sourceFiles: selection.sourceFiles, bridge: { file: bridgeFile, sha256: hash(bridgeBytes) }, selection: hash(selectionBytes), adaptiveBase: hash(base.bytes) },
-    output: { sha256: hash(bytes), bytes: bytes.length, triangles: composed.mesh.header.triangleCount },
+    output: { sha256: hash(bytes), bytes: bytes.length, triangles: frontage.mesh.header.triangleCount },
     parentIds: HERO_PAVEMENT_PARENTS,
     base: base.result,
     hero: { sourcePieces: hero.selected.length, sourceTriangles: hero.ledger.length, patches: hero.patches, topTriangles: hero.topTriangles, riserTriangles: hero.riserTriangles, ledger: hero.ledger, degenerates: hero.degenerates, precision: hero.precision },
     lower,
+    frontage: frontage.report,
     replacement: { ...composed, mesh: undefined },
-    coverageLimit: "Only the named hero parents receive proved ground repair, and only the named bridge clip preserves a proved lower passage. Other presentation retains its previous geometry; unclassified source regions and source elevations remain in pavement-source.json. Float32 boundary uncertainty is not a strict support pass. No network or whole-city walking support is admitted.",
+    coverageLimit: "Only the named hero parents receive proved ground repair, and only the named bridge clip preserves a proved lower passage. The separately recorded authored TSUTAYA frontage extends the presentation footprint without a surveyed-source claim. Other presentation retains its previous geometry; unclassified source regions and source elevations remain in pavement-source.json. Float32 boundary uncertainty is not a strict support pass. No network or whole-city walking support is admitted.",
   };
   return { bytes, sourceBytes: selectionBytes, report };
 }

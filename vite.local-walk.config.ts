@@ -5,10 +5,10 @@ import { resolve } from "node:path";
 import { defineConfig, type Connect, type Plugin } from "vite";
 import normal from "./vite.config.ts";
 
-const packetDirectory = resolve(import.meta.dirname, "artifacts/pedestrian-native253-20260928/packet");
-// The same finite packet admitted by the native253 private configuration.
+const packetDirectory = resolve(import.meta.dirname, "artifacts/pedestrian-corner331-20260928/packet");
+// Successor331 keeps the native253 schema and exact rigs/context; only its live pavement and hardware bindings change.
 const pins = [
-  ["manifest.json", "a41f57b8eba8840ffecb5e3faf87a5cec0997ddf0fa320200820f3223405e36e"],
+  ["manifest.json", "37ed690eeb9d6be25f9211b710e204cf50dccecff259f44b78fb1692efa0be15"],
   ["context.json", "0339db04b4f700655bdb9b89912e06a6143bc748cc3792fed041865c8f9aadce"],
   ["rig-near.json", "88247600d41eab2d0ee83f6646a821dae72c8525345965e0836a73f54ff0a243"],
   ["rig-medium.json", "aade34bf9005af3c3e530ab5b23d1bfd0c1df280c2b1d6520848daf084f0118f"],
@@ -19,9 +19,9 @@ for (const [name, sha256] of pins) {
   const path = resolve(packetDirectory, name);
   let bytes: Buffer;
   try { bytes = readFileSync(path); }
-  catch (error) { throw new Error(`Local walker packet ${path} is unavailable: ${String(error)}. Restore the retained native253 packet before selecting vite.local-walk.config.ts.`); }
+  catch (error) { throw new Error(`Local walker packet ${path} is unavailable: ${String(error)}. Restore the retained corner331 successor packet before selecting vite.local-walk.config.ts.`); }
   if (createHash("sha256").update(bytes).digest("hex") !== sha256) {
-    throw new Error(`Local walker packet ${path} differs from pinned SHA-256 ${sha256}. Restore the retained native253 packet before selecting vite.local-walk.config.ts.`);
+    throw new Error(`Local walker packet ${path} differs from pinned SHA-256 ${sha256}. Restore the retained corner331 successor packet before selecting vite.local-walk.config.ts.`);
   }
   files.set(`/local-walk/${name}`, bytes);
 }

@@ -158,20 +158,20 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
     VERTEX_MAIN,
-    `varying vec3 mapsSurfacePosition;\n${VERTEX_MAIN}`,
+    `varying vec3 mapsSurfacePosition;\n${kind === "sidewalk" ? "varying vec3 mapsSurfaceNormal;" : ""}\n${VERTEX_MAIN}`,
     `${kind}'s vertex stage, entry point`,
   );
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
     VERTEX_PROJECT,
-    `${VERTEX_PROJECT}\n  mapsSurfacePosition = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
+    `${VERTEX_PROJECT}\n  mapsSurfacePosition = (modelMatrix * vec4(transformed, 1.0)).xyz;\n  ${kind === "sidewalk" ? "mapsSurfaceNormal = inverseTransformDirection(transformedNormal, viewMatrix);" : ""}`,
     `${kind}'s vertex stage, world position`,
   );
 
   let fragment = replaceOnce(
     shader.fragmentShader,
     FRAGMENT_MAIN,
-    `varying vec3 mapsSurfacePosition;\n${declarations}\n${FRAGMENT_MAIN}`,
+    `varying vec3 mapsSurfacePosition;\n${kind === "sidewalk" ? "varying vec3 mapsSurfaceNormal;" : ""}\n${declarations}\n${FRAGMENT_MAIN}`,
     `${kind}'s fragment stage, entry point`,
   );
   fragment = replaceOnce(
@@ -192,7 +192,18 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         float pavingTone = (1.0 - mapsDetailStrength * (1.0 - grout))
           * (1.0 - 0.25 * meanGrout) / (1.0 - mapsDetailStrength * meanGrout);
         diffuseColor.rgb *= pavingTone;
-        roughnessFactor = 0.82;
+        // Seeded texture values vary whole pavers; continuous coordinates retain
+        // derivatives for both reads. Retire cell steps before they are subpixel.
+        vec2 paverCell = vec2(cell.x + 0.5 * mod(floor(cell.y), 2.0), cell.y);
+        vec2 paverUv = (floor(paverCell) + 0.5) / 16.0;
+        float paverValue = texture2DGradEXT(mapsDetailMap, paverUv, dFdx(cell) / 16.0, dFdy(cell) / 16.0).r - 0.5;
+        float grainValue = texture2D(mapsDetailMap, metres / mapsDetailMetres).r - 0.5;
+        float resolvedPaver = 1.0 - smoothstep(0.18, 0.65, max(aa.x, aa.y));
+        float topFace = smoothstep(0.65, 0.92, normalize(mapsSurfaceNormal).y);
+        float paverVariation = mapsDetailStrength * (2.4 * paverValue * resolvedPaver + 0.65 * grainValue);
+        // The side response is solid: no collapsed X/Z joints or painted halo.
+        diffuseColor.rgb *= mix(0.97 / pavingTone, 1.0 + paverVariation, topFace);
+        roughnessFactor = mix(0.9, 0.82 + paverVariation * 0.35, topFace);
         `
             : `
         // The detail tile, sampled in world metres. The distance fade is the mip chain
@@ -258,23 +269,22 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
   const material = new MeshStandardMaterial({ roughness: 0.85, metalness: 0, polygonOffset: kind !== "ground", polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
   const wetness = { value: style.wetness };
 
-  // `ground` and `road` are tiled with a seeded detail texture; `sidewalk` keeps its own
-  // metre-scale seam pattern, which is a shape rather than a tone and is not something a
-  // tile can carry. The texture is owned by this material and disposed with it, so
-  // rebuilding the scene does not strand one on the GPU.
-  const detail: SurfaceDetailKind | undefined = kind === "sidewalk" ? undefined : kind;
-  const texture = detail === undefined ? undefined : createSurfaceDetailTexture(detail);
+  // Sidewalks reuse the seeded ground texture for restrained material variation;
+  // their metre-scaled joints remain coverage-filtered shader geometry. Each
+  // material owns and disposes its texture, including through style changes.
+  const detail: SurfaceDetailKind = kind === "sidewalk" ? "ground" : kind;
+  const texture = createSurfaceDetailTexture(detail);
   const uniforms: SurfaceShaderUniforms = {
     wetness,
     detailMap: { value: texture },
-    detailMetres: { value: detail === undefined ? 1 : SURFACE_DETAIL_METRES[detail] },
-    detailStrength: { value: detail === undefined ? 0 : SURFACE_DETAIL_STRENGTH[detail] },
+    detailMetres: { value: kind === "sidewalk" ? 2 : SURFACE_DETAIL_METRES[detail] },
+    detailStrength: { value: SURFACE_DETAIL_STRENGTH[detail] },
   };
 
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     patchSurfaceShader(kind, uniforms, shader as unknown as PatchableShader);
   };
-  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "sidewalk" ? "v4-coverage" : "v3"}`;
+  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "sidewalk" ? "v5-paver-response" : "v3"}`;
   const apply = (next: WorldStyle): void => {
     material.color.setHex(next.palette[kind === "ground" ? "ground" : kind]);
     material.envMapIntensity = kind === "road" ? 0.7 : 0.45;

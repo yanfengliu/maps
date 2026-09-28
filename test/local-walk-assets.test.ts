@@ -16,22 +16,22 @@ vi.mock('../src/agents/render/local-walk-rig.js', () => ({ createLocalRig: () =>
 vi.mock('../src/agents/population/local-walk-support.js', () => ({ createLocalFloor: () => { throw boundary; } }));
 afterEach(() => vi.unstubAllGlobals());
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
-const packetDirectory = resolve('artifacts/pedestrian-native253-20260928/packet');
-const packetSha = 'a41f57b8eba8840ffecb5e3faf87a5cec0997ddf0fa320200820f3223405e36e';
+const packetDirectory = resolve('artifacts/pedestrian-corner331-20260928/packet');
+const packetSha = '37ed690eeb9d6be25f9211b710e204cf50dccecff259f44b78fb1692efa0be15';
 // Independent approved packet/capture registry. Do not derive expected URLs with the code under test.
 const expected = [
   { url: '/scene/buildings/tileset.json', bytes: 67872, sha256: '71b1716f6fafd028e1f6bad46fb8f7848c36f941c30d428be21828e9902b4483' },
   { url: '/scene/buildings/data/data518.b3dm', bytes: 4973844, sha256: '5e611688344a50142147c0c60442c893dd8f3a45b10ee264067b0275bb4fa96b' },
   { url: '/scene/decorations.json', bytes: 80890, sha256: 'f16d044aeefc16704f6bcd10c1e3d03039927d6226b68322631ea3edff1ac918' },
-  { url: '/scene/control-hardware.json', bytes: 99943, sha256: 'a65058ee0afc162e77189b11d3710162d0b299e02c4ac99c9a44b32ee99d2509' },
+  { url: '/scene/control-hardware.json', bytes: 100180, sha256: '6b8afb406d339cb8bed7926ef8ec800711f4f309ef69c4794203aa0603248b3b' },
   { url: '/network/network.json', bytes: 10239410, sha256: '314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677' },
-  { url: '/scene/pavements.mesh', bytes: 13068136, sha256: '3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62' },
+  { url: '/scene/pavements.mesh', bytes: 13071300, sha256: '841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6' },
 ];
 
 describe('retained native walker asset-load contract', () => {
   it('loads all six live inputs, including the nested data tile, through actual served routes', async () => {
     const manifestBytes = readFileSync(resolve(packetDirectory, 'manifest.json'));
-    expect(digest(manifestBytes), 'Restore the retained native253 packet; do not regenerate it').toBe(packetSha);
+    expect(digest(manifestBytes), 'Restore the retained corner331 successor packet; do not regenerate it').toBe(packetSha);
     const packet = JSON.parse(manifestBytes.toString()) as { files: { name: string; sha256: string }[]; sourceInputs: { path: string; sha256: string }[] };
     const live = packet.sourceInputs.filter(row => row.path.includes('/data/') && !row.path.includes('/agents/'));
     expect(live.map(row => row.sha256)).toEqual(expected.map(row => row.sha256));

@@ -1,9 +1,10 @@
 {
   "source": "Derived test coordinates from the authored scramble path and pinned PLATEAU road triangles; presentation-only seam allowance, no movement support authority.",
   "evidenceSha256": "91f98cf9ee34ff20d0c614a36803c1f543b6b4bc8d77e47eebd0aaf589d76a75",
+  "successor331": "Actual330 pavement census preserved all eleven probe coordinates, road-edge identities, heights and width expectations; only the pavement digest binding changes.",
   "reDerived": "Re-derived 2026-09-18 against the terrain cap's roads (0d429c31) and pavements (3b24c5ef). The eleven probe points are the original ones; their seam identities moved by exactly the 123 road triangles the cap drapes, and the gap widths moved by about 1e-10 m, below the test's 1e-6 m tolerance.",
   "roadsSha256": "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
-  "pavementsSha256": "3b24c5ef71f864fc6a90c768d8850b2f72ba1eb41255cf40dc37fd940115fb62",
+  "pavementsSha256": "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6",
   "probes": [
     {
       "x": -9.6966761662623,

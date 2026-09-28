@@ -182,8 +182,8 @@ describe("the material wires the patch to the shader three compiles", () => {
     }
   });
 
-  it("gives the road and the ground a detail texture and the pavement none", () => {
-    for (const [kind, expected] of [["road", true], ["ground", true], ["sidewalk", false]] as const) {
+  it("gives each surface its owned seeded detail texture", () => {
+    for (const [kind, expected] of [["road", true], ["ground", true], ["sidewalk", true]] as const) {
       const treatment = createSurfaceMaterial(kind, worldStyle("satellite"));
       const shader = shaderSource();
       treatment.material.onBeforeCompile(shader as never, {} as never);
@@ -264,9 +264,32 @@ describe("paving coverage over the emitted shader's box footprint", () => {
       treatment.apply(worldStyle("satellite"));
       expect(contrast.value).toBe(0.12);
       expect(key).not.toBe("maps-surface-sidewalk-v3");
-      expect(shader.fragmentShader).toContain("roughnessFactor = 0.82;");
+      expect(shader.fragmentShader).toContain("roughnessFactor = mix(0.9, 0.82 + paverVariation * 0.35, topFace);");
       expect(shader.fragmentShader).toContain("max(fwidth(cell), vec2(0.001))");
       expect(shader.fragmentShader).toContain("metres / vec2(0.6, 0.4)");
     } finally { treatment.dispose(); }
   });
+});
+
+/** Actual emitted scalar response; texture values stand for bounded sampler inputs.
+ * This proves side/top and minification arithmetic, not hardware mip selection. */
+it("keeps closure faces solid and retires per-paver steps under minification", () => {
+  const shader = shaderSource(); patchSurfaceShader("sidewalk", uniforms(), shader);
+  const body = shader.fragmentShader.match(/float resolvedPaver = [\s\S]*?roughnessFactor = [^;]+;/)?.[0];
+  if (!body) throw Error("Missing emitted top/closure and filtered paver response");
+  const js = body.replace(/float /g, "let ").replace("normalize(mapsSurfaceNormal).y", "normalY").replace("diffuseColor.rgb *=", "colour *=");
+  const smoothstep = (lo: number, hi: number, x: number) => { const t = Math.max(0, Math.min(1, (x - lo) / (hi - lo))); return t * t * (3 - 2 * t); };
+  const evaluate = new Function("aa", "normalY", "mapsDetailStrength", "paverValue", "grainValue", "pavingTone", "smoothstep", "max", "mix", "let colour=pavingTone,roughnessFactor=0;" + js + "return [colour,roughnessFactor];");
+  const sample = (normal: number, width: number, paver: number, grain = 0, tone = 0.98, strength = 0.12): number[] => evaluate({ x: width, y: width }, normal, strength, paver, grain, tone, smoothstep, Math.max, (a: number,b: number,t: number) => a+(b-a)*t) as number[];
+  for (const normal of [-1, 0, 0.5]) for (const value of [-0.5, 0.5]) {
+    expect(sample(normal, .01, value, value, .88)[0]).toBeCloseTo(.97, 12);
+    expect(sample(normal, .01, value, value, .99)[1]).toBe(.9);
+  }
+  expect(sample(1, .01, .5)[0]! - sample(1, .01, -.5)[0]!).toBeGreaterThan(.2);
+  expect(sample(1, .65, .5)).toEqual(sample(1, .65, -.5));
+  expect(sample(1, 10, .5)).toEqual(sample(1, 10, -.5));
+  expect(sample(1, .4, .5)[0]).toBeLessThan(sample(1, .01, .5)[0]!);
+  expect(sample(1, .01, .5, 0, .98, .08)[0]).toBeLessThan(sample(1, .01, .5)[0]!);
+  expect(shader.vertexShader).toContain("mapsSurfaceNormal = inverseTransformDirection(transformedNormal, viewMatrix)");
+  expect(shader.fragmentShader).toContain("texture2DGradEXT(mapsDetailMap, paverUv, dFdx(cell) / 16.0, dFdy(cell) / 16.0)");
 });

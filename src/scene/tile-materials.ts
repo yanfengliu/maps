@@ -32,6 +32,7 @@ import type { Material, Object3D, Texture } from "three";
 import { Color, MeshStandardMaterial } from "three";
 import type { WorldStyle } from "../world/styles.js";
 import { FACADE_EMISSION_GLSL } from "./facade-emission.js";
+import { CROSSING_CORNER_GLSL } from "./crossing-corner-material.js";
 
 export interface FacadeStyleUniforms {
   procedural: { value: number };
@@ -115,6 +116,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
 
   const map = material.map as Texture | null;
   const hasMask = map !== null;
+  const hasCorner = material.userData.mapsCrossingCorner === true;
 
   material.onBeforeCompile = (shader) => {
     shader.uniforms.mapsSignageIntensity = options.signageIntensity;
@@ -124,7 +126,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
     shader.uniforms.mapsRoof = options.style.roof;
     shader.uniforms.mapsWindow = options.style.window;
     shader.vertexShader = shader.vertexShader
-      .replace("void main() {", `attribute vec3 mapsFloorParams; attribute float mapsEmitterGroup; varying float mapsSignGroup; varying vec2 mapsSourceUv; varying vec3 mapsFloor; varying vec3 mapsWorld; void main() { mapsFloor = mapsFloorParams; mapsSignGroup = mapsEmitterGroup; mapsSourceUv = uv;`)
+      .replace("void main() {", `${hasCorner ? "attribute float mapsCornerEligible; varying float mapsCornerBinding;" : ""} attribute vec3 mapsFloorParams; attribute float mapsEmitterGroup; varying float mapsSignGroup; varying vec2 mapsSourceUv; varying vec3 mapsFloor; varying vec3 mapsWorld; void main() { mapsFloor = mapsFloorParams; mapsSignGroup = mapsEmitterGroup; mapsSourceUv = uv; ${hasCorner ? "mapsCornerBinding = mapsCornerEligible;" : ""}`)
       .replace("#include <project_vertex>", `#include <project_vertex>\n mapsWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
 
     shader.fragmentShader = shader.fragmentShader
@@ -142,6 +144,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         varying float mapsSignGroup;
         varying vec2 mapsSourceUv;
         ${FACADE_EMISSION_GLSL}
+        ${hasCorner ? "varying float mapsCornerBinding;" + CROSSING_CORNER_GLSL : ""}
         // Integrate a periodic interval over a one-dimensional pixel footprint.
         // Multiplying axis coverages approximates a skewed pixel by its box;
         // this is not exact integration over the projected pixel parallelogram.
@@ -260,6 +263,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
           mapsWindowMask = pane;
           roughnessFactor = mix(0.77, 0.31, pane);
         } else {
+          float corner = ${hasCorner ? "mapsCrossingCorner(mapsWorld, mapsNormal, mapsSourceUv, mapsCornerBinding)" : "0.0"};
           float lightness = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
           float chroma = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b) - min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
           float glass = (1.0 - smoothstep(0.06, 0.21, lightness)) * (1.0 - smoothstep(0.02, 0.12, chroma)) * mapsWall;
@@ -281,9 +285,10 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
           float photoFloor = 1.0 - smoothstep(0.014 - photoAa.y, 0.014 + photoAa.y, min(photoFraction.y, 1.0 - photoFraction.y));
           float photoFrame = 1.0 - smoothstep(0.010 - photoAa.x, 0.010 + photoAa.x, abs(photoFraction.x - 0.5));
           float nearDetail = 1.0 - smoothstep(90.0, 190.0, distance(cameraPosition, mapsWorld));
-          float detail = nearDetail * mapsWall * (1.0 - smoothstep(0.035, 0.15, chroma));
+          float detail = nearDetail * mapsWall * (1.0 - smoothstep(0.035, 0.15, chroma)) * (1.0 - corner);
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.76 + vec3(0.065), detail * max(photoFloor * 0.40, photoFrame * glass * 0.50));
-          roughnessFactor = mix(0.84, 0.36, glass) + detail * photoFrame * 0.10;
+          roughnessFactor = mix(mix(0.84, 0.36, glass) + detail * photoFrame * 0.10, 0.78, corner);
+          metalnessFactor = mix(metalnessFactor, 0.0, corner);
         }
       `)
       .replace(
@@ -320,7 +325,7 @@ function patchOne(material: Material, options: TileMaterialOptions): boolean {
         `,
       );
   };
-  material.customProgramCacheKey = () => `maps-facade-v7-photo-tones-${hasMask ? "photo" : "plain"}`;
+  material.customProgramCacheKey = () => `maps-facade-v8-crossing-${hasMask ? "photo" : "plain"}-${hasCorner ? "corner" : "ordinary"}`;
 
   material.needsUpdate = true;
   return true;
