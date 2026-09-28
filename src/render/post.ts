@@ -22,8 +22,8 @@
  * three.js's `TAARenderPass` accumulates jittered samples only while the app
  * reports a static scene. The app must include camera, tiles and animated actors
  * in that decision; a camera-only test would freeze or smear moving crowds.
- * Moving geometry uses a multisampled sample target. Motion quality still needs
- * actual time-sequence inspection; this implementation choice is not its proof.
+ * Moving geometry takes two current-frame spatial samples into a multisampled
+ * target. Motion quality still needs actual time-sequence inspection; this is not its proof.
  *
  * What is given up by not taking `postprocessing` is its merged effect pass. That
  * is a real advantage and it is smaller than it sounds here: the two expensive
@@ -33,7 +33,7 @@
  * ## The chain, in order
  *
  * 1. **`TAARenderPass`** draws the scene. While the camera or the tileset is
- *    moving it is one ordinary render; once both are still it accumulates 32
+ *    moving it takes two spatial scene samples; once still it accumulates 32
  *    jittered samples one per frame and then stops rendering the scene at all,
  *    which makes a settled frame cheaper than a moving one rather than dearer.
  * 2. **`GTAOPass`** — ground-truth ambient occlusion. It is what separates a wall
@@ -102,6 +102,8 @@ export interface PostStatus {
   taaAccumulating: boolean;
   /** How many of the 32 jittered samples are in the current frame. */
   taaSamples: number;
+  /** Actual TAA/SSAA level; absent when drawing directly without the chain. */
+  readonly taaSampleLevel?: number;
   /** Render targets the chain holds, and roughly what they weigh. */
   bufferBytes: number;
 }
@@ -243,6 +245,8 @@ export function createPostChain(options: PostOptions): PostChain {
 
   return {
     render(): void {
+      // Moving samples use only this frame. Still history keeps one sample per frame.
+      taa.sampleLevel = still ? 0 : 1;
       if (taa.accumulate !== still) {
         taa.accumulate = still;
         if (!still) taa.accumulateIndex = -1;
@@ -281,6 +285,7 @@ export function createPostChain(options: PostOptions): PostChain {
         ambientOcclusion: { blendIntensity: AO_BLEND, radiusM: AO_RADIUS_M },
         taaAccumulating: taa.accumulate,
         taaSamples: Math.max(0, taa.accumulateIndex),
+        taaSampleLevel: taa.sampleLevel,
         bufferBytes: estimateBufferBytes(width, height, renderer.getPixelRatio()),
       };
     },
