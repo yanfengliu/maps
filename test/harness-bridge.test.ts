@@ -61,7 +61,7 @@ const MEMBERS = [
   "population",
   "signals",
 ] as const;
-const OPTIONAL_MEMBERS = ["cameraClearance", "railStillState", "railStillSnapshot"] as const;
+const OPTIONAL_MEMBERS = ["localWalk", "cameraClearance", "railStillState", "railStillSnapshot"] as const;
 
 type MissingFromList = Exclude<keyof HarnessBridge, (typeof MEMBERS)[number] | (typeof OPTIONAL_MEMBERS)[number]>;
 const everyDeclaredMemberIsListed: MissingFromList extends never ? true : never = true;
@@ -131,9 +131,17 @@ function expectPublishesEveryMember(bridge: HarnessBridge, install: string, opti
 }
 
 describe("the harness bridge contract", () => {
+  it("publishes the local walker observation only with its source and detaches readings", () => {
+    const value = { started: false, root: { generation: 1 } } as unknown as NonNullable<ReturnType<NonNullable<BridgeSources["localWalk"]>>>;
+    const bridge = installed(sources({ localWalk: () => value }));
+    expectPublishesEveryMember(bridge, "local walker bridge", ["localWalk"]);
+    const copy = bridge.localWalk!()!;
+    (copy.root as { generation: number }).generation = 9;
+    expect(bridge.localWalk!()!.root.generation).toBe(1);
+  });
   it("publishes the optional rail observations only with their supplied sources", () => {
     const observation = (): never => { throw Error("This roster check does not take a scene observation."); };
-    expectPublishesEveryMember(installed(sources({ cameraClearance: observation, railStillState: observation, railStillSnapshot: observation })), "rail bridge", OPTIONAL_MEMBERS);
+    expectPublishesEveryMember(installed(sources({ cameraClearance: observation, railStillState: observation, railStillSnapshot: observation })), "rail bridge", ["cameraClearance", "railStillState", "railStillSnapshot"]);
     expectPublishesEveryMember(installed(sources({ cameraClearance: observation })), "clearance bridge", ["cameraClearance"]);
     expectPublishesEveryMember(installed(sources({ railStillState: observation })), "incomplete still pair");
     expectPublishesEveryMember(installed(sources({ railStillSnapshot: observation })), "incomplete snapshot pair");

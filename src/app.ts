@@ -31,6 +31,7 @@
 import { FogExp2, Group, Scene, type WebGLRenderTarget } from "three";
 import { clipCityRoot } from "./scene/aoi-cutout.js";
 
+import type { LocalWalker } from "./agents/local-walk-prototype.js";
 import { createAgents, type AgentSystem } from "./agents/agents.js";
 import { createAgentRenderer } from "./agents/render/agents.js";
 import { loadManifest } from "./agents/render/assets.js";
@@ -69,6 +70,8 @@ import type { ControlHardwarePlacement } from "./world/control-hardware.js";
 import type { PaintSeamUse } from "./scene/paint-support.js";
 
 export interface AppOptions {
+  /** Private one-actor event. Ordinary population/defaults are untouched. */
+  localWalk?: boolean;
   /**
    * Seed for anything generated. Fixed so frames repeat.
    *
@@ -196,7 +199,9 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   // and pedestrians that no frame contains. The gate is released the moment the
   // renderer is mounted, below. Without a population there is nothing to hold,
   // so a `?agents=`-free run is untouched.
+  let localWalker: LocalWalker | null = null;
   const populationWanted = (options.population?.pedestrians ?? 0) + (options.population?.vehicles ?? 0) > 0;
+  if (options.localWalk && populationWanted) throw Error("The local one-actor prototype cannot share the generic population.");
   if (populationWanted) loop.holdFixedSteps(true);
 
   // The tiles renderer needs the camera's world matrix as it will be *this*
@@ -240,7 +245,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // A populated scene is never still: thousands of pedestrians walking means the
     // picture changes every frame, so temporal accumulation stays off in populated
     // lanes by construction. A population-free run keeps the original predicate.
-    post.setStill(cameraStill && tilesStill && (agents.root.children.length === 0 || !agents.moving()));
+    post.setStill(cameraStill && tilesStill && (agents.root.children.length === 0 || !agents.moving()) && !localWalker?.moving());
   });
 
   let sceneLoaded = false;
@@ -307,6 +312,14 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
         loop.onFrame((_delta, elapsed, alpha) => renderer.update(alpha, camera, elapsed));
       }
     }
+    if (options.localWalk) {
+      const { createLocalWalker } = await import("./agents/local-walk-prototype.js");
+      localWalker = await loadOwned(createLocalWalker({ renderer, camera, loop, document: canvas.ownerDocument, network, style, ready: () => !disposed && sceneLoaded && city.visible && buildings.displayReady() && buildings.settled() }));
+      if (disposed) return;
+      localWalker.setStyle(style);
+      city.add(localWalker.root);
+      styleConsumers.push(next => localWalker?.setStyle(next));
+    }
     const hardware = await loadControlHardware(network, roads.inputDigests);
     if (disposed) return;
     hardwareObservation = hardware.records;
@@ -362,6 +375,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   observer.observe(canvas);
 
   installBridge({
+    ...(options.localWalk ? { localWalk: () => localWalker?.status() ?? null } : {}),
     ...(RAIL_TRIAL_BINDING ? createRailStillObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) : {}),
     ...(RAIL_TRIAL_BINDING ? { cameraClearance: createRailCameraObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) } : {}),
     renderer,

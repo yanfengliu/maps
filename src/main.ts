@@ -1,3 +1,4 @@
+import { localWalkRequested } from "./agents/local-walk-options.js";
 import { createApp } from "./app.js";
 import { installFailedBridge } from "./harness/bridge.js";
 import { recordTeardown } from "./harness/teardown.js";
@@ -68,7 +69,8 @@ function boot(): void {
   installAttribution(document);
 
   const initialStyle = worldStyle(query.get("style") ?? DEFAULT_WORLD_STYLE_ID).id;
-  const app = createApp(canvas, { seed, time, style: initialStyle, population });
+  const localWalk = localWalkRequested(query, seed, population);
+  const app = createApp(canvas, { seed, time, style: initialStyle, population, localWalk });
   const picker = createStylePicker({
     styles: WORLD_STYLES,
     initialStyle,
