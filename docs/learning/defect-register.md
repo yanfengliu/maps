@@ -1,5 +1,21 @@
 # Defect register
 
+## 2026-09-28 — historical worktrees and dirty states outlived their tasks
+
+Observed symptom: the owner reported abandoned worktrees and dirty states. [340](../work/0_shibuya-1km/reviews/340_worktree-lifecycle-audit.md) found70 registered checkouts,39 dirty. All HEADs were ancestral, but that did not account for local experiments or ignored evidence. Task completion had not reliably included retirement.
+
+Preservation and checks:341 retained394 regular files before the first batch. [344](../work/0_shibuya-1km/reviews/344_worktree_retention.md) retained20,081 working files/9,192,342,528 bytes plus457 Git metadata files from63 later candidates, including separate staged/working patches, raw indexes and deletion records. Sources and retained destinations were hashed. All27 junctions were detached nonrecursively; fresh complete censuses found zero links or enumeration errors, with owned state and shared targets preserved. Eight managed archives then completed. The actual remaining count is58: three kept roots and55 manual candidates.
+
+Remaining check: automatic approval review blocked the exact55-checkout stash/removal command before process creation because explicit owner authorization for that set was missing. No manual stash/removal ran;344 holds the concrete list and recovery state. These scoped checks are complete, but a reusable task-completion check for surviving owned checkouts, dirty states and ignored recovery dependencies remains owed. Its failing control must retain an abandoned checkout or unaccounted dirty state.
+
+## 2026-09-28 — managed archive was admitted with live shared-target junctions
+
+Observed symptom: after the motion-smoothing managed archive,343 found primary data and node_modules empty, with modification times15:59:27.539Z and15:59:28.452Z. The retained341 manifest had named three junctions resolving to those targets. Root and reviewer failed to enforce the existing unlink prerequisite; recording links and preserving ignored evidence did not satisfy it. Timing and mappings support an archive/junction interaction, but the app's internal deletion mechanism was not traced.
+
+Recovery: [343](../work/0_shibuya-1km/reviews/343_runtime-recovery.md) restored151 runtime files exact to338's scene digest and74 locked packages offline, with package/lock unchanged;166 bound assets,51 pins, scene/harness/build and129 retained evidence descriptors matched. Independent339 rechecked the certified inputs and24 inspected image hashes before ACCEPT. No new gates or renders ran. Complete recovery of historical nonruntime producer caches is not claimed.
+
+Prevention and gate owed: local-rules now explicitly requires evidence retention, exact link mapping, nonrecursive detachment, unchanged shared targets and an error-free zero-reparse census before managed archival.344 applied those checks before the later eight archives. [343a](../work/0_shibuya-1km/reviews/343a_archive-junction-incident.md) and lessons.md retain the owed reusable admission gate: refuse every reparse point or enumeration error, verify outside-target preservation, and prove refusal with an isolated synthetic junction and injected enumeration failure. No reusable gate, synthetic refusal proof or app fix is complete.
+
 ## 2026-09-19 — a scene rebuild could erase authored approach markings before refusing their sources
 
 Observed symptom: the Q4 source investigation found that `data:scene` cleans `markings.mesh` and `markings-provenance.json`, then calls the published-only markings writer. The delivered authored approach paint can therefore disappear even though its separate regeneration command correctly refuses mixed source vintages.
