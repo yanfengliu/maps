@@ -1,0 +1,63 @@
+{
+  "bound": "R169-1 actual accepted source route and all supported maximum bodies; discrete halt/authority witness, not continuous supported driving.",
+  "provenance": {
+    "reviewReportSha256": "49b4a9f8e7a0dd98e7354ff93ed10c339f84923ea1f7711f0c3f116c331ea525",
+    "reviewWitnessSha256": "6b70da976765f527fcbe6198ea11eaf18c0788f673d1699f2b05d190505c376b",
+    "networkSha256": "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
+    "fleetSha256": "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"
+  },
+  "seed": 1923715327,
+  "edgeIds": [
+    "lane:520446648:0:0:ground0:f:0:section0",
+    "lane:520446648:0:0:ground0:f:0:section1",
+    "turn:lane:520446648:0:0:ground0:f:0>lane:41857232:0:0:ground0:f:0",
+    "lane:41857232:0:0:ground0:f:0:section0",
+    "lane:41857232:0:0:ground0:f:0:section1",
+    "lane:41857232:0:0:ground0:f:0:section2",
+    "lane:41857232:1:0:ground0:f:0",
+    "turn:lane:41857232:1:0:ground0:f:0>lane:41857267:2:0:ground0:f:0",
+    "lane:41857267:2:0:ground0:f:0:section0",
+    "lane:41857267:2:0:ground0:f:0:section1",
+    "lane:41857267:2:0:ground0:f:0:section2",
+    "lane:41857267:3:0:ground0:f:0",
+    "lane:92712572:5:0:ground0:f:0:section0",
+    "lane:92712572:5:0:ground0:f:0:section1",
+    "lane:92712572:5:0:ground0:f:0:section2",
+    "lane:92712572:6:0:ground0:f:0:section0",
+    "lane:92712572:6:0:ground0:f:0:section1"
+  ],
+  "entryIndex": 10,
+  "entryDistanceM": 169.04619514198893,
+  "control": {
+    "routeIndex": 10,
+    "distanceM": 0.03592769347705581,
+    "nodeIds": [
+      13302752096
+    ],
+    "rule": "stop"
+  },
+  "completedThrough": 8,
+  "classes": [
+    {
+      "id": "kei",
+      "scale": 1.04,
+      "radius": 2.35283512002753,
+      "stop": 166.72928771543846,
+      "hold": 166.6933600219614
+    },
+    {
+      "id": "taxi",
+      "scale": 1.04,
+      "radius": 2.820123027873044,
+      "stop": 166.26199980759293,
+      "hold": 166.22607211411588
+    },
+    {
+      "id": "bus",
+      "scale": 1.001695679710784,
+      "radius": 5.8,
+      "stop": 163.28212283546597,
+      "hold": 163.24619514198892
+    }
+  ]
+}

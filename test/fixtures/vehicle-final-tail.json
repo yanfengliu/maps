@@ -1,0 +1,30 @@
+{
+  "bound": "Exact integration238 clean60ped12vehicle seed0x5b1b0a slot11 generation1; existing upright taxi, source route and owner. Source gates unchanged.",
+  "inputs": {
+    "network": "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
+    "fleet": "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"
+  },
+  "classId": "taxi",
+  "scale": 0.9836058837920427,
+  "edgeIds": [
+    "lane:1336649818:0:0:ground0:f:0:section0",
+    "lane:1336649818:0:0:ground0:f:0:section1",
+    "turn:lane:1336649818:0:0:ground0:f:0>lane:1257445134:1:0:ground0:f:1",
+    "lane:1257445134:1:0:ground0:f:1:section0",
+    "lane:1257445134:1:0:ground0:f:1:section1",
+    "lane:1257445134:1:0:ground0:f:1:section2",
+    "lane:1071659165:0:0:ground0:f:1",
+    "turn:lane:1071659165:0:0:ground0:f:1>lane:33476791:0:0:ground0:f:0",
+    "lane:33476791:0:0:ground0:f:0",
+    "turn:lane:33476791:0:0:ground0:f:0>lane:404515763:0:0:ground0:f:0",
+    "lane:404515763:0:0:ground0:f:0:section0",
+    "lane:404515763:0:0:ground0:f:0:section1"
+  ],
+  "owner": "junction:walk:1033547236:0:0:ground0",
+  "entryIndex": 1,
+  "lastConflictIndex": 10,
+  "firstEntryM": 28.424487857462545,
+  "oldReleaseM": 107.05347148966008,
+  "reentryM": 111.47447880277852,
+  "totalLengthM": 112.67895285308157
+}

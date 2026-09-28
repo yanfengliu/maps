@@ -15,8 +15,8 @@
  *    walking path the source lost in the southeast.
  *  - A route crosses several conflict authorities. `RoutePassage` is a single
  *    compound's commitment, so a route is planned as consecutive passages. Each
- *    passage's entry occurrence is the run of consecutive same-authority edges
- *    the contract's own last-conflict rule names, and any passage the real
+ *    passage's entry occurrence starts the factory-defined visit, including its
+ *    single internal null gaps, and any passage the real
  *    `createRoutePassage` factory refuses rejects the whole route rather than
  *    being dropped silently.
  *
@@ -26,13 +26,20 @@
  */
 
 import { sampleEdge, headingAt } from "../../network/geometry.ts";
-import { createRoutePassage, type RouteControl, type RoutePassage } from "../../network/passages.ts";
+import { vehicleApproachHalts, vehicleFinalRelease } from "./vehicle-approach.ts";
+import type { ApproachHalt, VehicleFinalRelease } from "../../network/halts.ts";
+import { unreconciledVehicleCorridorReason } from "./route-dispositions.ts";
+import { createBoundaryEntryPassage, type RouteControl, type RoutePassage } from "../../network/passages.ts";
 import type { ActorKind } from "../../network/passages.ts";
-import type { NetworkData, NetworkEdge } from "../../world/network-data.ts";
+import type { LaneEdge, NetworkData, NetworkEdge } from "../../world/network-data.ts";
 import { PEDESTRIAN_CADENCE_MPS, VEHICLE_DYNAMICS } from "./config.ts";
 import { CENTRAL_RADIUS_M, MovementGraph } from "./graph.ts";
 import type { RefusalCounts } from "./status.ts";
 import { clearPedestrianTerminal } from "./pedestrian-terminal.ts";
+import type { VehicleAsset } from "../../world/agent-assets.ts";
+import { footprintOccupies, projectVehicleFootprint, vehicleEnvelope } from "../../network/footprints.ts";
+import { createRouteVisits, routeHaltObligations } from "../../network/halts.ts";
+import { boundaryProfile } from "../../network/boundaries.ts";
 
 /**
  * The shortest route a slot will accept, in sections. Below this the population
@@ -173,7 +180,7 @@ export const MINIMUM_WALKING_LANES = 1;
  */
 export type LateralOffsets = Float64Array;
 
-/** One governed occurrence of a route: the gate, and where a body must stop for it. */
+/** One factory passage visit: its admission and separate mapped controls. */
 export interface RouteGate {
   readonly passageIndex: number;
   readonly entryIndex: number;
@@ -195,6 +202,11 @@ export interface RouteGate {
 }
 
 export interface PlannedRoute {
+  /** Fixed lateral state for the complete body/halts validation. Revalidate before changing it. */
+  readonly vehicleLaneIndex?: number;
+  readonly approachHalts?: readonly ApproachHalt[];
+  readonly vehicleFinalRelease?: VehicleFinalRelease;
+  readonly boundaryEntryPassage?: RoutePassage | null;
   readonly entryEdgeId: string;
   readonly edgeIds: readonly string[];
   readonly edges: readonly NetworkEdge[];
@@ -213,23 +225,26 @@ export interface PlannedRoute {
   readonly lateralOffsetsM?: LateralOffsets;
 }
 
+export interface VehicleRouteBody {
+  readonly asset: VehicleAsset;
+  readonly scale: number;
+  readonly laneIndex: number;
+  /** Matches the existing population core pose, not a ground-support certificate. */
+  readonly frame: "population-upright";
+}
 export interface RouteRequest {
+  readonly vehicleBody?: VehicleRouteBody;
   /**
    * What the route is for. Absent means the delivered `exit` shape, so every
    * caller that has not been taught about the centre keeps the route it had.
    */
   readonly destination?: RouteDestination;
-  /** Collision radius used to pull the halt short of a gate. */
+  /** Authority radius for vehicles; the existing logical walking radius for pedestrians. */
   readonly footprintRadiusM: number;
   readonly maxEdges: number;
   /** Distinct walks attempted before a portal is reported as unreachable. */
   readonly walkAttempts?: number;
-  /**
-   * Which edges this body may *halt* on. A vehicle whose body is longer than a
-   * junction's entry section cannot stand still on the approach before that
-   * gate, so a walk through that section is not a route for it ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the planner
-   * routes around it instead of driving it wrongly.
-   */
+  /** Optional source-legality constraint, never an edge-local body-length halt test. */
   readonly viable?: (edgeId: string) => boolean;
 }
 
@@ -237,6 +252,8 @@ export interface RouteAttempt {
   readonly route: PlannedRoute | null;
   /** Named, stable reason text when no route exists. */
   readonly reason?: string;
+  /** A source disposition is recorded at assembly, including successful later retries. */
+  readonly recorded?: true;
 }
 
 function actorSeed(sceneSeed: number, kind: ActorKind, slot: number, generation: number): number {
@@ -302,7 +319,7 @@ export class RouteLibrary {
     const streamSeed = actorSeed(0, kind, slot, generation);
     // A callback can change between calls, even when its function identity and
     // body radius are unchanged. Refit constrained requests against it now.
-    const cached = request.viable ? undefined : this.caches.get(key);
+    const cached = request.viable || kind === "vehicle" ? undefined : this.caches.get(key);
     if (cached) return placeOnCorridor(cached, kind, streamSeed, request.footprintRadiusM);
     const graph = kind === "vehicle" ? this.vehicleGraph : this.pedestrianGraph;
     const prefix = central ? this.centrePrefixes.get(prefixKey) : undefined;
@@ -316,9 +333,9 @@ export class RouteLibrary {
       }
       return null;
     }
-    // Only a route with no gate-length constraint is reusable across body sizes;
-    // a constrained walk depends on the radius it was planned for.
-    if (!request.viable) {
+    // Vehicle halt geometry depends on the whole body/frame, so vehicle plans
+    // are not cached. Walking fits retain their existing bounded cache.
+    if (!request.viable && kind !== "vehicle") {
       if (central) {
         const oldKey = this.centreCacheKeys.get(prefixKey);
         if (oldKey) this.caches.delete(oldKey);
@@ -357,10 +374,9 @@ export class RouteLibrary {
         const walk = request.destination === "centre"
           ? this.walkToCentre(graph, portal, createStream(seed(index) + attempt), request.maxEdges, request.viable)
           : this.walk(graph, portal, createStream(seed(index) + attempt), request.maxEdges, request.viable);
-        if (walk) {
-          drivable.push(portal);
-          break;
-        }
+        if (!walk) continue;
+        const built = this.assemble(graph, graph === this.vehicleGraph ? "vehicle" : "pedestrian", walk, request.footprintRadiusM, request.vehicleBody);
+        if (built.route) { drivable.push(portal); break; }
       }
     }
     return drivable;
@@ -378,17 +394,19 @@ export class RouteLibrary {
     const attempts = Math.max(1, request.walkAttempts ?? 3);
     const rng = createStream(streamSeed);
     let reason: string | undefined;
+    let recorded = false;
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const walk = request.destination === "centre"
         ? this.walkToCentre(graph, entryEdgeId, rng, request.maxEdges, request.viable)
         : this.walk(graph, entryEdgeId, rng, request.maxEdges, request.viable);
       if (!walk) {
+        recorded = false;
         reason = request.destination === "centre"
           ? `${kind} route from ${entryEdgeId} reaches no walking crossing inside ${CENTRAL_RADIUS_M} m of the world origin inside its component within ${MAXIMUM_CENTRE_ROUTE_LENGTH_M} m of walking`
-          : `${kind} route from ${entryEdgeId} reaches no true AOI exit inside its component within ${request.maxEdges} sections${request.viable ? " that this body can halt on" : ""}`;
+          : `${kind} route from ${entryEdgeId} reaches no true AOI exit inside its component within ${request.maxEdges} sections${request.viable ? " allowed by source legality" : ""}`;
         break;
       }
-      const built = this.assemble(graph, kind, walk, request.footprintRadiusM);
+      const built = this.assemble(graph, kind, walk, request.footprintRadiusM, request.vehicleBody);
       if (built.route) {
         if (centrePrefixKey && !request.viable) this.centrePrefixes.set(centrePrefixKey, Object.freeze([...walk]));
         if (kind === "pedestrian" && request.destination === "centre") {
@@ -402,10 +420,19 @@ export class RouteLibrary {
         return built;
       }
       reason = built.reason;
+      recorded = built.recorded === true;
     }
-    this.refusals.add(reason ?? `${kind} route from ${entryEdgeId} was refused by the real passage builder`);
-    this.refused += 1;
+    if (!recorded) {
+      this.refusals.add(reason ?? `${kind} route from ${entryEdgeId} was refused by the real passage builder`);
+      this.refused += 1;
+    }
     return { route: null, ...(reason === undefined ? {} : { reason }) };
+  }
+
+  /** Validate an unchanged directed candidate; does not search or consume a stream. */
+  validateVehicleCandidate(edgeIds: readonly string[], body: VehicleRouteBody): RouteAttempt {
+    const radius = vehicleEnvelope(body.asset, body.scale).diameter / 2;
+    return this.assemble(this.vehicleGraph, "vehicle", edgeIds, radius, body);
   }
 
   private assembleCentre(graph: MovementGraph, prefix: readonly string[], request: RouteRequest): RouteAttempt {
@@ -597,8 +624,18 @@ export class RouteLibrary {
     return null;
   }
 
-  private assemble(graph: MovementGraph, kind: ActorKind, edgeIds: readonly string[], footprintRadiusM: number): RouteAttempt {
+  private assemble(graph: MovementGraph, kind: ActorKind, edgeIds: readonly string[], footprintRadiusM: number, vehicleBody?: VehicleRouteBody): RouteAttempt {
+    if (kind === "vehicle" && vehicleBody && Math.abs(vehicleEnvelope(vehicleBody.asset, vehicleBody.scale).diameter / 2 - footprintRadiusM) > 1e-9) return { route: null, reason: `Vehicle route from ${edgeIds[0]} must use its actual authority envelope radius.` };
     const edges = edgeIds.map((id) => graph.edge(id));
+    if (kind === "vehicle") {
+      const reason = unreconciledVehicleCorridorReason(this.network, edges);
+      if (reason) {
+        this.refusals.add(reason);
+        this.refused += 1;
+        return { route: null, reason, recorded: true };
+      }
+    }
+    if (kind === "vehicle" && (!edges.length || !graph.isExit(edgeIds.at(-1)!) || !boundaryProfile(this.network, "vehicle", edges.at(-1)!))) return { route: null, reason: `Vehicle route from ${edgeIds[0]} needs its actual true AOI exit; a route terminus is not retirement.` };
     const starts: number[] = [];
     let total = 0;
     for (const edge of edges) {
@@ -607,62 +644,27 @@ export class RouteLibrary {
     }
     const passages: RoutePassage[] = [];
     const gates: RouteGate[] = [];
-    // One passage per governed section, not one per run of same-authority
-    // sections. A run's passage spans several occurrences, and the occurrence a
-    // body reports is then a compromise: the release test wants the true one
-    // while the request window wants the last one the run owns, and one number
-    // cannot be both. A single-occurrence passage makes the request window and
-    // the body's position the same thing, so a body asks, is observed and is
-    // released one occurrence at a time.
-    //
-    // The factory is called once per distinct occurrence and cached: it validates
-    // the whole route on every call, and every actor driving this plan must hold
-    // the same object, which is what makes the passage bookkeeping an identity.
-    const cachedPassages = new Map<number, RoutePassage | string>();
-    const passageAt = (index: number): RoutePassage | string => {
-      const hit = cachedPassages.get(index);
-      if (hit !== undefined) return hit;
-      let value: RoutePassage | string;
-      try {
-        value = createRoutePassage(this.network, kind, edgeIds, index);
-      } catch (error) {
-        value = `route from ${edgeIds[0]} is not drivable: the real passage builder refuses the ${edges[index]!.junctionId} occurrence at section ${index} (${(error as Error).message.split(";")[0]})`;
-      }
-      cachedPassages.set(index, value);
-      return value;
-    };
-    for (let index = 0; index < edges.length; index += 1) {
-      const junctionId = edges[index]!.junctionId;
-      if (!junctionId) continue;
-      const passage = passageAt(index);
-      if (typeof passage === "string") return { route: null, reason: passage };
+    // One factory window is one visit, including its single internal null gaps.
+    // Preserve every source edge; internal governed occurrences add no admission.
+    let visits: readonly RoutePassage[];
+    try { visits = createRouteVisits(this.network, kind, edgeIds); }
+    catch (error) { return { route: null, reason: `Route from ${edgeIds[0]} has no complete legal passage sequence: ${(error as Error).message}` }; }
+    for (const passage of visits) {
+      const index = passage.entryIndex, junctionId = passage.junctionId;
       const entryEdge = edges[index]!;
       const gateDistanceM = starts[index]!;
-      const controls = passage.controls.filter((control) => control.routeIndex === index);
+      const controls = passage.controls;
       let holdDistanceM = gateDistanceM - footprintRadiusM;
       for (const control of controls) {
-        holdDistanceM = Math.min(holdDistanceM, gateDistanceM + control.distanceM - footprintRadiusM);
+        holdDistanceM = Math.min(holdDistanceM, passage.starts[control.routeIndex]! + control.distanceM - footprintRadiusM);
       }
-      if (!(holdDistanceM >= -1e-9)) {
+      if (kind !== "vehicle" && !(holdDistanceM >= -1e-9)) {
         return {
           route: null,
           reason: `route from ${edgeIds[0]} is not drivable for a ${footprintRadiusM.toFixed(3)} m body: the ${junctionId} gate sits ${gateDistanceM.toFixed(3)} m into the route and its earliest obligation at ${holdDistanceM.toFixed(3)} m leaves no legal halt`,
         };
       }
       const clampedHold = Math.max(0, holdDistanceM);
-      if (entryEdge.lengthM < footprintRadiusM - 1e-9) {
-        // A body whose own radius is longer than the junction's entry section has
-        // nowhere to stand on the approach: at its earliest legal halt its
-        // collision centre would already be inside the junction, and a smaller
-        // footprint is not an option ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the dimensions come from the delivered
-        // collision envelope and must not be trimmed to buy a route. The walk's
-        // `viable` filter is the same rule applied while planning, so this is a
-        // backstop rather than the mechanism that finds a drivable route.
-        return {
-          route: null,
-          reason: `route from ${edgeIds[0]} is not drivable for a ${footprintRadiusM.toFixed(3)} m body: the ${junctionId} entry section ${entryEdge.id} is ${entryEdge.lengthM.toFixed(3)} m long, shorter than the body's own footprint radius, so it cannot halt outside that gate`,
-        };
-      }
       passages.push(passage);
       gates.push(Object.freeze({
         passageIndex: passages.length - 1,
@@ -676,8 +678,7 @@ export class RouteLibrary {
       }));
     }
     const speedLimits = edges.map((edge) => (kind === "vehicle" ? graph.speedLimit(edge.id) : PEDESTRIAN_CADENCE_MPS));
-    return {
-      route: Object.freeze({
+    const route: PlannedRoute = Object.freeze({
         entryEdgeId: edgeIds[0]!,
         edgeIds: Object.freeze([...edgeIds]),
         edges: Object.freeze(edges),
@@ -686,8 +687,18 @@ export class RouteLibrary {
         totalLengthM: total,
         starts: Object.freeze(starts),
         speedLimits: Object.freeze(speedLimits),
-      }),
-    };
+      });
+    if (kind === "vehicle") {
+      if (!vehicleBody) return { route: null, reason: `Vehicle route from ${edgeIds[0]} needs its actual asset, scale and core body frame before complete halt validation.` };
+      const checked = validateVehicleRoute(this.network, route, vehicleBody);
+      if (checked.reason) return { route: null, reason: checked.reason };
+      const gates = route.gates.map(gate => {
+        const approach = checked.approachHalts?.find(h=>h.entryIndex===gate.entryIndex);
+        return approach ? Object.freeze({ ...gate, holdDistanceM: Math.min(gate.holdDistanceM, approach.distanceM) }) : gate;
+      });
+      return { route: Object.freeze({ ...route, vehicleLaneIndex: vehicleBody.laneIndex, ...(checked.vehicleFinalRelease ? { vehicleFinalRelease: checked.vehicleFinalRelease } : {}), gates: Object.freeze(gates), approachHalts: checked.approachHalts ?? Object.freeze([]), boundaryEntryPassage: checked.boundaryEntryPassage ?? null }) };
+    }
+    return { route };
   }
 }
 
@@ -797,4 +808,52 @@ export function placeOnCorridor(route: PlannedRoute, kind: ActorKind, streamSeed
     offsets[index] = room > 0 ? fraction * room : 0;
   }
   return Object.freeze({ ...route, lateralOffsetsM: offsets });
+}
+
+/** Existing vehicle core frame at a source-route distance. This is not fitted ground support. */
+export function vehicleRoutePose(route: PlannedRoute, travelledM: number, laneIndex: number) {
+  let occurrence = 0;
+  while (occurrence + 1 < route.edges.length && travelledM >= route.starts[occurrence + 1]!) occurrence++;
+  const at = sampleRoute(route, occurrence, travelledM - route.starts[occurrence]!);
+  const lateral = laneIndex * (route.edges[occurrence]! as LaneEdge).widthM * .45;
+  return { occurrence, x: at.x + Math.cos(at.heading) * lateral, y: at.y, z: at.z - Math.sin(at.heading) * lateral, heading: at.heading };
+}
+export function vehicleRouteFootprint(route: PlannedRoute, travelledM: number, body: VehicleRouteBody) {
+  if (body.frame !== "population-upright" || !Number.isFinite(body.laneIndex)) throw new Error(`Vehicle ${body.asset.id} route halt needs the exact population core body frame and finite lateral lane index.`);
+  const pose = vehicleRoutePose(route, travelledM, body.laneIndex);
+  return projectVehicleFootprint(body.asset, pose, pose.heading, { x: 0, y: 1, z: 0 }, body.scale, [0, 0, 0, 0]);
+}
+/** Derive physical first-approach halts once; retain every mapped control and body size. */
+function validateVehicleRoute(network: NetworkData, route: PlannedRoute, body: VehicleRouteBody) {
+  const radius = vehicleEnvelope(body.asset, body.scale).diameter / 2;
+  let boundaryEntryPassage: RoutePassage | null = null;
+  try {
+    const initial = vehicleRouteFootprint(route, 0, body);
+    if (boundaryProfile(network, "vehicle", route.edges[0]!, true)) boundaryEntryPassage = createBoundaryEntryPassage(network, "vehicle", route.edgeIds, initial);
+    const envelope = vehicleEnvelope(body.asset, body.scale);
+    const lateral = Math.max(...route.edges.map(edge=>Math.abs(body.laneIndex)*edge.widthM*.45));
+    const fitted = vehicleApproachHalts(network, route, radius + Math.hypot(envelope.centre.x,envelope.centre.z) + lateral, radius, boundaryEntryPassage);
+    if (fitted.reason) return { reason: fitted.reason };
+    const obligations = routeHaltObligations({ ...route, approachHalts: fitted.halts }, radius, boundaryEntryPassage ?? undefined);
+    let previous = boundaryEntryPassage;
+    for (const halt of obligations.admissions) {
+      if (halt.distanceM < -1e-9) return { reason: `Vehicle route from ${route.entryEdgeId} leaves negative admission room at occurrence ${halt.entryIndex}; no legal whole-body halt.` };
+      const distanceM = Math.max(0, halt.distanceM), pose = vehicleRoutePose(route, distanceM, body.laneIndex), footprint = vehicleRouteFootprint(route, distanceM, body);
+      if (previous && pose.occurrence <= previous.lastConflictIndex) return { reason: `Vehicle route from ${route.entryEdgeId} cannot release the previous visit before admission at occurrence ${halt.entryIndex}.` };
+      const touched = network.junctions.filter(owner => footprintOccupies(owner, footprint));
+      if (touched.length) return { reason: `Vehicle route from ${route.entryEdgeId} admission halt at occurrence ${halt.entryIndex} occupies ${touched.map(owner => owner.id).join(", ")}; the whole body must clear every authority before requesting a new visit.` };
+      previous = halt.passage;
+    }
+    for (const halt of obligations.controls) {
+      if (halt.distanceM < -1e-9) return { reason: `Vehicle route from ${route.entryEdgeId} leaves negative room for mapped ${halt.control.rule} node/${halt.control.nodeIds.join(",")}.` };
+      const footprint = vehicleRouteFootprint(route, Math.max(0, halt.distanceM), body);
+      const touched = network.junctions.filter(owner => owner.id !== halt.passage.junctionId && footprintOccupies(owner, footprint));
+      if (touched.length) return { reason: `Vehicle route from ${route.entryEdgeId} mapped ${halt.control.rule} halt at occurrence ${halt.control.routeIndex} occupies unheld ${touched.map(owner => owner.id).join(", ")}.` };
+    }
+    for (const [index, edge] of route.edges.entries()) {
+      const lateral = body.laneIndex * edge.widthM * .45 + envelope.centre.x;
+      if (Math.abs(lateral) + envelope.width / 2 >= edge.widthM / 2) return { reason: `Vehicle route from ${route.entryEdgeId} cannot contain ${body.asset.id} at scale ${body.scale} on occurrence ${index} (${edge.id}): generated width ${envelope.width.toFixed(6)} m and lateral centre ${lateral.toFixed(6)} m need more than its ${edge.widthM} m lane; retain the body and choose a width-fitting source route.` };
+    }
+    return { boundaryEntryPassage, approachHalts: fitted.halts, vehicleFinalRelease: vehicleFinalRelease(network, route, radius + Math.hypot(envelope.centre.x,envelope.centre.z) + lateral, boundaryEntryPassage) };
+  } catch (error) { return { reason: `Vehicle route from ${route.entryEdgeId} has no complete body halt validation: ${(error as Error).message}` }; }
 }

@@ -1,4 +1,8 @@
 /**
+ * Current repair179: body-fit screening admits kei/taxi only, with two observed
+ * governed green disk entries in the same window. Historical measurements and
+ * red controls below remain historical; no full signal-cycle claim is added.
+ *
  * Vehicle run gate. Bound: the delivered network and fleet, seed `0x5b1b0a`, 1,200
  * ticks at 1/60 s — 20 simulated seconds — with 60 vehicles and no pedestrians,
  * sampled every tick. Every input is named here because the numbers below are
@@ -152,6 +156,8 @@ export interface VehicleRunReport {
     readonly authorityViolations: number;
     readonly grants: number;
     readonly governedEntries: number;
+    readonly governedGreenEntries: number;
+    readonly governedNonGreenEntries: number;
     readonly ungovernedDiskEntries: number;
     readonly signalJunctionsWithACycleAdvance: number;
     readonly signalJunctions: number;
@@ -266,6 +272,8 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
   let turnsCompleted = 0;
   let transitionsAtAJunction = 0;
   let governedEntries = 0;
+  let governedGreenEntries = 0;
+  let governedNonGreenEntries = 0;
   let ungovernedDiskEntries = 0;
   let maximumSwing = 0;
 
@@ -396,7 +404,12 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
         const was = state.inside.has(junction.id);
         if (inside && !was) {
           state.inside.add(junction.id);
-          if (edge?.signalGroupId) governedEntries += 1;
+          if (edge?.signalGroupId) {
+            governedEntries += 1;
+            const signal = snapshots.find(snapshot => snapshot.junctionId === junction.id);
+            if (signal?.stage === "vehicle" && signal.activeGroup === edge.signalGroupId) governedGreenEntries += 1;
+            else governedNonGreenEntries += 1;
+          }
           else ungovernedDiskEntries += 1;
         } else if (!inside && was) {
           state.inside.delete(junction.id);
@@ -433,6 +446,8 @@ export function measureVehicleRun(inputs: RunInputs, mutations: RunMutations = {
       authorityViolations: status.authorityViolations,
       grants: status.grants,
       governedEntries,
+      governedGreenEntries,
+      governedNonGreenEntries,
       ungovernedDiskEntries,
       signalJunctionsWithACycleAdvance: cycles.size,
       signalJunctions: signalJunctions.length,
@@ -523,12 +538,10 @@ export function controlFailures(report: VehicleRunReport): string[] {
   // has no way to reach around: `test/population-authority.test.ts` asserts that
   // no module under `src/agents/population/` even names `canEnter`.
   //
-  // What was missing is the temporal half — watching a run to see that the
-  // enforcement holds over time — and that is what this gate adds, by counting
-  // `governedEntries`. In this window the number is 0: the driven corridors do not
-  // contain a signalized junction's governed approaches, so this gate has no
-  // observation of a green-light entry and says so in its own reading rather than
-  // reporting the absence as agreement.
+  // The original window had no governed disk entry. Body-fit screening now
+  // changes the selected paths, and the evidence case below checks positive
+  // governed entries against their observed active signal group. This remains a
+  // 20-second entry sample, not a full green-to-red cycle.
   if (report.signals.authorityViolations !== 0) {
     failures.push(`${report.signals.authorityViolations} vehicles moved into a governed conflict section with no grant of their own; the single-authority invariant is broken`);
   }
@@ -645,13 +658,13 @@ describe("vehicles over a run", () => {
     expect(report.lifecycle.retiredInPlace).toBe(0);
     expect(report.signals.authorityViolations).toBe(0);
     expect(report.signals.grants).toBeGreaterThan(100);
-    // What this window did not reach. Asserted, not just commented: a later change
-    // that starts driving the signalized corridors will fail here, which is the
-    // signal that the signal clause has become measurable and should be asserted
-    // rather than noted.
-    expect(unmeasuredClauses(report)).toEqual([
-      `signal clause unmeasured: 0 of ${report.signals.ungovernedDiskEntries} junction-disk entries in this window were on an approach lane carrying an entry signal group, so nothing here observed a green-light entry; the authority half is gated in test/population-authority.test.ts`,
-    ]);
+    // Body-fit screening changes the trajectories: this window now has two
+    // governed disk entries. Check their observed current group, not an empty
+    // unmeasured list alone. A full green/red cycle remains outside 20 seconds.
+    expect(report.signals.governedEntries).toBeGreaterThan(0);
+    expect(report.signals.governedGreenEntries).toBe(report.signals.governedEntries);
+    expect(report.signals.governedNonGreenEntries).toBe(0);
+    expect(unmeasuredClauses(report)).toEqual([]);
   });
 
   it("is vacuous unless vehicles were drawn, turned, and retired through the boundary", () => {

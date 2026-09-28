@@ -1,0 +1,324 @@
+{
+  "provenance": {
+    "report178Sha256": "d41df8fc96476d60250b7b480667b3e88eccaf77681f5f32c22c850dd3ff6232",
+    "networkSha256": "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
+    "fleetSha256": "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"
+  },
+  "lane": {
+    "tick": 686,
+    "beyondM": 0.14280221503573465,
+    "actor": {
+      "slot": 48,
+      "variant": 2,
+      "scale": 1.001695679710784,
+      "position": [
+        -484.1898193359375,
+        19.096839904785156,
+        -416.7569274902344
+      ],
+      "yaw": 2.2965781688690186,
+      "travelledM": 17.667947816107112,
+      "edgeIds": [
+        "lane:46770351:2:0:ground0:f:0:section0",
+        "lane:46770351:2:0:ground0:f:0:section1",
+        "lane:46770351:3:0:ground0:f:0:section0",
+        "lane:46770351:3:0:ground0:f:0:section1",
+        "lane:46770351:3:0:ground0:f:0:section2",
+        "turn:lane:46770351:3:0:ground0:f:0>lane:1066165136:0:0:ground0:r:0",
+        "lane:1066165136:0:0:ground0:r:0:section0",
+        "lane:1066165136:0:0:ground0:r:0:section1",
+        "turn:lane:1066165136:0:0:ground0:r:0>lane:282756971:0:0:ground0:r:0",
+        "lane:282756971:0:0:ground0:r:0"
+      ]
+    }
+  },
+  "entry": {
+    "tick": 181,
+    "pair": {
+      "a": 2,
+      "b": 16,
+      "labelA": "bus#2",
+      "labelB": "kei#16",
+      "penetrationM": 0.8587374808664068,
+      "longitudinalOverlapM": 0.8587374808664077,
+      "lateralOverlapM": 2.573432558131878,
+      "centreDistanceM": 6.163688979481574,
+      "originGapM": -6.1636889794752125,
+      "headingDeltaDegrees": 0
+    },
+    "actors": [
+      {
+        "slot": 2,
+        "variant": 2,
+        "scale": 1.0012779671698808,
+        "position": [
+          -140.576171875,
+          33.38358688354492,
+          493.3365173339844
+        ],
+        "yaw": -2.7517669200897217,
+        "travelledM": 6.164014449969414,
+        "edgeIds": [
+          "lane:60264950:1:0:ground0:r:0:section0",
+          "lane:60264950:1:0:ground0:r:0:section1",
+          "turn:lane:60264950:1:0:ground0:r:0>lane:60264950:0:0:ground0:r:0",
+          "lane:60264950:0:0:ground0:r:0",
+          "turn:lane:60264950:0:0:ground0:r:0>lane:756290725:5:0:ground0:f:0",
+          "lane:756290725:5:0:ground0:f:0:section0",
+          "lane:756290725:5:0:ground0:f:0:section1",
+          "lane:756290725:5:0:ground0:f:0:section2",
+          "lane:756290725:6:0:ground0:f:0:section0",
+          "lane:756290725:6:0:ground0:f:0:section1",
+          "lane:756290725:6:0:ground0:f:0:section2",
+          "lane:756290725:7:0:ground0:f:0"
+        ]
+      },
+      {
+        "slot": 16,
+        "variant": 0,
+        "scale": 0.970151657089591,
+        "position": [
+          -138.2338104248047,
+          33.32710647583008,
+          499.03778076171875
+        ],
+        "yaw": -2.7517669200897217,
+        "travelledM": 0,
+        "edgeIds": [
+          "lane:60264950:1:0:ground0:r:0:section0",
+          "lane:60264950:1:0:ground0:r:0:section1",
+          "turn:lane:60264950:1:0:ground0:r:0>lane:60264950:0:0:ground0:r:0",
+          "lane:60264950:0:0:ground0:r:0",
+          "turn:lane:60264950:0:0:ground0:r:0>lane:756290725:5:0:ground0:f:0",
+          "lane:756290725:5:0:ground0:f:0:section0",
+          "lane:756290725:5:0:ground0:f:0:section1",
+          "lane:756290725:5:0:ground0:f:0:section2",
+          "lane:756290725:6:0:ground0:f:0:section0",
+          "lane:756290725:6:0:ground0:f:0:section1",
+          "lane:756290725:6:0:ground0:f:0:section2",
+          "lane:756290725:7:0:ground0:f:0"
+        ]
+      }
+    ]
+  },
+  "turn": {
+    "tick": 241,
+    "granted": true,
+    "request": {
+      "actorId": "vehicle:49",
+      "kind": "vehicle",
+      "entryEdgeId": "lane:520446649:0:0:ground0:f:0",
+      "passage": {
+        "entryIndex": 0,
+        "lastConflictIndex": 6,
+        "edgeIds": [
+          "lane:520446649:0:0:ground0:f:0",
+          "turn:lane:520446649:0:0:ground0:f:0>lane:520446644:1:0:ground0:r:0",
+          "lane:520446644:1:0:ground0:r:0:section0",
+          "lane:520446644:1:0:ground0:r:0:section1",
+          "lane:520446644:1:0:ground0:r:0:section2",
+          "turn:lane:520446644:1:0:ground0:r:0>lane:520446643:0:0:ground0:r:0",
+          "lane:520446643:0:0:ground0:r:0:section0",
+          "lane:520446643:0:0:ground0:r:0:section1"
+        ],
+        "junctionId": "priority:node:5072661379"
+      },
+      "routeIndex": 0,
+      "footprint": {
+        "position": {
+          "x": 498.4505188388917,
+          "y": 29.546038280946494,
+          "z": -368.54437450926304
+        },
+        "origin": {
+          "x": 498.4524230957031,
+          "y": 27.909854888916016,
+          "z": -368.5428161621094
+        },
+        "headingRadians": -2.2566261291503906,
+        "supportNormal": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "lengthM": 10.399324057066698,
+        "widthM": 3.2285645020739517,
+        "hull": [
+          {
+            "x": 493.4041828775954,
+            "y": 27.860638966199012,
+            "z": -370.5881175857559
+          },
+          {
+            "x": 495.4488825236805,
+            "y": 31.231437595693976,
+            "z": -373.08668359476025
+          },
+          {
+            "x": 503.4968548001879,
+            "y": 31.231437595693976,
+            "z": -366.5006314327702
+          },
+          {
+            "x": 501.45215515410285,
+            "y": 27.860638966199012,
+            "z": -364.0020654237659
+          }
+        ],
+        "envelopeDiameterM": 11.398765415102785,
+        "vehicle": {
+          "classId": "bus",
+          "scale": 0.9843184543401002
+        }
+      },
+      "stoppedSeconds": 0,
+      "yieldSatisfied": true,
+      "receivingSpace": true,
+      "generation": 1
+    },
+    "actors": [
+      {
+        "slot": 0,
+        "generation": 1,
+        "active": true,
+        "pending": false,
+        "position": [
+          493.64056396484375,
+          28.028348922729492,
+          -354.92352294921875
+        ],
+        "speedMps": 1.0134592056274414,
+        "travelledM": 6.127560288553774,
+        "stoppedSeconds": 0,
+        "routeEntryEdgeId": "lane:520446643:0:0:ground0:f:0:section0",
+        "routeEdges": 8,
+        "routeLengthM": 34.63786572924028,
+        "routeIndex": 0,
+        "junctionId": null,
+        "variant": 0,
+        "scale": 1.0111933946609497,
+        "footprint": {
+          "position": {
+            "x": 493.6358118732689,
+            "y": 28.99151061729977,
+            "z": -354.9272950276273
+          },
+          "origin": {
+            "x": 493.64056396484375,
+            "y": 28.028348922729492,
+            "z": -354.92352294921875
+          },
+          "headingRadians": -2.2417283058166504,
+          "supportNormal": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          },
+          "lengthM": 3.612994196251437,
+          "widthM": 1.9414913961486546,
+          "hull": [
+            {
+              "x": 491.6173580775104,
+              "y": 27.97778925296385,
+              "z": -355.29009421485694
+            },
+            {
+              "x": 492.8244147745163,
+              "y": 30.00523198163569,
+              "z": -356.8107529443332
+            },
+            {
+              "x": 495.65426566902744,
+              "y": 30.00523198163569,
+              "z": -354.5644958403976
+            },
+            {
+              "x": 494.44720897202154,
+              "y": 27.97778925296385,
+              "z": -353.04383711092134
+            }
+          ],
+          "envelopeDiameterM": 4.5753294877538755,
+          "vehicle": {
+            "classId": "kei",
+            "scale": 1.0111933953128756
+          }
+        },
+        "committed": false,
+        "egressing": false,
+        "egressOffsetM": 0,
+        "retryTick": 0,
+        "route": {
+          "edgeIds": [
+            "lane:520446643:0:0:ground0:f:0:section0",
+            "lane:520446643:0:0:ground0:f:0:section1",
+            "turn:lane:520446643:0:0:ground0:f:0>lane:520446644:1:0:ground0:f:0",
+            "lane:520446644:1:0:ground0:f:0:section0",
+            "lane:520446644:1:0:ground0:f:0:section1",
+            "lane:520446644:1:0:ground0:f:0:section2",
+            "lane:520446644:2:0:ground0:f:0:section0",
+            "lane:520446644:2:0:ground0:f:0:section1"
+          ],
+          "starts": [
+            0,
+            10.058268639925853,
+            13.766424183080156,
+            16.18310065969968,
+            19.891252031381704,
+            26.188790548499277,
+            29.89692966267103,
+            33.605058702088385
+          ]
+        }
+      },
+      {
+        "slot": 49,
+        "generation": 1,
+        "active": false,
+        "pending": true,
+        "position": [
+          498.4524230957031,
+          27.909854888916016,
+          -368.5428161621094
+        ],
+        "speedMps": 0,
+        "travelledM": 0,
+        "stoppedSeconds": 0,
+        "routeEntryEdgeId": "lane:520446649:0:0:ground0:f:0",
+        "routeEdges": 8,
+        "routeLengthM": 34.44090513924556,
+        "routeIndex": 0,
+        "junctionId": "priority:node:5072661379",
+        "variant": 2,
+        "scale": 0.9843184351921082,
+        "footprint": null,
+        "committed": false,
+        "egressing": false,
+        "egressOffsetM": 0,
+        "retryTick": 241,
+        "route": {
+          "edgeIds": [
+            "lane:520446649:0:0:ground0:f:0",
+            "turn:lane:520446649:0:0:ground0:f:0>lane:520446644:1:0:ground0:r:0",
+            "lane:520446644:1:0:ground0:r:0:section0",
+            "lane:520446644:1:0:ground0:r:0:section1",
+            "lane:520446644:1:0:ground0:r:0:section2",
+            "turn:lane:520446644:1:0:ground0:r:0>lane:520446643:0:0:ground0:r:0",
+            "lane:520446643:0:0:ground0:r:0:section0",
+            "lane:520446643:0:0:ground0:r:0:section1"
+          ],
+          "starts": [
+            0,
+            3.3396428787842467,
+            6.396518010524672,
+            10.104703019701553,
+            16.40229428880872,
+            20.110408446336752,
+            23.054728739699,
+            26.762859116615402
+          ]
+        }
+      }
+    ]
+  }
+}

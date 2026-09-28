@@ -1,0 +1,709 @@
+{
+  "provenance": {
+    "reviewReportSha256": "895439154f053303ec952a2f16a996d32ccb4e38e064d0cda3892b7884c8a510",
+    "networkSha256": "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
+    "fleetSha256": "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01",
+    "bound": "Exact source route IDs and expected physical/stop witnesses promoted from independent Review 161; full source remains ignored."
+  },
+  "hero": {
+    "ids": [
+      "lane:1071930093:0:0:ground0:r:1:section0",
+      "lane:1071930093:0:0:ground0:r:1:section1",
+      "turn:lane:1071930093:0:0:ground0:r:1>lane:1071930092:0:0:ground0:r:1",
+      "lane:1071930092:0:0:ground0:r:1:section0",
+      "lane:1071930092:0:0:ground0:r:1:section1",
+      "lane:1071930092:0:0:ground0:r:1:section2",
+      "lane:1134562280:1:0:ground0:r:1",
+      "lane:1134562280:0:0:ground0:r:1",
+      "turn:lane:1134562280:0:0:ground0:r:1>lane:1134562282:1:0:ground0:r:1",
+      "lane:1134562282:1:0:ground0:r:1",
+      "turn:lane:1134562282:1:0:ground0:r:1>lane:1134562282:0:0:ground0:r:1",
+      "lane:1134562282:0:0:ground0:r:1",
+      "lane:23334685:0:0:ground0:r:1:section0",
+      "lane:23334685:0:0:ground0:r:1:section1",
+      "lane:23334685:0:0:ground0:r:1:section2",
+      "turn:lane:23334685:0:0:ground0:r:1>lane:1109680533:0:0:ground0:r:1",
+      "lane:1109680533:0:0:ground0:r:1",
+      "turn:lane:1109680533:0:0:ground0:r:1>lane:1134562285:0:0:ground0:r:1",
+      "lane:1134562285:0:0:ground0:r:1",
+      "turn:lane:1134562285:0:0:ground0:r:1>lane:1298036687:0:0:ground0:r:1",
+      "lane:1298036687:0:0:ground0:r:1",
+      "turn:lane:1298036687:0:0:ground0:r:1>lane:1106270530:0:0:ground0:r:1",
+      "lane:1106270530:0:0:ground0:r:1",
+      "turn:lane:1106270530:0:0:ground0:r:1>lane:1112568718:0:0:ground0:r:1",
+      "lane:1112568718:0:0:ground0:r:1",
+      "turn:lane:1112568718:0:0:ground0:r:1>lane:1134562286:1:0:ground0:r:1",
+      "lane:1134562286:1:0:ground0:r:1",
+      "turn:lane:1134562286:1:0:ground0:r:1>lane:1134562286:0:0:ground0:r:1",
+      "lane:1134562286:0:0:ground0:r:1",
+      "turn:lane:1134562286:0:0:ground0:r:1>lane:1035760831:0:0:ground0:r:1",
+      "lane:1035760831:0:0:ground0:r:1:section0",
+      "lane:1035760831:0:0:ground0:r:1:section1",
+      "turn:lane:1035760831:0:0:ground0:r:1>lane:153108795:13:0:ground0:r:0",
+      "lane:153108795:13:0:ground0:r:0",
+      "lane:153108795:12:0:ground0:r:0:section0",
+      "lane:153108795:12:0:ground0:r:0:section1",
+      "lane:153108795:11:0:ground0:r:0",
+      "lane:153108795:10:0:ground0:r:0",
+      "lane:153108795:9:0:ground0:r:0",
+      "lane:153108795:8:0:ground0:r:0",
+      "lane:153108795:7:0:ground0:r:0:section0",
+      "lane:153108795:7:0:ground0:r:0:section1",
+      "lane:153108795:7:0:ground0:r:0:section2",
+      "lane:153108795:6:0:ground0:r:0",
+      "lane:153108795:5:0:ground0:r:0",
+      "lane:153108795:4:0:ground0:r:0",
+      "lane:153108795:3:0:ground0:r:0:section0",
+      "lane:153108795:3:0:ground0:r:0:section1",
+      "turn:lane:153108795:3:0:ground0:r:0>lane:153108795:2:0:ground0:r:0",
+      "lane:153108795:2:0:ground0:r:0:section0",
+      "lane:153108795:2:0:ground0:r:0:section1",
+      "lane:153108795:1:0:ground0:r:0",
+      "turn:lane:153108795:1:0:ground0:r:0>lane:153108795:0:0:ground0:r:0",
+      "lane:153108795:0:0:ground0:r:0",
+      "turn:lane:153108795:0:0:ground0:r:0>lane:310155108:4:0:ground0:r:0",
+      "lane:310155108:4:0:ground0:r:0",
+      "lane:310155108:3:0:ground0:r:0",
+      "lane:310155108:2:0:ground0:r:0:section0",
+      "lane:310155108:2:0:ground0:r:0:section1",
+      "lane:310155108:2:0:ground0:r:0:section2",
+      "turn:lane:310155108:2:0:ground0:r:0>lane:310155108:1:0:ground0:r:0",
+      "lane:310155108:1:0:ground0:r:0:section0",
+      "lane:310155108:1:0:ground0:r:0:section1",
+      "lane:310155108:1:0:ground0:r:0:section2",
+      "turn:lane:310155108:1:0:ground0:r:0>lane:310155108:0:0:ground0:r:0",
+      "lane:310155108:0:0:ground0:r:0",
+      "lane:31856144:2:0:ground0:r:0",
+      "lane:31856144:1:0:ground0:r:0:section0",
+      "lane:31856144:1:0:ground0:r:0:section1",
+      "lane:31856144:1:0:ground0:r:0:section2"
+    ],
+    "totalM": 636.9142742286133,
+    "holds": [
+      {
+        "class": "kei",
+        "scale": 1.04,
+        "radius": 2.35283512002753,
+        "visits": [
+          {
+            "entryIndex": 1,
+            "lastConflictIndex": 30,
+            "junctionId": "scramble",
+            "haltDistanceM": 24.1580147927775,
+            "haltOccurrence": 0,
+            "flatProjectedPose": {
+              "x": 60.936883958102676,
+              "y": 14.779124954539723,
+              "z": 7.174785596977857,
+              "heading": -1.5592316504473331
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 35,
+            "lastConflictIndex": 40,
+            "junctionId": "junction:walk:664532518:0:0:ground0",
+            "haltDistanceM": 276.11037461356136,
+            "haltOccurrence": 33,
+            "flatProjectedPose": {
+              "x": -172.1768322829392,
+              "y": 16.844820316754838,
+              "z": -42.83014642056079,
+              "heading": -1.9946764462564626
+            },
+            "touched": [
+              "junction:walk:664532518:0:0:ground0"
+            ]
+          },
+          {
+            "entryIndex": 42,
+            "lastConflictIndex": 46,
+            "junctionId": "junction:walk:1507031473:0:0:ground0",
+            "haltDistanceM": 345.0974626616012,
+            "haltOccurrence": 41,
+            "flatProjectedPose": {
+              "x": -234.59242153950754,
+              "y": 18.285745795652755,
+              "z": -72.22719815177747,
+              "heading": -2.0129277692520144
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 50,
+            "lastConflictIndex": 61,
+            "junctionId": "junction:walk:1286507149:0:0:ground0",
+            "haltDistanceM": 415.52332752967885,
+            "haltOccurrence": 49,
+            "flatProjectedPose": {
+              "x": -298.65432899507636,
+              "y": 18.82333034471323,
+              "z": -101.23677220082239,
+              "heading": -1.97912857118908
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 63,
+            "lastConflictIndex": 67,
+            "junctionId": "junction:walk:1286510241:0:0:ground0",
+            "haltDistanceM": 554.1065654902194,
+            "haltOccurrence": 62,
+            "flatProjectedPose": {
+              "x": -423.4487303058212,
+              "y": 21.706011905270522,
+              "z": -71.46262118164377,
+              "heading": -1.1582213049609085
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 69,
+            "lastConflictIndex": 69,
+            "junctionId": "junction:walk:1286510249:0:0:ground0",
+            "haltDistanceM": 629.7572306704716,
+            "haltOccurrence": 68,
+            "flatProjectedPose": {
+              "x": -491.6987664697209,
+              "y": 21.606966744256642,
+              "z": -39.27767698966642,
+              "heading": -1.0559139317663455
+            },
+            "touched": [
+              "junction:walk:1286510249:0:0:ground0"
+            ]
+          }
+        ]
+      },
+      {
+        "class": "taxi",
+        "scale": 1.04,
+        "radius": 2.820123027873044,
+        "visits": [
+          {
+            "entryIndex": 1,
+            "lastConflictIndex": 30,
+            "junctionId": "scramble",
+            "haltDistanceM": 23.690726884931983,
+            "haltOccurrence": 0,
+            "flatProjectedPose": {
+              "x": 61.40413379713411,
+              "y": 14.781649894358003,
+              "z": 7.169381762907804,
+              "heading": -1.5592316504473331
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 35,
+            "lastConflictIndex": 40,
+            "junctionId": "junction:walk:664532518:0:0:ground0",
+            "haltDistanceM": 275.64308670571586,
+            "haltOccurrence": 33,
+            "flatProjectedPose": {
+              "x": -171.75091532624265,
+              "y": 16.84077890872544,
+              "z": -42.63795796659407,
+              "heading": -1.9946764462564768
+            },
+            "touched": [
+              "junction:walk:664532518:0:0:ground0"
+            ]
+          },
+          {
+            "entryIndex": 42,
+            "lastConflictIndex": 46,
+            "junctionId": "junction:walk:1507031473:0:0:ground0",
+            "haltDistanceM": 344.6301747537557,
+            "haltOccurrence": 41,
+            "flatProjectedPose": {
+              "x": -234.17014791814498,
+              "y": 18.276611690501166,
+              "z": -72.02729931325399,
+              "heading": -2.0129277692519825
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 50,
+            "lastConflictIndex": 61,
+            "junctionId": "junction:walk:1286507149:0:0:ground0",
+            "haltDistanceM": 415.05603962183335,
+            "haltOccurrence": 49,
+            "flatProjectedPose": {
+              "x": -298.22549688520223,
+              "y": 18.817158447167852,
+              "z": -101.05123805830358,
+              "heading": -1.9791285711891127
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 63,
+            "lastConflictIndex": 67,
+            "junctionId": "junction:walk:1286510241:0:0:ground0",
+            "haltDistanceM": 553.6392775823739,
+            "haltOccurrence": 62,
+            "flatProjectedPose": {
+              "x": -423.02071948913573,
+              "y": 21.697708004590417,
+              "z": -71.64995984517155,
+              "heading": -1.1582213049609411
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 69,
+            "lastConflictIndex": 69,
+            "junctionId": "junction:walk:1286510249:0:0:ground0",
+            "haltDistanceM": 629.2899427626261,
+            "haltOccurrence": 68,
+            "flatProjectedPose": {
+              "x": -491.29223853484075,
+              "y": 21.593205541819565,
+              "z": -39.5076849379816,
+              "heading": -1.05591393176633
+            },
+            "touched": [
+              "junction:walk:1286510249:0:0:ground0"
+            ]
+          }
+        ]
+      },
+      {
+        "class": "bus",
+        "scale": 1.001695679710784,
+        "radius": 5.8,
+        "visits": [
+          {
+            "entryIndex": 1,
+            "lastConflictIndex": 30,
+            "junctionId": "scramble",
+            "haltDistanceM": 20.710849912805028,
+            "haltOccurrence": 0,
+            "flatProjectedPose": {
+              "x": 64.38376800590137,
+              "y": 14.79775133823055,
+              "z": 7.134921721386957,
+              "heading": -1.5592316504473331
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 35,
+            "lastConflictIndex": 40,
+            "junctionId": "junction:walk:664532518:0:0:ground0",
+            "haltDistanceM": 272.6632097335889,
+            "haltOccurrence": 33,
+            "flatProjectedPose": {
+              "x": -169.0348250669161,
+              "y": 16.82652266227518,
+              "z": -41.412364151727644,
+              "heading": -1.9946764462564295
+            },
+            "touched": [
+              "junction:walk:664532518:0:0:ground0"
+            ]
+          },
+          {
+            "entryIndex": 42,
+            "lastConflictIndex": 46,
+            "junctionId": "junction:walk:1507031473:0:0:ground0",
+            "haltDistanceM": 341.6502977816287,
+            "haltOccurrence": 41,
+            "flatProjectedPose": {
+              "x": -231.4774939644368,
+              "y": 18.210558362691643,
+              "z": -70.75263196331377,
+              "heading": -2.0129277692520087
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 50,
+            "lastConflictIndex": 61,
+            "junctionId": "junction:walk:1286507149:0:0:ground0",
+            "haltDistanceM": 412.07616264970636,
+            "haltOccurrence": 49,
+            "flatProjectedPose": {
+              "x": -295.4908510540818,
+              "y": 18.7778004944774,
+              "z": -99.86809398469771,
+              "heading": -1.97912857118908
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 63,
+            "lastConflictIndex": 67,
+            "junctionId": "junction:walk:1286510241:0:0:ground0",
+            "haltDistanceM": 550.659400610247,
+            "haltOccurrence": 62,
+            "flatProjectedPose": {
+              "x": -420.29131101301505,
+              "y": 21.644754350108837,
+              "z": -72.84461127967872,
+              "heading": -1.1582213049609085
+            },
+            "touched": []
+          },
+          {
+            "entryIndex": 69,
+            "lastConflictIndex": 69,
+            "junctionId": "junction:walk:1286510249:0:0:ground0",
+            "haltDistanceM": 626.3100657904992,
+            "haltOccurrence": 68,
+            "flatProjectedPose": {
+              "x": -488.6997648317189,
+              "y": 21.507912073408757,
+              "z": -40.97447112007225,
+              "heading": -1.0559139317663588
+            },
+            "touched": [
+              "junction:walk:1286510249:0:0:ground0"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "stops": [
+    {
+      "ids": [
+        "lane:202129903:1:0:ground0:f:0:section1",
+        "lane:202129903:1:0:ground0:f:0:section2",
+        "lane:202129903:2:0:ground0:f:0:section0",
+        "lane:202129903:2:0:ground0:f:0:section1",
+        "lane:202129903:2:0:ground0:f:0:section2",
+        "lane:202129903:3:0:ground0:f:0",
+        "lane:202129903:4:0:ground0:f:0:section0",
+        "lane:202129903:4:0:ground0:f:0:section1",
+        "lane:202129903:4:0:ground0:f:0:section2",
+        "lane:202129903:5:0:ground0:f:0:section0",
+        "lane:202129903:5:0:ground0:f:0:section1",
+        "lane:202129903:5:0:ground0:f:0:section2",
+        "lane:202129903:6:0:ground0:f:0:section0",
+        "lane:202129903:6:0:ground0:f:0:section1",
+        "lane:202129903:6:0:ground0:f:0:section2",
+        "lane:202129903:7:0:ground0:f:0",
+        "lane:202129903:8:0:ground0:f:0:section0",
+        "lane:202129903:8:0:ground0:f:0:section1",
+        "lane:202129903:8:0:ground0:f:0:section2",
+        "lane:202129903:9:0:ground0:f:0:section0",
+        "lane:202129903:9:0:ground0:f:0:section1",
+        "lane:202129903:9:0:ground0:f:0:section2",
+        "lane:731814367:0:0:ground0:f:0",
+        "lane:731814367:1:0:ground0:f:0:section0",
+        "lane:731814367:1:0:ground0:f:0:section1",
+        "lane:731814367:1:0:ground0:f:0:section2",
+        "lane:95633645:0:0:ground0:f:0:section0",
+        "lane:95633645:0:0:ground0:f:0:section1",
+        "lane:95633645:0:0:ground0:f:0:section2",
+        "lane:95633645:1:0:ground0:f:0:section0",
+        "lane:95633645:1:0:ground0:f:0:section1",
+        "lane:95633645:1:0:ground0:f:0:section2",
+        "lane:95633645:2:0:ground0:f:0",
+        "lane:95633645:3:0:ground0:f:0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:2:0:ground0:r:0:section0",
+        "lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:1:0:ground0:r:0",
+        "turn:lane:153108795:1:0:ground0:r:0>lane:153108795:0:0:ground0:r:0",
+        "lane:153108795:0:0:ground0:r:0",
+        "turn:lane:153108795:0:0:ground0:r:0>lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:3:0:ground0:r:0",
+        "lane:310155108:2:0:ground0:r:0:section0",
+        "lane:310155108:2:0:ground0:r:0:section1",
+        "lane:310155108:2:0:ground0:r:0:section2",
+        "turn:lane:310155108:2:0:ground0:r:0>lane:310155108:1:0:ground0:r:0",
+        "lane:310155108:1:0:ground0:r:0:section0",
+        "lane:310155108:1:0:ground0:r:0:section1",
+        "lane:310155108:1:0:ground0:r:0:section2",
+        "turn:lane:310155108:1:0:ground0:r:0>lane:310155108:0:0:ground0:r:0",
+        "lane:310155108:0:0:ground0:r:0",
+        "lane:31856144:2:0:ground0:r:0",
+        "lane:31856144:1:0:ground0:r:0:section0",
+        "lane:31856144:1:0:ground0:r:0:section1",
+        "lane:31856144:1:0:ground0:r:0:section2"
+      ],
+      "passage": {
+        "entryIndex": 31,
+        "lastConflictIndex": 34,
+        "junctionId": "junction:walk:1507031473:0:0:ground0",
+        "controls": [
+          {
+            "routeIndex": 31,
+            "distanceM": 5.391396175141724,
+            "nodeIds": [
+              13782042827
+            ],
+            "rule": "stop"
+          }
+        ],
+        "boundaryEntry": false,
+        "routeEdgeIdsSha256": "03e10621ad71396511dbdb8d3c465e935ab089239e5f391a7cfe9d39eb3e9b07"
+      },
+      "progressAfterEntry": 317.2458311541648,
+      "remainingAuthorityFrontM": 3.028561055114201
+    },
+    {
+      "ids": [
+        "lane:202129903:2:0:ground0:f:0:section1",
+        "lane:202129903:2:0:ground0:f:0:section2",
+        "lane:202129903:3:0:ground0:f:0",
+        "lane:202129903:4:0:ground0:f:0:section0",
+        "lane:202129903:4:0:ground0:f:0:section1",
+        "lane:202129903:4:0:ground0:f:0:section2",
+        "lane:202129903:5:0:ground0:f:0:section0",
+        "lane:202129903:5:0:ground0:f:0:section1",
+        "lane:202129903:5:0:ground0:f:0:section2",
+        "lane:202129903:6:0:ground0:f:0:section0",
+        "lane:202129903:6:0:ground0:f:0:section1",
+        "lane:202129903:6:0:ground0:f:0:section2",
+        "lane:202129903:7:0:ground0:f:0",
+        "lane:202129903:8:0:ground0:f:0:section0",
+        "lane:202129903:8:0:ground0:f:0:section1",
+        "lane:202129903:8:0:ground0:f:0:section2",
+        "lane:202129903:9:0:ground0:f:0:section0",
+        "lane:202129903:9:0:ground0:f:0:section1",
+        "lane:202129903:9:0:ground0:f:0:section2",
+        "lane:731814367:0:0:ground0:f:0",
+        "lane:731814367:1:0:ground0:f:0:section0",
+        "lane:731814367:1:0:ground0:f:0:section1",
+        "lane:731814367:1:0:ground0:f:0:section2",
+        "lane:95633645:0:0:ground0:f:0:section0",
+        "lane:95633645:0:0:ground0:f:0:section1",
+        "lane:95633645:0:0:ground0:f:0:section2",
+        "lane:95633645:1:0:ground0:f:0:section0",
+        "lane:95633645:1:0:ground0:f:0:section1",
+        "lane:95633645:1:0:ground0:f:0:section2",
+        "lane:95633645:2:0:ground0:f:0",
+        "lane:95633645:3:0:ground0:f:0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:2:0:ground0:r:0:section0",
+        "lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:1:0:ground0:r:0",
+        "turn:lane:153108795:1:0:ground0:r:0>lane:153108795:0:0:ground0:r:0",
+        "lane:153108795:0:0:ground0:r:0",
+        "turn:lane:153108795:0:0:ground0:r:0>lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:3:0:ground0:r:0",
+        "lane:310155108:2:0:ground0:r:0:section0",
+        "lane:310155108:2:0:ground0:r:0:section1",
+        "lane:310155108:2:0:ground0:r:0:section2",
+        "turn:lane:310155108:2:0:ground0:r:0>lane:310155108:1:0:ground0:r:0",
+        "lane:310155108:1:0:ground0:r:0:section0",
+        "lane:310155108:1:0:ground0:r:0:section1",
+        "lane:310155108:1:0:ground0:r:0:section2",
+        "turn:lane:310155108:1:0:ground0:r:0>lane:310155108:0:0:ground0:r:0",
+        "lane:310155108:0:0:ground0:r:0",
+        "lane:31856144:2:0:ground0:r:0",
+        "lane:31856144:1:0:ground0:r:0:section0",
+        "lane:31856144:1:0:ground0:r:0:section1",
+        "lane:31856144:1:0:ground0:r:0:section2"
+      ],
+      "passage": {
+        "entryIndex": 28,
+        "lastConflictIndex": 31,
+        "junctionId": "junction:walk:1507031473:0:0:ground0",
+        "controls": [
+          {
+            "routeIndex": 28,
+            "distanceM": 5.391396175141724,
+            "nodeIds": [
+              13782042827
+            ],
+            "rule": "stop"
+          }
+        ],
+        "boundaryEntry": false,
+        "routeEdgeIdsSha256": "8c112f4b90d721b2eedfa239bcf1ac79e8f04af0fbc184ecb967d32974bb0f1c"
+      },
+      "progressAfterEntry": 263.79335466403364,
+      "remainingAuthorityFrontM": 3.028561055114201
+    },
+    {
+      "ids": [
+        "lane:48391530:0:0:ground0:f:0:section0",
+        "lane:48391530:0:0:ground0:f:0:section1",
+        "lane:48391530:1:0:ground0:f:0",
+        "lane:48391530:2:0:ground0:f:0",
+        "lane:202129903:5:0:ground0:f:0:section0",
+        "lane:202129903:5:0:ground0:f:0:section1",
+        "lane:202129903:5:0:ground0:f:0:section2",
+        "lane:202129903:6:0:ground0:f:0:section0",
+        "lane:202129903:6:0:ground0:f:0:section1",
+        "lane:202129903:6:0:ground0:f:0:section2",
+        "lane:202129903:7:0:ground0:f:0",
+        "lane:202129903:8:0:ground0:f:0:section0",
+        "lane:202129903:8:0:ground0:f:0:section1",
+        "lane:202129903:8:0:ground0:f:0:section2",
+        "lane:202129903:9:0:ground0:f:0:section0",
+        "lane:202129903:9:0:ground0:f:0:section1",
+        "lane:202129903:9:0:ground0:f:0:section2",
+        "lane:731814367:0:0:ground0:f:0",
+        "lane:731814367:1:0:ground0:f:0:section0",
+        "lane:731814367:1:0:ground0:f:0:section1",
+        "lane:731814367:1:0:ground0:f:0:section2",
+        "lane:95633645:0:0:ground0:f:0:section0",
+        "lane:95633645:0:0:ground0:f:0:section1",
+        "lane:95633645:0:0:ground0:f:0:section2",
+        "lane:95633645:1:0:ground0:f:0:section0",
+        "lane:95633645:1:0:ground0:f:0:section1",
+        "lane:95633645:1:0:ground0:f:0:section2",
+        "lane:95633645:2:0:ground0:f:0",
+        "lane:95633645:3:0:ground0:f:0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:2:0:ground0:r:0:section0",
+        "lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:1:0:ground0:r:0",
+        "turn:lane:153108795:1:0:ground0:r:0>lane:153108795:0:0:ground0:r:0",
+        "lane:153108795:0:0:ground0:r:0",
+        "turn:lane:153108795:0:0:ground0:r:0>lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:3:0:ground0:r:0",
+        "lane:310155108:2:0:ground0:r:0:section0",
+        "lane:310155108:2:0:ground0:r:0:section1",
+        "lane:310155108:2:0:ground0:r:0:section2",
+        "turn:lane:310155108:2:0:ground0:r:0>lane:310155108:1:0:ground0:r:0",
+        "lane:310155108:1:0:ground0:r:0:section0",
+        "lane:310155108:1:0:ground0:r:0:section1",
+        "lane:310155108:1:0:ground0:r:0:section2",
+        "turn:lane:310155108:1:0:ground0:r:0>lane:310155108:0:0:ground0:r:0",
+        "lane:310155108:0:0:ground0:r:0",
+        "lane:31856144:2:0:ground0:r:0",
+        "lane:31856144:1:0:ground0:r:0:section0",
+        "lane:31856144:1:0:ground0:r:0:section1",
+        "lane:31856144:1:0:ground0:r:0:section2"
+      ],
+      "passage": {
+        "entryIndex": 1,
+        "lastConflictIndex": 4,
+        "junctionId": "junction:walk:1391515614:0:0:ground0",
+        "controls": [
+          {
+            "routeIndex": 1,
+            "distanceM": 4.757987413470654,
+            "nodeIds": [
+              13781883297
+            ],
+            "rule": "stop"
+          }
+        ],
+        "boundaryEntry": false,
+        "routeEdgeIdsSha256": "4677091e3a44dea2099e994efda363bf94992e482b09c7a81790267fb129ff79"
+      },
+      "progressAfterEntry": 42.98055752772558,
+      "remainingAuthorityFrontM": 2.3951522934431235
+    },
+    {
+      "ids": [
+        "lane:48391530:0:0:ground0:f:0:section0",
+        "lane:48391530:0:0:ground0:f:0:section1",
+        "lane:48391530:1:0:ground0:f:0",
+        "lane:48391530:2:0:ground0:f:0",
+        "lane:202129903:5:0:ground0:f:0:section0",
+        "lane:202129903:5:0:ground0:f:0:section1",
+        "lane:202129903:5:0:ground0:f:0:section2",
+        "lane:202129903:6:0:ground0:f:0:section0",
+        "lane:202129903:6:0:ground0:f:0:section1",
+        "lane:202129903:6:0:ground0:f:0:section2",
+        "lane:202129903:7:0:ground0:f:0",
+        "lane:202129903:8:0:ground0:f:0:section0",
+        "lane:202129903:8:0:ground0:f:0:section1",
+        "lane:202129903:8:0:ground0:f:0:section2",
+        "lane:202129903:9:0:ground0:f:0:section0",
+        "lane:202129903:9:0:ground0:f:0:section1",
+        "lane:202129903:9:0:ground0:f:0:section2",
+        "lane:731814367:0:0:ground0:f:0",
+        "lane:731814367:1:0:ground0:f:0:section0",
+        "lane:731814367:1:0:ground0:f:0:section1",
+        "lane:731814367:1:0:ground0:f:0:section2",
+        "lane:95633645:0:0:ground0:f:0:section0",
+        "lane:95633645:0:0:ground0:f:0:section1",
+        "lane:95633645:0:0:ground0:f:0:section2",
+        "lane:95633645:1:0:ground0:f:0:section0",
+        "lane:95633645:1:0:ground0:f:0:section1",
+        "lane:95633645:1:0:ground0:f:0:section2",
+        "lane:95633645:2:0:ground0:f:0",
+        "lane:95633645:3:0:ground0:f:0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section0",
+        "turn:lane:95633645:3:0:ground0:f:0>lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:2:0:ground0:r:0:section0",
+        "lane:153108795:2:0:ground0:r:0:section1",
+        "lane:153108795:1:0:ground0:r:0",
+        "turn:lane:153108795:1:0:ground0:r:0>lane:153108795:0:0:ground0:r:0",
+        "lane:153108795:0:0:ground0:r:0",
+        "turn:lane:153108795:0:0:ground0:r:0>lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:4:0:ground0:r:0",
+        "lane:310155108:3:0:ground0:r:0",
+        "lane:310155108:2:0:ground0:r:0:section0",
+        "lane:310155108:2:0:ground0:r:0:section1",
+        "lane:310155108:2:0:ground0:r:0:section2",
+        "turn:lane:310155108:2:0:ground0:r:0>lane:310155108:1:0:ground0:r:0",
+        "lane:310155108:1:0:ground0:r:0:section0",
+        "lane:310155108:1:0:ground0:r:0:section1",
+        "lane:310155108:1:0:ground0:r:0:section2",
+        "turn:lane:310155108:1:0:ground0:r:0>lane:310155108:0:0:ground0:r:0",
+        "lane:310155108:0:0:ground0:r:0",
+        "lane:31856144:2:0:ground0:r:0",
+        "lane:31856144:1:0:ground0:r:0:section0",
+        "lane:31856144:1:0:ground0:r:0:section1",
+        "lane:31856144:1:0:ground0:r:0:section2"
+      ],
+      "passage": {
+        "entryIndex": 26,
+        "lastConflictIndex": 29,
+        "junctionId": "junction:walk:1507031473:0:0:ground0",
+        "controls": [
+          {
+            "routeIndex": 26,
+            "distanceM": 5.391396175141724,
+            "nodeIds": [
+              13782042827
+            ],
+            "rule": "stop"
+          }
+        ],
+        "boundaryEntry": false,
+        "routeEdgeIdsSha256": "4677091e3a44dea2099e994efda363bf94992e482b09c7a81790267fb129ff79"
+      },
+      "progressAfterEntry": 273.0872583454055,
+      "remainingAuthorityFrontM": 3.028561055114201
+    }
+  ],
+  "clearRoute": {
+    "ids": [
+      "lane:1071930093:0:0:ground0:f:0:section1",
+      "turn:lane:1071930093:0:0:ground0:f:0>lane:213526440:0:0:ground0:f:0",
+      "lane:213526440:0:0:ground0:f:0:section0",
+      "lane:213526440:0:0:ground0:f:0:section1",
+      "lane:213526440:1:0:ground0:f:0",
+      "turn:lane:213526440:1:0:ground0:f:0>lane:213526440:2:0:ground0:f:0",
+      "lane:213526440:2:0:ground0:f:0:section0",
+      "lane:213526440:2:0:ground0:f:0:section1",
+      "lane:213526440:2:0:ground0:f:0:section2",
+      "turn:lane:213526440:2:0:ground0:f:0>lane:534157302:0:0:ground0:f:0",
+      "lane:534157302:0:0:ground0:f:0",
+      "lane:534157302:1:0:ground0:f:0:section0",
+      "lane:534157302:1:0:ground0:f:0:section1",
+      "lane:534157302:1:0:ground0:f:0:section2",
+      "lane:534157302:2:0:ground0:f:0",
+      "turn:lane:534157302:2:0:ground0:f:0>lane:931455737:0:0:ground0:f:0",
+      "lane:931455737:0:0:ground0:f:0",
+      "lane:931455737:1:0:ground0:f:0:section0",
+      "lane:931455737:1:0:ground0:f:0:section1",
+      "lane:931455737:1:0:ground0:f:0:section2",
+      "turn:lane:931455737:1:0:ground0:f:0>lane:798794764:0:0:ground0:f:0",
+      "lane:798794764:0:0:ground0:f:0",
+      "lane:798794764:1:0:ground0:f:0:section0",
+      "lane:798794764:1:0:ground0:f:0:section1"
+    ],
+    "class": "kei",
+    "scale": 1.04
+  }
+}

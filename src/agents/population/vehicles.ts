@@ -5,9 +5,9 @@
  *
  *  - car-following with IDM, using the edge's own `speedMps` as the desired
  *    speed and a standstill gap never below the shared 0.5 m `stopGapM`;
- *  - a lateral offset inside its movement width, with lane changes only inside
- *    the intervals `laneChangeOverlap` returns and only with MOBIL's safety and
- *    incentive tests passed;
+ *  - the fixed lateral state retained by its complete body/halts validation;
+ *    unqualified API plans retain the existing bounded MOBIL behavior, but an
+ *    admitted population route needs revalidation before it can change lanes;
  *  - signal and control obedience through one admission decision, never two:
  *    the vehicle asks the shared authority with its `RoutePassage` and moves
  *    into a governed occurrence only on the grant that comes back.
@@ -28,8 +28,10 @@ import { laneChangeOverlap } from "../../network/geometry.ts";
 import type { LaneEdge, NetworkData } from "../../world/network-data.ts";
 import type { VehicleAssetManifest } from "../../world/agent-assets.ts";
 import { VEHICLE_DYNAMICS } from "./config.ts";
-import { sampleRoute, type PlannedRoute } from "./routes.ts";
+import { sampleRoute, vehicleRoutePose, type PlannedRoute } from "./routes.ts";
 import { placeSlot, type SlotTable } from "./slots.ts";
+import { hasVehiclePassageSpace } from "./vehicle-clearance.ts";
+import type { RoutePassage } from "../../network/passages.ts";
 
 const UP = Object.freeze({ x: 0, y: 1, z: 0 });
 
@@ -48,14 +50,9 @@ export function gateFor(route: PlannedRoute, occurrence: number) {
 export function placeVehicle(table: SlotTable, slot: number, travelledM: number, laneIndex = 0): void {
   const state = table.vehicles[slot]!;
   const route = table.vehicleRoutes[slot]!;
-  const occurrence = occurrenceIndex(route, travelledM);
-  const local = Math.max(0, Math.min(route.edges[occurrence]!.lengthM, travelledM - route.starts[occurrence]!));
-  const at = sampleRoute(route, occurrence, local);
-  const edge = route.edges[occurrence]! as LaneEdge;
-  const lateral = laneIndex * edge.widthM * 0.45;
-  const rightX = Math.cos(at.heading);
-  const rightZ = -Math.sin(at.heading);
-  placeSlot(table.poses.vehicles, slot, { x: at.x + rightX * lateral, y: at.y, z: at.z + rightZ * lateral }, at.heading);
+  const at = vehicleRoutePose(route, travelledM, laneIndex);
+  const occurrence = at.occurrence;
+  placeSlot(table.poses.vehicles, slot, at, at.heading);
   table.poses.vehicles.current.travelledMetres[slot] = travelledM;
   state.routeIndex = occurrence;
 }
@@ -418,7 +415,11 @@ export function hasReceivingSpace(
   self: number,
   radiusM: number,
   stopGapM: number,
+  fleet: VehicleAssetManifest,
+  pending: ReadonlySet<number>,
+  passage: RoutePassage = route.passages[gateIndex]!,
 ): boolean {
+  if (passage && !hasVehiclePassageSpace(table, fleet, route, passage, travelledM, self, pending, stopGapM)) return false;
   const gate = route.gates[gateIndex];
   if (!gate) return true;
   const last = route.gates.at(-1)!;
@@ -434,6 +435,16 @@ export function hasReceivingSpace(
   return true;
 }
 
+/** A qualified plan covers one lateral state, including every later control halt.
+ * Refuse stale/partial state; never snap a displayed body back into that contract. */
+function holdsValidatedLane(route: PlannedRoute | null | undefined, state: { laneIndex: number; targetLaneIndex: number }): boolean {
+  const laneIndex = route?.vehicleLaneIndex;
+  if (laneIndex === undefined) return false;
+  if (state.laneIndex !== laneIndex || state.targetLaneIndex !== laneIndex) throw new Error(
+    `Vehicle route ${route!.entryEdgeId} was validated at lane index ${laneIndex}, but current/target are ${state.laneIndex}/${state.targetLaneIndex}. Revalidate its complete route and halts before lateral motion.`);
+  return true;
+}
+
 /* ------------------------------------------------------------ MOBIL lane change */
 
 export function considerLaneChange(
@@ -445,6 +456,7 @@ export function considerLaneChange(
   desiredSpeedMps: number,
 ): void {
   const state = table.vehicles[slot]!;
+  if (holdsValidatedLane(table.vehicleRoutes?.[slot], state)) return;
   if (state.committed || edge.junctionId !== null || table.poses.vehicles.speedMps[slot]! < 1) {
     // A missing lateral neighbour is not permission to cross a junction or an
     // opposing carriageway, and a committed body keeps its lane.
@@ -475,7 +487,8 @@ export function considerLaneChange(
 }
 
 /** Step the lateral offset toward its target; the body never jumps sideways. */
-export function stepLateral(state: { laneIndex: number; targetLaneIndex: number }, step: number): void {
+export function stepLateral(state: { laneIndex: number; targetLaneIndex: number }, step: number, route?: PlannedRoute): void {
+  if (holdsValidatedLane(route, state)) return;
   const limit = VEHICLE_DYNAMICS.mobil.lateralRateMps * step * 0.8;
   const delta = state.targetLaneIndex - state.laneIndex;
   state.laneIndex += Math.max(-limit, Math.min(limit, delta));

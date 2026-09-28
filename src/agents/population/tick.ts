@@ -25,10 +25,10 @@
  */
 
 import { type AdmissionRequest, type AdmissionSnapshot, type JunctionAdmissions, type BoundaryActorBinding } from "../../network/admissions.ts";
-import { createBoundaryEntryPassage, type RoutePassage } from "../../network/passages.ts";
+import { type RoutePassage } from "../../network/passages.ts";
 import { boundaryProfile, boundaryProgress } from "../../network/boundaries.ts";
 import { MAX_BOUNDARY_EGRESS_M } from "../../network/admission-bounds.ts";
-import { footprintOccupies, type ActorFootprint } from "../../network/footprints.ts";
+import { footprintOccupies, footprintRadius, vehicleEnvelope, type ActorFootprint } from "../../network/footprints.ts";
 import type { LaneEdge, NetworkData } from "../../world/network-data.ts";
 import type { VehicleAssetManifest } from "../../world/agent-assets.ts";
 import type { WorldAgentPoses } from "../../world/agent-poses.ts";
@@ -44,6 +44,8 @@ import {
 import { RouteLibrary, populationActorRng, sampleRoute, vehicleScale, vehicleSpeedFactor, type PlannedRoute } from "./routes.ts";
 import { createSlotTable, placeSlot, retireSlot, spawnSlot, stageSlot, stageVehicleSlots, type SlotTable } from "./slots.ts";
 import { RefusalCounts, emptyPopulationStatus, type PopulationKind, type PopulationStatus } from "./status.ts";
+import { queryRouteHalts } from "../../network/halts.ts";
+import { hasVehicleEntrySpace } from "./vehicle-clearance.ts";
 import { PedestrianEntrySpace, pedestrianEntryBody, PEDESTRIAN_ENTRY_SCAN_BUDGET, type PedestrianEntryCandidate } from "./pedestrian-entry.ts";
 
 /* ------------------------------------------------------------ phase enforcement */
@@ -270,7 +272,6 @@ interface Intent {
   committed: boolean;
 }
 
-interface GateStop { distanceM: number; rule: "none" | "stop" | "yield" }
 
 /**
  * How far out a body walks while it retires through the boundary.
@@ -303,11 +304,11 @@ export function createPopulation(options: PopulationOptions): Population {
   const routes = new RouteLibrary(network, refusals);
   const junctionsById = new Map(network.junctions.map((junction) => [junction.id, junction]));
   const junctionIndex = new JunctionIndex(network);
-  const laneById = new Map(network.lanes.map((lane) => [lane.id, lane]));
   const crowd: PedestrianCrowd = createPedestrianCrowd(table);
   const vehicleFootprints = new Array<ActorFootprint | undefined>(settings.vehicles);
   const pedestrianFootprints = new Array<ActorFootprint | undefined>(settings.pedestrians);
   const vehicleRadii = new Float64Array(settings.vehicles);
+  const vehicleAuthorityRadii = new Float64Array(settings.vehicles);
   const requests = new Array<AdmissionRequest | undefined>(settings.pedestrians + settings.vehicles);
   const gateFootprints = new Array<ActorFootprint | undefined>(settings.pedestrians + settings.vehicles);
   const bindings = new Array<BoundaryActorBinding | undefined>(settings.vehicles);
@@ -371,12 +372,6 @@ export function createPopulation(options: PopulationOptions): Population {
   const vehiclePortalsByClass: string[][] = [];
   let routablePortals = 0;
 
-  /** Whether a body of this size may halt on an edge: its own section must be longer than its radius. */
-  function canHalt(edgeId: string, radiusM: number): boolean {
-    const edge = laneById.get(edgeId);
-    return edge === undefined || edge.junctionId === null || edge.lengthM >= radiusM;
-  }
-
   /**
    * Whether the entrance portal is clear for a new body.
    *
@@ -389,38 +384,9 @@ export function createPopulation(options: PopulationOptions): Population {
    * measured in the world, from the pose buffers the population has already
    * written, and a spawn waits for the portal to clear.
    */
-  function spawnClearance(slot: number, radiusM: number): boolean {
-    // `HALT_CAPTURE_M` is part of the clearance rather than a margin: the body
-    // materializes at its portal and the integrator may then move it onto its own
-    // first halt, up to that far ahead, before any body on the lane moves. Measuring
-    // only the portal under-states the separation by the size of that hop - measured
-    // at 200 vehicles, a taxi's hop was 1.457 m and closed a guard-approved 5.6 m to
-    // 4.55 m between two 4.573 m taxis.
-    const gapM = 2 * radiusM + network.admissionBounds.stopGapM + HALT_CAPTURE_M;
-    const here = slot * 3;
-    const x = table.poses.vehicles.current.position[here]!;
-    const z = table.poses.vehicles.current.position[here + 2]!;
-    for (const other of table.vehicles) {
-      // The `pending` set is tested as well as the active byte. A body staged at a
-      // portal holds no active byte yet, so testing only active bodies left it
-      // invisible: a second body was planned at the same portal, drove up to it, and
-      // the waiting body then materialized inside it - measured at 200 vehicles, 1.24
-      // m of oriented-box overlap at ticks 315 and 535.
-      if (other.slot === slot) continue;
-      if (!table.poses.vehicles.active[other.slot] && !pending.has(other.slot)) continue;
-      // The world bounding box is the only prefilter. The guard used to skip any body
-      // whose `travelledM` had passed `gapM`, which reads as "it has driven away" but
-      // is an arc length: a lane section that curves back on itself puts a body
-      // 7.15 m along the section 2.28 m from the portal in the world, and the body it
-      // skipped was overlapped by the new one on the tick it materialized.
-      const there = other.slot * 3;
-      const dx = table.poses.vehicles.current.position[there]! - x;
-      if (dx >= gapM || dx <= -gapM) continue;
-      const dz = table.poses.vehicles.current.position[there + 2]! - z;
-      if (dz >= gapM || dz <= -gapM) continue;
-      if (dx * dx + dz * dz < gapM * gapM) return false;
-    }
-    return true;
+  function spawnClearance(slot: number): boolean {
+    // Reserve the possible same-tick halt capture as well as both actual bodies.
+    return hasVehicleEntrySpace(table, fleet, slot, pending, network.admissionBounds.stopGapM, HALT_CAPTURE_M);
   }
 
   const pedestrianPortals = [...network.portals.pedestrian]
@@ -435,12 +401,13 @@ export function createPopulation(options: PopulationOptions): Population {
   }
   if (settings.vehicles > 0) {
     for (const asset of fleet.vehicles) {
-      const radius = Math.hypot(asset.collision.length, asset.collision.width) / 2 * 1.04;
-      vehiclePortalsByClass.push(routes.drivablePortals(routes.vehicleGraph, vehiclePortals, { footprintRadiusM: radius, maxEdges: 120, viable: (id) => canHalt(id, radius) }));
+      const scale = vehicleScale(() => 1, asset);
+      const radius = vehicleEnvelope(asset, scale).diameter / 2;
+      vehiclePortalsByClass.push(routes.drivablePortals(routes.vehicleGraph, vehiclePortals, { footprintRadiusM: radius, maxEdges: 120, vehicleBody: { asset, scale, laneIndex: 0, frame: "population-upright" } }));
     }
     routablePortals = Math.max(...vehiclePortalsByClass.map((list) => list.length), 0);
     if (routablePortals === 0) {
-      throw new Error(`No vehicle class has an AOI entry portal it can drive from: the delivered lane graph's junction entry sections are all shorter than the shortest class's footprint radius. This is a network geometry limitation, not a spawn setting; report it rather than driving a body it cannot hold.`);
+      throw new Error(`No vehicle class has an AOI entry portal it can drive from: every bounded candidate failed complete passage and whole-body halt validation. Preserve the refusal and review the source route geometry before admitting traffic.`);
     }
   }
 
@@ -529,17 +496,18 @@ export function createPopulation(options: PopulationOptions): Population {
       table.poses.vehicles.scale[slot] = scale;
       const radius = Math.hypot(asset.collision.length, asset.collision.width) * scale / 2;
       vehicleRadii[slot] = radius;
-      // A portal is drawn only from the set this body size can actually leave:
-      // the class's own radius decides which junction entry sections it can halt
-      // on, and a portal with no such route is not demand, it is a refusal.
+      const authorityRadius = vehicleEnvelope(asset, scale).diameter / 2;
+      vehicleAuthorityRadii[slot] = authorityRadius;
+      // Portal screening validated the supported maximum class body. Validate
+      // this actor's actual prescribed body again on its own seeded candidate.
       const portals = vehiclePortalsByClass[variant] ?? [];
       if (!portals.length) {
-        refusals.add(`vehicle class ${asset.id} at scale ${scale.toFixed(3)} has no AOI entry portal whose junction sections are long enough for its ${radius.toFixed(3)} m footprint radius`);
+        refusals.add(`vehicle class ${asset.id} at scale ${scale.toFixed(3)} has no AOI entry portal with a complete route and clear halts for its ${authorityRadius.toFixed(3)} m authority radius`);
         retry();
         return false;
       }
       const entry = portals[Math.min(portals.length - 1, Math.floor(rng() * portals.length))]!;
-      const route = routes.route(kind, slot, generation, entry, { footprintRadiusM: radius, maxEdges: 120, walkAttempts: 3, viable: (id) => canHalt(id, radius) });
+      const route = routes.route(kind, slot, generation, entry, { footprintRadiusM: authorityRadius, maxEdges: 120, walkAttempts: 3, vehicleBody: { asset, scale, laneIndex: 0, frame: "population-upright" } });
       if (!route) {
         refusals.add(`vehicle spawn at ${entry} planned no drivable route to a true AOI exit that a ${radius.toFixed(3)} m body can halt on`);
         retry();
@@ -563,8 +531,8 @@ export function createPopulation(options: PopulationOptions): Population {
       // The body now stands at its portal, so the clearance is a measurement of
       // the world rather than a guess about the plan. A refused spawn leaves
       // nothing registered, so the slot is retried rather than left half-present.
-      if (!spawnClearance(slot, radius)) {
-        refusals.add(`vehicle spawn at ${entry} is waiting for the entrance portal to clear: another body is still within ${(2 * radius + network.admissionBounds.stopGapM).toFixed(2)} m of it`);
+      if (!spawnClearance(slot)) {
+        refusals.add(`vehicle spawn at ${entry} is waiting for the entrance portal to clear: the actual active or pending body envelopes plus the stop gap and bounded halt capture need more room`);
         table.vehicleRoutes[slot] = null;
         retry();
         return false;
@@ -572,7 +540,7 @@ export function createPopulation(options: PopulationOptions): Population {
       const footprint = vehicleFootprint(fleet, table, slot);
       let entryPassage: RoutePassage | null = null;
       try {
-        entryPassage = createBoundaryEntryPassage(network, "vehicle", route.edgeIds, footprint);
+        entryPassage = route.boundaryEntryPassage ?? null;
       } catch (error) {
         refusals.add(`vehicle spawn at ${entry} could not evaluate its entry authority: ${(error as Error).message.split(";")[0]}`);
       }
@@ -873,6 +841,8 @@ export function createPopulation(options: PopulationOptions): Population {
 
   function plan(step: number): void {
     requirePhase("plan");
+    for (const state of table.vehicles) if (table.poses.vehicles.active[state.slot]) vehicleFootprints[state.slot] = vehicleFootprint(fleet, table, state.slot);
+    observeCommitted();
     for (const state of table.vehicles) {
       const slot = state.slot;
       if (!table.poses.vehicles.active[slot]) {
@@ -888,29 +858,17 @@ export function createPopulation(options: PopulationOptions): Population {
         throw new Error(`Population lifecycle conservation failed: vehicle slot ${slot} is present in the pose buffers with no planned route. A body was retired without clearing its slot.`);
       }
       vehicleFootprints[slot] = vehicleFootprint(fleet, table, slot);
-      const radius = vehicleRadii[slot]!;
-      // Two different obligations, and only one of them ends at the grant. A gate
-      // is a *permission*: it stops a body that holds no grant, and a committed
-      // body is never stopped mid-conflict. A mapped stop or yield obligation is
-      // a *condition of the passage*: the body must dwell at it and the authority
-      // refuses any observation whose hull reaches a control it has not cleared,
-      // so that hold applies whether or not the compound has been entered.
-      const gate = state.committed ? gateStop(route!, state.travelledM, heldPassages[slot + settings.pedestrians]) : gateStop(route!, state.travelledM);
-      const control = controlStop(route!, state.travelledM, radius);
+      const halt = currentHalts("vehicle", slot, route!);
       intents[slot] = {
         acceleration: 0,
         // The single-authority mutation: an uncommitted body ignores the halt it
         // was given and drives on. That is the defect class this gate exists to
         // catch — a hull arriving in a conflict area on no grant — and it is
         // counted by the invariant below rather than driven silently.
-        stopDistanceM: populationInvariants.driveWithoutGrant ? Number.POSITIVE_INFINITY : Math.min(gate.distanceM, control.distanceM),
+        stopDistanceM: populationInvariants.driveWithoutGrant ? Number.POSITIVE_INFINITY : halt.stopDistanceM,
         committed: state.committed,
       };
     }
-    // Step 5 of the design's order, nested at the head of step 1: report the
-    // progress the previous integration actually made, so a released actor is
-    // free to ask for its next passage in this same tick rather than a tick late.
-    observeCommitted();
     frame = buildVehicleFrame(table, vehicleFootprints, (junctionId, footprint) => {
       const junction = junctionsById.get(junctionId);
       return junction ? footprintOccupies(junction, footprint) : false;
@@ -939,106 +897,18 @@ export function createPopulation(options: PopulationOptions): Population {
     void step;
   }
 
-  /**
-   * The gate governing the occurrence a walk is on, or the next one. This is the
-   * halting gate for an uncommitted walk: a walking route can *start* inside a
-   * crossing — the delivered walking portals include crossings — so a gate whose
-   * own stop line is behind the walk is still the gate it must be admitted into,
-   * and asking for the one after it instead left the walk frozen at a curb it was
-   * already standing past.
-   */
-  function gateAtOrAhead(route: PlannedRoute, travelledM: number) {
-    const occurrence = occurrenceAtDistance(route, travelledM);
-    // `gates` is built by `assemble` in ascending occurrence order, so the gate the two
-    // `find`s used to return is the first one at or past this occurrence: one loop and no
-    // closure per call.
-    const gates = route.gates;
-    for (let i = 0; i < gates.length; i += 1) {
-      const gate = gates[i]!;
-      if (gate.entryIndex >= occurrence) return gate;
-    }
-    return undefined;
+  /** Fresh after observation, and again after resolve before motion. No population-held exemption. */
+  function currentHalts(kind: PopulationKind, slot: number, route: PlannedRoute) {
+    const state = kind === "vehicle" ? table.vehicles[slot]! : table.pedestrians[slot]!;
+    const generation = (kind === "vehicle" ? table.poses.vehicles : table.poses.pedestrians).current.generation[slot]!;
+    const radiusM = kind === "vehicle" ? vehicleAuthorityRadii[slot]! : PEDESTRIAN_DYNAMICS.radiusM * state.scale;
+    const actor = actorId(kind, slot);
+    return queryRouteHalts({ route, actorId: actor, generation, progressM: state.travelledM, radiusM, authority: admissions.haltStateFor(actor, route, generation) });
   }
-
-  /**
-   * The first gate at or ahead of the body that a held lease does not already
-   * admit it through.
-   *
-   * A compound can own several consecutive governed occurrences, and the route
-   * planner builds one gate per governed occurrence, so a body inside a
-   * two-occurrence crossing meets a *second* gate of the same junction a metre
-   * ahead of it. That gate's stop line is behind the body, so halting at it froze
-   * the body on the spot while it held the compound's lease: nothing released, and
-   * every other actor queued behind a lease that could never be given back. A body
-   * clearing a compound is capped instead at the first gate of a *different*
-   * authority, which is the one it may not enter until its old hull has cleared and
-   * the old lease has gone — the contract's own rule for entering another
-   * authority.
-   */
-  function gateBeyond(route: PlannedRoute, travelledM: number, lease: RoutePassage | undefined) {
-    // `gates` is built in ascending occurrence order and `gateDistanceM` is that
-    // occurrence's route-absolute start, so the first gate meeting both clauses is the one
-    // this loop meets first: the `find` and its closure become a plain scan.
-    const gates = route.gates;
-    const floor = travelledM - 1e-6;
-    for (let i = 0; i < gates.length; i += 1) {
-      const gate = gates[i]!;
-      if (gate.gateDistanceM >= floor && (lease === undefined || gate.junctionId !== lease.junctionId)) return gate;
-    }
-    return undefined;
-  }
-
-  /**
-   * Route-absolute metres a body may not pass while its compound's permission is
-   * missing: the body's collision front halts at the gate, so its origin halts a
-   * footprint radius short of it.
-   */
-  function gateStop(route: PlannedRoute, travelledM: number, lease?: RoutePassage): GateStop {
-    // The first gate the body has not yet reached, whether or not it is close to
-    // it. Seeking the gate from any distance is what makes the halt and the
-    // request one place: a body that was only capped once it happened to arrive
-    // drove to its next junction unadmitted and then stopped half a metre
-    // *before* the window in which the authority accepts a request, so it could
-    // never ask at all.
-    const gate = gateBeyond(route, travelledM, lease);
-    if (!gate) return { distanceM: Number.POSITIVE_INFINITY, rule: "none" };
-    // The body halts with its whole hull exactly at the gate and never on it:
-    // that is precisely the arc distance the planner's own `holdDistanceM`
-    // records, and the point at which the authority's request window opens. One
-    // formula, so the place the body stands and the place it may ask cannot drift
-    // apart. The planner already applies the whole-hull offset for this body's
-    // own footprint radius; the shared stop gap separates two bodies, not a body
-    // from the area it is waiting to enter.
-    return { distanceM: Math.max(0, gate.holdDistanceM), rule: "none" };
-  }
-
-  /**
-   * The mapped stop/yield obligation the body has yet to clear, if any.
-   *
-   * This is the minimal correct stop-line offset policy: a mapped obligation
-   * binds the *front of the body*, so the origin is held exactly one footprint
-   * radius short of the mapped position. Without it a stop line nearer the gate
-   * than half the largest vehicle makes the authority refuse the actor's own
-   * progress — the geometry `artifacts/population-cost/report.md` excluded two
-   * planned routes for. The hold applies whether or not the compound has been
-   * entered, because a mapped control is a condition of the passage rather than
-   * the permission to enter it.
-   */
-  function controlStop(route: PlannedRoute, travelledM: number, radiusM: number): GateStop {
-    let stop: GateStop = { distanceM: Number.POSITIVE_INFINITY, rule: "none" };
-    for (const gate of route.gates) {
-      // A control inside a compound the body has already entered is not a halt
-      // any more: the body is clearing on its grant, and the authority's release
-      // test needs its hull to leave the compound's disks. Holding it at an
-      // internal line would deadlock both the body and the lease it holds.
-      if (travelledM > gate.gateDistanceM - radiusM + 1e-6) continue;
-      for (const control of gate.controls) {
-        const distanceM = gate.gateDistanceM + control.distanceM - radiusM;
-        if (distanceM < travelledM - 1e-6) continue;
-        if (distanceM < stop.distanceM) stop = { distanceM: Math.max(0, distanceM), rule: control.rule };
-      }
-    }
-    return stop;
+  function nextGate(kind: PopulationKind, slot: number, route: PlannedRoute) {
+    const halt = currentHalts(kind, slot, route);
+    if (halt.refusal) { refusals.add(halt.refusal); return undefined; }
+    return halt.admission ? route.gates.find(gate => route.passages[gate.passageIndex] === halt.admission!.passage) : undefined;
   }
 
   /* --------------------------------------------------------------- request */
@@ -1107,7 +977,7 @@ export function createPopulation(options: PopulationOptions): Population {
           footprint,
           stoppedSeconds: state.stoppedSeconds,
           yieldSatisfied: !trafficInside(entryPrefix.junctionId, slot),
-          receivingSpace: true,
+          receivingSpace: underPrefix || hasSpace(table, route, 0, state.travelledM, slot, vehicleAuthorityRadii[slot]!, network.admissionBounds.stopGapM, fleet, pending, entryPrefix),
         };
         // A nomination while nothing is held, the held lease itself once the grant
         // lands: either way the prefix object is the only passage this actor may
@@ -1118,6 +988,8 @@ export function createPopulation(options: PopulationOptions): Population {
         continue;
       }
       if (!table.poses.vehicles.active[slot]) continue;
+      const obligation = currentHalts("vehicle", slot, route);
+      if (obligation.refusal) { refusals.add(obligation.refusal); continue; }
       // A body the authority has committed names the occurrence its own snapshot
       // holds for it, floored there and snapped to a governed occurrence of the
       // lease it holds. Two request-occurrence defects lived in the alternatives: a
@@ -1141,7 +1013,7 @@ export function createPopulation(options: PopulationOptions): Population {
           counters.missingPassage += 1;
           continue;
         }
-        const occurrence = requestOccurrenceFor(lease, held, occurrenceAtDistance(route, state.travelledM), state.travelledM + vehicleRadii[slot]!);
+        const occurrence = requestOccurrenceFor(lease, held, occurrenceAtDistance(route, state.travelledM), state.travelledM + footprintRadius(footprint));
         if (occurrence === null) continue;
         requests[index] = {
           actorId: actor,
@@ -1163,18 +1035,13 @@ export function createPopulation(options: PopulationOptions): Population {
       // Naming that gate's *entry* occurrence is what the authority accepts from an
       // actor that has not entered: the occurrence it is asking for, not the one it
       // is standing on.
-      const gate = gateBeyond(route, state.travelledM, undefined);
+      const gate = nextGate("vehicle", slot, route);
       if (!gate || state.travelledM < gate.holdDistanceM - GATE_SEEK_TOLERANCE_M) continue;
       // A bound vehicle still inside its boundary entry prefix asks with the
       // authority's own entry passage; afterwards it asks with the route's gate
       // passage. Swapping these two is what "already holds another passage" means,
       // so the prefix is only used when it is the entry passage of *this* route.
-      const usesPrefix = entryPrefix !== null && entryPrefix !== undefined && gate.passageIndex === 0 && entryPrefix.routeEdgeIds[0] === route.edgeIds[0];
-      if (entryPrefix !== null && entryPrefix !== undefined && !usesPrefix) entryPassages[slot] = null;
-      // The passage named is the one this actor is committed to, held by object
-      // identity: an actor may not hold one passage and ask with another, and
-      // re-deriving it from a gate index is exactly how those two drift apart.
-      const passage = usesPrefix ? entryPrefix : route.passages[gate.passageIndex];
+      const passage = route.passages[gate.passageIndex];
       if (!passage) {
         // A committed actor with no recorded passage object cannot ask without
         // risking a passage swap. It is counted rather than guessed at, and the
@@ -1199,7 +1066,7 @@ export function createPopulation(options: PopulationOptions): Population {
         footprint,
         stoppedSeconds: state.stoppedSeconds,
         yieldSatisfied: !trafficInside(gate.junctionId, slot),
-        receivingSpace: hasReceivingSpace(route, gate.passageIndex, state.travelledM, vehicleRadii[slot]!, slot),
+        receivingSpace: hasReceivingSpace(route, gate.passageIndex, state.travelledM, vehicleAuthorityRadii[slot]!, slot),
       };
       // A nomination, not a hold: the authority's grant is what latches the
       // passage, and `resolve` drops the nomination for any request it did not
@@ -1263,7 +1130,7 @@ export function createPopulation(options: PopulationOptions): Population {
       // still walking towards. It is automatically true whenever the gate governs
       // the occurrence the walk is already on, because that gate's stop line is at
       // or behind the walk's own feet.
-      const gate = gateAtOrAhead(route, state.travelledM);
+      const gate = nextGate("pedestrian", slot, route);
       if (!gate || state.travelledM < gate.holdDistanceM - GATE_SEEK_TOLERANCE_M) continue;
       const passage = route.passages[gate.passageIndex]!;
       if (!passage) {
@@ -1288,6 +1155,16 @@ export function createPopulation(options: PopulationOptions): Population {
       gateFootprints[slot] = footprint;
       count += 1;
     }
+    for (const request of requests) if (request) {
+      const slot = Number(request.actorId.split(":").at(-1));
+      request.routeIdentity = request.kind === "vehicle" ? table.vehicleRoutes[slot]! : table.pedestrianRoutes[slot]!;
+      request.generation = (request.kind === "vehicle" ? table.poses.vehicles : table.poses.pedestrians).current.generation[slot]!;
+      if (request.kind === "vehicle") {
+        const halt = currentHalts("vehicle", slot, table.vehicleRoutes[slot]!);
+        // Standstill elsewhere on a route is not measured dwell at this control.
+        if (halt.control && Math.abs(table.vehicles[slot]!.travelledM - halt.control.distanceM) > .125) request.stoppedSeconds = 0;
+      }
+    }
     return count;
   }
 
@@ -1297,7 +1174,7 @@ export function createPopulation(options: PopulationOptions): Population {
    * occurrence has room for its whole projected hull plus the shared stop gap.
    */
   function hasReceivingSpace(route: PlannedRoute, passageIndex: number, travelledM: number, radiusM: number, self: number): boolean {
-    return hasSpace(table, route, passageIndex, travelledM, self, radiusM, network.admissionBounds.stopGapM);
+    return hasSpace(table, route, passageIndex, travelledM, self, radiusM, network.admissionBounds.stopGapM, fleet, pending);
   }
 
   /* --------------------------------------------------------------- resolve */
@@ -1366,6 +1243,13 @@ export function createPopulation(options: PopulationOptions): Population {
 
   function integrate(step: number): void {
     requirePhase("integrate");
+    for (const state of table.vehicles) {
+      if (!table.poses.vehicles.active[state.slot]) continue;
+      const route = table.vehicleRoutes[state.slot]!;
+      const halt = currentHalts("vehicle", state.slot, route);
+      intents[state.slot]!.stopDistanceM = populationInvariants.driveWithoutGrant ? Infinity : halt.stopDistanceM;
+      if (halt.refusal) { refusals.add(halt.refusal); state.speedMps = 0; }
+    }
     let moving = false;
     for (const state of table.vehicles) {
       const slot = state.slot;
@@ -1374,9 +1258,8 @@ export function createPopulation(options: PopulationOptions): Population {
       const intent = intents[slot]!;
       const desired = Math.max(0.5, route.speedLimits[state.routeIndex]! * state.speedFactor);
       const speed = Math.max(0, Math.min(state.speedMps + intent.acceleration * step, desired));
-      // Only an uncommitted body is capped by its halt. A committed body is never
-      // stopped mid-conflict: it clears the compound at its own speed, and its own
-      // hull clearing every conflict disk is what releases the lease.
+      // Admission ends at a grant. An uncleared mapped control remains a halt
+      // inside the retained visit until the authority records its satisfaction.
       // The shipped body may not pass its halt. The mutation drops that cap and
       // every commitment with it, which is how the single-authority gate is made to
       // go red: an actor then drives into a conflict section with no commitment of
@@ -1429,7 +1312,7 @@ export function createPopulation(options: PopulationOptions): Population {
       // dwell the authority measures and the body's own reported speed must agree.
       state.speedMps = reached ? 0 : actual / step;
       state.travelledM += actual;
-      stepLateral(state, step);
+      stepLateral(state, step, route);
       // The lane-keeping mutation, and the only thing it changes: the lateral index
       // the drawn pose is offset by. A body whose route is on lane 0 is drawn one
       // lane to the side, which is a sideways displacement and not a route change.
@@ -1504,7 +1387,16 @@ export function createPopulation(options: PopulationOptions): Population {
       const slot = state.slot;
       if (!table.poses.pedestrians.active[slot]) continue;
       const route = table.pedestrianRoutes[slot]!;
-      const forward = Math.hypot(crowd.velocityX[slot]!, crowd.velocityZ[slot]!);
+      const selectedSpeed = Math.hypot(crowd.velocityX[slot]!, crowd.velocityZ[slot]!);
+      const halt = currentHalts("pedestrian", slot, route);
+      const limit = populationInvariants.driveWithoutGrant || populationInvariants.ignoreCurb ? route.totalLengthM : Math.min(route.totalLengthM, halt.stopDistanceM);
+      const advance = Math.min(selectedSpeed * step, Math.max(0, limit - state.travelledM));
+      const forward = advance / step;
+      // Source arc/tangent velocity, not measured published-world velocity. This
+      // enforces authority only; post-solve shortening does not prove pair safety.
+      const fraction = selectedSpeed > 0 ? forward / selectedSpeed : 0;
+      crowd.velocityX[slot] = crowd.velocityX[slot]! * fraction;
+      crowd.velocityZ[slot] = crowd.velocityZ[slot]! * fraction;
       state.speedMps = forward;
       if (forward > 0.05) moving = true;
       if (state.queued || forward <= 0.05) {
@@ -1512,7 +1404,7 @@ export function createPopulation(options: PopulationOptions): Population {
       } else {
         state.stoppedSeconds = 0;
       }
-      const next = Math.min(state.travelledM + forward * step, route.totalLengthM);
+      const next = Math.min(state.travelledM + advance, route.totalLengthM);
       state.travelledM = Math.max(state.travelledM, next);
       placePedestrian(table, slot);
       observePedestrianCommitment(slot);
@@ -1570,6 +1462,7 @@ export function createPopulation(options: PopulationOptions): Population {
     // Only an unused grant can be cancelled. An entered lease has already been
     // released by observing the actual post-integration body, or retirement fails.
     admissions.cancelPending(id);
+    admissions.forgetRoute(id, table.pedestrianRoutes[slot]!, table.poses.pedestrians.current.generation[slot]!);
     heldPassages[slot] = undefined;
     if (!populationInvariants.leakRetiredBody) retireSlot(table.poses.pedestrians, slot);
     state.committed = false;
@@ -1641,17 +1534,16 @@ export function createPopulation(options: PopulationOptions): Population {
         // position leaves no legal halt for a body this size, which is the same
         // class of geometry `artifacts/population-cost/report.md` recorded when a
         // stop line sat nearer the gate than half the longest vehicle. The
-        // population does not weaken admission to get past it: the body is held
-        // at the control's legal halt, its lease is dropped, and the refusal is
-        // counted and named so the route is visible rather than driven wrongly.
+        // body stays at its actual progress and the authority retains its lease.
+        // A refused observation cannot authorize a backwards correction.
         counters.authorityRefusals += 1;
         refusals.add(`vehicle stop/yield obligation on route from ${route.entryEdgeId} could not be satisfied: ${(error as Error).message.split(":")[0]}`);
         state.committed = false;
         // The lease object is kept: the authority still holds it, so the next
         // request must name the same passage or the authority refuses the swap.
-        // The lifecycle phase retires the slot, which is what finally drops it.
-        state.travelledM = Math.min(state.travelledM, controlStop(route, state.travelledM, vehicleRadii[slot]!).distanceM);
-        placeVehicle(table, slot, state.travelledM, state.laneIndex);
+        // Neither a control failure nor a stopped body permits retirement.
+        state.speedMps = 0;
+        intents[slot]!.stopDistanceM = state.travelledM;
         continue;
       }
       if (released) {
@@ -1866,16 +1758,11 @@ export function createPopulation(options: PopulationOptions): Population {
         // it. A body without one is a leak, and it fails here by name.
         throw new Error(`Population lifecycle conservation failed: pedestrian slot ${slot} is present in the pose buffers with no planned route. A body was retired without clearing its slot.`);
       }
-      // A committed walk is capped only at the next *different* authority's gate: a
-      // body clearing a compound has to be free to cross it at its own pace, and its
-      // hull leaving that compound's disks is what releases the lease.
-      const next = state.committed ? gateBeyond(route, state.travelledM, heldPassages[slot]) : gateAtOrAhead(route, state.travelledM);
-      let allowed = state.travelledM + state.cadenceMps * step;
-      let blocked = false;
-      if (next) {
-        allowed = Math.min(allowed, next.holdDistanceM);
-        blocked = allowed <= state.travelledM + 1e-9;
-      }
+      // The authority's exact current visit covers its own internal occurrences.
+      // A later visit, even to the same owner, retains its admission halt.
+      const halt = currentHalts("pedestrian", slot, route);
+      let allowed = Math.min(state.travelledM + state.cadenceMps * step, halt.stopDistanceM);
+      let blocked = halt.refusal !== null || allowed <= state.travelledM + 1e-9;
       if (populationInvariants.driveWithoutGrant || populationInvariants.ignoreCurb) {
         // The mutation treats every actor as committed, which is the
         // single-authority defect.
@@ -2086,7 +1973,7 @@ export function createPopulation(options: PopulationOptions): Population {
       if (!trace.has(slot)) continue;
       const index = slot + settings.pedestrians;
       const route = table.vehicleRoutes[slot];
-      const gate = route && table.poses.vehicles.active[slot] ? gateStop(route, state.travelledM, heldPassages[index]) : undefined;
+      const gate = route && table.poses.vehicles.active[slot] ? currentHalts("vehicle", slot, route) : undefined;
       const lease = leases.get(actorId("vehicle", slot));
       const request = requests[index];
       const passage = request?.passage;
@@ -2104,7 +1991,7 @@ export function createPopulation(options: PopulationOptions): Population {
         routeLengthM: route ? Number(route.totalLengthM.toFixed(2)) : 0,
         routeIndex: route ? occurrenceAtDistance(route, state.travelledM) : 0,
         junctionId: route ? (route.edges[occurrenceAtDistance(route, state.travelledM)]!.junctionId ?? null) : null,
-        stopDistanceM: gate && Number.isFinite(gate.distanceM) ? Number(gate.distanceM.toFixed(3)) : null,
+        stopDistanceM: gate && Number.isFinite(gate.stopDistanceM) ? Number(gate.stopDistanceM.toFixed(3)) : null,
         requested: request !== undefined,
         requestedRouteIndex: request?.routeIndex ?? null,
         requestedJunctionId: passage ? passage.junctionId : null,

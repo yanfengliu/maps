@@ -39,6 +39,37 @@ const request = { destination: "centre" as const, footprintRadiusM: 0.25, maxEdg
 afterEach(() => vi.restoreAllMocks());
 
 describe("pedestrian terminal clearance", () => {
+  it("caps the actual ungranted scalar step at its halt and publishes the executed source speed", () => {
+    // Bound: one walker and the existing logical scalar/tangent movement policy.
+    // Shortening a chosen step is an authority guard, not a proof of pair avoidance.
+    const network = smallNetwork(), admissions = new JunctionAdmissions(network);
+    const population = createPopulation({ network, admissions, fleet: deliveredFleet(), settings: populationSettings({ pedestrians: 1, vehicles: 0, seed: 5970698 }) });
+    const ordinaryResolve = admissions.resolve.bind(admissions);
+    let selectedSpeed = 0, before = 0, ungranted = false, hold = Infinity, clipped = 0;
+    vi.spyOn(admissions, "resolve").mockImplementation((step, requests) => {
+      const route = population.pedestrianRoute(0)!;
+      before = population.diagnostics().pedestrians[0]!.travelledM;
+      hold = route.gates[0]!.holdDistanceM;
+      selectedSpeed = Math.hypot(population.pedestrianCrowd().velocityX[0]!, population.pedestrianCrowd().velocityZ[0]!);
+      const granted = ordinaryResolve(step, requests);
+      ungranted = admissions.commitmentFor("pedestrian:0") === null;
+      return granted;
+    });
+    for (let tick = 1; tick <= 600; tick++) {
+      population.update(1 / 60, tick / 60);
+      const state = population.diagnostics().pedestrians[0]!;
+      if (!ungranted) continue;
+      expect(state.travelledM).toBeGreaterThanOrEqual(before);
+      expect(state.travelledM).toBeLessThanOrEqual(hold + 1e-10);
+      const actualAdvance = state.travelledM - before;
+      if (selectedSpeed / 60 > actualAdvance + 1e-10) clipped++;
+      // This is source arc/tangent speed, not a measured world-space velocity.
+      expect(state.speedMps).toBeCloseTo(Math.fround(actualAdvance * 60), 6);
+      expect(Math.hypot(population.pedestrianCrowd().velocityX[0]!, population.pedestrianCrowd().velocityZ[0]!)).toBeCloseTo(actualAdvance * 60, 8);
+    }
+    expect(clipped).toBeGreaterThan(0);
+    expect(population.status().refusedRoutes.some(row => row.reason.includes("passed uncleared"))).toBe(false);
+  });
   it("continues through a null-junction section that still touches a late compound primitive", () => {
     const network = smallNetwork(), graph = new MovementGraph(network, "pedestrian");
     expect(pedestrianTerminalIsClear(network, graph.edge("inside"), 0.25)).toBe(false);
