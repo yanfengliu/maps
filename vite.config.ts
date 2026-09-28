@@ -1,13 +1,18 @@
 import { defineConfig } from "vite";
 
 import { serveSceneData } from "./tools/vite/serve-scene-data.ts";
+import { railTrialServer } from "./tools/vite/serve-rail-trial.ts";
+import { RAIL_MANIFEST_SHA256 } from "./src/world/rail-trial.ts";
+
+const rail = railTrialServer(`${import.meta.dirname}/data/rail/manifest.json`, RAIL_MANIFEST_SHA256);
 
 export default defineConfig({
   // The scene's terrain, roads and 137 MB of placed building tiles are built by
   // `npm run data:scene` into a gitignored `data/scene/`. This serves that one
   // copy at `/scene/` rather than staging it through `public/`, which would copy
   // all of it into `dist/` on every build — and the visual gate builds first.
-  plugins: [serveSceneData(import.meta.dirname)],
+  plugins: [serveSceneData(import.meta.dirname), rail.plugin],
+  define: { __MAPS_RAIL_TRIAL__: JSON.stringify(rail.binding) },
   build: {
     // The visual gate photographs the production build, not the dev server, so
     // sourcemaps are kept: a runtime failure in a gate run has to be readable.

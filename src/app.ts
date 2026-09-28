@@ -42,6 +42,10 @@ import { RenderLoop } from "./render/loop.js";
 import { createPostChain, type PostChain } from "./render/post.js";
 import { createRenderer, resizeRendererToDisplay } from "./render/renderer.js";
 import { createBuildings, type Buildings } from "./scene/buildings.js";
+import { createRailTrialScene, loadRailTrial } from "./scene/rail-trial.js";
+import { RAIL_TRIAL_BINDING } from "./world/rail-trial.js";
+import { createRailStillObserver } from "./harness/rail-still-snapshot.js";
+import { createRailCameraObserver } from "./harness/rail-camera-clearance.js";
 import type { FacadeTextureOptions } from "./scene/facade-textures.js";
 import { createLighting, type Lighting } from "./scene/lighting.js";
 import { createRoads } from "./scene/roads.js";
@@ -197,7 +201,9 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
 
   // The tiles renderer needs the camera's world matrix as it will be *this*
   // frame, so it refines after the controls have moved it and before the draw.
+  const railData = RAIL_TRIAL_BINDING ? loadRailTrial() : null;
   const buildings: Buildings = createBuildings(camera, renderer, {
+    railTrial: railData ?? undefined,
     signageIntensity,
     style: facadeStyle,
     facade: options.facade,
@@ -263,11 +269,12 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   const ready = (async (): Promise<void> => {
     // In parallel: the two meshes are one request each and the tileset root is a
     // small JSON. Serialising them would triple the wait for no gain.
-    const [terrain, roads, network, vegetation] = await Promise.all([
+    const [terrain, roads, network, vegetation, rail] = await Promise.all([
       loadOwned(createTerrain(style)),
       loadOwned(createRoads(style)),
       loadNetwork(),
       loadOwned(createVegetation(style)),
+      railData ? loadOwned(railData.then(data => { if (!data) throw Error("Rail trial binding disappeared during loading."); return createRailTrialScene(data, style); })) : Promise.resolve(null),
       buildings.ready,
     ]);
     if (disposed) return;
@@ -304,6 +311,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     if (disposed) return;
     hardwareObservation = hardware.records;
     city.add(terrain.root);
+    if (rail) { city.add(rail.root); rail.setStyle(style); styleConsumers.push(rail.setStyle); }
     clipCityRoot(roads.root); city.add(roads.root);
     const streets = createStreetDetails(network, style, roads.paintHeightAt, hardware.records);
     paintObservation = streets.paintPlacements;
@@ -354,6 +362,8 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   observer.observe(canvas);
 
   installBridge({
+    ...(RAIL_TRIAL_BINDING ? createRailStillObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) : {}),
+    ...(RAIL_TRIAL_BINDING ? { cameraClearance: createRailCameraObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) } : {}),
     renderer,
     camera,
     controls,

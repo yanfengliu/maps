@@ -56,6 +56,7 @@ interface DracoStatus {
 }
 
 interface DracoDecoder {
+  GetFaceFromMesh(mesh: DracoMesh, index: number, out: DracoTypedArray): boolean;
   GetEncodedGeometryType(buffer: DracoBuffer): number;
   DecodeBufferToMesh(buffer: DracoBuffer, mesh: DracoMesh): DracoStatus;
   GetAttributeByUniqueId(mesh: DracoMesh, id: number): DracoAttribute;
@@ -112,19 +113,21 @@ export interface DecodedPrimitive {
   positions: Float32Array;
   /** One per vertex, or undefined when the primitive carries no `_BATCHID`. */
   batchIds: Float32Array | undefined;
+  /** Explicit opt-in for offline source-preserving surface adaptations. */
+  surface?: { indices: Uint32Array; normals: Float32Array; uv: Float32Array | null };
 }
 
 /**
  * Decode one primitive's positions and batch ids.
  *
- * Only the two attributes the pipeline needs are pulled out. Normals, texture
- * coordinates and the index buffer stay compressed: nothing offline draws these
- * triangles, it only measures where they are and which building each belongs to.
+ * Existing callers read positions and batch ids. Source-preserving offline
+ * adaptations explicitly opt in to normals, UV0 and the original face indices.
  */
 export async function decodePrimitive(
   json: GltfJson,
   binary: Uint8Array,
   primitive: GltfPrimitive,
+  includeSurface = false,
 ): Promise<DecodedPrimitive> {
   const compression = primitive.extensions?.KHR_draco_mesh_compression;
   if (compression === undefined) {
@@ -148,7 +151,9 @@ export async function decodePrimitive(
   const decoder = new draco.Decoder();
   const mesh = new draco.Mesh();
   try {
-    buffer.Init(new Int8Array(payload.slice().buffer), payload.byteLength);
+    // Buffer.slice() retains the backing allocation and its offset. Copy the
+    // exact payload for both Uint8Array and Buffer-backed source readers.
+    buffer.Init(new Int8Array(Uint8Array.from(payload).buffer), payload.byteLength);
     if (decoder.GetEncodedGeometryType(buffer) !== draco.TRIANGULAR_MESH) {
       throw new Error(
         "This Draco payload is not a triangular mesh. PLATEAU's building tiles always are.",
@@ -173,12 +178,29 @@ export async function decodePrimitive(
         ? undefined
         : readFloatAttribute(draco, decoder, mesh, batchIdIndex, 1);
 
-    return {
+    const result: DecodedPrimitive = {
       triangleCount: mesh.num_faces(),
       vertexCount: mesh.num_points(),
       positions,
       batchIds,
     };
+    if (includeSurface) {
+      const normalIndex = compression.attributes.NORMAL;
+      if (normalIndex === undefined) throw new Error("Rail source primitive has no NORMAL attribute; restore the reviewed tile before adapting its surfaces.");
+      const normals = readFloatAttribute(draco, decoder, mesh, normalIndex, 3);
+      const uvIndex = compression.attributes.TEXCOORD_0;
+      const uv = uvIndex === undefined ? null : readFloatAttribute(draco, decoder, mesh, uvIndex, 2);
+      const indices = new Uint32Array(mesh.num_faces() * 3);
+      const face = new draco.DracoInt32Array();
+      try {
+        for (let i = 0; i < mesh.num_faces(); i++) {
+          if (!decoder.GetFaceFromMesh(mesh, i, face)) throw new Error(`Draco could not read source face ${i}; no partial rail adaptation is allowed.`);
+          for (let j = 0; j < 3; j++) indices[i * 3 + j] = face.GetValue(j);
+        }
+      } finally { draco.destroy(face); }
+      result.surface = { indices, normals, uv };
+    }
+    return result;
   } finally {
     draco.destroy(mesh);
     draco.destroy(decoder);

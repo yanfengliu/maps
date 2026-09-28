@@ -5,7 +5,8 @@
  * reaches through is the window the type describes.
  *
  * Claim: every member `installBridge` and `installFailedBridge` publish is
- * declared on `HarnessBridge`, and every declared member is published by both.
+ * declared on `HarnessBridge`, and every required member is published by both.
+ * Optional rail observations are published only when their sources exist.
  * The gate is two-sided on purpose, because the defect it exists for was
  * one-sided: `installBridge` published `population()` while the interface above
  * it did not declare the member, so `tools/populated/driver.ts` had to widen the
@@ -38,7 +39,7 @@ const page = globalThis as unknown as { window?: Record<string, unknown> };
 beforeEach(() => { page.window = {}; });
 
 /**
- * Every member of `HarnessBridge`, by name.
+ * Every required and optional member of `HarnessBridge`, by name.
  *
  * Typed as a tuple of the interface's own keys as well as a runtime list: the
  * `MissingFromList` assertion below makes an omission here a compile error, and
@@ -60,8 +61,9 @@ const MEMBERS = [
   "population",
   "signals",
 ] as const;
+const OPTIONAL_MEMBERS = ["cameraClearance", "railStillState", "railStillSnapshot"] as const;
 
-type MissingFromList = Exclude<keyof HarnessBridge, (typeof MEMBERS)[number]>;
+type MissingFromList = Exclude<keyof HarnessBridge, (typeof MEMBERS)[number] | (typeof OPTIONAL_MEMBERS)[number]>;
 const everyDeclaredMemberIsListed: MissingFromList extends never ? true : never = true;
 
 const signals: SignalSnapshot[] = [{
@@ -119,16 +121,24 @@ function installed(sources_: BridgeSources): HarnessBridge {
 }
 
 /** Every declared member is published, as the right kind of thing. */
-function expectPublishesEveryMember(bridge: HarnessBridge, install: string): void {
+function expectPublishesEveryMember(bridge: HarnessBridge, install: string, optional: readonly (typeof OPTIONAL_MEMBERS)[number][] = []): void {
   expect(bridge.version, `${install} published the wrong version`).toBe(1);
-  for (const name of MEMBERS) {
+  for (const name of [...MEMBERS, ...optional]) {
     if (name === "version") continue;
     expect(typeof bridge[name], `${install} has no ${name}()`).toBe("function");
   }
-  expect(Object.keys(bridge).sort(), `${install} publishes members the list above does not name`).toEqual([...MEMBERS].sort());
+  expect(Object.keys(bridge).sort(), `${install} publishes members outside its explicit roster`).toEqual([...MEMBERS, ...optional].sort());
 }
 
 describe("the harness bridge contract", () => {
+  it("publishes the optional rail observations only with their supplied sources", () => {
+    const observation = (): never => { throw Error("This roster check does not take a scene observation."); };
+    expectPublishesEveryMember(installed(sources({ cameraClearance: observation, railStillState: observation, railStillSnapshot: observation })), "rail bridge", OPTIONAL_MEMBERS);
+    expectPublishesEveryMember(installed(sources({ cameraClearance: observation })), "clearance bridge", ["cameraClearance"]);
+    expectPublishesEveryMember(installed(sources({ railStillState: observation })), "incomplete still pair");
+    expectPublishesEveryMember(installed(sources({ railStillSnapshot: observation })), "incomplete snapshot pair");
+  });
+
   it("declares population() and signals() as callable observations with no cast", () => {
     const population: PopulationStatus = { ...emptyPopulationStatus(), attached: true, ticks: 42 };
     const bridge: HarnessBridge = installed(sources({

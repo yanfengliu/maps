@@ -30,6 +30,7 @@ import { dirname, join } from "node:path";
 import { deflateSync } from "node:zlib";
 import {
   HARNESS_ROOTS,
+  SCENE_MOUNTS,
   beginVisualRun,
   certifyVisualRun,
   harnessTreeDigest,
@@ -496,6 +497,20 @@ describe("the certificate refuses a run this chain did not open", { timeout: FRA
 });
 
 describe("the scene data's identity is bound into the certificate", { timeout: FRAME_SET_BUDGET_MS }, () => {
+  it("binds the default rail mount, detects changed bytes and refuses a missing packet", async () => {
+    const root = await mkdtemp(join(tmpdir(), "maps-default-mounts-"));
+    try {
+      const mounts = SCENE_MOUNTS.map(m => ({ route: m.route, directory: join(root, m.directory) }));
+      const rail = mounts.find(m => m.route === "/rail-trial/");
+      expect(rail?.directory).toBe(join(root, "data/rail"));
+      for (const mount of mounts) { await mkdir(mount.directory, { recursive: true }); await writeFile(join(mount.directory, "manifest.json"), "one"); }
+      const before = await sceneTreeDigest(mounts);
+      await writeFile(join(rail!.directory, "manifest.json"), "two");
+      expect((await sceneTreeDigest(mounts)).digest).not.toBe(before.digest);
+      await rm(rail!.directory, { recursive: true });
+      await expect(sceneTreeDigest(mounts)).rejects.toThrow(/npm run data:rail/);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it("changes the digest when a served file changes", async () => {
     const root = await mkdtemp(join(tmpdir(), "maps-scene-digest-"));
     try {

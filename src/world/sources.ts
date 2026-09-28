@@ -61,7 +61,7 @@ export const SOURCES: readonly SourceAttribution[] = [
   },
   {
     label: "OpenStreetMap",
-    role: "Road, sidewalk and crossing network",
+    role: "Road, sidewalk and crossing network; railway centrelines in the static rail model",
     licence: "Open Database Licence 1.0 (ODbL)",
     licenceUrl: "https://www.openstreetmap.org/copyright",
     credit:
@@ -69,6 +69,7 @@ export const SOURCES: readonly SourceAttribution[] = [
       "The scene itself is this project's work and is not OpenStreetMap's.",
     notes: [
       "The rendered scene is a Produced Work, so no share-alike attaches to it.",
+      "The static rail model keeps its historical OSM centreline database in separate external files. Its heights, supports and material finishes are authored, not surveyed OSM elevations. The derived centreline files remain identifiable for the ODbL database offer.",
       "The road network graph built from this data is a Derivative Database. ODbL section 4.6 " +
         "obliges this project to offer recipients that graph, or a description of how it was " +
         "made, once the app is published. It is kept in files of its own, separate from the " +

@@ -53,6 +53,10 @@ import { wholeByteAccounting } from "./tile-memory.js";
 import { clipCityRoot, FinalLeafReadiness } from "./aoi-cutout.js";
 import { buildingSections } from "./cutout-sections.js";
 import type { WorldStyle } from "../world/styles.js";
+import { railSourcePlugin, replaceRailBuildings, verifyRailBytes, type RailTrialData } from "./rail-trial.js";
+import { applyRailFinishStyle } from "./rail-finish.js";
+import { installTileTransactions } from "./tile-transaction.js";
+import type { FacadeTextureLifetime } from "./facade-textures.js";
 
 /**
  * Screen-space error target, in pixels.
@@ -99,6 +103,7 @@ const CACHE_BYTES = Object.freeze({
 const UNLOAD_DELAY_MS = 2_000;
 
 export interface BuildingsStatus {
+  railTrial?: { manifest: string; layers: number; replacements: string[]; sourceTriangles: number; returnTriangles: number };
   /** The finite final-detail cutout preparation, independent of camera culling. */
   cutout?: { ready: boolean; preparedLeaves: number; requiredLeaves: number; loadedLeafUris: string[]; requiredLeafUris: string[]; visibleTileUris: string[]; sectionMeshes: number; connectors: number };
   /** True once the root tileset has loaded and no tile is in flight. */
@@ -209,6 +214,7 @@ export interface FacadeSample {
 }
 
 export interface BuildingsOptions {
+  railTrial?: Promise<RailTrialData | null> | undefined;
   style: FacadeStyleUniforms;
   /** The shared uniform the patched tile materials read their signage level from. */
   signageIntensity: SignageUniform;
@@ -234,7 +240,10 @@ export function createBuildings(
   const cutout = new FinalLeafReadiness();
   const sectionMaterials = new Map<Tile, MeshStandardMaterial[]>();
   const connectorCounts = new Map<Tile, number>();
+  const railLeaves = new Map<Tile, { ids: string[]; sourceTriangles: number; returnTriangles: number }>();
+  let railData: RailTrialData | null = null;
   let disposed = false;
+  const transactions = options.railTrial ? installTileTransactions(tiles, () => disposed) : null;
   const hasLiveContent = (node: { content?: { uri?: string } }): boolean => {
     const tile = node as Tile & { engineData?: { scene?: Object3D | null } };
     return tiles.lruCache.has(tile) && Boolean(tile.engineData?.scene) && sectionMaterials.has(tile);
@@ -246,7 +255,7 @@ export function createBuildings(
   const accounting = tiles as TilesRenderer & { calculateBytesUsed(tile: unknown, scene: Object3D): number };
   const calculateBytesUsed = accounting.calculateBytesUsed.bind(tiles);
   accounting.calculateBytesUsed = wholeByteAccounting(calculateBytesUsed);
-  tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader: draco }));
+  tiles.registerPlugin(new GLTFExtensionsPlugin({ dracoLoader: draco, ...(options.railTrial ? { plugins: [railSourcePlugin], autoDispose: false } : {}) }));
   // Before the unload plugin, and before anything measures a tile: the texture
   // cap has to be applied where the library still counts the bytes it will hold,
   // not after. The same pass de-lights the albedo and derives the sign mask, so
@@ -261,14 +270,48 @@ export function createBuildings(
   // operations explicitly: the facade pass must finish its whole-scene walk
   // before section meshes exist. Both still precede resource/byte accounting.
   const prepareFacade = facade.processTileModel.bind(facade);
-  facade.processTileModel = async (scene: Object3D, sourceTile: unknown): Promise<void> => {
-      await prepareFacade(scene, sourceTile);
-      if (disposed) return;
+  if (options.railTrial) {
+    const fetchFacade = facade.fetchData.bind(facade);
+    facade.fetchData = (url, init) => (async () => {
+      const data = await options.railTrial!;
+      const pathname = new URL(url, "http://rail-trial.invalid").pathname;
+      const pin = data?.manifest.tiles.find(t => pathname === `/scene/buildings/${t.uri}`);
+      const existing = fetchFacade(url, init);
+      if (!pin) {
+        if (existing) return existing;
+        const response = await fetch(url, init);
+        if (!response.ok) throw Error(`Building source ${url} returned HTTP ${response.status}.`);
+        return response;
+      }
+      const bytes = existing ? await existing : await (async () => { const r = await fetch(url, init); if (!r.ok) throw Error(`Rail source ${url} returned HTTP ${r.status}.`); return r.arrayBuffer(); })();
+      const binary = bytes instanceof Response ? await bytes.arrayBuffer() : bytes;
+      await verifyRailBytes(pin, binary); return binary;
+    })();
+  }
+  const processModel = async (scene: Object3D, sourceTile: unknown, lifetime?: FacadeTextureLifetime, capture?: (root: Object3D) => void): Promise<() => void> => {
       const tile = sourceTile as Tile;
+      railData = options.railTrial ? await options.railTrial : null;
+      if (disposed) return () => {};
+      const replacement = railData ? replaceRailBuildings(scene, tile.content?.uri ?? "unknown", !tile.children?.length, railData) : null;
+      if (railData) {
+        const uri = tile.content?.uri ?? "unknown";
+        scene.userData.railTileIdentity = { uri, sha256: railData.manifest.tiles.find(pin => pin.uri === uri)?.sha256 ?? null };
+      }
+      capture?.(scene);
+      for (const mesh of replacement?.returns ?? []) capture?.(mesh);
+      await prepareFacade(scene, sourceTile, lifetime);
+      if (disposed) return () => {};
+      const materials: MeshStandardMaterial[] = [];
+      for (const mesh of replacement?.returns ?? []) {
+        const material = mesh.material as MeshStandardMaterial;
+        material.color.copy(options.style.building.value).multiplyScalar(0.58);
+        applyRailFinishStyle(material, options.style.procedural.value === 0);
+        scene.add(mesh); materials.push(material);
+      }
       clipCityRoot(scene);
-      if (tile.children?.length) return;
+      if (tile.children?.length) return () => {};
       const sections = buildingSections(scene, tile.content?.uri ?? "unknown building tile");
-      const materials: MeshStandardMaterial[] = []; let connectors = 0;
+      let connectors = 0;
       for (const section of sections) {
         const material = new MeshStandardMaterial({ color: options.style.building.value.clone().multiplyScalar(0.58), roughness: 0.95 });
         const cap = new Mesh(section.geometry, material);
@@ -277,8 +320,15 @@ export function createBuildings(
         cap.receiveShadow = true; cap.castShadow = true;
         scene.add(cap); materials.push(material); connectors += section.connectors;
       }
-      sectionMaterials.set(tile, materials); connectorCounts.set(tile, connectors);
       clipCityRoot(scene);
+      return () => {
+        sectionMaterials.set(tile, materials); connectorCounts.set(tile, connectors);
+        if (replacement) railLeaves.set(tile, replacement);
+      };
+  };
+  facade.processTileModel = async (scene, sourceTile): Promise<void> => {
+    if (transactions) await transactions.process(scene, sourceTile as Tile, (tile, lifetime, capture) => processModel(scene, tile, lifetime, capture));
+    else (await processModel(scene, sourceTile))();
   };
   tiles.registerPlugin(facade);
   tiles.registerPlugin({
@@ -343,7 +393,7 @@ export function createBuildings(
     unloaded += 1;
     revision += 1;
     const tile = (event as unknown as { tile: Tile }).tile;
-    cutout.removed(tile); sectionMaterials.delete(tile); connectorCounts.delete(tile);
+    cutout.removed(tile); sectionMaterials.delete(tile); connectorCounts.delete(tile); railLeaves.delete(tile);
   });
 
   group.add(tiles.group);
@@ -398,6 +448,7 @@ export function createBuildings(
       const drawn = measureDrawn(group);
       return {
         ...drawn,
+        ...(railData ? { railTrial: { manifest: railData.digest, layers: railData.layers.length, replacements: [...railLeaves.values()].flatMap(r => r.ids).sort(), sourceTriangles: [...railLeaves.values()].reduce((s, r) => s + r.sourceTriangles, 0), returnTriangles: [...railLeaves.values()].reduce((s, r) => s + r.returnTriangles, 0) } } : {}),
         idle: rootUp && pending === 0 && cutout.canDisplay(tiles.visibleTiles),
         cutout: { ready: cutout.canDisplay(tiles.visibleTiles), preparedLeaves: cutout.prepared.size, requiredLeaves: cutout.expected.size, loadedLeafUris: [...cutout.prepared].filter(hasLiveContent).map(tile => tile.content!.uri!).sort(), requiredLeafUris: [...cutout.expected].map(tile => tile.content!.uri!).sort(), visibleTileUris: [...tiles.visibleTiles].map(tile => tile.content?.uri ?? "unknown").sort(), sectionMeshes: [...sectionMaterials.values()].reduce((n, items) => n + items.length, 0), connectors: [...connectorCounts.values()].reduce((n, value) => n + value, 0) },
         visible: tiles.visibleTiles.size,
@@ -419,11 +470,11 @@ export function createBuildings(
     displayReady: () => cutout.canDisplay(tiles.visibleTiles),
     loadingMessage: () => cutout.message(),
     failure: () => error ?? cutout.error,
-    setStyle(style): void { for (const materials of sectionMaterials.values()) for (const material of materials) material.color.setHex(style.palette.building).multiplyScalar(0.58); },
+    setStyle(style): void { for (const materials of sectionMaterials.values()) for (const material of materials) { material.color.setHex(style.palette.building).multiplyScalar(0.58); applyRailFinishStyle(material, style.id === "satellite"); } },
     dispose(): void {
       disposed = true;
       tiles.dispose();
-      cutout.prepared.clear(); sectionMaterials.clear(); connectorCounts.clear();
+      cutout.prepared.clear(); sectionMaterials.clear(); connectorCounts.clear(); railLeaves.clear();
       draco.dispose();
     },
   };

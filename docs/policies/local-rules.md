@@ -194,6 +194,14 @@ Two rules, each from a named incident rather than a preference.
 
 ## The scene is built offline and served from `data/`, not bundled
 
+### Static rail restoration
+
+Ordinary startup also requires the admitted external static-rail packet and the reviewed scene cache containing its three pinned original building tiles. Restore the 34-file packet, then run `npm run data:rail -- --from <path/to/manifest.json>`; the admitted manifest SHA-256 is `e8e41c2944601c5d574fb1596c89a4ee4bb2b6bbb8bac54d240863ffdb3ff707`. The installer verifies every asset and source pin before creating owned ignored `data/rail/`, accepts an exact existing copy without rewriting it, and refuses different, partial, foreign or linked destinations. These 52,950,963 bytes stay outside Git and dist and use the finite `/rail-trial/` whitelist.
+
+`npm run data:setup` does not recreate this historical packet. Its assembly provenance is `tools/scene/stage-rail-trial.ts`, admitted run 12 and the historical frozen inputs it checks; fresh remote data is not equivalent restoration. The retained local restoration source is the frozen `shibuya-quality` worktree's `artifacts/rail-runtime-trial-20260927/overlay/manifest.json`; preserve that packet until an equivalent retained copy exists. Historical OSM-derived centrelines remain separately identifiable external data; authored heights, supports and finishes are not surveyed source measurements. Missing or changed data must be restored, not silently omitted.
+
+### Main scene
+
 `npm run data:scene` reads `data/plateau/` and `data/3dtiles/` and writes `data/scene/` — the terrain mesh, the road mesh, a clipped tileset and 67 placed building tiles, about 148 MB. `tools/vite/serve-scene-data.ts` serves that at `/scene/`, and three.js's Draco decoder out of `node_modules` at `/draco/`, in the dev server and in `vite preview` alike.
 
 The alternative was Vite's `public/`, which copies everything into `dist/` on every build — and `npm run visual` builds before every run. The cost of this choice, stated here so it is not rediscovered: **`dist/` is not self-contained.** Serving it from anywhere other than `vite preview` means serving those two directories too. The app names the missing file rather than drawing an empty city.

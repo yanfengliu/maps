@@ -54,14 +54,15 @@ import { assertPrimaryVisualCheckout } from "./checkout.ts";
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
 /**
- * The two directories the preview server serves outside `dist/`, and the mounts
- * `tools/vite/serve-scene-data.ts` answers. The pixels are not determined by the
+ * The directories the preview server serves outside `dist/`, including the
+ * admitted rail packet. The pixels are not determined by the
  * build bytes alone: the same `dist/` draws a different city against a different
  * `data/scene/`, so two certificates that bind only `dist/` cannot be compared.
  */
-const SCENE_MOUNTS: readonly { route: string; directory: string }[] = [
+export const SCENE_MOUNTS: readonly { route: string; directory: string }[] = [
   { route: "/scene/", directory: "data/scene" },
   { route: "/network/", directory: "data/network" },
+  { route: "/rail-trial/", directory: "data/rail" },
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -75,7 +76,7 @@ interface SceneDigest {
 }
 
 /**
- * A digest over what `/scene/` and `/network/` will serve: the path each file is
+ * A digest over what `/scene/`, `/network/` and `/rail-trial/` will serve: the path each file is
  * served at, and the bytes of that file.
  *
  * Why the contents and not the metadata: this digest is what binds the frames to
@@ -106,7 +107,7 @@ export async function sceneTreeDigest(
       throw new Error(
         `The visual gate cannot read ${directory}, which the preview server serves as scene data: ` +
           `${error instanceof Error ? error.message : String(error)}. That directory is built by ` +
-          "`npm run data:scene`, and the network database by `npm run data:network`; a run without it " +
+          "`npm run data:scene`, the network by `npm run data:network`, and rail restored from its admitted external packet with `npm run data:rail -- --from <path/to/manifest.json>`; a run without it " +
           "would certify frames whose scene data nothing bound.",
       );
     }
@@ -130,7 +131,7 @@ export async function sceneTreeDigest(
             `${error instanceof Error ? error.message : String(error)}. Every file under these mounts is ` +
             "hashed by content into the certificate, so one this run cannot read would leave the frames " +
             "unbound. Rebuild the scene with `npm run data:scene`, and the network database with " +
-            "`npm run data:network`, before re-running the gate.",
+            "`npm run data:network`, or restore the admitted external rail packet with `npm run data:rail -- --from <path/to/manifest.json>`, before re-running the gate.",
         );
       }
       entries.push(`${relative}${name}\u0000${hash(content)}`);
@@ -158,7 +159,7 @@ async function assertSceneUnchanged(
       "The served scene data changed during capture, so these frames are not all pictures of the same " +
         `city: ${scene.files} files digested ${scene.digest.slice(0, 12)} when the run began and ` +
         `${now.files} files digest ${now.digest.slice(0, 12)} now. \`npm run data:scene\` (or ` +
-        "`npm run data:network`) ran while the gate was capturing. Rebuild and recapture before " +
+        "`npm run data:network` or a rail packet install/change) ran while the gate was capturing. Rebuild and recapture before " +
         "reviewing this run.",
     );
   }

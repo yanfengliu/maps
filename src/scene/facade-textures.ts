@@ -84,6 +84,12 @@ export interface FacadeTextureOptions {
   patchMaterials: boolean;
 }
 
+/** Optional trial parse owner. Default loading retains its existing lifecycle. */
+export interface FacadeTextureLifetime {
+  trackTexture(texture: Texture): void;
+  releaseTexture(texture: Texture): void;
+}
+
 export const DEFAULT_FACADE_OPTIONS: Omit<FacadeTextureOptions, "signageIntensity" | "style"> = Object.freeze({
   delight: PLATEAU_DELIGHT,
   signMask: PLATEAU_SIGN_MASK,
@@ -157,7 +163,7 @@ export class FacadeTexturePlugin {
   constructor(private readonly options: FacadeTextureOptions) {}
 
   /** Reuse the normal tile request; retain only two digests, never tile buffers. */
-  fetchData(url: string, options: RequestInit): Promise<ArrayBuffer> | null {
+  fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
     const source = emissionSourceForUrl(url);
     if (!source) return null;
     return (async () => {
@@ -189,7 +195,7 @@ export class FacadeTexturePlugin {
     };
   }
 
-  async processTileModel(scene: Object3D, tile: unknown): Promise<void> {
+  async processTileModel(scene: Object3D, tile: unknown, lifetime?: FacadeTextureLifetime): Promise<void> {
     // Validate the parser's original UV channel/orientation/transform before
     // rebuilding replaces the map with a DataTexture carrying default state.
     if (this.options.patchMaterials) {
@@ -206,7 +212,7 @@ export class FacadeTexturePlugin {
         if (texture === null || texture === undefined || !texture.isTexture) continue;
         if (slot !== "map") continue;
         if (!replacements.has(texture)) {
-          const replacement = await this.rebuild(texture, textureLimitForTile(tile));
+          const replacement = await this.rebuild(texture, textureLimitForTile(tile), lifetime);
           if (replacement) {
             const sourceTile = tile as { content?: { uri?: string; url?: string }; boundingVolume?: { box?: number[] } };
             replacement.userData.mapsAtlas = { ...(replacement.userData.mapsAtlas as object), tileUri: sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown", tileBounds: sourceTile.boundingVolume?.box?.slice() ?? null };
@@ -223,7 +229,9 @@ export class FacadeTexturePlugin {
 
     // The originals are on nothing now, and the tiles renderer only disposes what
     // it can find on a material.
-    for (const original of replacements.keys()) original.dispose();
+    for (const original of replacements.keys()) {
+      if (lifetime) lifetime.releaseTexture(original); else original.dispose();
+    }
 
     if (this.options.patchMaterials) {
       this.proceduralFeatures += prepareProceduralFacades(scene);
@@ -242,7 +250,7 @@ export class FacadeTexturePlugin {
    * browser side of this refuses: a tile that draws its published texture is a
    * worse frame, and a tile that does not draw at all is a broken scene.
    */
-  private async rebuild(texture: Texture, limit: number): Promise<DataTexture | null> {
+  private async rebuild(texture: Texture, limit: number, lifetime?: FacadeTextureLifetime): Promise<DataTexture | null> {
     const image = texture.image as { width?: number; height?: number } | null | undefined;
     if (image === null || image === undefined) return null;
     const sourceWidth = image.width ?? 0;
@@ -282,6 +290,7 @@ export class FacadeTexturePlugin {
     this.after.add(data);
 
     const replacement = new DataTexture(data, width, height, RGBAFormat, UnsignedByteType);
+    lifetime?.trackTexture(replacement);
     replacement.colorSpace = SRGBColorSpace;
     replacement.wrapS = texture.wrapS;
     replacement.wrapT = texture.wrapT;
@@ -303,7 +312,7 @@ export class FacadeTexturePlugin {
       this.shrunk += 1;
       this.savedPixels += sourceWidth * sourceHeight - width * height;
     }
-    if (typeof (image as ImageBitmap).close === "function") (image as ImageBitmap).close();
+    if (!lifetime && typeof (image as ImageBitmap).close === "function") (image as ImageBitmap).close();
 
     return replacement;
   }

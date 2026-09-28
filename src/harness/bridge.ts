@@ -27,6 +27,8 @@ import type { PaintPlacement } from "../scene/street-details.js";
 import type { PaintSeamUse } from "../scene/paint-support.js";
 import type { SignalSnapshot } from "../network/signals.js";
 import { emptyPopulationStatus, type PopulationStatus } from "../agents/population/status.js";
+import type { RailStillSnapshot, RailStillState } from "./rail-still-snapshot.js";
+import type { RailCameraClearance } from "./rail-camera-clearance.js";
 
 /** The property the harness reads off `window`. */
 export const HARNESS_KEY = "__mapsHarness";
@@ -108,6 +110,9 @@ export interface LightingStatus extends LightingState {
  * cannot advance a phase, hold a clearance or admit an actor.
  */
 export interface HarnessBridge {
+  cameraClearance?(): RailCameraClearance;
+  railStillState?(): RailStillState;
+  railStillSnapshot?(): RailStillSnapshot;
   readonly version: 1;
   status(): RenderStatus;
   camera(): CameraSnapshot;
@@ -132,6 +137,9 @@ declare global {
 }
 
 export interface BridgeSources {
+  cameraClearance?: (() => RailCameraClearance) | undefined;
+  railStillState?: (() => RailStillState) | undefined;
+  railStillSnapshot?: (() => RailStillSnapshot) | undefined;
   renderer: WebGLRenderer;
   camera: PerspectiveCamera;
   controls: OrbitControls;
@@ -165,6 +173,8 @@ export interface BridgeSources {
  */
 export function installBridge(sources: BridgeSources): HarnessBridge {
   const bridge: HarnessBridge = {
+    ...(sources.cameraClearance ? { cameraClearance: sources.cameraClearance } : {}),
+    ...(sources.railStillState && sources.railStillSnapshot ? { railStillState: sources.railStillState, railStillSnapshot: sources.railStillSnapshot } : {}),
     version: 1 as const,
     status(): RenderStatus {
       const context = sources.renderer.getContext();
