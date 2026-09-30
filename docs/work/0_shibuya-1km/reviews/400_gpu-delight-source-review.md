@@ -76,3 +76,37 @@ This is an ordinary product state: `src/render/renderer.ts:36` permits fractiona
 Required correction: preserve the captured null-target active state as well as logical values, respecting both public-setter and target-rebind rounding behavior. Add focused fractional-ratio, odd-dimension null-target cases for prior state established by each path. Keep the strict restoration assertion; weakening it would hide the changed state. The bound-target logical/actual state distinction and borrowed target-property restoration otherwise look corrected in source.
 
 Numerical equivalence, native appearance, matched startup improvement, complete hardware lifecycle behavior and all five gates remain pending. Another source vote must bind the next refrozen bytes; this round grants no product acceptance.
+
+## Round3 — final focused source correction review
+
+2026-09-30. Independent reviewer: fresh397. **Vote: ACCEPT within the focused source-review scope.** No material source finding remains in F1–F3 or the direct correction interactions inspected. This vote does not establish runtime numerical equivalence, appearance, startup improvement, hardware lifecycle success or final product acceptance. The reported63 focused passes/typecheck were not rerun by this reviewer. No runtime, browser, GPU, server, gate or Git mutation ran; only this authorized report append was written.
+
+### Exact inspected bytes and corrected handoff scope
+
+All nine current candidate hashes supplied by370 matched actual files in the same frontage checkout. Three paths changed from Round2: the GPU module, its focused tests and `test/rail-runtime.test.ts`. The initial two-path/other-seven-unchanged handoff was inaccurate. Root and370 explicitly corrected it before this vote: the rail test contains the additional requested rejection case after atlas adoption. The other six hashes are unchanged. The Round2 record remains bound to the bytes actually inspected in that round.
+
+| Round3 path | SHA-256 |
+| --- | --- |
+| `src/render/atlas-delight.ts` | `a387dbcdee9baea7e34987f8a480a01bc11e7dfb726430ff2968d37ddc381396` |
+| `src/scene/buildings.ts` | `cc8675eb865f00a5c3710a8b45dd367670ec2cbd1034f32c9ed913627991dd33` |
+| `src/scene/facade-textures.ts` | `862fadec32c7d60bab01fb9f7fe708de25ea66f17d99f6e5d63140af7d8fa2ca` |
+| `src/scene/tile-transaction.ts` | `cb8c136cfc9ce2ad8ccb7e24351572f87491ca06d7f01cc991a6485cda27c7ef` |
+| `test/atlas-delight.test.ts` | `85800090464860a56410fd976ec474a120bd40e36f1e4d8d6d9a4dbe68fb5efa` |
+| `test/facade-gpu-owner.test.ts` | `830e9667bf5380298e29caf27584efd661b6d30174e679ba0e9a1e1130d05e2b` |
+| `test/facade-emission.test.ts` | `b9ec9d96bc07536fded266c7686c18c1382003a5bc9586fabc7f01682f46daf0` |
+| `test/crossing-corner-material.test.ts` | `edc9295bb70aa38357a35689ed0b55386885b75f2877d3c890d96790aa3f7a2c` |
+| `test/rail-runtime.test.ts` | `75cd9e6ba7e2aeb2d485b776b2863ba2c7b2f657257c6322c5f5474d82f650b1` |
+
+### F2 resolved in source
+
+`src/render/atlas-delight.ts:263–275` restores null-target scissor enablement and rebinds null, establishing Three's FLOOR-scaled state. It then compares the captured physical viewport and scissor independently and invokes only the public setter needed to reproduce each prior ROUND form. The pass does not change their logical values. This preserves mixed FLOOR/ROUND states and avoids a final null rebind that would undo a ROUND restoration. Bound-target restoration remains separate at277–298, including temporary active overrides, restored target properties and logical globals. Strict physical/logical verification remains at299–309.
+
+The installed Three implementations inspected for this correction update both renderer current rectangles and `WebGLState` caches through `setRenderTarget`, `setViewport` and `setScissor` (`WebGLRenderer.js:730,767,2775–2805`; `WebGLState.js:1121–1141`). The repair introduces no raw GL viewport/scissor writes or renderer-state shortcut. Source inspection therefore supports cache coherence for the next draw; it is not a measured next-draw hardware result.
+
+`test/atlas-delight.test.ts:154–176` covers all four independent FLOOR/ROUND combinations at pixel ratio1.5, with logical viewport101×67 and scissor47×33 and odd offsets. Its double now models installed FLOOR target binding and ROUND public setters separately. Each case checks the retained logical getters, physical rectangles, null target and scissor enablement. Existing bound-target, controlled-pass-failure and controlled-readback-failure coverage remains. No assertions were weakened to close F2.
+
+### F1/F3 carried forward and added ownership coverage
+
+The F1 product ownership files retain their Round2 hashes. The added rail-runtime case deletes source batch IDs so preparation rejects after a replacement DataTexture has already been adopted; both normal and trial cases assert unique original geometry/material/texture/ImageBitmap release, replacement disposal and no repeated release on owner disposal. This strengthens the direct ownership coverage and does not change product behavior. The numerical GPU operation is bypassed in that particular ownership fixture, so it supplies no numerical execution proof.
+
+The module retains valid three-component fullscreen positions and disabled frustum culling, preserving F3's source resolution. The earlier mask ordering, caps, DataTexture/sampler/UV, style reuse and fulfilled-readiness observations retain their scoped source conclusion. No ignored hardware fixture was inspected in this round. Independent hardware numerical verification, native Satellite review, matched production startup measurement, lifecycle qualification and the five final gates remain required before integration acceptance.
