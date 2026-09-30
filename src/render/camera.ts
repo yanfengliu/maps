@@ -1,9 +1,10 @@
-import { PerspectiveCamera } from "three";
+import { MOUSE, PerspectiveCamera } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import { AOI_HALF_EXTENT_M } from "../world/frame.js";
 import { GROUND_AT_ORIGIN_M } from "../world/scene-data.js";
 import { installControlRest } from "./controls-rest.js";
+import { installCameraKeyboard } from "./camera-keyboard.js";
 
 /**
  * The camera and the controls the user actually drives.
@@ -68,6 +69,7 @@ export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {
   // Stop just short of the horizon so the camera cannot end up underground.
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.screenSpacePanning = false;
+  controls.mouseButtons.MIDDLE = MOUSE.ROTATE;
   controls.update();
 
   // Damping never terminates on its own, and the app's own stillness test — the
@@ -78,6 +80,7 @@ export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {
   // stillness test itself is unchanged. `src/render/controls-rest.ts` carries
   // the measurement.
   installControlRest(camera, controls, canvas);
+  installCameraKeyboard(controls, canvas);
 
   return { camera, controls };
 }

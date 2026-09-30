@@ -1,6 +1,6 @@
 # 387 — Development startup diagnosis
 
-The user reported Satellite/noon on port 5319 stuck at “Loading Shibuya buildings: 0 of 44 ready”. User resources were untouched. No product/Git change, build, install or data regeneration ran.
+The user reported Satellite/noon on port 5319 stuck at “Loading Shibuya buildings: 0 of 44 ready”. User resources were untouched. The initial investigation changed no product or Git state and ran no build, install or data regeneration.
 
 Initial direct HTTP returned 200: index 50.58 ms; tileset, root/first final tile and Draco files 3.66–8.03 ms. Only 5319 listened among 5319/4319/4324. Timestamp was not retained. Before reproduction, server PID 51468 disappeared; at 05:27:51 UTC requests failed. Subsequent checks returned ECONNREFUSED; existing-tab CUA returned `Browser is not available: iab`. The original browser stall remains unclassified.
 
@@ -14,6 +14,6 @@ The successful run loaded 67 models and all 44 final leaves, with 150 internal m
 
 All 286 bound files totaling 364,630,382 bytes stayed unchanged. Largest sampled Node RSS was 285,978,624 bytes, not a continuous peak. No runtime errors occurred. Cleanup took 0.415 s; every close succeeded. At 06:16:04Z all eleven observed process IDs and the task marker were absent; 5319/5320 had no listeners.
 
-Proposed product fix: pin optimizer entries to index.html and exclude `**/artifacts/**` from watching. Gate actual discovery/watch exclusion with unrelated retained HTML/source fixtures, a mutated old-config red control and preserved src hot reload. Measure complete-city startup separately from HTML. No product fix is implemented yet.
+Candidate configuration in the existing frontage checkout pins dependency discovery to `index.html` and excludes `**/artifacts/**` from Vite watching. `test/dev-startup.test.ts` runs real Vite against a temporary fixture: its default-config control discovers the artifact-only package and watches retained artifact HTML; the candidate discovers the app package only, excludes artifact HTML, retains source watching and node_modules exclusion, and emits a source HMR update over Vite's WebSocket. Chokidar readiness is awaited before watcher membership is asserted. Independent red controls removing only optimizer entries and only the watch exclusion fail at their corresponding assertions; exact candidate config bytes were restored and the focused test passes 1/1. The [retained receipt](../../../../artifacts/startup387/live-gate/receipt.json) binds the caller, cache-disabled config, source hashes, mutation hashes, stdout/stderr and exit statuses. This is a local config/fixture regression check, not integrated-main or whole-city startup acceptance. The prior 45.80 s all-final-leaves observation, significant post-download preparation, and unknown original IAB cause remain open.
 
-Ignored evidence: `artifacts/startup387/{initial-http-witness.json,http.json,iab-unavailable.json,html-entry-census.json,cold/,scoped/,combined/}`.
+Ignored evidence: `artifacts/startup387/{initial-http-witness.json,http.json,iab-unavailable.json,html-entry-census.json,cold/,scoped/,combined/,live-gate/}`.

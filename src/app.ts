@@ -182,8 +182,8 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   // Damping is a per-frame effect, so it runs on the frame step. This is also
   // the only place `controls.update` is called: the camera moves because input
   // reached the controls, never because something assigned a pose.
-  loop.onFrame(() => {
-    controls.update();
+  loop.onFrame((delta) => {
+    controls.update(delta);
   });
 
   const agents = createAgents(loop, options.population ?? { pedestrians: 0, vehicles: 0 });

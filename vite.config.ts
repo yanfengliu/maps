@@ -7,6 +7,11 @@ import { RAIL_MANIFEST_SHA256 } from "./src/world/rail-trial.ts";
 const rail = railTrialServer(`${import.meta.dirname}/data/rail/manifest.json`, RAIL_MANIFEST_SHA256);
 
 export default defineConfig({
+  // Only the application document is a dependency-discovery entry. Retained
+  // review and capture HTML under artifacts must not join the cold-start scan.
+  optimizeDeps: {
+    entries: ["index.html"],
+  },
   // The scene's terrain, roads and 137 MB of placed building tiles are built by
   // `npm run data:scene` into a gitignored `data/scene/`. This serves that one
   // copy at `/scene/` rather than staging it through `public/`, which would copy
@@ -32,6 +37,9 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5319,
     strictPort: true,
+    watch: {
+      ignored: ["**/artifacts/**"],
+    },
   },
   preview: {
     host: "127.0.0.1",
