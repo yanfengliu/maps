@@ -36,6 +36,7 @@
 import type { Camera, Object3D, WebGLRenderer } from "three";
 import { Box3, Group, Matrix3, Mesh, MeshStandardMaterial, Raycaster, Vector2, Vector3 } from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { AtlasDelightProcessor } from "../render/atlas-delight.js";
 import { TilesRenderer } from "3d-tiles-renderer";
 import type { Tile } from "3d-tiles-renderer/core";
 import { GLTFExtensionsPlugin, UnloadTilesPlugin } from "3d-tiles-renderer/plugins";
@@ -243,7 +244,11 @@ export function createBuildings(
   const railLeaves = new Map<Tile, { ids: string[]; sourceTriangles: number; returnTriangles: number }>();
   let railData: RailTrialData | null = null;
   let disposed = false;
-  const transactions = options.railTrial ? installTileTransactions(tiles, () => disposed) : null;
+  const atlasDelight = new AtlasDelightProcessor(renderer);
+  // Every parser continuation can reject after the GPU facade pass. Stage and
+  // own parsed resources on both the ordinary and rail-trial paths so a failed
+  // or cancelled pre-accounting hook cannot orphan the original scene.
+  const transactions = installTileTransactions(tiles, () => disposed);
   const hasLiveContent = (node: { content?: { uri?: string } }): boolean => {
     const tile = node as Tile & { engineData?: { scene?: Object3D | null } };
     return tiles.lruCache.has(tile) && Boolean(tile.engineData?.scene) && sectionMaterials.has(tile);
@@ -265,7 +270,7 @@ export function createBuildings(
     ...options.facade,
     signageIntensity: options.signageIntensity,
     style: options.style,
-  });
+  }, atlasDelight, () => disposed);
   // The tiles renderer starts model hooks concurrently. Compose these two
   // operations explicitly: the facade pass must finish its whole-scene walk
   // before section meshes exist. Both still precede resource/byte accounting.
@@ -327,8 +332,7 @@ export function createBuildings(
       };
   };
   facade.processTileModel = async (scene, sourceTile): Promise<void> => {
-    if (transactions) await transactions.process(scene, sourceTile as Tile, (tile, lifetime, capture) => processModel(scene, tile, lifetime, capture));
-    else (await processModel(scene, sourceTile))();
+    await transactions.process(scene, sourceTile as Tile, (tile, lifetime, capture) => processModel(scene, tile, lifetime, capture));
   };
   tiles.registerPlugin(facade);
   tiles.registerPlugin({
@@ -474,6 +478,7 @@ export function createBuildings(
     dispose(): void {
       disposed = true;
       tiles.dispose();
+      atlasDelight.dispose();
       cutout.prepared.clear(); sectionMaterials.clear(); connectorCounts.clear(); railLeaves.clear();
       draco.dispose();
     },

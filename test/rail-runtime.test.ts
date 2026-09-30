@@ -2,7 +2,9 @@
 import fs from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { B3DMLoader } from "3d-tiles-renderer";
-import { BufferGeometry, Float32BufferAttribute, Group, Material, Matrix4, Mesh, MeshStandardMaterial, PerspectiveCamera, Texture, type WebGLRenderer } from "three";
+import { BufferGeometry, DataTexture, Float32BufferAttribute, Group, Material, Matrix4, Mesh, MeshStandardMaterial, PerspectiveCamera, Texture, type WebGLRenderer } from "three";
+import { AtlasDelightProcessor } from "../src/render/atlas-delight.js";
+import { PLATEAU_DELIGHT } from "../src/scene/delight.js";
 import { createBuildings } from "../src/scene/buildings.js";
 import { FacadeTexturePlugin, type FacadeTextureLifetime } from "../src/scene/facade-textures.js";
 import type { RailTrialData } from "../src/scene/rail-trial.js";
@@ -14,10 +16,10 @@ function environment(): void {
   vi.stubGlobal("requestAnimationFrame", (cb: (t: number) => void) => setTimeout(() => cb(0), 0));
   vi.stubGlobal("cancelAnimationFrame", (id: ReturnType<typeof setTimeout>) => clearTimeout(id));
 }
-function buildings(data: Promise<RailTrialData>) {
+function buildings(data?: Promise<RailTrialData>, facade: { patchMaterials?: boolean; delight?: typeof PLATEAU_DELIGHT | null } = {}) {
   environment();
   return createBuildings(new PerspectiveCamera(55, 1280 / 720, 1, 8000), { getSize: (v: { set(x: number, y: number): unknown }) => v.set(1280, 720) } as unknown as WebGLRenderer,
-    { style: createFacadeStyle(worldStyle("satellite")), signageIntensity: { value: 0 }, railTrial: data, facade: { patchMaterials: false } });
+    { style: createFacadeStyle(worldStyle("satellite")), signageIntensity: { value: 0 }, ...(data ? { railTrial: data } : {}), facade: { patchMaterials: false, delight: null, ...facade } });
 }
 // The private installed parser API is intentionally exercised through the
 // actual public createBuildings instance. No dependency implementation is copied.
@@ -54,7 +56,7 @@ describe("rail caller startup", () => {
 });
 
 class Bitmap { constructor(private readonly onClose: () => void) {} close(): void { this.onClose(); } }
-function parsedFixture(shared = false, target = false) {
+function parsedFixture(shared = false, target = false, multiple = false) {
   const counts = { geometry: 0, material: 0, texture: 0, image: 0 };
   vi.stubGlobal("ImageBitmap", Bitmap);
   const g = new BufferGeometry(); g.setAttribute("position", new Float32BufferAttribute([0,25,4, 1,25,4, 0,26,4],3));
@@ -63,12 +65,21 @@ function parsedFixture(shared = false, target = false) {
   const scene = new Group(), mesh = new Mesh(g,material); scene.add(mesh); if(shared)scene.add(new Mesh(g,material));
   g.addEventListener("dispose",()=>counts.geometry++);material.addEventListener("dispose",()=>counts.material++);
   texture.addEventListener("dispose",()=>counts.texture++);other.addEventListener("dispose",()=>counts.texture++);
+  let secondGeometry: BufferGeometry | null = null, secondMaterial: MeshStandardMaterial | null = null, secondTexture: Texture | null = null;
+  if (multiple) {
+    const secondImage = new Bitmap(() => counts.image++) as unknown as ImageBitmap;
+    secondTexture = new Texture(secondImage); secondMaterial = new MeshStandardMaterial({ map: secondTexture });
+    secondGeometry = new BufferGeometry(); secondGeometry.setAttribute("position", new Float32BufferAttribute([0,25,4, 1,25,4, 0,26,4],3));
+    const secondMesh = new Mesh(secondGeometry, secondMaterial); scene.add(secondMesh);
+    secondGeometry.addEventListener("dispose",()=>counts.geometry++); secondMaterial.addEventListener("dispose",()=>counts.material++);
+    secondTexture.addEventListener("dispose",()=>counts.texture++);
+  }
   mesh.userData.railSource = {node:0,primitive:0,material:0,rawWorld:new Matrix4().toArray(),parserWorld:new Matrix4().toArray()};
   const s={index:0,uri:"data/fixture.b3dm",node:0,primitive:0,face:0,gmlId:"fixture",batchId:0,material:0,p:[[0,25,4],[1,25,4],[0,26,4]],n:[[0,0,1],[0,0,1],[0,0,1]],uv:null};
   const t={source:0,sourceIdentity:{uri:s.uri,node:0,primitive:0,face:0,gmlId:s.gmlId,batchId:0},material:0,positions:s.p.flat(),normals:s.n.flat(),uv:null,weights:[]};
   const data=empty();if(target)data.replacements=[{id:s.gmlId,sourceIdentity:[s],triangles:[t,{...t,source:-1,sourceIdentity:null}]}] as any;
   const tile:any={content:{uri:s.uri},children:[],engineData:{transform:new Matrix4()},internal:{},traversal:{visible:false,active:false}};
-  return {counts,g,material,texture,other,scene,data,tile};
+  return {counts,g,material,texture,other,scene,data,tile,secondGeometry,secondMaterial,secondTexture};
 }
 function parse(b: ReturnType<typeof buildings>, f: ReturnType<typeof parsedFixture>, signal = new AbortController().signal): Promise<void> {
   const tiles=renderer(b); tiles.registerPlugin({name:`CPU_PARSED_${tiles.plugins.length}`,parseToMesh:()=>Promise.resolve(f.scene)});
@@ -158,6 +169,71 @@ describe("rail parsed transaction ownership", () => {
       if(mode==="facade"){expect(gd).toHaveBeenCalledTimes(3);expect(md).toHaveBeenCalledTimes(2);}
       b.dispose();expect(f.counts).toEqual({geometry:1,material:1,texture:1,image:1});
     } finally { b.dispose(); f.other.dispose(); }
+  });
+  it.each([false, true])("releases parser-owned originals when the second actual atlas rejects; rail trial=%s", async railTrial => {
+    const f = parsedFixture(false, false, true);
+    Object.assign(f.texture.image, { width: 1, height: 1 });
+    Object.assign(f.secondTexture!.image, { width: 1, height: 1 });
+    vi.stubGlobal("OffscreenCanvas", class { constructor(private readonly width: number, private readonly height: number) {} getContext() { return { drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(this.width * this.height * 4).fill(127) }) }; } });
+    let calls = 0;
+    vi.spyOn(AtlasDelightProcessor.prototype, "apply").mockImplementation(pixels => {
+      calls += 1;
+      if (calls === 1) { pixels[0] = 23; return; }
+      throw new Error("controlled second-atlas GPU failure");
+    });
+    const replacementDispose = vi.spyOn(DataTexture.prototype, "dispose");
+    const b = buildings(railTrial ? Promise.resolve(f.data) : undefined, { delight: PLATEAU_DELIGHT });
+    try {
+      await expect(parse(b, f)).rejects.toThrow(/controlled second-atlas GPU failure/);
+      expect(calls).toBe(2);
+      expect(f.tile.engineData.scene).toBeUndefined();
+      expect(f.counts).toEqual({ geometry: 2, material: 2, texture: 2, image: 2 });
+      expect(replacementDispose).toHaveBeenCalledOnce();
+      b.dispose();
+      expect(f.counts).toEqual({ geometry: 2, material: 2, texture: 2, image: 2 });
+    } finally { b.dispose(); f.other.dispose(); }
+  });
+  it.each([false, true])("releases an adopted atlas and parser originals after later preparation rejects; rail trial=%s", async railTrial => {
+    const f = parsedFixture();
+    Object.assign(f.texture.image, { width: 1, height: 1 });
+    f.g.deleteAttribute("_batchid");
+    vi.stubGlobal("OffscreenCanvas", class { constructor(private readonly width: number, private readonly height: number) {} getContext() { return { drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(this.width * this.height * 4).fill(127) }) }; } });
+    const replacementDispose = vi.spyOn(DataTexture.prototype, "dispose");
+    const b = buildings(railTrial ? Promise.resolve(f.data) : undefined);
+    try {
+      await expect(parse(b, f)).rejects.toThrow(/no position or source batch IDs/);
+      expect(f.material.map).not.toBe(f.texture);
+      expect(f.material.map).toBeInstanceOf(DataTexture);
+      expect(f.tile.engineData.scene).toBeUndefined();
+      expect(f.counts).toEqual({ geometry: 1, material: 1, texture: 1, image: 1 });
+      expect(replacementDispose).toHaveBeenCalledOnce();
+      b.dispose();
+      expect(f.counts).toEqual({ geometry: 1, material: 1, texture: 1, image: 1 });
+    } finally { b.dispose(); f.other.dispose(); }
+  });
+  it.each([false, true])("cancels after async resize and releases original parser resources; rail trial=%s", async railTrial => {
+    const f = parsedFixture();
+    Object.assign(f.texture.image, { width: 1025, height: 1 });
+    let resolveBitmap!: (image: { width: number; height: number; close(): void }) => void;
+    let markRequested!: () => void;
+    const requested = new Promise<void>(resolve => { markRequested = resolve; });
+    const bitmap = new Promise<{ width: number; height: number; close(): void }>(resolve => { resolveBitmap = resolve; });
+    vi.stubGlobal("createImageBitmap", vi.fn(() => { markRequested(); return bitmap; }));
+    vi.stubGlobal("OffscreenCanvas", class { constructor(private readonly width: number, private readonly height: number) {} getContext() { return { drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(this.width * this.height * 4).fill(127) }) }; } });
+    const gpu = vi.spyOn(AtlasDelightProcessor.prototype, "apply");
+    const b = buildings(railTrial ? Promise.resolve(f.data) : undefined, { delight: PLATEAU_DELIGHT });
+    const pending = parse(b, f);
+    let bitmapClosed = false;
+    try {
+      await requested;
+      b.dispose();
+      resolveBitmap({ width: 1024, height: 1, close: () => { bitmapClosed = true; } });
+      await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+      expect(bitmapClosed).toBe(true);
+      expect(gpu).not.toHaveBeenCalled();
+      expect(f.tile.engineData.scene).toBeUndefined();
+      expect(f.counts).toEqual({ geometry: 1, material: 1, texture: 1, image: 1 });
+    } finally { b.dispose(); resolveBitmap({ width: 1024, height: 1, close: () => { bitmapClosed = true; } }); f.other.dispose(); }
   });
   it.each(["cancel", "dispose", "transfer", "retired-then-reject"])("settles %s with shared geometry/materials and two textures sharing one bitmap", async mode => {
     const f=parsedFixture(true),abort=new AbortController();let entered!:()=>void, resume!:()=>void;

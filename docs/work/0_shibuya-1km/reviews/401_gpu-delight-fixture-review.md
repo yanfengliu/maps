@@ -71,3 +71,52 @@ The retained attempt-1 evidence was read and hash-verified:
 | `process-cleanup.json` | `4d5792b678f84934b5a070a1548973779280f21dd4e7ecfcefad4dcf047385ba` |
 
 The recorded directly owned Node process, PID 8624, exited. The final census was available and found no admitted, omitted or marked survivor and no 5321 listener. The temporary tree had no reparse point and was removed. This establishes closure of the observed preflight attempt within that census; it does not establish native renderer cleanup or numerical execution. No CPU gate, browser, server or GPU fixture was launched by this reviewer. Numerical, state and metadata hardware acceptance remains pending an admitted actual run.
+
+## Round 4: failed hardware attempt, partial evidence accepted
+
+FAIL for complete instrument qualification; no product acceptance. Attempt 2 ran from 11:22:19.485Z to 11:22:27.055Z on 2026-09-30 and stopped at tile 462's source/cap-dimension assertion. Its fixture required a source maximum of 4096 for every selected tile. The source-specific dimension diagnosis and repair belong to worker 370; this review did not inspect image headers or credit an unrun repair.
+
+The exact retained FRONTAGE evidence is `artifacts/texture-gpu397/attempt2/run.json` (52,754 bytes; SHA-256 `b6f28b35417b174d2abaa13328b8cb12060d2ad044eed10901fcea34d092645f`) and `process-cleanup.json` (15,089 bytes; SHA-256 `47dbb03345ccc72e5915e4fcc64ab20f025e4cf6fe55871d22e9f30fe9d4cbdb`). The failed fixture is retained as `fixture.failed.ts`, matching the Round 2 hash. Stdout's parsed JSON equals the run record. Both instrument and wrapper report failure; the wrapper exit is 1.
+
+Three full actual-processor/CPU comparisons completed before the dimension assertion:
+
+| Tile | Compared output | Differing RGB bytes/pixels | Maximum RGB error | Alpha differences |
+| --- | --- | ---: | ---: | ---: |
+| 518 | 4096×4096 | 204 | 1 | 0 |
+| 488 | 2048×2048 | 86 | 1 | 0 |
+| 462 | 1024×1024 | 16 | 1 | 0 |
+
+Only 518 and 488 have completed tile-qualification rows. Their mask ordering, output bytes, source/output UV metadata, sampler policy and capped dimensions match the recorded checks. Tile 462's numerical comparison is partial evidence, not complete tile qualification. The exhaustive cube, clamp, four null-target state/cache cases, bypass, zero-mask and final bound-target state check were not reached. No complete numerical or native state pass may be inferred from the three comparisons.
+
+The before/after records agree for all 31 bounded input records: nine candidate files, seven cached source/decoder files, eight support/API files, three resolved package entries and four experiment files. Rehashing at this review's initial inspection found zero current-byte mismatches, before the separately announced fixture correction. The recorded HEAD and status also remained unchanged. All 39 recorded HTTP requests returned 200; there were no failed requests or browser console/page errors. Machine GPU/driver identity was RTX 4090 / 616.64 before and after. The failure's partial result omits the final browser-renderer field, so this review does not certify successful final adapter binding.
+
+The runner recorded context, browser, Vite and esbuild closure. The available final census found all five pinned admitted identities absent, no live omitted or marked process, and no 5321 listener. Cleanup errors and temporary reparse points were empty; the owned temporary tree was removed and was physically absent when inspected. This qualifies the recorded failure's closure, not a successful fixture lifecycle. No browser, GPU, server or gate was launched by this reviewer. The subsequent source-dimension repair requires its own frozen source review before another dispatch.
+
+## Round 5: strict per-source dimension oracle
+
+ACCEPT SOURCE for the minimal fixture repair, 2026-09-30. Revised `fixture.ts` is 37,579 bytes, SHA-256 `1d9de29ce42a7d10a46b674fd05bd41862ae88e05e1a93fe1ec5bff5a0f97adc`. The frozen dimension audit is `artifacts/texture-gpu397/attempt2/source-dimension-audit.json` (3,792 bytes; SHA-256 `950ab2d6c8ce3ff5bee190a2f39a7a29582b4aacf25faf547e83635077a8d491`). The remaining HTML, runner and wrapper bindings are unchanged from their last accepted source rounds.
+
+Comparison against the exact preserved failed fixture found six changed lines: the case type, three pinned source width/height pairs, the condition requiring both per-case dimensions, and an error naming actual dimensions. Tile 518 and 488 require 4096×4096 source atlases; tile 462 requires 2048×2048. Tile hashes, geographic caps, resize formula, actual output-size checks and other numerical/state assertions remain unchanged.
+
+An independent read-only extraction of the actual pinned 462 b3dm's GLB image confirmed its VP8 WebP header is 2048×2048. The tile is 1,581,404 bytes and matches its existing SHA-256. The embedded image is 668,454 bytes, SHA-256 `ccaec242b468e94783a76ca9d6cd8502daef6caaefe3631996b3bd3ba8d05243`, matching the audit. Its 1024 geographic cap yields the 1024×1024 output observed in the failed run. The repair replaces a false universal source-size assumption with strict source-specific equality; it does not waive a changed input, cap or output dimension.
+
+This is a source-only verdict on the repaired instrument. No runtime, GPU, browser, server or gate ran during this focused review. The failed attempt remains red; complete numerical/native/cleanup qualification requires the separately admitted retry.
+
+## Round 6: completed numerical and native healthy-state fixture
+
+ACCEPT the bounded executed fixture evidence, 2026-09-30. Attempt 3 ran from 11:33:41.291Z to 11:33:49.986Z with the Round 5 fixture and the Round 3 runner. The retained FRONTAGE records are `artifacts/texture-gpu397/attempt3/run.json` (67,351 bytes; SHA-256 `e246a2fbb43a5fe43db18d4c283d86b444599c838791c5106f7cf556178dec22`) and `attempt3/process-cleanup.json` (13,217 bytes; SHA-256 `b90f983d057bb82d06ec3d51e02fae3ecfcd705142499369acb4003875292d65`). Both match the current records. The run reports `passedInstrument: true`, no failure, unchanged bindings and wrapper exit 0; stdout's parsed JSON equals the run record.
+
+| Executed comparison | Output pixels | Differing RGB bytes/pixels | Maximum RGB error | Alpha differences |
+| --- | ---: | ---: | ---: | ---: |
+| Full plugin, tile 518 | 16,777,216 | 204 | 1 | 0 |
+| Full plugin, tile 488 | 4,194,304 | 86 | 1 | 0 |
+| Full plugin, tile 462 | 1,048,576 | 16 | 1 | 0 |
+| Exhaustive RGB cube | 16,777,216 | 364 | 1 | 0 |
+
+All three source-specific dimensions, caps, mask ordering, actual processor output bytes, UV metadata and sampler-policy assertions completed. The 4096×4096 cube scans all 67,108,864 RGBA bytes, enumerating each 24-bit RGB triplet once and all 256 values in each channel. Its deterministic alpha assignment includes zero-alpha RGB cases; it is not an exhaustive RGB-by-alpha cross-product. These comparisons satisfy exact alpha and maximum absolute RGB error of one at the frozen settings. Exact RGBA equality fails. The raw full output buffers were not retained, so this review verifies the frozen executed scan and its records rather than independently rescanning saved buffers.
+
+Explicit clamp, bypass without GPU calls and zero-mask RGB checks passed. All four DPR 1.5 null-target floor/round rectangle combinations completed, including logical/physical restoration and the supported next bind/cache behavior. The bound-target check restored viewport, scissor, test flag, target properties, DITHER and DPR. These are actual healthy native state checks. Controlled CPU shader-error, context-loss and cancellation checks have a separate bound; no native failure observation is claimed.
+
+Independent rehashing found zero mismatches across all 31 bound candidate, cached source, API, resolved-entry and experiment files; before/after records agree. All 39 HTTP requests returned 200, with no failed request or browser console/page error. The browser reported RTX 4090 through ANGLE/D3D11; matching machine records before and after pin driver 616.64.
+
+All four runner close flags passed. The recorded available final census found all five pinned admitted process identities absent, no omitted or marked survivor and no listener on 5321. Cleanup errors and temporary reparse points were empty; the owned temporary tree was removed and was absent on inspection. This reviewer launched no runtime resource. This verdict does not accept full appearance, whole-city readiness or speed, product integration, or the complete Shibuya goal; those remain separate acceptance work.

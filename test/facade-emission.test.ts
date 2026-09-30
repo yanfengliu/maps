@@ -12,8 +12,10 @@ import { FACADE_EMISSION_REGIONS } from "../src/scene/facade-emission-regions.js
 import { createFacadeStyle, patchTileMaterials } from "../src/scene/tile-materials.js";
 import { worldStyle } from "../src/world/styles.js";
 import { FacadeTexturePlugin, DEFAULT_FACADE_OPTIONS } from "../src/scene/facade-textures.js";
+import { delightInPlace } from "../src/scene/delight.js";
 
 const fixture = JSON.parse(await readFile(new URL("./fixtures/facade-emission.json", import.meta.url), "utf8")) as {fixtures: {expected:string|null;tileUri:string;position:{x:number;y:number;z:number};normal:{x:number;y:number;z:number};uv:{x:number;y:number}}[]};
+const cpuDelighter = { apply(pixels: Uint8ClampedArray, _width: number, _height: number, settings: Parameters<typeof delightInPlace>[1]) { delightInPlace(pixels, settings); } };
 describe("photographic emission requires identified source panels", () => {
   it.each(["identity", "channel1", "flipY", "offset", "rotation", "repeat", "manual-matrix"])("checks original %s UV state through the complete tile plugin", async mode => {
     const region = FACADE_EMISSION_REGIONS[0];
@@ -21,7 +23,7 @@ describe("photographic emission requires identified source panels", () => {
     let bytes: Buffer;
     try { bytes = await readFile(source); }
     catch (cause) { throw new Error(`Facade plugin gate needs cached ${source.pathname}; run npm run data:fetch then npm run data:scene before npm test. This source-bound test does not download or skip missing data.`, { cause }); }
-    const plugin = new FacadeTexturePlugin({ ...DEFAULT_FACADE_OPTIONS, signageIntensity: { value: 1 }, style: createFacadeStyle(worldStyle("satellite")) });
+    const plugin = new FacadeTexturePlugin({ ...DEFAULT_FACADE_OPTIONS, signageIntensity: { value: 1 }, style: createFacadeStyle(worldStyle("satellite")) }, cpuDelighter);
     const root = new Group() as Group & { batchTable: { getDataFromId(id: number): Record<string, unknown> } };
     root.batchTable = { getDataFromId: () => ({ gml_id: region.gmlId }) };
     const geometry = new BoxGeometry();
@@ -58,7 +60,7 @@ describe("photographic emission requires identified source panels", () => {
     }
   });
   it("does not intercept relative root tilesets or unrelated LOD requests", () => {
-    const plugin = new FacadeTexturePlugin({...DEFAULT_FACADE_OPTIONS,signageIntensity:{value:1},style:createFacadeStyle(worldStyle("satellite"))});
+    const plugin = new FacadeTexturePlugin({...DEFAULT_FACADE_OPTIONS,signageIntensity:{value:1},style:createFacadeStyle(worldStyle("satellite"))},cpuDelighter);
     for (const url of ["/scene/buildings/tileset.json","data/other.b3dm","http://127.0.0.1:4319/scene/buildings/data/other.b3dm"]) expect(plugin.fetchData(url,{})).toBeNull();
     for (const prefix of ["/scene/", "http://127.0.0.1:4319/scene/"]) {
       expect(emissionSourceForUrl(`${prefix}buildings/data/data518.b3dm?cache=1`)?.tileSha256).toBe("5e611688344a50142147c0c60442c893dd8f3a45b10ee264067b0275bb4fa96b");

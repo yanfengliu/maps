@@ -8,6 +8,7 @@ import { parseB3dm, parseGlb, readBatchColumn } from "../tools/tiles/b3dm.js";
 import { decodePrimitive } from "../tools/tiles/draco.js";
 import { CROSSING_CORNER, CROSSING_CORNER_GLSL, prepareCrossingCorner } from "../src/scene/crossing-corner-material.js";
 import { FacadeTexturePlugin, DEFAULT_FACADE_OPTIONS } from "../src/scene/facade-textures.js";
+import { delightInPlace } from "../src/scene/delight.js";
 import { createFacadeStyle } from "../src/scene/tile-materials.js";
 import { worldStyle } from "../src/world/styles.js";
 
@@ -50,6 +51,7 @@ function sample(mesh: Mesh, face: number, weights: number[]) {
 const scalar = CROSSING_CORNER_GLSL.split("float mapsCrossingCorner(")[0]!.replace(/float (mapsCorner\w+)\(/g, "function $1(").replace(/float (\w+)(?=\s*[,\)])/g, "$1").replace(/(?:float|bool) (\w+)\s*=/g, "let $1 =");
 const smoothstep = (lo: number, hi: number, v: number) => { const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo))); return t*t*(3-2*t); };
 const predicate = new Function("abs", "smoothstep", scalar + "return mapsCornerWeight;")(Math.abs, smoothstep) as (...values: number[]) => number;
+const cpuDelighter = { apply(pixels: Uint8ClampedArray, _width: number, _height: number, settings: Parameters<typeof delightInPlace>[1]) { delightInPlace(pixels, settings); } };
 
 describe("source-bound lower crossing frontage", () => {
   it("admits both decoded lower triangles and excludes upper, side, wrong UV/normal/plane", () => {
@@ -69,7 +71,7 @@ describe("source-bound lower crossing frontage", () => {
   });
   it.each(["good", "wrong-bytes", "wrong-gml", "wrong-uv", "other-lod"])("checks %s through actual tile fetch/plugin, retaining source arrays", async mode => {
     const f = fixture(mode !== "wrong-gml"); const oldArrays = ["position","normal","uv","_batchid"].map(n => sha(new Uint8Array(f.mesh.geometry.getAttribute(n).array.buffer))); const indices = sha(new Uint8Array(f.mesh.geometry.index!.array.buffer));
-    const plugin = new FacadeTexturePlugin({ ...DEFAULT_FACADE_OPTIONS, signageIntensity: { value: 1 }, style: createFacadeStyle(worldStyle("satellite")) });
+    const plugin = new FacadeTexturePlugin({ ...DEFAULT_FACADE_OPTIONS, signageIntensity: { value: 1 }, style: createFacadeStyle(worldStyle("satellite")) }, cpuDelighter);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(mode === "wrong-bytes" ? new Uint8Array([1,2,3]) : Uint8Array.from(bytes))));
     vi.stubGlobal("OffscreenCanvas", class { getContext() { return { drawImage() {}, getImageData() { return { data: new Uint8ClampedArray([150,150,150,255]) }; } }; } });
     try {

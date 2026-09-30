@@ -17,18 +17,18 @@
  * times, so they are one pass, in that order. The order is load-bearing: the mask
  * keys on the contrast that de-lighting removes, so it has to be taken first.
  *
- * ## Why the pixels are touched on the CPU at all
+ * ## Why the source and result bytes are read on the CPU
  *
- * The de-lighting is per-pixel arithmetic with no spatial support, so it could
- * equally run in the material's fragment shader for nothing. It does not, for two
- * reasons. It would be a **second implementation** of the operator, in another
- * language, checked by nothing — and the repository has already been told what
- * that costs. And the statistics this item is judged on would then have to be
- * measured by a different code path from the one that renders, which is exactly
- * the instrument problem: you would be measuring the copy, not the thing.
+ * The plugin retains CPU-readable `DataTexture.image.data` for the statistics,
+ * sample probes and downstream material observers. It decodes and caps each
+ * source atlas once, writes the original-RGB sign mask, then runs the de-light
+ * operator once on the buildings-owned GPU processor. That synchronous pass
+ * reads its result back into these same bytes; the product does not also run the
+ * CPU oracle or silently fall back to it. The unchanged pure CPU helper remains
+ * an independent test oracle for the GPU's byte-error bound.
  *
- * The cost is paid at load: about 63 megapixels of read-modify-write across 65
- * atlases, spread over the tiles as they arrive. It is not paid per frame.
+ * The cost is paid during tile preparation, spread over atlases as they arrive.
+ * It is not paid per frame, and final-leaf readiness still waits for each hook.
  *
  * ## The texture that comes out
  *
@@ -51,7 +51,8 @@ import {
   type Texture,
 } from "three";
 
-import { AlbedoAccumulator, delightInPlace, PLATEAU_DELIGHT, type DelightSettings } from "./delight.js";
+import { AlbedoAccumulator, PLATEAU_DELIGHT, type DelightSettings } from "./delight.js";
+import type { FacadeDelighter } from "../render/atlas-delight.js";
 import {
   PLATEAU_SIGN_MASK,
   SignMaskDistribution,
@@ -162,7 +163,11 @@ export class FacadeTexturePlugin {
   private error: string | null = null;
   private readonly verifiedEmissionTiles = new Map<string, string>();
 
-  constructor(private readonly options: FacadeTextureOptions) {}
+  constructor(
+    private readonly options: FacadeTextureOptions,
+    private readonly delighter: FacadeDelighter | null = null,
+    private readonly ownerClosed: () => boolean = () => false,
+  ) {}
 
   /** Reuse the normal tile request; retain only two digests, never tile buffers. */
   fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
@@ -198,6 +203,7 @@ export class FacadeTexturePlugin {
   }
 
   async processTileModel(scene: Object3D, tile: unknown, lifetime?: FacadeTextureLifetime): Promise<void> {
+    if (this.ownerClosed()) throw abortFacadePreparation();
     // Validate the parser's original UV channel/orientation/transform before
     // rebuilding replaces the map with a DataTexture carrying default state.
     if (this.options.patchMaterials) {
@@ -209,30 +215,48 @@ export class FacadeTexturePlugin {
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
 
-    for (const material of materials) {
-      for (const slot of TEXTURE_SLOTS) {
-        const texture = (material as unknown as Record<string, unknown>)[slot] as Texture | null;
-        if (texture === null || texture === undefined || !texture.isTexture) continue;
-        if (slot !== "map") continue;
-        if (!replacements.has(texture)) {
-          const replacement = await this.rebuild(texture, textureLimitForTile(tile), lifetime);
-          if (replacement) {
-            const sourceTile = tile as { content?: { uri?: string; url?: string }; boundingVolume?: { box?: number[] } };
-            replacement.userData.mapsAtlas = { ...(replacement.userData.mapsAtlas as object), tileUri: sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown", tileBounds: sourceTile.boundingVolume?.box?.slice() ?? null };
+    const unadopted = new Set<DataTexture>();
+    try {
+      for (const material of materials) {
+        for (const slot of TEXTURE_SLOTS) {
+          const texture = (material as unknown as Record<string, unknown>)[slot] as Texture | null;
+          if (texture === null || texture === undefined || !texture.isTexture || slot !== "map") continue;
+          if (!replacements.has(texture)) {
+            const replacement = await this.rebuild(texture, textureLimitForTile(tile), lifetime);
+            if (replacement) {
+              const sourceTile = tile as { content?: { uri?: string; url?: string }; boundingVolume?: { box?: number[] } };
+              replacement.userData.mapsAtlas = { ...(replacement.userData.mapsAtlas as object), tileUri: sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown", tileBounds: sourceTile.boundingVolume?.box?.slice() ?? null };
+              replacements.set(texture, replacement);
+              unadopted.add(replacement);
+            }
+            if (this.ownerClosed()) throw abortFacadePreparation();
           }
-          if (replacement !== null) replacements.set(texture, replacement);
-        }
-        const replacement = replacements.get(texture);
-        if (replacement !== undefined) {
-          (material as unknown as Record<string, unknown>)[slot] = replacement;
-          material.needsUpdate = true;
         }
       }
+
+      if (this.ownerClosed()) throw abortFacadePreparation();
+      for (const material of materials) {
+        for (const slot of TEXTURE_SLOTS) {
+          const texture = (material as unknown as Record<string, unknown>)[slot] as Texture | null;
+          if (texture === null || texture === undefined || slot !== "map") continue;
+          const replacement = replacements.get(texture);
+          if (replacement !== undefined) {
+            (material as unknown as Record<string, unknown>)[slot] = replacement;
+            material.needsUpdate = true;
+          }
+        }
+      }
+      unadopted.clear();
+    } catch (cause) {
+      for (const texture of unadopted) {
+        if (lifetime) lifetime.releaseTexture(texture); else texture.dispose();
+      }
+      throw cause;
     }
 
-    // The originals are on nothing now, and the tiles renderer only disposes what
-    // it can find on a material.
+    // Release only maps that no other texture slot still references.
     for (const original of replacements.keys()) {
+      if ([...materials].some(material => TEXTURE_SLOTS.some(slot => (material as unknown as Record<string, unknown>)[slot] === original))) continue;
       if (lifetime) lifetime.releaseTexture(original); else original.dispose();
     }
 
@@ -272,6 +296,7 @@ export class FacadeTexturePlugin {
     try {
       pixels = await readPixels(image as ImageBitmapSource, width, height, scale < 1);
     } catch (cause) {
+      if (this.ownerClosed() || (cause instanceof DOMException && cause.name === "AbortError")) throw abortFacadePreparation();
       const message =
         `Could not read a ${sourceWidth}x${sourceHeight} facade atlas back for de-lighting, ` +
         `so it stays as PLATEAU shipped it — daylight and all — and the memory budget is ` +
@@ -280,6 +305,8 @@ export class FacadeTexturePlugin {
       console.warn(message);
       return null;
     }
+
+    if (this.ownerClosed()) throw abortFacadePreparation();
 
     const data = pixels.data;
     this.before.add(data);
@@ -292,7 +319,13 @@ export class FacadeTexturePlugin {
     } else {
       for (let offset = 3; offset < data.length; offset += 4) data[offset] = 0;
     }
-    if (this.options.delight !== null) delightInPlace(data, this.options.delight);
+    if (this.options.delight !== null) {
+      if (this.delighter === null) {
+        throw new Error("Facade de-lighting requires the buildings-owned GPU processor; no CPU fallback is configured.");
+      }
+      if (this.ownerClosed()) throw abortFacadePreparation();
+      this.delighter.apply(data, width, height, this.options.delight);
+    }
     this.after.add(data);
 
     const replacement = new DataTexture(data, width, height, RGBAFormat, UnsignedByteType);
@@ -345,23 +378,24 @@ async function readPixels(
         resizeQuality: "high",
       })
     : source;
+  try {
+    const canvas =
+      typeof OffscreenCanvas === "function"
+        ? new OffscreenCanvas(width, height)
+        : Object.assign(document.createElement("canvas"), { width, height });
+    const context = (canvas as OffscreenCanvas).getContext("2d", {
+      willReadFrequently: true,
+    }) as OffscreenCanvasRenderingContext2D | null;
+    if (context === null) throw new Error("a 2D canvas context was refused");
+    context.drawImage(drawable as CanvasImageSource, 0, 0, width, height);
+    return context.getImageData(0, 0, width, height);
+  } finally {
+    if (resize && typeof (drawable as ImageBitmap).close === "function") (drawable as ImageBitmap).close();
+  }
+}
 
-  const canvas =
-    typeof OffscreenCanvas === "function"
-      ? new OffscreenCanvas(width, height)
-      : Object.assign(document.createElement("canvas"), { width, height });
-  const context = (canvas as OffscreenCanvas).getContext("2d", {
-    willReadFrequently: true,
-  }) as OffscreenCanvasRenderingContext2D | null;
-  if (context === null) {
-    throw new Error("a 2D canvas context was refused");
-  }
-  context.drawImage(drawable as CanvasImageSource, 0, 0, width, height);
-  const pixels = context.getImageData(0, 0, width, height);
-  if (resize && typeof (drawable as ImageBitmap).close === "function") {
-    (drawable as ImageBitmap).close();
-  }
-  return pixels;
+function abortFacadePreparation(): DOMException {
+  return new DOMException("Facade tile preparation was cancelled because its buildings owner closed.", "AbortError");
 }
 
 function collectMaterials(scene: Object3D): Set<Material> {

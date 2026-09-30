@@ -1,4 +1,4 @@
-/** Trial-only ownership around the installed parser's pre-accounting boundary.
+/** Own parsed resources across the installed parser's pre-accounting boundary.
  * Each parse has a private staging tile. A fulfilled parse explicitly transfers
  * its scene to the original tile; rejection/cancellation never transfers it. */
 import { BufferGeometry, Material, Mesh, Texture, type Object3D } from "three";
@@ -68,10 +68,10 @@ export function installTileTransactions(tiles: TilesRenderer, disposed: () => bo
       // Upstream cancellation releases only textures and repeats shared ones.
       // Keep its private transaction live, then settle the real signal here.
       await parse(buffer, staged, extension, url, new AbortController().signal);
-      if (!item.scene || staged.engineData.scene !== item.scene) throw new Error(`Rail tile ${url} completed without its owned parsed scene.`);
+      if (!item.scene || staged.engineData.scene !== item.scene) throw new Error(`Building tile ${url} completed without its owned parsed scene.`);
       item.resources.capture(item.scene);
       if (signal.aborted || disposed()) return;
-      if (original.engineData.scene) throw new Error(`Rail tile ${url} cannot replace an undisposed parsed scene.`);
+      if (original.engineData.scene) throw new Error(`Building tile ${url} cannot replace an undisposed parsed scene.`);
       item.scene.traverse(object => { object.userData.tile = tile; });
       Object.assign(original.engineData, { scene: item.scene, metadata: staged.engineData.metadata,
         geometry: [...item.resources.geometries], materials: [...item.resources.materials], textures: [...item.resources.textures] });
@@ -97,7 +97,7 @@ export function installTileTransactions(tiles: TilesRenderer, disposed: () => bo
   };
   return { async process(scene, tile, work) {
     const item = pending.get(tile);
-    if (!item) throw new Error(`Rail tile ${tile.content?.uri ?? "unknown"} was processed outside its parse transaction.`);
+    if (!item) throw new Error(`Building tile ${tile.content?.uri ?? "unknown"} was processed outside its parse transaction.`);
     item.scene = scene; item.resources.capture(scene);
     if (disposed()) return;
     item.commit = await work(item.original, item.resources, root => item.resources.capture(root));
