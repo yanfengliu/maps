@@ -15,7 +15,8 @@ class ParsedResources implements FacadeTextureLifetime {
     root.traverse(object => {
       if (!(object instanceof Mesh)) return;
       this.geometries.add(object.geometry);
-      for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      for (const material of [...(Array.isArray(object.material) ? object.material : [object.material]), object.customDepthMaterial, object.customDistanceMaterial]) {
+        if (!material) continue;
         this.materials.add(material);
         for (const value of Object.values(material)) if (value instanceof Texture) this.trackTexture(value);
       }
