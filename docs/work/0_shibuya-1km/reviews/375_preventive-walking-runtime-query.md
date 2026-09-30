@@ -1,0 +1,22 @@
+# 375 — Preventive walking runtime query
+
+2026-09-29 local / 2026-09-30 UTC. The single [369](369_preventive-walking-prototype.md) candidate experiment failed and its owned code batch is closed. Root accepted this as an upstream freeze, not a remedy. No second query, fix, source gate or commit occurred.
+
+The frozen candidate ran from normal construction: 150 pedestrians, 20 vehicles, seed 5970698, spawn interval 1, actual RenderLoop/admission/signals, exactly 36,000 fixed ticks (600 simulated seconds). Slots 40/76 retained generation 1 and their original 35-edge route SHA-256 `4dcf906fce46e07fe4defcb4f644e278e9fd8878c3b578e82814c80b246d954f`. Avoidance environment absence was bound before child startup, before imports and inside the query. All 37 imported source files, inputs, three candidate files and caller were identical before/after.
+
+Neither walker received a target grant, entry or release at `junction:walk:665310545:0:0:ground0`; neither reached turn occurrences 5–8. Both froze much earlier in occurrence 0:
+
+| Slot | Last positive tick/time | Final progress | Unchanged ticks |
+| --- | --- | ---: | ---: |
+| 40 | 4352 / 72.5333 s | 5.565434197 m | 31,648 |
+| 76 | 4353 / 72.5500 s | 4.032760091 m | 31,647 |
+
+At the cap, 40 held an earlier entered lease for `junction:walk:528096523:0:0:ground0` for 528 seconds; its next halt was 108.030748 m, with no refusal/control. Walker 76 had no lease, a halt at 5.307924 m, and no refusal/control. Actual nearby slots were 40/68/76/106/145. Both were within micrometres of their clearance requirement against 68. The caller did not expose the private requested advance or each intermediate guard decision, so this does not establish a sole causal neighbor or a general source-join impossibility.
+
+No endpoint overlap was observed for these two walkers within the existing staged 8 m/cap-8 selection. Their minimum observed clearance was 3.70/9.03 µm. This prevention result is not movement success. Measurements use current endpoint poses after serial integration; staged selection, order, cap coverage, center-corridor predicates and float32 body envelopes limit the claim. No all-neighbor, swept-mesh, sole-support or general safety verdict follows. Query core time was 59,808.77 ms; wall was 59,854 ms. Core includes unprofiled measurement overhead and is not qualified performance evidence.
+
+Ignored evidence packet: `artifacts/runtime375-query-20260929/`. Frozen caller is 17,315 bytes/SHA-256 `e4a757e8ac12d2c1557bd767927ec6b3c973976e6c323df2b099617291364dac`; result is 1,015,545 bytes/`dfee500cfc9c9b1d66f1b2e452d283c3b87b159a29d4272c66ef50955a9249f4`; small digest is 9,187 bytes/`d50b6d7bbbc69ef40a8c31c79753b8f345a8e6c2fa630e58dbda361d806b25be`. Launch records, receipt and result retain complete bindings. Candidate copies remain under `candidate/` with original hashes `c48504aceb92ba08e501e48998b71ac8e8a32a4b5d34e108e47003c7606eb2d9` (pedestrians), `6867407444a44395cdd3419e5c17be443e4f11b8e60990c454a7265c179739e9` (tick), and `2c7ea5e07097b8405a4e43858e85061b2144095e0c9307dec48cd1212685d7eb` (test). Preserved patch is 15,808 bytes/`45481249ced58fece1525653ae216475711029ebb51569fc1bbce0ec8e278186`.
+
+Authorized rollback verified accepted primary raw bytes against primary HEAD, frontage HEAD `1e840ac590149c1bae2760ca4e6ef06f521fd6b9` and index with CRLF-aware comparisons before copying only the two owned source paths. Restored raw SHA-256 is `db92594a90b8039a5eaf6552ef07ef5686ae2bed5f082fe03709323035f38bf8` / `f71607fce8faf34e89c3774c2ecc3c37c027896d5d3044dc6da2ea8024f278ba`; corresponding Git/CRLF-aware hashes are `9ee61b90d01dba325f4f4398a446609aad21f605e1beb2f8bf106313f9907c77` / `1318a57d80e18df2833695a912f60899b4402f9dd0fb66ed887b0cd93f847afd`. No source normalization was written. The owned untracked test was removed only after retained-copy verification. Exact-path metadata refresh left Git status clean and staging empty. Primary HEAD remained `ff3b19be371442720e8c0c2559a8aa33fa92a3f7`. Closure receipt: 3,258 bytes/`d0fddb2f1619c893e2c6b9910f951fec173908288f64f13299cfedd51dde105c`.
+
+Exec session 41692 completed 0 as an instrument; the mechanism verdict is failure. Runtime finally unregistered/stopped/disposed; exact final PID 49296 lookup returned ObjectNotFound. No browser/GPU/server/port or live helper remains. Retained evidence is still needed; no unrelated output was removed. Held-out/native capture/all-five gates were not attempted, and 357's original negative baseline remains unchanged.

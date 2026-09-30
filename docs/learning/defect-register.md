@@ -8,6 +8,8 @@ Preservation and checks:341 retained394 regular files before the first batch. [3
 
 Remaining check: automatic approval review blocked the exact55-checkout stash/removal command before process creation because explicit owner authorization for that set was missing. No manual stash/removal ran;344 holds the concrete list and recovery state. These scoped checks are complete, but a reusable task-completion check for surviving owned checkouts, dirty states and ignored recovery dependencies remains owed. Its failing control must retain an abandoned checkout or unaccounted dirty state.
 
+2026-09-29 repeat symptom: The owner again reported too much uncommitted code. In primary, the five source/test status markers checked under 376 had empty content diffs and identical raw bytes and index blobs; exact-path refresh cleared only those metadata markers. The three-file 369 candidate failed runtime query 375; its patch and original files were preserved, owned source was restored, and root independently checked rollback. The 55 manual checkout cleanup and reusable task-completion gate remain owed. This does not establish a universal clean-state claim.
+
 ## 2026-09-28 — managed archive was admitted with live shared-target junctions
 
 Observed symptom: after the motion-smoothing managed archive,343 found primary data and node_modules empty, with modification times15:59:27.539Z and15:59:28.452Z. The retained341 manifest had named three junctions resolving to those targets. Root and reviewer failed to enforce the existing unlink prerequisite; recording links and preserving ignored evidence did not satisfy it. Timing and mappings support an archive/junction interaction, but the app's internal deletion mechanism was not traced.

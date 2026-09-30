@@ -11,7 +11,7 @@ Readiness365 amends only the scoring role of20 seconds;357/359 remain inadequate
 
 | Mechanism family | Fresh owner | Status and bound |
 | --- | --- | --- |
-| Runtime progress and admission | crossing_progress362 |367 measured infeasible stopped40/76 forward rays and earlier613/1239 clearance violations. Independent368 permits pedestrians.ts,minimal tick.ts hook and focusedtest. 369 focused red/green and374 source review admit ONE bounded runtime query. Current execution and closure status live in [the progress board](progress.md). Ordinary traversal/passage release remain required;120seconds is not an accepted gate. |
+| Runtime progress and admission | crossing_progress362 |367 measured infeasible stopped40/76 forward rays and earlier613/1239 clearance violations. Independent368 permits pedestrians.ts,minimal tick.ts hook and focusedtest. The single bounded runtime query375 failed and is closed; see the [progress board](progress.md) for its measured result and the next root decision. Ordinary traversal/passage release remain required;120seconds remains unaccepted. |
 | Central route geometry and connectivity | crossing_routes363 | BLOCKED as a correction:18/33 portals already reach central crossings; minimum directed source distance500.038m. No geometry fix is established. See363. |
 | Supported inhabited initial state | crossing_initial364 | BLOCKED:24 static human proposals exist, but ongoing grounded placement and interior vehicle admission remain unproved. Initialization alone relocates those gaps. See364. |
 
