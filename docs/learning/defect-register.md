@@ -1,5 +1,37 @@
 # Defect register
 
+## 2026-09-30 — many roads have no clear lane markers
+
+Observed symptom: the owner asks for clear lane markers on every road. Independent [410](../work/0_shibuya-1km/reviews/410_whole-city-visual-priority.md) inspected three pinned native views; its aerial sample shows mostly unmarked minor roads and weak street hierarchy beyond crossing stripes. This is sampled appearance, not a full-road census.
+
+Investigation/root cause pending: published marking polygons are loaded, unsupported polygons are dropped, and no whole-road coverage criterion exists. Missing source, unsupported layer, intentional unmarked streets and visibility loss have not been separated across the AOI. The owner's annotated dark rectangle has not been source-located or classified.
+
+Future class gate, owed: whole-road marking coverage over an explicit drivable-interval inventory, supported native near/block/aerial dusk/noon inspection and named exception resolution. Removing peripheral markings, selecting the wrong physical layer or omitting an interval from the denominator must fail. No repair or gate acceptance is claimed.
+
+## 2026-09-30 — textures and broad surfaces look too plain
+
+Observed symptom: the owner reports generally plain textures. Review410 sees broad muted paving/dark ground planes, soft nonhero facades and hard-to-read dusk roofs in three pinned originals. Existing seeded detail and paver seams do not establish useful whole-city surface structure.
+
+Investigation/root cause pending: road/ground detail shaders are implemented in the current material path; lack of a texture map is not the established cause. Material region coverage, source classification, scale response, atlas limits and lighting contributions remain to be separated. No shader failure or actual terrain classification is inferred from the unknown rectangle.
+
+Future class gate, owed: multiscale surface richness over the whole-AOI sample, source-bound road/pavement/ground classifications and representative nonhero facades. Flat-material, fine-grain-only and conspicuously repeated-patch controls must be visibly refused; temporal crawl remains separately checked. No repair or quality acceptance is claimed.
+
+## 2026-09-30 — the default city looks dead or in a power outage
+
+Observed symptom: the owner says the default city looks dead, with no lights or like a power outage. Review410's dusk approach shows crossing signs/pools amid mostly dark surrounding blocks.
+
+Investigation/root cause pending: default Satellite/dusk has no generic population unless requested, four authored crossing lights and source-photo emission restricted to admitted sign panels; general photographic window emission is absent. These known coverage limits match the sample but do not establish each contribution to the reported experience.
+
+Future class gate, owed: whole-city powered appearance using fixed peripheral strata, mounted varied dusk sources and their local response, paired noon views and roof/wall exclusion. Disabling peripheral emission while retaining hero lights, global color-mask emission or detached fixtures must fail. Separate default visible-motion acceptance remains open. No repair or gate acceptance is claimed.
+
+## 2026-09-30 — trains should run on the visible tracks
+
+Observed symptom: the owner asks for trains running on tracks. Review410's dusk approach contains visible rail corridors and no train in that still; a still alone cannot establish motion absence.
+
+Investigation/root cause pending for the reported experience: the admitted runtime rail scene is static geometry/style/disposal, and bounded source inspection found no train actor. Track geometry does not itself supply a qualified train trajectory. This is an unimplemented visible outcome, not an established fault in an existing train controller.
+
+Future class gate, owed: default animated rail passage through the ordinary entry point, actual track support/body clearance and fixed-clock binding, plus native sparse review of 30 fps passages across corridor, elevated and portal/span views. Frozen train/advancing clock, wrong-track support, visible recycling jump and omitted actor controls must fail. No runtime proof or acceptance is claimed.
+
 ## 2026-09-28 — historical worktrees and dirty states outlived their tasks
 
 Observed symptom: the owner reported abandoned worktrees and dirty states. [340](../work/0_shibuya-1km/reviews/340_worktree-lifecycle-audit.md) found70 registered checkouts,39 dirty. All HEADs were ancestral, but that did not account for local experiments or ignored evidence. Task completion had not reliably included retirement.

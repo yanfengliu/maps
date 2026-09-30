@@ -4,6 +4,10 @@
 
 The owner directs the root orchestrator to maintain an explicit todo list, oversee overall progress, delegate detailed implementation and review, and continue in goal mode. Prioritize supreme visual quality for the current Shibuya work; detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main, with independent visual review and the existing gates.
 
+## Proactive whole-city inspection — 2026-09-30
+
+User examples guide whole-class self-inspection across the square: every road needs clear supported markings, surfaces need useful structure at several scales, dusk needs distributed mounted city lights, and trains must visibly run on the admitted tracks in the ordinary experience. Inspect peripheral streets and blocks as well as fixed hero views, then use held-out seeded exploration. Record source exceptions and material findings; do not wait for another user annotation to discover the same class elsewhere.
+
 ## Satellite quality focus — 2026-09-28
 
 The owner asks to finish one visual style well before working on the other. Satellite is the sole current visual-quality target, matching the photoreal Shibuya goal. Defer Cartographic polish, paired style iterations and detailed Cartographic image review. Keep basic style-switch and shared-rendering regression checks. The existing automated visual gate may still capture both styles; those captures do not require a second detailed quality review or claim Cartographic acceptance. This direction supersedes the earlier requirement to inspect every Cartographic static frame during this focus period.
