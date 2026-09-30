@@ -60,6 +60,8 @@ The standing question for any new lane or instrument is still which renderer it 
 
 ## The work is a list, and the list is the orchestration
 
+Owner steering, 2026-09-29: root maintains [the Shibuya progress board](../work/0_shibuya-1km/progress.md) against the complete acceptance criteria and stable plan items. Read it at turn start and before delegation; update it at each meaningful handoff, gate, review and integration with owner, actual evidence scope, next acceptance and blockers. Distinguish implemented, verified, accepted and integrated work; keep the full-map and performance requirements visible.
+
 A goal is carried by an explicit task list, not by a running commentary. The list is written before the work starts, derived from the deliverable's own acceptance criteria and phase steps rather than invented from whatever is in front of the session, and it is what the coordinator reads to decide what to delegate next, what the team has room for, and what is stuck. Each item is one bounded unit with one owner, and it is marked done when its evidence exists rather than when its work stops.
 
 Deriving it first is what stops the failure this rule was written after: three population lanes went at one blocker in sequence while the acceptance list was in nobody's hands, and the list never showed that the populated render, the style switch, the flythrough, the frame-time measurement and the independent review had no owner at all. A commentary cannot be checked for missing work; a list can. Keep it current, mark items as they land, and read it before each delegation so the queue and the team are chosen together.
