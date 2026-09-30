@@ -8,6 +8,12 @@ The owner directs the root orchestrator to maintain an explicit todo list, overs
 
 The owner asks to finish one visual style well before working on the other. Satellite is the sole current visual-quality target, matching the photoreal Shibuya goal. Defer Cartographic polish, paired style iterations and detailed Cartographic image review. Keep basic style-switch and shared-rendering regression checks. The existing automated visual gate may still capture both styles; those captures do not require a second detailed quality review or claim Cartographic acceptance. This direction supersedes the earlier requirement to inspect every Cartographic static frame during this focus period.
 
+## Camera input and visual exploration - 2026-09-30
+
+Held WASD pans along the ground relative to the view. Middle-button drag rotates; preserve the existing left-button rotation, right-button pan and wheel zoom. Suppress movement while a UI control or editor has focus.
+
+Visual acceptance compares fixed baselines across azimuth, elevation and zoom, then uses seeded randomized poses to explore. Record the seed and actual camera pose for each exploratory view; report surprises as findings and state sampling and coverage bounds. Inspect original images at native resolution. Satellite remains the only detailed polish target.
+
 ## Keep visual review sampling small — 2026-09-27
 
 The owner asks for modest animation frame rates, around 30 or 60 fps, to limit tokens spent viewing individual frames. Default review clips to 30 fps when sufficient; use 60 fps only for a targeted motion question. Limit inspected images through sparse keyframes and short event-specific sequences, rather than opening every frame of a long animation. State the actual sampled frame/time gaps and keep uninspected footage outside appearance claims. Existing required static-view coverage stays explicit. Do not change the fixed 60 Hz simulation step merely to reduce review-image count.
