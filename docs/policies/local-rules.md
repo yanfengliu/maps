@@ -2,7 +2,7 @@
 
 ## Visual quality first — 2026-09-26
 
-The owner directs the root orchestrator to maintain an explicit todo list, oversee overall progress, delegate detailed implementation and review, and continue in goal mode. Prioritize supreme visual quality for the current Shibuya work; detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main, with independent visual review and the existing gates.
+The owner directs the root orchestrator to delegate detailed implementation and review, and continue in goal mode. Prioritize supreme visual quality for the current Shibuya work; detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main, with independent visual review and the existing gates.
 
 ## Preserve existing markings before a scene rebuild
 
@@ -16,7 +16,7 @@ Vite, three.js and TypeScript, on Node 24 pinned in `.nvmrc`. Decided in the Shi
 
 ## Shibuya delivery ownership and autonomous work
 
-For the approved Shibuya deliverable, the root orchestrator coordinates and delegates implementation to bounded workers, owns shared contracts and canonical status, and accepts the final integrated revision. Managed work continues autonomously in goal mode through the whole deliverable; the owner's 2026-09-08 instruction to continue until done overrides the default automatic-repair cap for this scope. Use each worker's scoped goal where the available tooling supports one; never overwrite another worker's or the root's goal.
+For the approved Shibuya deliverable, the root orchestrator coordinates and delegates implementation to bounded workers, owns shared contracts, and accepts the final integrated revision. Managed work continues autonomously in goal mode through the whole deliverable; the owner's 2026-09-08 instruction to continue until done overrides the default automatic-repair cap for this scope. Use each worker's scoped goal where the available tooling supports one; never overwrite another worker's or the root's goal.
 
 The existing target in `src/world/frame.ts` is 3,000 animated pedestrians and 200 vehicles at 60 fps and 1920×1080. Keep that target distinct from measured performance. The scope remains the roughly 1 km Shibuya simulated world and its approved phases; no second location, broader product surface or publication is implied.
 
@@ -46,11 +46,9 @@ The measured pace, so the next session inherits numbers rather than the argument
 
 The standing question for any new lane or instrument is still which renderer it is entitled to, and the answer is now the GPU unless the subject *is* the rasteriser. `tools/post-chain/` keeps a software arm because its question is what the post chain does on that renderer; `docs/learning/gate-proofs.md` keeps SwiftShader as a reproducible red baseline for the settle and lifecycle bounds.
 
-## The work is a list, and the list is the orchestration
+## The Shibuya work queue
 
-A goal is carried by an explicit task list, not by a running commentary. The list is written before the work starts, derived from the deliverable's own acceptance criteria and phase steps rather than invented from whatever is in front of the session, and it is what the coordinator reads to decide what to delegate next, what the team has room for, and what is stuck. Each item is one bounded unit with one owner, and it is marked done when its evidence exists rather than when its work stops.
-
-Deriving it first is what stops the failure this rule was written after: three population lanes went at one blocker in sequence while the acceptance list was in nobody's hands, and the list never showed that the populated render, the style switch, the flythrough, the frame-time measurement and the independent review had no owner at all. A commentary cannot be checked for missing work; a list can. Keep it current, mark items as they land, and read it before each delegation so the queue and the team are chosen together.
+Derive the Shibuya queue from the approved phase steps and acceptance criteria before work starts. Each item is one bounded unit with one owner and is marked done when its evidence exists. Read the queue before each delegation.
 
 ## Map data, and what its licences oblige
 
