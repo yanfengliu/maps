@@ -63,6 +63,7 @@ import { patchTileMaterials, type SignageUniform, type FacadeStyleUniforms } fro
 import { prepareProceduralFacades } from "./procedural-facades.js";
 import { emissionSourceForUrl, prepareEmissionEligibility } from "./facade-emission.js";
 import { prepareCrossingCorner } from "./crossing-corner-material.js";
+import { addCrossingFrontage } from "./crossing-frontage.js";
 
 /** Every material property that can hold a texture we care about. */
 const TEXTURE_SLOTS = ["map", "emissiveMap"] as const;
@@ -242,6 +243,9 @@ export class FacadeTexturePlugin {
         style: this.options.style,
         enabled: true,
       });
+      const sourceTile = tile as { content?: { uri?: string; url?: string } };
+      const tileUri = sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown";
+      addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
   }
 

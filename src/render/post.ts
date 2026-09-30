@@ -65,6 +65,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { TimeOfDayLighting } from "../scene/time-of-day.js";
 import { getAgentNormalMaterial } from "../agents/render/pass-materials.js";
 import { installAgentNormals } from "./normal-pass.js";
+import { getCrossingFrontageNormalMaterial } from "../scene/crossing-frontage.js";
 
 /**
  * How much ambient occlusion is blended in.
@@ -189,7 +190,7 @@ export function createPostChain(options: PostOptions): PostChain {
 
     gtao = new GTAOPass(scene, camera, options.width, options.height);
     partialDisposers.push(() => gtao.dispose());
-    installAgentNormals(gtao, getAgentNormalMaterial);
+    installAgentNormals(gtao, mesh => getAgentNormalMaterial(mesh) ?? getCrossingFrontageNormalMaterial(mesh));
     gtao.output = GTAOPass.OUTPUT.Default;
     gtao.blendIntensity = AO_BLEND;
     gtao.updateGtaoMaterial({
