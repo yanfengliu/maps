@@ -1,0 +1,13 @@
+# 564 — sign-mask lookup experiment
+
+Implemented, unadopted and uncommitted on HEAD `de36e5a955553e7d3b1e57fedfa22143f534f4f8`. Only `src/scene/signage.ts` and new `test/sign-mask.test.ts` changed. The source diff adds 49 lines. `artifacts/mask564/owned.diff` and `handoff.json` bind the exact files and checks.
+
+The frozen default settings use one lazily allocated `Float64Array(65536)`, exactly 524,288 bytes. Only the 32,896 valid byte extrema pairs are populated. Original value/saturation divisions, smoothsteps, response precision, alpha rounding and pixel accumulation order remain. Custom settings and nondivisible buffers retain the unchanged general loop. There is no source eligibility, lighting, atlas policy, API or dependency change.
+
+The self-contained frozen pre-change oracle checks all 32,896 unquantized responses, then 592,128 pixels comprising six channel orders and three middle values for every pair in each byte-array type. Literal thresholds and the white alpha-rounding tie, original RGB, overwritten alpha, ordered mean/coverage, empty/incomplete buffers, per-pixel custom getters, nonfinite settings and degenerate edges are covered. Final focused Vitest: 10 passed, 651 ms; focused source/test typecheck passed on Node 24.12.0. Initial generic buffer equality timed out; exact native byte comparison reduced runtime without changing coverage.
+
+A wrong-lookup mutation returning zero made the real public literal assertion fail: expected mean/coverage 1/1, received 0/0. Direct byte restoration preserved the candidate. The red log and mutation digest are retained under `artifacts/mask564/`.
+
+Two existing pinned source PNG crops also match the old source exactly, including full RGB/alpha and statistics. Twelve alternating CPU pairs after eight warmups used 1,048,576 pixels in repeated original crop order: baseline median 16.96465 ms, lookup 6.29600 ms, 2.6945× speedup (62.8875% reduction). First lookup call including initialization and scan took 8.8882 ms. `microbenchmark.json` binds encoded/decoded inputs, outputs, pixel count and unchanged source. This is Node mask-only timing; it proves neither total startup nor GPU/appearance improvement.
+
+Pre-write source SHA `f454e58b82caaac226ecd3f7a49555092e54204009dc2fa510116f8c06aa5b34`; candidate SHA `e39d0d2e3334877e910a9a9fc81234773458610d056ba8721a89540ca4153318`. Saved raw index SHA `6e718b1faae838181baf57403b00f7e1188c9eb85aa2f2198d2b0ff1af80a134` remains unchanged. No browser/server ran. CPU runner exits were observed; CIM census was sandbox-denied. Root still owes unchanged-instrument paired startup, independent review, final five gates and main integration.
