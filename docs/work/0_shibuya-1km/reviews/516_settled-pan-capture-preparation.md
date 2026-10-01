@@ -11,3 +11,13 @@ First-ready diagnostic remains separate from paired qualification. Targets/toler
 Frozen SHA-256: native26632B `cbaa183e0ed6d30aef6a0c1365e988ddd51f2c47890a229f9fbd84063b87eb14`; owner20265B `4a4640eaf67b8ee5d4ef6de3149163086b26d79befa8123f5e8a2e951cb1ba3e`; prepared221326B `957089fe537d4c9b389c9d04f8364bcb4421e91a0fa6a2e7a0a77ef83e442759`; source-views136080B `965b42b015364792359b24ba7212dd746a703ffb787462714d3f80315cfa0b50`; recipe4803B `bfcabfb2cbb8edd024587c57cc5374b5fefe3502fdbc282f5747d3aebea8b4ad`.
 
 Actual Node `--check` exited0 and PowerShell7.6.5 parse-only returned zero errors. Receipt1006B `6bdfb074dff00edae8ef7c7424424b435f72dcc24d7d17651955bf6d1bf0507c` retains results. No imports/build/native ran. Independent exact-source review and root admission remain pending; appearance/main/whole-map acceptance stays open.
+
+## Actual paired capture — 2026-10-01
+
+After512 exact-source acceptance and root's single native lease, exec77290 exited0. Native17:58:25.228–18:01:44.792UTC lasted199.564s; wrapper lasted202.488s. Actual record6888473B SHA-256 `1a3ac2dd5231145d1fd7b155ebd6bb1dd0ecd361691217795dd8511c9005cd3c` retains30 paired originals, two separately excluded first-ready diagnostics, every per-image hash/pose,20 independent calibrations and all input receipts. Independent rehash of all32 PNGs and580 current input pins found zero mismatches. Both six-file builds remained unchanged; baseline6640602B/pilot6661500B. Baseline remains diagnostic common unlanded observer450.
+
+All unchanged controls/pose/pair/sparse/error checks passed. Each aim used1–3 corrections. Maximum targetXZ residual was9.51835797661471e-6m; paired fixed/seed target, azimuth, polar and radius differences were zero. Both renderers reported hardware4090 D3D11; GPU/driver remained4090/616.64. No page/request errors;222 watched status200 metadata records per arm. Mounted-file before/after witness passed; browser-body identity remains false.
+
+Sparse baseline frame gaps were2,2,3,3,2 with33.6,34,48.5,49.7,33.8ms gaps; pilot3,2,3,2,2 with50.5,33.2,49.5,33.5,34ms. These are recorded sample bounds, not adjacency, complete motion or FPS qualification.
+
+All native finally cleanup passed. Fresh eight recorded IDs, task marker and4335 listener census returned no owned survivors; exact TEMP/cache were absent. Cleanup5383B `1a62b2d3203acf92a53dd7128c70f4f4aedece492767c9eb34c1e3deed35b8cf` and census3660B `ba4b940a8dd8845c972c3650a87ceb4cb754698f2bd49a14e4826abc6c38e384` bind closure. No retry or helper/product/Git change occurred. This append followed root's completed514 checkpoint. Native-resolution appearance, unocclusion, material improvement, integrated/main and whole-map acceptance remain pending independent review.
