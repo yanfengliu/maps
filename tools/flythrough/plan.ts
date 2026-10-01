@@ -31,7 +31,7 @@
  * | Leg | Frames | Target | Camera height | Distance | What moves |
  * | --- | --- | --- | --- | --- | --- |
  * | `overview` | 11 | origin to the crowd's corner | 675 to 60 m | 620 to 170 m | pan 619 m south-east, zoom, bearing held |
- * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 26 m | descent and a 37.5 degree swing onto the crowd |
+ * | `approach` | 12 | the crowd | 60 to 3 m | 170 to 26 m | descent and a 142.5 degree swing onto the crowd |
  * | `crowd` | 12 | through the crowd | 3 m | 26 to 18.8 m | a slow push, 1.2 m a step, then six frames with no input |
  * | `ascent` | 11 | the crowd, back to the crossing | 18.8 to 110 m | 18.8 to 620 m | climb, swing, and a pan home |
  *
@@ -121,9 +121,9 @@
  * than a change this file makes. What the flight's camera is, from the same
  * controls' formula, is `CROWD_FLOWN_CAMERA` below.
  *
- * This anchor's bearing is 7.5 degrees, so the approach turns 37.5 degrees instead
- * of the old 82.5, and the swing's own arithmetic — the short-way interpolation,
- * whose long-way version cost a run — is in the approach leg below.
+ * This anchor's bearing remains 7.5 degrees. From the app's approved -135 degree
+ * opening, the approach now turns 142.5 degrees; its short-way interpolation and
+ * the input cap it must fit are in the approach leg below.
  *
  * ## The clock
  *
@@ -383,26 +383,26 @@ const OVERVIEW_STEPS: readonly LegStep[] = OVERVIEW_LADDER.map((rung, index) => 
  * Leg 2: the descent and the swing that puts the camera on the crowd's side.
  *
  * Two movements at once, and they have to be ordered. The distance falls from
- * 170 m to 30 m and the height from 60 m to 3 m over the first six steps while
- * the bearing is still held, because a camera 170 m out that swings before it
+ * 170 m to 26 m and the height from 60 m to 3 m over twelve steps. The bearing
+ * holds over the first four, because a camera 170 m out that swings before it
  * closes would leave the area of interest; then the bearing swings the short way
- * onto the crowd over the last six, where the camera is under 60 m out and the
+ * onto the crowd over the last eight, where the camera is under 80 m out and the
  * circle it turns on is small. The stand heights are a ladder down the descent,
  * so the camera arrives at the footway rather than over the roofs.
  *
- * The swing is 0.6545 rad, 37.5 degrees, from `OPENING_AZIMUTH` 0.7854 down to
+ * The swing is 2.4871 rad, 142.5 degrees, from `OPENING_AZIMUTH` -2.3562 up to
  * `CROWD_AZIMUTH` 0.1309. It is written as an interpolation *towards* the crowd's
  * bearing rather than as an angle that rises past it, and that is what makes it
  * arrive. The driver buys a bearing with a left-button drag whose longest gesture is
- * 40 px, which at this lane's 1280x720 canvas is 0.3491 rad, so 0.6545 rad over six
- * steps — 0.1091 rad a step — is inside the cap with room to spare and the last step
+ * 40 px, which at this lane's 1280x720 canvas is 0.3491 rad, so 2.4871 rad over eight
+ * steps — 0.3109 rad a step — is inside the cap and the last step
  * lands on the crowd's bearing exactly.
  *
- * The interpolation is also a **cap** on the anchor: at most 2.095 rad can be
- * delivered over these six steps, so a crowd anchor whose bearing is more than that
- * from `OPENING_AZIMUTH` cannot be reached by this leg at all. That is why the aim
- * tool's highest-count pose is not the one below: its bearing asks for 0.3927 rad a
- * step.
+ * The interpolation is also a **cap** on the anchor: at most 160 degrees can be
+ * delivered over eight steps (2.7925 rad). Holding the old six-step schedule after
+ * the opening bearing changed left the approach 0.3927 rad short of the same crowd
+ * anchor. Starting two existing descent rungs earlier fits the approved bearing
+ * without changing the anchor, frame count, heights or driver's gesture cap.
  *
  * The long way round is what this replaced, and it cost a run. Written from 0.7854
  * up to `CROWD_AZIMUTH + 2*PI`, the old 82.5 degree swing asked for 1.2872 rad a
@@ -453,9 +453,9 @@ const APPROACH_STEPS: readonly LegStep[] = APPROACH_LADDER.map((rung, index) => 
   // The short way onto the crowd's own bearing: `turnTo` targets an absolute
   // azimuth and takes the shortest signed difference to it, so interpolating
   // towards `CROWD_AZIMUTH` is the path the driver can actually deliver. Every
-  // step asks for 0.1091 rad against the 0.3491 rad a 40 px drag buys at this
+  // step asks for 0.3109 rad against the 0.3491 rad a 40 px drag buys at this
   // canvas.
-  const swing = index < 6 ? 0 : (index - 5) / 6;
+  const swing = index < 4 ? 0 : (index - 3) / 8;
   const azimuth = OPENING_AZIMUTH + (CROWD_AZIMUTH - OPENING_AZIMUTH) * swing;
   return {
     panToX: CROWD_TARGET.x,
@@ -608,8 +608,8 @@ export const LEGS: readonly Leg[] = Object.freeze([
       "the hardest thing in this lane for the tile traversal, the ambient occlusion and the bloom, and the leg where " +
       "a strobing light or a swimming shadow would be most visible.",
     expectation:
-      "170 m to 30 m and 60 m up to 3 m over twelve steps, then a 37.5 degree swing onto the crowd while the camera " +
-      "is under 60 m out. The frame should open on the district from 60 m up and close on a footway at eye height, " +
+      "170 m to 26 m and 60 m up to 3 m over twelve steps, with a 142.5 degree swing onto the crowd while the camera " +
+      "is under 80 m out. The frame should open on the district from 60 m up and close on a footway at eye height, " +
       "with the crowd arriving from a texture into people.",
     captureEvery: 1,
     minClearanceM: 2,

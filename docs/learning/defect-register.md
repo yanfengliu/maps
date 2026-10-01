@@ -1,5 +1,23 @@
 # Defect register
 
+## 2026-09-30 — building facades feel like pasted wallpaper
+
+Observed symptom: the owner asks for vibrant building textures and says they should not feel like fake wallpaper crawled from the internet. This extends the plain-texture report to facade believability; it does not establish that the mapped photographs are unrelated internet assets.
+
+Investigation pending: inspect the ordinary scene through real controls at close, block and aerial scales, with fixed and seeded poses, then separate source-image detail, material depth, window readability, lighting response and repeated treatment. The surface427 acceptance is not building-texture acceptance. This is the next facade direction after the smaller verified surface/error/camera commit.
+
+Class check owed: same-source rendered facade comparisons at representative scales and noon/dusk, with independent native review and temporal inspection. A brighter flat photograph or repeated generic window mask alone must not qualify. Source bounds, texture budgets and materially different buildings remain explicit; no repair or class-gate acceptance is claimed.
+
+## 2026-09-30 — surface shaders failed while the scene reported ready
+
+Self-inspection of the first whole-city candidate found missing roads, pavement and terrain in three native views. The actual hardware capture recorded nine fragment errors: the new analytic surface helper used reserved GLSL identifier `patch`. Bridge status still reported ready with no error because readiness observed data loading rather than shader success. This is a candidate regression; it does not establish the cause of the earlier plain-texture report. Fresh [414](../work/0_shibuya-1km/reviews/414_first-whole-city-game-review.md) binds the rejected pixels and source.
+
+The candidate renames the declaration to `panelCoverage` and surfaces persistent named renderer failures through readiness, bridge and the existing alert, with full diagnostics. Root and independent [424](../work/0_shibuya-1km/reviews/424_clean-city-gate-admission.md) accepted the actual [421](../work/0_shibuya-1km/reviews/421_native-shader-class-control.md) hardware class control: clean has44 idle leaves and no errors; malformed ground/road/sidewalk shaders retain real compiler diagnostics and the ground alert stays nonready through frames116–190. Both native originals were inspected. This gates the observed reserved-identifier/false-readiness class, not material quality or every renderer failure; current440 build/types,1,055 tests, high-threshold audit and44 hardware frames/three lifecycle records pass on the adopted source, with independent441 review. Camera445 also records no renderer errors. Main commit is pending; the original red is preserved.
+
+## 2026-09-30 — pedestrian lower bodies are obscured at the peripheral tour anchor
+
+Self-inspection and independent441 review of camera445 approach/crowd originals show torsos emerging beside a raised strip, with lower bodies hidden. Read-only447 finds network heights and rendered pavement use separate support paths, but its nearby1.714m difference is not an actor support residual. The strip, pictured actor occurrence/interpolated pose and drawn asset sole must be identified before a correction. Class check owed: same-source contact and layer continuity with a failing control plus side/reverse native views; preserve lower passages and physical occupancy. No cause, repair or whole-map acceptance is claimed.
+
 ## 2026-09-30 — many roads have no clear lane markers
 
 Observed symptom: the owner asks for clear lane markers on every road. Independent [410](../work/0_shibuya-1km/reviews/410_whole-city-visual-priority.md) inspected three pinned native views; its aerial sample shows mostly unmarked minor roads and weak street hierarchy beyond crossing stripes. This is sampled appearance, not a full-road census.

@@ -1,0 +1,63 @@
+# 414 — first whole-city game review
+
+Fresh independent reviewer: critic414. Date: 2026-09-30. Verdict: redirect; no appearance acceptance. This early prototype review covers three actual native images and the exact source snapshot that produced them. It does not accept the whole square, road coverage, continuous train motion or the population performance target.
+
+## Visual first pass
+
+All three original 1280×720 PNGs were opened individually at their original resolution before source inspection. They came from ordinary Satellite entry at dusk and noon, then an actual-controls peripheral block visit. No reviewer browser, server, GPU run or gate was launched.
+
+| Original | SHA-256 | Observed pose |
+| --- | --- | --- |
+| `artifacts/city-lighting413/prototype/00-default-dusk.png` | `f612dcc659db41e3448d0b50865cdae0e91e2b192b6be0476a53e3603fb0bfe1` | Ordinary entry; target X0/Y15.2/Z0, distance1800 m, azimuth0.7854, polar0.5. |
+| `artifacts/city-lighting413/prototype/01-default-noon.png` | `345539a4d60cf84e60e394d95e8a3bcf80c2f351c1978d93096f8092c896d1a7` | Same ordinary camera, noon query. |
+| `artifacts/city-lighting413/prototype/02-peripheral-block-dusk.png` | `8a0e3326afaea397a918b8a8c6fd3cd31e8be55de02aae90eeb8eff4ffa072d0` | Target X−326.834/Y15.2/Z−262.026, distance130.000 m, azimuth0.7854, polar1.1. |
+
+The first impression is a small, cold building diorama. In both default frames, the city occupies roughly the central 500×500 pixels of a 1280×720 canvas. Building outlines are readable, but the street, facade-light and train detail is too small to establish their quality. This initial scale hides the expensive detail the current work seeks to improve. A closer ordinary entry with recognizable streets and a rail corridor is a cheap, high-benefit next direction; retain an aerial view as explicit coverage.
+
+The dominant visual defect is a missing base. The default views have near-black gaps between buildings. The peripheral view exposes the orange sky/background through the long street opening around X220–455/Y275–600 in image coordinates. Buildings have no readable road, pavement or ground support there. This defeats surface continuity before texture richness can be judged. Source inspection below identifies a shader compile failure, so these pixels are not evidence that the authored surface treatment itself is too dark.
+
+The sampled dusk still looks unpowered after 864 fitted apertures are reported. In the peripheral frame, the foreground and middle-distance facades retain broad, muted blue-grey areas, without a clearly readable shopfront rhythm or light falling onto the street. The roof equipment exists, but flat roof response and blurred facade detail dominate the close impression. This is a visible shortfall within one block, not proof that every fitting is misplaced or that every stratum is dark. The missing base prevents a fair assessment of ground light response. Raising a count alone would not answer it.
+
+No train is clearly recognizable as a passenger consist in these three sampled views. The default views are distant, and the close view is away from the useful corridor. Read-only status reports two four-car consists, advancing time and 64 supported wheels, but those counts establish neither camera visibility nor appearance. This review makes no inference of omitted trains, frozen motion or recycling.
+
+## Required source fixes
+
+1. **[P1] The new surface shader does not compile.** Frozen `src/scene/surface-structure.ts:53` declares `float patch`, then uses it at56. The same capture receipt records nine fragment shader errors naming `patch` as a reserved word. Because `STRUCTURE_GLSL` is injected into road, sidewalk and ground materials, the error removes their visible base. Rename the identifier and run the corrected native materials through actual shader compilation before reviewing their appearance. The CPU cases in `test/surface-structure.test.ts` check source strings, allocation and binding; they explicitly cannot prove linked GPU output and did not catch this defect.
+
+2. **[P1] The app reports ready while essential scene shaders are broken.** In all three captures, bridge status is `ready:true`, `error:null`, while the receipt contains the material compile failures above. Frozen `src/app.ts:391` admits readiness from frame count, context and data readiness;393 reports only `sceneError` or building-load failure. Visibility and the existing alert use the same data-only error at228–235. `src/render/renderer.ts` installs no shader-failure observer. Use the installed renderer's `debug.onShaderError(gl, program, vertexShader, fragmentShader)` hook to retain a named render failure, feed it into visible readiness, bridge error and the existing alert, and preserve detailed diagnostics: assigning the hook suppresses three.js's default error reporting. The relevant installed implementation is `node_modules/three/src/renderers/WebGLRenderer.js:146` and `renderers/webgl/WebGLProgram.js:938`. A malformed native shader must make the app non-ready and visibly name the failure, while a clean shader remains ready. This is an error-boundary repair, not a demand for a new product flow.
+
+3. **[P2] Train disposal leaves seven instance buffers without their release event.** Frozen `src/scene/rail-trains.ts:121` unregisters callbacks and disposes shared geometries/materials, but clears the seven `InstancedMesh` objects without calling their `dispose()`. The installed `WebGLObjects.js:70–78` removes `instanceMatrix` and `instanceColor` only in response to that mesh's dispose event. Geometry disposal is separate. Call each mesh's disposal once and extend `test/running-trains.test.ts` beyond its existing shared-geometry spy to assert all seven mesh dispose events. `city-lighting.ts` already follows this ownership rule.
+
+## Source findings and limits
+
+The train path and schedule use the pinned rail provenance and authored bed profile, rather than the road graph. The northern four-car turnback has continuous position and zero speed at both reversal points. App wiring mounts trains without an agents query, waits for city visibility, shares the fixed loop, keeps style changes separate from pose/time and disables temporal still accumulation while a visible consist moves. Wheel placement refuses a missing actual rail-head triangle inside the cutout. These source properties and the existing CPU tests are meaningful, but I ran no tests and saw no native passage. The southern through paths remain disqualified by the recorded truss intersections. Discrete envelope checks are not continuous swept-volume proof; authored height, vehicles and schedule are not surveyed service facts.
+
+The surface candidate preserves the existing fine aggregate and semantic sidewalk top-face restriction. Ground gets restrained neutral variation rather than invented road or yard classification. The new seed texture has a finite 16 KiB allocation per material, clamp wrapping, no mip allocation and owned disposal. The shader has filtered authored repair regions; their visual usefulness and temporal stability remain unobserved because compilation failed. Road-treatment geometry is not mounted in this preview, so unmarked-road coverage remains open.
+
+The lighting layout excludes coarse leaves, cut sections, sign/crossing regions and surfaces whose normal is not nearly horizontal. It checks the full fitted rectangle against one source wall triangle and the AOI. Seeded source identity controls occupancy and colour. Noon emitted power is zero; source albedo is not modified. Borrowed atlases stay tile-owned, and the mounted group releases instance resources during replacement. These are attachment and resource bounds, not proof of photographed openings or powered appearance. No roof-light placement defect is established by the three originals.
+
+An unexpected inefficiency is selection after full candidate construction. `city-lighting-layout.ts:63–119` allocates a map of all fitted candidates and associated vectors, triangles and UV records, then sorts and discards nearly all of them. The capture reports 95,000 candidates for 864 retained fittings; the separate source-only inventory recorded 1,577.2654 ms. `app.ts:244` mounts when building refinement returns to settled, so this synchronous path can recur. The 864-instance drawing cap does not bound construction allocation or stall cost. Before densification, retain only a bounded deterministic selection while scanning, or prepare source-bound fittings outside the rendered frame. Reuse unchanged layout across camera-only refinement transitions. This is a justified optimization direction; no native mount-time or whole-process memory measurement was made here.
+
+## Cheapest coherent next direction
+
+| Order | Direction | Visible benefit and cost |
+| --- | --- | --- |
+| 1 | Repair surface compilation and truthful readiness, then recapture default and peripheral views. | Highest benefit; small source repair. Restores the base and permits a real material verdict. |
+| 2 | Start the ordinary experience at a useful block/crossing distance with streets and the rail corridor legible. | High benefit; small camera change, with actual-controls and surrounding views checked. The current1800 m view conceals quality. |
+| 3 | Make street-level mounted light and nearby facade response readable at dusk before raising source counts. | High benefit; moderate presentation work. Judge foreground, opposite-facing and peripheral facades, their photographs and supported ground. |
+| 4 | Complete admitted road treatment, then judge coherent asphalt/pavement/paint hierarchy at noon and dusk. | High benefit; moderate source-bound work. Avoid global procedural noise as a substitute for street semantics. |
+| 5 | Inspect a recognizable northern train passage and its dwell/reversal with sparse native temporal samples. | High benefit to the reported missing-life symptom; bounded capture cost. Preserve full-size models and southern-route refusals. |
+
+The taller roofs and blurred facade detail deserve a later fidelity decision after the supported streets and lighting can be seen. The present evidence does not establish texture resolution as their sole cause. Avoid a broad atlas expansion or more procedural layers before a close noon comparison identifies the real limit.
+
+## Evidence identity and coverage
+
+`prototype.json` SHA-256 is `1d3f3011951fa590be119d46716926dea9301f85654420628c22835d6d6685d3`. The early run is red: it captured three originals, then the instrument's minimum30 ms key pulse oscillated outside its5 m target tolerance. There is no opposing aerial original and no temporal pair. This is an instrument failure; it establishes no camera-control product defect. No continuous motion or uninspected interval is accepted.
+
+`compiled-inputs.json` SHA-256 is `c5e2716bf1a170f3208b4fafebf9798b9c1b2fb6148211d1f3f822172f873a28`. At first source inspection, the reviewer compared all128 listed compiled source paths to current bytes and found zero mismatches. An earlier message incorrectly called the denominator111; the exact count is128, including124 `.ts` paths. The build receipt SHA-256 is `4fa718b6334edaaea808fbe78856950a078ddb3bf9c59931092ec6f9a217ea02`; it records exit0, unchanged source inputs and the actual bundle. A successful Vite build did not compile the injected GLSL.
+
+The reviewer froze26 relevant files under ignored `artifacts/critic414/source-at-capture/`:20 compiled source files and six tests. All20 copied source hashes match the compiled receipt. Snapshot receipt SHA-256 is `2ef57d580df7bebce5a95550edaef3dea7ed1cff243f01f953e916f8fcf853ef`. Findings above apply to that frozen snapshot, even if workers subsequently repair the live tree. Focused re-review must bind new source and captures separately.
+
+The capture binding names the NVIDIA RTX4090 with driver616.64, the frozen build,151 served scene files and24 instrument/harness files. The producer records unchanged bindings and closes its six JavaScript-owned resources; its outer wrapper reports process closure and owned-TEMP removal. The reviewer owns no browser, server or GUI resources. Only the authored review and source-evidence copies were created; product, data, dependencies, Git state and source tests were not changed.
+
+This is three-view sampling, including only one peripheral block, rather than a whole-AOI audit. Whole-square street continuity, nine-stratum held-out exploration, native lighting plausibility, train appearance and continuous motion, final five gates, integrated review and merge to main all remain open. The broader Shibuya quality goal remains open.

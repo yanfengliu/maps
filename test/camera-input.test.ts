@@ -79,6 +79,21 @@ function heldPan(keys: string[], fps = 60, repeats = 0): Vector3 {
 }
 
 describe("map camera input", () => {
+  it("opens on readable crossing blocks and retains wheel access to the whole square", () => {
+    const f = fixture();
+    try {
+      expect(f.controls.getDistance()).toBeCloseTo(420, 8);
+      expect(f.controls.getPolarAngle()).toBeCloseTo(.95, 8);
+      expect(f.controls.getAzimuthalAngle()).toBeCloseTo(-3 * Math.PI / 4, 8);
+      expect(f.controls.target.x).toBe(0);
+      expect(f.controls.target.y).toBeCloseTo(15.2, 12);
+      expect(f.controls.target.z).toBe(0);
+      for (let i = 0; i < 100; i++) f.canvas.wheel(120);
+      f.settle();
+      expect(f.controls.getDistance()).toBeGreaterThanOrEqual(1800);
+      expect(f.controls.getDistance()).toBeLessThanOrEqual(f.controls.maxDistance);
+    } finally { f.controls.dispose(); }
+  });
   it.each(["KeyW", "KeyA", "KeyS", "KeyD"])("holds %s to pan both camera and target on the ground", (key) => {
     const f = fixture();
     try {
@@ -92,8 +107,8 @@ describe("map camera input", () => {
       expect(f.canvas.key("keyup", key).defaultPrevented).toBe(true);
       f.settle();
       const moved = f.controls.target.clone().sub(target);
-      expect(moved.length()).toBeGreaterThan(500);
-      expect(moved.length()).toBeLessThan(650);
+      expect(moved.length()).toBeGreaterThan(100);
+      expect(moved.length()).toBeLessThan(200);
       expect(moved.clone().normalize().dot(direction)).toBeCloseTo(1, 12);
       expect(moved.y).toBeCloseTo(0, 10);
       expect(f.camera.position.clone().sub(position).distanceTo(moved)).toBeLessThan(1e-8);
@@ -103,7 +118,7 @@ describe("map camera input", () => {
 
   it("uses elapsed frame time rather than frame count or OS repeat", () => {
     const at30 = heldPan(["KeyW"], 30), at60 = heldPan(["KeyW"], 60), at120 = heldPan(["KeyW"], 120);
-    expect(at30.length()).toBeGreaterThan(500);
+    expect(at30.length()).toBeGreaterThan(100);
     expect(at30.distanceTo(at60)).toBeLessThan(1e-8);
     expect(at120.distanceTo(at60)).toBeLessThan(1e-8);
     expect(heldPan(["KeyW"], 60, 50).distanceTo(at60)).toBeLessThan(1e-8);
@@ -120,6 +135,7 @@ describe("map camera input", () => {
     const f = fixture();
     try {
       for (let i = 0; i < 100 && f.controls.getDistance() > requestedDistance * 1.05; i++) f.canvas.wheel(-120);
+      for (let i = 0; i < 100 && f.controls.getDistance() < requestedDistance * .95; i++) f.canvas.wheel(120);
       f.settle();
       const distance = f.controls.getDistance(), height = f.camera.position.y, targetHeight = f.controls.target.y;
       expect(distance).toBeGreaterThanOrEqual(requestedDistance * 0.9);

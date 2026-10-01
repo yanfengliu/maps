@@ -52,6 +52,15 @@ const ANCHORS = Object.freeze({
 
 const KINDS: readonly SurfaceMaterialKind[] = ["road", "sidewalk", "ground"];
 
+it.each(KINDS)("names the actual %s material for native shader diagnostics through style changes", kind => {
+  const treatment = createSurfaceMaterial(kind, worldStyle("satellite"));
+  try {
+    expect(treatment.material.name).toBe(`Shibuya:${kind}`);
+    treatment.apply(worldStyle("cartographic"));
+    expect(treatment.material.name).toBe(`Shibuya:${kind}`);
+  } finally { treatment.dispose(); }
+});
+
 function uniforms(): SurfaceShaderUniforms {
   return {
     wetness: { value: 0.72 },
@@ -124,7 +133,7 @@ describe("the patch reaches the surface's own colour, for every kind", () => {
       const bound = Object.keys(shader.uniforms);
       // The names are the ones the shader must declare; a patch that bound a different
       // name than it declared would leave the uniform undefined on the surface.
-      expect(bound.sort()).toEqual(["mapsDetailMap", "mapsDetailMetres", "mapsDetailStrength", "mapsWetness"]);
+      expect(bound.sort()).toEqual(["mapsDetailMap", "mapsDetailMetres", "mapsDetailStrength", "mapsStructureSeeds", "mapsStructureStrength", "mapsWetness"]);
       for (const name of bound) {
         expect(shader.fragmentShader, `${kind}: ${name} is bound but not declared`).toContain(`uniform `);
         expect(shader.fragmentShader, `${kind}: ${name} is bound but not declared`).toMatch(

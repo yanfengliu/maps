@@ -10,7 +10,7 @@ const pending = vi.hoisted(() => ({ factory: vi.fn() }));
 vi.mock("../src/agents/local-walk-prototype.js", () => ({ createLocalWalker: pending.factory }));
 vi.mock("../src/scene/aoi-cutout.js", () => ({ clipCityRoot: vi.fn() }));
 vi.mock("../src/harness/bridge.js", () => ({ installBridge: vi.fn() }));
-vi.mock("../src/render/renderer.js", () => ({ createRenderer: () => ({ dispose: vi.fn() }), resizeRendererToDisplay: vi.fn() }));
+vi.mock("../src/render/renderer.js", () => ({ createRenderer: () => ({ dispose: vi.fn() }), rendererFailure: () => null, resizeRendererToDisplay: vi.fn() }));
 vi.mock("../src/render/camera.js", () => ({ createCameraRig: () => ({ camera: new PerspectiveCamera(), controls: { update: vi.fn(), dispose: vi.fn() } }) }));
 vi.mock("../src/render/post.js", () => ({ createPostChain: () => ({ render: vi.fn(), dispose: vi.fn(), apply: vi.fn(), invalidate: vi.fn(), setSize: vi.fn(), setStill: vi.fn() }) }));
 vi.mock("../src/scene/sky.js", () => ({ createSky: () => ({ mesh: new Mesh(new BufferGeometry(), new MeshBasicMaterial()) }), bakeEnvironment: () => ({ texture: null, dispose: vi.fn() }) }));

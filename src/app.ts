@@ -41,7 +41,7 @@ import { installBridge } from "./harness/bridge.js";
 import { createCameraRig } from "./render/camera.js";
 import { RenderLoop } from "./render/loop.js";
 import { createPostChain, type PostChain } from "./render/post.js";
-import { createRenderer, resizeRendererToDisplay } from "./render/renderer.js";
+import { createRenderer, rendererFailure, resizeRendererToDisplay } from "./render/renderer.js";
 import { createBuildings, type Buildings } from "./scene/buildings.js";
 import { createRailTrialScene, loadRailTrial } from "./scene/rail-trial.js";
 import { RAIL_TRIAL_BINDING } from "./world/rail-trial.js";
@@ -176,6 +176,9 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   const loop = new RenderLoop({
     render: () => {
       post.render();
+      // Shader linking happens during the draw. Reflect a new failure in the
+      // same frame, rather than leaving a broken city visible until a later tick.
+      if (rendererFailure(renderer)) updateSceneVisibility();
     },
   });
 
@@ -224,15 +227,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   let tilesWereStill = false;
   loop.onFrame(() => {
     buildings.update();
-    const visible = sceneLoaded && sceneError === null && buildings.displayReady();
-    if (city.visible !== visible) { city.visible = visible; post.invalidate(); }
-    loading.hidden = visible;
-    if (!visible) {
-      const failure = sceneError ?? buildings.failure();
-      const message = failure ? `Shibuya could not load.\n${failure}` : buildings.displayReady() ? "Preparing Shibuya streets…" : buildings.loadingMessage();
-      if (loading.textContent !== message) loading.textContent = message;
-      loading.setAttribute("role", failure ? "alert" : "status");
-    }
+    updateSceneVisibility();
     let cameraStill = true;
     const elements = camera.matrixWorld.elements;
     for (let index = 0; index < 16; index += 1) {
@@ -254,6 +249,17 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   let paintSeamObservation: readonly PaintSeamUse[] = [];
   let sceneError: string | null = null;
   let disposed = false;
+  const sceneFailure = (): string | null => rendererFailure(renderer)?.message ?? sceneError ?? buildings.failure();
+  const updateSceneVisibility = (): void => {
+    const failure = sceneFailure(), visible = sceneLoaded && failure === null && !contextLost && buildings.displayReady();
+    if (city.visible !== visible) { city.visible = visible; post.invalidate(); }
+    loading.hidden = visible;
+    if (!visible) {
+      const message = failure ? `Shibuya could not load.\n${failure}` : buildings.displayReady() ? "Preparing Shibuya streets…" : buildings.loadingMessage();
+      if (loading.textContent !== message) loading.textContent = message;
+      loading.setAttribute("role", failure ? "alert" : "status");
+    }
+  };
   const disposers: (() => void)[] = [
     () => buildings.dispose(),
     () => post.dispose(),
@@ -386,9 +392,9 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // Those are different claims and the harness needs the stronger one: a sweep
     // that captured after the first frame would photograph an empty sky twelve
     // times and every check in the gate would pass.
-    isReady: () => loop.frameCount > 0 && !contextLost && sceneLoaded && buildings.displayReady(),
+    isReady: () => loop.frameCount > 0 && !contextLost && sceneFailure() === null && sceneLoaded && buildings.displayReady(),
     contextLost: () => contextLost,
-    error: () => sceneError ?? buildings.failure(),
+    error: sceneFailure,
     tiles: () => buildings.status(),
     lighting: () => ({
       preset: timePreset,

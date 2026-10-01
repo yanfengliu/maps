@@ -57,9 +57,13 @@ function leg(name: string): Leg {
  * arithmetic here is the same function it reads it with, so a step that arrives
  * short arrives short here too.
  */
-function flyBearing(steps: Leg["steps"], from: number): number {
+function flyBearing(
+  steps: Leg["steps"],
+  from: number,
+  inspectTurn?: (delta: number, delivered: number, index: number) => void,
+): number {
   let azimuth = from;
-  for (const step of steps) {
+  for (const [index, step] of steps.entries()) {
     if (step.turnToAzimuth === undefined) continue;
     const delta = shortestAngle(step.turnToAzimuth - azimuth);
     const turn = rotateStepRadians(delta, {
@@ -67,12 +71,25 @@ function flyBearing(steps: Leg["steps"], from: number): number {
       canvasHeightPx: CAPTURE_VIEWPORT.height,
       maxRotatePx: MAX_ROTATE_PX,
     });
+    inspectTurn?.(delta, turn.deliveredRad, index);
     azimuth += turn.deliveredRad;
   }
   return azimuth;
 }
 
 describe("the flythrough plan's swings", () => {
+  it("delivers every approach turn in one gesture without reversing the short path", () => {
+    const direction = Math.sign(shortestAngle(CROWD_AZIMUTH - OPENING_AZIMUTH));
+    flyBearing(leg("approach").steps, OPENING_AZIMUTH, (delta, delivered, index) => {
+      expect(
+        delivered,
+        `approach step ${index} asks for ${delta.toFixed(4)} rad but one unchanged driver gesture delivers ` +
+          `${delivered.toFixed(4)}; a later frame must not make up a capped turn`,
+      ).toBeCloseTo(delta, 12);
+      if (delta !== 0) expect(Math.sign(delivered), `approach step ${index} reverses the short swing`).toBe(direction);
+    });
+  });
+
   it("opens the crowd leg on the crowd's bearing and lands the ascent back on the opening one", () => {
     // The overview leg holds OPENING_AZIMUTH, so this is where the approach starts.
     const approachEnd = flyBearing(leg("approach").steps, OPENING_AZIMUTH);

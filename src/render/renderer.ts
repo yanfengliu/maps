@@ -1,5 +1,32 @@
 import { PCFSoftShadowMap, WebGLRenderer } from "three";
 
+export interface RendererShaderFailure {
+  message: string; materialName: string; materialType: string; programId: number | null;
+  programLog: string; vertexLog: string; fragmentLog: string; vertexSource: string; fragmentSource: string;
+}
+const shaderFailures = new WeakMap<WebGLRenderer, Readonly<RendererShaderFailure>>();
+/** A linked-program failure stays failed for this renderer's lifetime. */
+export function rendererFailure(renderer: WebGLRenderer): Readonly<RendererShaderFailure> | null { return shaderFailures.get(renderer) ?? null; }
+
+/** The installed Three hook replaces its default console diagnostics. Preserve
+ * logs and source explicitly, and chain an observer installed before this one. */
+export function observeShaderFailures(renderer: WebGLRenderer): void {
+  const prior = renderer.debug.onShaderError;
+  renderer.debug.checkShaderErrors = true;
+  renderer.debug.onShaderError = (gl, program, vertex, fragment) => {
+    const vertexSource = gl.getShaderSource(vertex) ?? "", fragmentSource = gl.getShaderSource(fragment) ?? "";
+    const linked = renderer.info.programs?.find(candidate => candidate.program === program);
+    const materialName = linked?.name || /^[ \t]*#define[ \t]+SHADER_NAME[ \t]+([^ \t\r\n]+)[ \t]*\r?$/m.exec(fragmentSource)?.[1] || "unnamed material";
+    const materialType = (linked as { type?: string } | undefined)?.type || /^[ \t]*#define[ \t]+SHADER_TYPE[ \t]+([^ \t\r\n]+)[ \t]*\r?$/m.exec(fragmentSource)?.[1] || "unknown material type";
+    const programLog = gl.getProgramInfoLog(program) ?? "", vertexLog = gl.getShaderInfoLog(vertex) ?? "", fragmentLog = gl.getShaderInfoLog(fragment) ?? "";
+    const summary = (fragmentLog || vertexLog || programLog).trim().split(/\r?\n/)[0] || "WebGL refused to link the program";
+    const failure = Object.freeze({ message: `Shibuya shader ${materialName} (${materialType}) could not link: ${summary}. Restore valid material shader code before displaying the city.`, materialName, materialType, programId: linked?.id ?? null, programLog, vertexLog, fragmentLog, vertexSource, fragmentSource });
+    if (!shaderFailures.has(renderer)) shaderFailures.set(renderer, failure);
+    console.error(failure.message, failure);
+    prior?.(gl, program, vertex, fragment);
+  };
+}
+
 /**
  * Build the renderer, or say clearly why it could not be built.
  *
@@ -37,6 +64,7 @@ export function createRenderer(canvas: HTMLCanvasElement): WebGLRenderer {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFSoftShadowMap;
   renderer.localClippingEnabled = true;
+  observeShaderFailures(renderer);
 
   // The output stage belongs to `src/render/post.ts`, which sets ACES filmic tone
   // mapping and the exposure for the time of day on this same renderer —

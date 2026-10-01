@@ -18,6 +18,7 @@
  */
 import { MeshStandardMaterial, type WebGLProgramParametersWithUniforms } from "three";
 import type { WorldStyle } from "../world/styles.js";
+import { createStructureSeedTexture, STRUCTURE_GLSL } from "./surface-structure.js";
 import {
   createSurfaceDetailTexture,
   SURFACE_DETAIL_METRES,
@@ -41,6 +42,8 @@ export interface SurfaceShaderUniforms {
   detailMap: { value: unknown };
   detailMetres: { value: number };
   detailStrength: { value: number };
+  structureSeeds?: { value: unknown };
+  structureStrength?: { value: number };
 }
 
 /** The part of three's program parameters this patch reads and rewrites. */
@@ -69,6 +72,8 @@ const UNIFORM_DECLARATIONS: Readonly<Record<keyof SurfaceShaderUniforms, string>
   detailMap: "uniform sampler2D mapsDetailMap;",
   detailMetres: "uniform float mapsDetailMetres;",
   detailStrength: "uniform float mapsDetailStrength;",
+  structureSeeds: "uniform sampler2D mapsStructureSeeds;",
+  structureStrength: "uniform float mapsStructureStrength;",
 });
 
 /** The marker each kind's injected body must leave behind, for the post-checks. */
@@ -152,8 +157,10 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
   shader.uniforms.mapsDetailMap = uniforms.detailMap;
   shader.uniforms.mapsDetailMetres = uniforms.detailMetres;
   shader.uniforms.mapsDetailStrength = uniforms.detailStrength;
+  shader.uniforms.mapsStructureSeeds = uniforms.structureSeeds ?? { value: null };
+  shader.uniforms.mapsStructureStrength = uniforms.structureStrength ?? { value: 0 };
 
-  const declarations = Object.values(UNIFORM_DECLARATIONS).join("\n") + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL : "");
+  const declarations = Object.entries(UNIFORM_DECLARATIONS).filter(([key]) => !key.startsWith("structure")).map(([, declaration]) => declaration).join("\n") + STRUCTURE_GLSL + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL : "");
 
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
@@ -180,6 +187,8 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
     `
         ${FRAGMENT_ROUGHNESS}
         vec2 metres = mapsSurfacePosition.xz;
+        float region = mapsStructureRegion(metres);
+        vec2 panel = mapsStructurePanel(metres);
         ${
           kind === "sidewalk"
             ? `
@@ -204,6 +213,10 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         // The side response is solid: no collapsed X/Z joints or painted halo.
         diffuseColor.rgb *= mix(0.97 / pavingTone, 1.0 + paverVariation, topFace);
         roughnessFactor = mix(0.9, 0.82 + paverVariation * 0.35, topFace);
+        // Authored paving regions sit only on the semantic top surface.
+        float pavingRegion = 1.0 + (region - 0.5) * 0.32 + panel.x * 0.10 - panel.y * 0.20;
+        diffuseColor.rgb *= mix(1.0, pavingRegion, topFace * mapsStructureStrength);
+        roughnessFactor = clamp(roughnessFactor + topFace * mapsStructureStrength * (0.04 * panel.x - 0.02 * panel.y), 0.3, 1.0);
         `
             : `
         // The detail tile, sampled in world metres. The distance fade is the mip chain
@@ -223,6 +236,10 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         float asphaltVariation = 0.5 + 0.5 * sin(metres.x * 0.18 + sin(metres.y * 0.25)) * sin(metres.y * 0.22);
         diffuseColor.rgb *= 0.94 + asphaltVariation * 0.07;
         roughnessFactor = mix(0.92, 0.28 + 0.23 * asphaltVariation, mapsWetness) + (detail - 0.5) * 0.08;
+        // Disclosed resurfacing variation, not a claim of surveyed repair patches.
+        float asphaltRegion = 1.0 + (region - 0.5) * 0.34 - panel.x * 0.18 - panel.y * 0.15;
+        diffuseColor.rgb *= mix(1.0, asphaltRegion, mapsStructureStrength);
+        roughnessFactor = clamp(roughnessFactor + mapsStructureStrength * (0.07 * panel.x + (region - 0.5) * 0.10), 0.25, 1.0);
         `
             : `
         // And the same band on the ground, whose period is about 20 m: relief the 8 m
@@ -230,6 +247,9 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         float variation = sin(metres.x * 0.31) * sin(metres.y * 0.37);
         diffuseColor.rgb *= 0.98 + variation * 0.045;
         roughnessFactor = 0.96 + (detail - 0.5) * 0.05;
+        // Unknown terrain is weathered substrate; no road/yard/paving inference.
+        diffuseColor.rgb *= 1.0 + (region - 0.5) * 0.18 * mapsStructureStrength;
+        roughnessFactor = clamp(roughnessFactor + (region - 0.5) * 0.06 * mapsStructureStrength, 0.85, 1.0);
         `
         }
         `
@@ -267,6 +287,7 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
 
 export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldStyle): SurfaceMaterial {
   const material = new MeshStandardMaterial({ roughness: 0.85, metalness: 0, polygonOffset: kind !== "ground", polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  material.name = `Shibuya:${kind}`;
   const wetness = { value: style.wetness };
 
   // Sidewalks reuse the seeded ground texture for restrained material variation;
@@ -274,21 +295,25 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
   // material owns and disposes its texture, including through style changes.
   const detail: SurfaceDetailKind = kind === "sidewalk" ? "ground" : kind;
   const texture = createSurfaceDetailTexture(detail);
+  const structure = createStructureSeedTexture(kind);
   const uniforms: SurfaceShaderUniforms = {
     wetness,
     detailMap: { value: texture },
     detailMetres: { value: kind === "sidewalk" ? 2 : SURFACE_DETAIL_METRES[detail] },
     detailStrength: { value: SURFACE_DETAIL_STRENGTH[detail] },
+    structureSeeds: { value: structure },
+    structureStrength: { value: 1 },
   };
 
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     patchSurfaceShader(kind, uniforms, shader as unknown as PatchableShader);
   };
-  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "sidewalk" ? "v5-paver-response" : "v3"}`;
+  material.customProgramCacheKey = () => `maps-surface-${kind}-v6-regional-structure`;
   const apply = (next: WorldStyle): void => {
     material.color.setHex(next.palette[kind === "ground" ? "ground" : kind]);
     material.envMapIntensity = kind === "road" ? 0.7 : 0.45;
     wetness.value = next.wetness;
+    uniforms.structureStrength!.value = next.facade === "photographic" ? 1 : 0.24;
     if (kind === "sidewalk") uniforms.detailStrength.value = next.facade === "photographic" ? 0.12 : 0.08;
   };
   apply(style);
@@ -298,6 +323,7 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
     dispose(): void {
       material.dispose();
       texture?.dispose();
+      structure.dispose();
     },
   };
 }

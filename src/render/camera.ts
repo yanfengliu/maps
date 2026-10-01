@@ -20,14 +20,15 @@ export interface CameraRig {
   controls: OrbitControls;
 }
 
-/** Start with the whole square in view, centred on the crossing. */
+/** Open on readable crossing blocks and the nearby rail corridor. Wheel zoom
+ * retains the full square within the unchanged control distance limits. */
 export const INITIAL_VIEW = Object.freeze({
   /** Metres from the target. */
-  distance: 1800,
-  /** Radians clockwise from north, matching OrbitControls' azimuthal angle. */
-  azimuth: Math.PI * 0.25,
+  distance: 420,
+  /** Radians around world Y from the target's +Z axis (OrbitControls). */
+  azimuth: -3 * Math.PI / 4,
   /** Radians down from straight up, matching OrbitControls' polar angle. */
-  polar: 0.50,
+  polar: 0.95,
 });
 
 export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {

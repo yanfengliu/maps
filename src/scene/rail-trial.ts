@@ -194,7 +194,8 @@ export function railSectionGroups(mesh: MeshData): Map<number, number[]> {
   }
   return groups;
 }
-export function createRailTrialScene(data: RailTrialData, style: WorldStyle): { root: Group; setStyle(style: WorldStyle): void; dispose(): void } {
+export interface RailTrialScene { root: Group; setStyle(style: WorldStyle): void; dispose(): void }
+export function createRailTrialScene(data: RailTrialData, style: WorldStyle): RailTrialScene {
   const root = new Group(); root.name = "rail-trial";
   const finishSet = createRailFinishSet();
   const resources: { geometry: BufferGeometry; material: MeshStandardMaterial; kind: string }[] = [];
