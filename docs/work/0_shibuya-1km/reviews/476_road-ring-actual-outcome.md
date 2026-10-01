@@ -1,0 +1,13 @@
+# 476 — Actual road ring outcome
+
+2026-10-01. Root accepts stage-one controls and outside-AOI preservation only. One reviewed command ran at 09:45:27–09:45:28 UTC; proof elapsed 581.2694 ms. All 15 controls passed, including independently read original/full-precision coordinates, existing projection/clipping, legacy-consumer refusal and the imported dropped-interior mutant's intended `ERR_ASSERTION`. Both earlier holed polygons retain interiors and empty existing-AOI clips. Original 466's refusal history/results remain unchanged.
+
+**Full-source FAIL:** Node exit 2, outer command exit 1. Candidate 53393585/86/95 observed 1006/836/772 parents, admitting 160/119/288 and geometrically excluding 846/717/484. Candidate 53393596 observed 399 of 634: 47 admitted, 351 outside, 1 refused; 235 remain unobserved. No skip, waiver, repair or rerun occurred.
+
+The new refusal is `poly_58dd2991-1557-42c6-a5af-bc3db1d10da7`, road `tran_d302605e-55f0-4f73-a74f-529efb8f92ba`, area `tran_0551ab7a-f86c-4959-bdc6-79f7851d9a84`, function 1020/LOD2. Exterior/interior have 49/37 closed original points. All 48 projected exterior XYZ survive AOI clipping unchanged. Entire geographic exterior bounds 35.65794728795673–35.65873722435534 / 139.70418034169754–139.70494747757078 and the hole bounds lie inside AOI. This case cannot receive an outside-AOI exclusion.
+
+Retained exterior area 3272.898921798602 m² is not solid area. File-only context arithmetic measures hole 235.79814296586358 m², unchanged by existing-bound half-plane clipping. Topology/containment and physical layer/support remain unproved; LOD2 height 0 is plan evidence.
+
+Actual `artifacts/roads473/proof-result.json`, 1296807 bytes, SHA `641bcd03528b9625801395b6cafe4cfb40cbfd74d723d51c9ee1d67b136dfa97`, retains all controls/source outcomes/refused rings. All 30 before/after pins match. Node 17744 exited/disposed; its identity and owned TEMP are absent. Closure SHA `b3df0e689ad0c2a244e9458283e79152fb9ab57b20b8d438f6c50a6f654eeff1`. Evidence remains ignored for the unresolved failure; pinned 473 preparation is untouched.
+
+Next smallest contract: one private supported-solid adapter for this actual polygon using existing Three hole triangulation and original-XYZ indexing. Require strict ring/topology refusal, net-area conservation, excluded-hole membership and AOI-clipped convex pieces. Membership/ownership/area/boundary consumers must use those solids. Prove tiny-hole-crossing refusal against filled displayed support and preserve an unrelated elevated source/layer. Retain further source refusals. No stage-two implementation is admitted; denominator, lanes and native acceptance remain open.
