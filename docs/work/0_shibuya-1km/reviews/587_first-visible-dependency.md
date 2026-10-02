@@ -1,0 +1,11 @@
+# 587 — first-visible dependency
+
+The whole-cutout barrier blocks the first buildings. The loop starts immediately, but `app.ts:254` reveals the city only when `sceneLoaded && buildings.displayReady()` and failure/context checks pass. `buildings.ready` resolves through `FinalLeafReadiness.canDisplay`: all 44 final leaves must finish preparation, with every visible tile an admitted final leaf. Tile transactions finish facade/section work before admission. Early prepared buildings therefore remain hidden.
+
+Actual 579 pilots admit their first leaf at 1.969/1.928 s, finish 44 at 6.314/6.246 s, set sceneLoaded at 7.505/7.428 s, then return the first visible-city render call at 7.981/7.878 s. Across ABBA, building readiness precedes sceneLoaded by 1.182–1.221 s. Hardware validation and supported street construction are sequenced after the join containing `buildings.ready`. Existing marks do not show when roads/network/other joined assets finish or isolate hardware/street costs, so that span is not a removable-cost measurement.
+
+One candidate is progressive preparation: begin validated hardware and supported streets once the existing roads/network dependencies resolve, during building warmup. Keep full 44-leaf reveal/readiness, cache limits, failure concealment/post invalidation, current-style reconciliation, exactly-once late-resource disposal and real-control/simulation ordering unchanged. Revealing partial buildings would change the accepted complete-cutout visibility contract.
+
+Next proof: one separately reviewed bounded default-startup trace marking roads/network completion and hardware/street spans alongside the existing milestones. It must establish early dependency availability before this scheduling change is justified. Earlier synchronous street work could instead delay tile work/input frames; cancellation, failure and style changes during loading are material risks.
+
+Seven product files and frozen 579/580 inputs are SHA-bound in `artifacts/startup587/source-facts.json`. These are warm-service fresh-context ABBA CPU-return observations, with cache/order effects. GPU completion, displayed pixels, machine-cold startup and the historical 0/44 cause remain unproved. No source/runtime change or optimization backlog is proposed.

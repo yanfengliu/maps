@@ -1,0 +1,9 @@
+# 592 — Startup invocation host repair
+
+Bound: invocation metadata and CPU host proof only; no build, native runner, server, browser or GPU dispatch. Actual 591 exited 1 in 1.7875 s at owner line 48: Windows PowerShell's .NET Framework lacks `IO.Path.TrimEndingDirectorySeparator`. Source order places this before TEMP creation, the runtime `try` block or `Start-Process`; the historical receipt separately observes marker/listener/runtime-receipt counts zero. It supplies no healthy runtime or cleanup proof.
+
+The supported outer host is `C:/Users/38909/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe`: PowerShell 7.6.5 Core, .NET 10.0.11, SHA-256 `362a356ce7f0940ec74f73a8fc2c990a2cc24a38a11c90bbd8eca947110ad139`. Its real API exists. Executing the exact frozen owner prefix through native shell invocation passes in 1.250 s, checks all 599 inputs and creates no TEMP. The old host reproduces the API refusal in 1.695 s. Process/write guards and truncation before the runtime block prevent native effects. Absolute work/cleanup/outer offsets remain 20/60 s. Initial CPU staging refusals (newline anchor; Node-inherited module path) remain separate evidence.
+
+Only the outer command and explicit host admission change. The old handoff and tuple are preserved under `artifacts/startup590/host-repair592/refused591/`. Prepared SHA, all 599 inputs, 449 product files, raw index, native/owner bytes and the 7,052-byte ledger remain unchanged. The executable list controls children of the native Node root; the external invoking host is bound separately.
+
+589 also selects the incompatible `powershell.exe` and calls the API at line 49. Root was informed for relay to its owner/reviewer; its files were not edited. Root must admit the unchanged 4335/hardware lease before exactly one repaired run.
