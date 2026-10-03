@@ -1,0 +1,9 @@
+# 604 — Ground first-eight mechanical result
+
+2026-10-01. Executed frozen600's pinned PowerShell Core command exactly once. Exit0; instrument passed; final global errors `[]`; source/build inputs unchanged. Native elapsed126.867s; owner elapsed130.4134451s. No repair, rerun or capture expansion occurred.
+
+Eight originals are retained under `artifacts/ground600/originals/{baseline,pilot}/`: noon crossing fixed-close, dusk crossing fixed-block, dusk side-street seeded-close and noon side-street seeded-block. Every actual PNG SHA-256 independently matches its native receipt. Baseline/pilot poses are identical. Actual distance/azimuth/polar: crossing-close45.0000014/0.850000060/0.700000014; crossing-block109.9999957/0.850000060/0.749999798; side-close42.0000003/-0.094977912/0.480000005; side-block90.0000011/-0.011630557/0.550000128. Full positions/targets, time states, requested poses and real-control evidence remain in the native receipt.
+
+Every capture had44/44 leaves ready. Hardware RTX4090, driver616.64. Native page/context/browser/browser-server/preview/esbuild cleanup passed; owned TEMP and compile cache were removed. Available closure census contained no live admitted/omitted identities, descendants, unavailable ownership, marker processes or listeners. Independent fresh CIM confirmed all10 recorded identities absent, marker0 and port4335 listener0. Exclusive lease released.
+
+Runtime/build/owner/cleanup/census receipts remain under ignored `artifacts/ground600/`; native receipt SHA-256 `9e640ae6d0ba17163927f5daa1c811413e5fcedc0e9dbe538221c3a342bf9b75`. Independent original-size image inspection remains required. This record makes no appearance, canonical visual, population/FPS, temporal, full-area or adoption verdict. Frozen source, product, Git and PRIMARY were unchanged.
