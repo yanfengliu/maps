@@ -1,0 +1,88 @@
+# Visual implementation repair review, round 8
+
+Independent authored review, 2026-10-11, by the assigned Astra/xhigh reviewer. Target: canonical `C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree`, base `33d386299ff7bd02d91bca38f655f41597ddb756`, with the exact five-file inventory below. Root owns final integration and acceptance. This bounded review covers R10/R11, current native capture admission, the Windows SM6 selection and the one GameMode integration setting; it does not duplicate the pending runtime lifecycle review.
+
+## Verdict
+
+R10 and R11 are resolved in the reviewed implementation and their scoped evidence. No new material code finding in these capture/readiness/save repairs or the intended SM6 configuration change. The completed native diagnostic confirms actual SM6/PCD3D_SM6 selection, preserves scene and input bytes, and makes the zero-Lumen-card crop view fail before brightness scoring. It also confirms that the crossing remains too dark despite positive Lumen scene cards. There is no full appearance, native game input, population or performance acceptance.
+
+The current frozen engine INI also contains a regenerated Android File Server block beyond the intended GameMode/SM6 changes. I notified root without retaining its generated security value in this report. Root confirmed it is uncleaned generated configuration and assigned plugin disabling plus removal as a later explicit delta. The five-file inventory below intentionally records the bytes actually reviewed; it is not approval to commit that unrelated generated block. The eventual cleaned INI/project delta needs its own exact hash binding before integration.
+
+## Frozen target and evidence identity
+
+I preserved the complete five-file target under canonical `tmp/review-runs/visual-round8/target/`, with `inventory.json` SHA-256 `bd24ee507c45b542b12e425d122a1928e878705674b484bcf55e484b1c0475cd`. Initial and final live-versus-retained hash comparisons match all five files. No reviewed implementation/config file changed while I read it. The original round 5 target remains retained under `tmp/review-runs/visual-round5/target/`.
+
+| Authored path relative to canonical target | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Content/Python/shibuya_tools.py | 43444 | `b6ea6ff73380cdf6eb10d4c263662275b67dd714cfc877e5f29db369088f9d71` |
+| tools/unreal/mcp_run.py | 34142 | `698cac8fe9ef72c2303a29d73e81a7561d2cf5832f18ac454ece0b8f1fecbd11` |
+| tools/unreal/test_mcp_run.py | 22826 | `c0416036f75d62b7d770b9ee7dfc227702e232c170b40a3a69a89d28582f6259` |
+| tools/unreal/test_visual_controls.py | 8607 | `5cfdb60b90eb139ff63f2657a97fde3a563ad3b5fdf7b7b8fb8ff04871f47c2f` |
+| Config/DefaultEngine.ini | 1433 | `f85fb346c0aef3668c7cc102487c1edf48917efc508f45fa353200635ffff993` |
+
+There are two distinct offline receipts. The dispatched 19-case receipt, SHA-256 `6a07de08504a1cd9b341f9e63112c5063e4fe88198d92672f942af71920ef8d0`, is preserved at `artifacts/unreal/visual-review-repairs/offline-r10-r11-19/report.json`. The current 21-case receipt at `artifacts/unreal/visual-review-repairs/report.json` is 3,389 bytes, SHA-256 `7c06648b2a978fdcbb182fad68832dfc60d1f8bf66d4c3e3a6e4707690b34152`; it names the five current target hashes. I independently hashed both receipts, retained the latter as `tmp/review-runs/visual-round8/repair-report.json`, and verified all four current log digests against it. The authored repair document's earlier 19-test hashes/time refer to the earlier increment, not the current final SM6 target.
+
+I inspected the full changed helper and runner functions with their callers, complete current tests, original round 5 changes, renderer contract, control logs and completed native diagnostic receipts. Primary installed-engine source outside any authored diff included `Engine/Config/BaseEngine.ini:3411`, `Renderer/Private/Lumen/LumenVisualize.cpp:267–275` and `:803–814`, and `Renderer/Private/Lumen/LumenScene.cpp:2263–2277`, under `C:/Program Files/Epic Games/UE_5.8/Engine/`. Those reads establish the real default shader target and dump semantics. No engine, compiler, browser, network request or test gate was launched by this reviewer.
+
+## R10 resolved: native readiness and fresh image identity are admission conditions
+
+[Content/Python/shibuya_tools.py:30](C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/Content/Python/shibuya_tools.py:30) observes current capture actor/component/texture properties, rather than replaying requested values. It uses the compiled read-only `ShibuyaRendererLibrary.inspect_world_resources` and matches its returned native show flags to the actual live component path. Missing diagnostic code or a missing matching component fails explicitly. Actual position and forward vectors come from both actor and component; format, gamma, dimensions, persistent-state request, post-process method/override and target ownership are read from current objects. The witness is sampled at start and again after both exports.
+
+[tools/unreal/mcp_run.py:52](C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/tools/unreal/mcp_run.py:52) validates these observations before pixel scoring. Booleans must be actual true/false values; integer population/frame fields cannot be booleans; camera/direction/gamma fields must be finite and within explicit native-float tolerances. Expected direction is calculated independently from the runner's fixed camera and target. All arms must agree on the same capture component and native start frame. Warmup/final require exactly 60/80 manual capture calls, at least 60/80 elapsed native frames, and at least 20 native frames between exports. This verifies the implemented serial warmed-capture protocol, not a measured simulation or display frame rate.
+
+`score_capture` at `:109–144` requires the exact requested final/warmup relative paths, file timestamps at or after capture start, matching independent SHA-256, native-prefix witness, fixed 1280x720 dimensions and exactly 387,072 central pixels. It rejects allocation trailers from the scored file and rereads it after measurement to detect changed bytes. The main path at `:450–468` refuses preexisting output files, validates start readiness immediately, validates both complete exports, and does not mark readiness or darkness as passed if any required witness is missing. A native failure is not transformed into a brightness result.
+
+The original actual runner control accepted empty readiness with readable synthetic PNGs. Its retained red output is `AssertionError: True is not false`, exit 1, at `test_visual_controls.py:102`. The repaired main-path control requires overall failure, `darkness_gate: did-not-run` and an empty capture list. A complete mocked native contract passes, and validly admitted black pixels still fail the original darkness threshold. The current-object test at `test_visual_controls.py:115–149` changes live native-stub properties between observations and checks the second witness reflects those changes. These controls exercise authored main/helper boundaries with mocked native APIs, not a GPU.
+
+The native GI diagnostic also exercised the repaired live witness fields: actual target format is `<TextureRenderTargetFormat.RTF_RGBA8: 2>` and actual gamma is `2.200000047683716`, within the fixed 2.2 tolerance. Configuration/show flags still do not prove that every final pixel received indirect lighting. Persistence is a native request observation; the read-only inspector does not allocate a view state to manufacture one.
+
+## R11 resolved: a failed road-material save cannot return success
+
+[Content/Python/shibuya_tools.py:514](C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/Content/Python/shibuya_tools.py:514) checks `save_loaded_asset(mesh)` before replacing the road actor reference. False now raises an actionable error naming the exact generated road and native asset package and instructing that the package must be writable. Subsequent actor-reference rollback remains in `:529–532`; prior saved/imported asset packages are not represented as transactionally rolled back.
+
+The old authored helper body, executed with a mocked native save returning false, failed the new assertion with `RuntimeError not raised`, exit 1. The current test at `test_mcp_run.py:231–237` requires refusal after the first failed save and unchanged original road actor references. The success control at `:239–245` requires all 25 saves, all 25 resulting road records and the one shared material before success.
+
+The completed fresh-editor diagnostic at `artifacts/unreal/gi-control-20261011-101848/report.json` independently read back terrain plus all 25 road bindings to the single native atlas texture. Its SHA-256 is `6520dbd390079484691d3f9b1689cfc616e90675681c2f91e03f588b976bd193`. It reports 112 source actors before and after; the 54 recorded saved map/surface asset files remain byte-identical before/after/final. That readback demonstrates persistence of the existing saved photo set. The controlled false-save test supplies the repaired failure-path evidence; the fresh-editor readback is not mislabeled as a newly induced native save failure.
+
+## Native PNG prefix and pixel measurement bounds
+
+The prefix routine at `shibuya_tools.py:65–84` verifies native PNG signature, bounded chunk extents, each chunk CRC and empty IEND, then returns the original exact byte prefix through IEND. Export at `:644–651` records raw export SHA, retained-prefix SHA, removed-tail byte count and tail SHA. It removes the native writer's allocation tail without decoding, recoloring, re-encoding or replacing pixels. No generated imagery, exposure adjustment or material emission was introduced by this repair.
+
+The unchanged strict scorer at `mcp_run.py:254–329` separately requires one initial IHDR, known native RGB/RGBA8 noninterlaced format, valid ordered pixel data, no unexpected chunk type, empty IEND, a complete single zlib stream, exact decompressed population and fully opaque alpha. Invalid/missing pixels cannot become a dark/bright result. The controlled cases include missing/invalid IEND, corrupted CRC, transparent payloads, extra/truncated compressed streams, unknown/transparency chunks, duplicate or misplaced headers, stale/missing/wrong paths, mismatched digest, allocation tails and wrong dimensions. The scorer's general parser can report ignored trailers, but capture admission rejects any such trailer before a frame is accepted.
+
+Pixel acceptance remains mean luma at least 40, median at least 30, black fraction at most 0.30 and white fraction at most 0.20, with warmup/final mean convergence. These are encoded central-image luma checks. They cannot establish architectural fidelity, source-texture quality, photorealism, collision or ordinary game-view correctness. No threshold, source photograph, camera pose, 100,000-lux sun, ISO100/f16/shutter125 exposure or gamma default was changed in this increment.
+
+## SM6 selection and actual Lumen scene observation
+
+The installed `BaseEngine.ini:3411` supplies `+D3D12TargetedShaderFormats=PCD3D_SM5`. The intended project override selects `DefaultGraphicsRHI_DX12`, removes that SM5 array entry and adds `PCD3D_SM6` in the Windows target settings section. The separate GameMode line names `/Script/ShibuyaRuntime.ShibuyaGameMode`. The renderer feature change does not alter source assets or physical light/exposure values. Its effect must be checked in the running engine, since D3D12-capable hardware alone does not establish SM6.
+
+`verify_native_renderer` at `mcp_run.py:28–35` requires all three actual native log observations: feature level SM6, shader platform PCD3D_SM6 and highest selected D3D12 feature level SM6. It rejects absent values, capability-only text and actual SM5 selection before capture scoring. The source control tests these failures explicitly.
+
+On the 80th manual capture, `shibuya_tools.py:595–598` requests `r.LumenScene.DumpStats 2` immediately before rendering. The native implementation documents a next-frame one-shot dump and resets the variable after reading the renderer's first view's actual `FLumenSceneData`. The runner slices the new log interval for the serial current capture at `mcp_run.py:454–467`; `verify_lumen_scene` at `:38–49` requires positive actual SDF objects, mesh cards and cards. An asset's offline card count or requested Lumen flag cannot satisfy this check. The stats log does not carry the Python component path; attribution relies on the owned editor's one-active-capture serial execution and the fresh interval, not a globally authenticated camera identifier. It is a scene-coverage prerequisite, not a per-pixel indirect-light guarantee.
+
+The original completed 101848 diagnostic actually selected SM5/PCD3D_SM5. Its dump contained 112 SDF objects but zero mesh cards and zero cards despite offline card metadata and nonzero sky resources. GI-on/off crossing results both failed darkness and differed little. That diagnostic is an observed failure mechanism, not renderer acceptance.
+
+The completed SM6 diagnostic is `artifacts/unreal/gi-control-20261011-103544/report.json`, 1,088,700 bytes, SHA-256 `5c80169ae14fb20ed492d56d3fda3a53a7eb80ab5eaacf0cbce141fde792538e`. I read the completed report and native log. Its helper, runner and INI input hashes match this reviewed target exactly. Actual log metadata records SM6 and PCD3D_SM6. Reported input and saved-asset digests are unchanged through final cleanup, including map SHA-256 `4203bd6085a60b99570dc3cfb25c02a503f4642719166b9f07f1f9e20df52808`.
+
+| Native diagnostic view | Actual scene counters | Recorded pixel result |
+| --- | --- | --- |
+| Crossing GI on | 112 SDF objects, 31 mesh cards, 163 cards | Median 16.953; black fraction 0.375615; darkness failed. |
+| Crossing GI off, explicit diagnostic control | GI intentionally disabled; not a production acceptance arm | Median 11.953; black fraction 0.500181; darkness failed. |
+| Crossing west | 112 SDF objects, 26 mesh cards, 132 cards | Fixed luma check passed; appearance not approved by this code review. |
+| Block | 112 SDF objects, 8 mesh cards, 56 cards | Median 9.3702; black fraction 0.581672; darkness failed. |
+| Block north | 112 SDF objects, 2 mesh cards, 14 cards | Fixed luma check passed; appearance not approved by this code review. |
+| Crop | Actual mesh cards absent or zero | Refused before brightness scoring; overall readiness did-not-run and diagnostic failed. |
+
+The overall diagnostic has `passed: false`, `readiness_gate: did-not-run`, `appearance_acceptance: false`, and the explicit missing/zero-card error. This is the intended distinction between a valid dark image, a failed prerequisite and a pass. It is not a completed six/eight-view appearance gate. I did not perform a native-resolution visual review of these new pixels; image inspection remains with the assigned visual owners. The positive cards and changed crossing GI result demonstrate progress in the mechanism, not full scene coverage or adequate shadow lighting.
+
+## Conservation, process ownership and integration bounds
+
+The helper diff adds observation, fresh-output refusal, strict asset-save handling and the diagnostic stat request. The daylight implementation, physical exposure values, source geometry comparisons, source material bindings and fixed view coordinates remain unchanged. The road path still hashes admitted base/atlas/original/generated files, compares original/generated geometry, requires 25 distinct original actors, checks bounds and unaffected actor state, and shares exactly one atlas. The completed native diagnostic's readback and unchanged file hashes support conservation; no full city reimport is inferred.
+
+The production runner retains loopback port admission, a dedicated hidden owned editor, bounded startup/MCP operations, failure reporting, graceful quit and finally-based process-tree cleanup. Active capture failure either destroys its actor at helper start/export cleanup or is contained by shutdown of that owned editor. No shared editor/browser is killed. The completed SM6 receipt records graceful exit 0, editor stopped, cleanup verified and no owned descendants remaining. The reviewer launched no persistent processes and did not duplicate the engine lease.
+
+The offline current-green log records 21 tests in 21.280 seconds; the child-process receipt duration is 21.454 seconds. Both old-defect controls produced their intended exit 1 and exact assertion messages. Syntax checking exited zero. These are retained worker executions against the current five-file hashes, not tests rerun by this reviewer. The compiled renderer inspector was independently reviewed in round 6; its provisional availability in the editor does not constitute runtime game acceptance.
+
+Before the milestone commit, root must bind the small agreed plugin/INI cleanup delta, keep the generated Android block out of authored configuration, and retain the distinction between the two offline receipts. Any subsequent GI coverage/configuration repair is a new frozen increment with affected native checks and review. Existing dark/crop failures remain open. The independent runtime entry/exit lifecycle, ordinary controls, continuous support, animation and full-population performance work remain separate from this visual implementation verdict.
+
+Only this authored report and the explicitly authorized ignored target copies/inventory were written. No implementation, map, asset, project setting, index or running native process was changed by this reviewer. Root retains final branch integration and acceptance ownership.

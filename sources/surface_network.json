@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "base_manifest_sha256": "edba2060ee919ef2d1f2c3b8304eea5e9e55778fee33e8cb56a8ecd8bef3d09e",
+  "osm": {
+    "url": "https://api.openstreetmap.org/api/0.6/map?bbox=139.6945,35.6545,139.7065,35.6645",
+    "path": "data/source/osm/crop.osm",
+    "bytes": 8187120,
+    "sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+    "license": "https://www.openstreetmap.org/copyright",
+    "attribution": "© OpenStreetMap contributors. ODbL. Cropped and converted for this simulation."
+  },
+  "gsi": {
+    "url_template": "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",
+    "zoom": 18,
+    "license": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+    "specification": "https://maps.gsi.go.jp/development/siyou.html",
+    "attribution": "Source: Geospatial Information Authority of Japan, seamless aerial photographs. Cropped and converted for this simulation."
+  },
+  "simulation": {
+    "seed": 581310,
+    "support_spacing_m": 1.5,
+    "vehicle_left_offset_m": 1.8,
+    "pedestrian_corridor_width_m": 1.2,
+    "vehicle_corridor_width_m": 2.0,
+    "signal_period_s": 70,
+    "pedestrian_green_start_s": 50,
+    "pedestrian_green_end_s": 70
+  }
+}
