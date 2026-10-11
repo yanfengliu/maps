@@ -1,0 +1,35 @@
+# 632 — sign-mask final qualification
+
+Bound: the existing two-file LUT candidate on base `5661d0c35761f9ccbbd906a7bd8ee4cb8a7c2cca`, now checkpointed as `883288994343eb4fc8533d3e0e439f11355fcbfc` on `codex/shibuya-frontage`. It is unmerged. Root owns PRIMARY dispatch and acceptance; audit and canonical visual acceptance remain open. This qualification adds no product code, dependency, source data or checker change. The unrelated PRIMARY `AGENTS.md` canon update is excluded and preserved.
+
+Frozen code: `src/scene/signage.ts` SHA `e39d0d2e3334877e910a9a9fc81234773458610d056ba8721a89540ca4153318`; `test/sign-mask.test.ts` SHA `f829e3f96308fe1f67efa8712242f5808f4714f900a64856dac67106aefa1e3e`. The existing source review and bounded warm-service comparison remain [567](567_sign-mask-source-review.md) and [580](580_mask-startup-comparison.md). [583](583_sign-mask-four-checks.md) does not replace the current required checks.
+
+The sealed owned preparation is `artifacts/mask632/prepared.json`, SHA `9f70ec78128e7108ce4e04115d8a4bdab90adc52d4749158a6d98c6bccdad0ff`. It binds 451 PRIMARY source/config/direct-doc inputs, 151 mounted data files totaling 354,752,173 bytes, six installed inputs, nine helpers and both unchanged HEADs. Both staged-content sets are empty. PRIMARY raw index SHA is `610c2cd31f6bc168304220e63ee17234d86440476694d5e8e09ec51dc5408dd0`.
+
+The mature accepted 440 observers supply retained live-creation handles and finally closure. Derivatives change task paths, use owned TEMP/compile/npm/Vite caches, add finite 600-second CPU and 900-second visual work limits with 120 seconds reserved for cleanup, and replace following/recursive deletion with a nonfollowing census and exact per-entry removal. All six PowerShell helpers parse. Removing only the owned root/cacheDir and `test.cache=false` additions from the Vitest config compares deeply equal to canonical configuration; selection and worker settings are unchanged. Its loader is `runner`. Canonical visual stays exactly `npm run visual`: the PRIMARY guard, 44 frames and three hardware lifecycle checks are unchanged. Shared data and installed dependencies are read-only.
+
+During source-only helper checks, one unused derivative token, a Windows import URL, a surplus parenthesis and an unescaped Windows cache path were corrected before dispatch. These were preparation failures; no package gate or browser/server/GPU attempt ran. The initial prepared manifest is retained under the owned artifact directory; the rejected intermediate helper bytes were not retained. No runtime or appearance acceptance follows preparation.
+
+At preparation, all current gates and independent native acceptance were pending. Detailed review requires the 22 Satellite originals. Root covers basic style controls and relevant style-return evidence under the current local rule; detailed Cartographic acceptance is deferred.
+
+Before dispatch, root requested preservation of the current PRIMARY output. `artifacts/mask632/history` now retains 177 exact `dist` and `artifacts/visual` files totaling 68,075,676 bytes. Complete nonfollowing source/target traversals found zero links or enumeration errors. Every copied digest matches its source and the full source list matches before/after. Receipt SHA is `7d64bd3783451c993b36c329c8444d0278316d32c1bfa93ff469322a795bbe6e`; retained historical certificate `42cfbe7d62f131d3` SHA is `dd690e40b8e27161a81fb1d5afc7b93393a558c34bf2c124de744d2255cbe794`. Existing PRIMARY and 440 output was unchanged. A sandbox CIM read failed with access denied; root owns the fresh actual-user gate/port inventory. No process launch or termination occurred during this preservation.
+
+Root's actual-user predispatch inventory was available with no 4319 listener or known gate process. The one exact candidate install exited 0 at 2026-10-11T06:12:19.964Z. Its current receipt binds 452 final PRIMARY source/config/direct-doc inputs, the exact two frozen code hashes, unchanged HEAD, empty staging and unchanged raw index. Mounted data and installed inputs remain exact. Root dispatched the sealed CPU phase once after its fresh input preflight.
+
+| Actual PRIMARY command | Exit | Command time |
+| --- | --- | --- |
+| `npm run build` | 0 | 9.132 s |
+| `npm run typecheck` | 0 | 7.704 s |
+| `npm test -- --config <owned mask632/vitest.config.mjs> --configLoader runner` | 0 | 94.559 s |
+| `npm run audit` | 1 | 9.360 s |
+| `npm run visual` | Unrun | Pending separate independent dispatch. |
+
+Vitest passed 120 files and 1,065 tests in 92.70 seconds, including the ten exact sign-mask cases. The existing build chunk-size warning remains. Audit now reports four vulnerabilities: one moderate, one high and two critical. New advisories in the unchanged development dependency graph name source-map-js (`GHSA-68fv-2mgg-jv7q`) and tinypool (`GHSA-5gmw-xhrv-c9v3`, `GHSA-85c8-ppgw-ccpr`). Its proposed Vitest 5.0.3 force fix is a breaking change; no fix, dependency write or gate retry ran. The prior 583 audit result does not establish current acceptance.
+
+The actual after-CPU receipt preserves all final source/direct inputs, mounted data, installed input pins, empty staging and PRIMARY index bytes. Owner closure is available: all 67 retained identities already exited; 39 omitted identities are absent; live, descendant, uncertain, marker and 4319 rows are empty. Owned TEMP is removed. Root inspected that actual available closure receipt; it did not run a separate post-CPU process census. The owned CPU caches remain because the success-only wrapper stops before cache cleanup on a red audit; they are retained task resources, not live processes.
+
+Current receipts: CPU commands SHA `01c3931a9d3735c8d644f3bdba96351a0f58118136293df0e9dc5333f37389d5`; after-CPU SHA `23c60fa6423953057c5b8d0768f7dc8b778e08a56ebf61fccd5faebaca243e78`; cleanup SHA `8526e2482f6ebd437af6b93d5c9921e5a3a25828c467547ac5c5703a41c6ddc2`; available closure census SHA `bb865723e0275517a7dca118fa04470e24395f9128ec21460a0e8e2528a003f2`. Actual logs and pinned source/build details remain under `artifacts/mask632`.
+
+The human's newest explicit commit-first request authorized the reversible two-file checkpoint despite incomplete gates. Root committed exactly those two files with 225 insertions and a body recording three green checks, red audit and visual/main pending. PRIMARY stays on base `5661d0c`; no main merge, adoption, push or general startup claim follows. The four-green visual admission wrapper remains unchanged. A separate invocation of the existing visual owner may qualify the canonical frames while preserving the red audit status; all-five/main acceptance remains unmet until both outstanding gates and native review are resolved.
+
+The worker's unused checkpoint helper was never dispatched; root made the exact two-file commit directly. That unused helper and its message were removed. No dependency repair is admitted, and canonical visual has not run. This report is frozen for the separate documentation checkpoint.

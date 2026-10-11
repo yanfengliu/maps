@@ -1,0 +1,13 @@
+# 634 — Fresh Satellite review
+
+## Source review — 2026-10-10
+
+No blocking source finding in the frozen sign-mask startup change. Reviewed FRONTAGE base `5661d0c35761f9ccbbd906a7bd8ee4cb8a7c2cca`, the actual 49-line addition to `src/scene/signage.ts` and the new `test/sign-mask.test.ts`. Inspected source SHA-256 is `e39d0d2e3334877e910a9a9fc81234773458610d056ba8721a89540ca4153318`; test SHA-256 is `f829e3f96308fe1f67efa8712242f5808f4714f900a64856dac67106aefa1e3e`. Other uncommitted product paths are outside this review and are not admitted by it.
+
+The fast path requires identity with frozen `PLATEAU_SIGN_MASK` and an RGBA-complete byte buffer. Every reachable eight-bit RGB input has `0 <= min <= max <= 255`; the table covers all 32,896 such pairs. Each entry repeats the original value, saturation, smoothstep and maximum arithmetic in a Float64Array. Alpha rounding, strict `mask > 0.5`, summation order and empty statistics are unchanged. Intermediate-channel and channel-permutation changes cannot change either extreme. This establishes source-level output equivalence for the declared byte-array contract without relying on aggregate atlas statistics.
+
+The retained original loop handles equivalent copied settings, custom settings, nonfinite or degenerate thresholds, settings getters and incomplete RGBA tails. The 256×256×8-byte allocation is exactly 512 KiB, created lazily on the first default complete-buffer call, including an empty call, and retained once per module instance. It adds no texture, renderer or GPU ownership. The production caller still writes the mask before de-lighting. No visual treatment, source eligibility, atlas cap or authored illumination changes here.
+
+The test freezes the old public loop and literal thresholds independently of the production response helper. It checks every unquantized extrema response, both supported array types, channel/middle permutations, overwritten alpha, ordered statistics and fallback cases. Literal boundary checks and the frozen-settings assertion make a changed threshold visible. These are meaningful equivalence checks rather than a table inspecting itself. This reviewer ran no gate; [583](583_sign-mask-four-checks.md) is historical four-gate evidence and [580](580_mask-startup-comparison.md) is bounded warm-service timing evidence, not fresh integrated qualification or rendered equivalence.
+
+Source reads are released. Canonical PRIMARY 44-frame/three-lifecycle qualification, native inspection of all 22 Satellite originals and final integrated revision binding remain pending. No browser, server, GPU process, gate, source edit, data write or index operation was launched by this review.
