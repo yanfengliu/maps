@@ -185,6 +185,10 @@ export function writeSignMask(
   pixels: Uint8ClampedArray | Uint8Array,
   settings: SignMaskSettings = PLATEAU_SIGN_MASK,
 ): SignMaskStats {
+  if (settings === PLATEAU_SIGN_MASK && pixels.length % 4 === 0) {
+    return writePlateauSignMask(pixels);
+  }
+
   let maskSum = 0;
   let strong = 0;
   let count = 0;
@@ -204,6 +208,51 @@ export function writeSignMask(
     const white = smoothstep(settings.whiteLow, settings.whiteHigh, value) * settings.whiteWeight;
     const mask = coloured > white ? coloured : white;
 
+    pixels[offset + 3] = Math.round(mask * 255);
+    maskSum += mask;
+    if (mask > 0.5) strong += 1;
+    count += 1;
+  }
+
+  return {
+    pixels: count,
+    meanMask: count === 0 ? 0 : maskSum / count,
+    coverage: count === 0 ? 0 : strong / count,
+  };
+}
+
+// One lazily built table, 512 KiB. Store the original double responses rather
+// than alpha bytes: quantizing here would change meanMask and coverage.
+let plateauSignResponses: Float64Array | undefined;
+
+function writePlateauSignMask(pixels: Uint8ClampedArray | Uint8Array): SignMaskStats {
+  if (plateauSignResponses === undefined) {
+    const responses = new Float64Array(256 * 256);
+    const settings = PLATEAU_SIGN_MASK;
+    for (let max = 0; max < 256; max += 1) {
+      for (let min = 0; min <= max; min += 1) {
+        const value = max / 255;
+        const saturation = max === 0 ? 0 : (max - min) / max;
+        const coloured =
+          smoothstep(settings.saturationLow, settings.saturationHigh, saturation) *
+          smoothstep(settings.valueLow, settings.valueHigh, value);
+        const white = smoothstep(settings.whiteLow, settings.whiteHigh, value) * settings.whiteWeight;
+        responses[(max << 8) | min] = coloured > white ? coloured : white;
+      }
+    }
+    plateauSignResponses = responses;
+  }
+
+  let maskSum = 0;
+  let strong = 0;
+  let count = 0;
+  for (let offset = 0; offset < pixels.length; offset += 4) {
+    const r = pixels[offset]!;
+    const g = pixels[offset + 1]!;
+    const b = pixels[offset + 2]!;
+    const max = r > g ? (r > b ? r : b) : g > b ? g : b;
+    const min = r < g ? (r < b ? r : b) : g < b ? g : b;
+    const mask = plateauSignResponses[(max << 8) | min]!;
     pixels[offset + 3] = Math.round(mask * 255);
     maskSum += mask;
     if (mask > 0.5) strong += 1;
