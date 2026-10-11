@@ -2,7 +2,7 @@
 
 ## Target
 
-The frozen authored code on `codex/shibuya-unreal-5.8`, based on bootstrap commit `af4403654cfa2917c17bc52caf838da61939770e`, at `C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree`. The reviewer's exact SHA-256 inventory below identifies the reviewed target. The orchestrator will bind those bytes to the next experimental commit; no final commit hash is claimed here.
+The frozen authored code on `codex/shibuya-unreal-5.8`, based on bootstrap commit `af4403654cfa2917c17bc52caf838da61939770e`, at `C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree`. The reviewer's exact SHA-256 inventory below identifies the reviewed target. The orchestrator bound those exact bytes to implementation commit `9df42139ef1747bedc435cb60ecd226cfb69a60a` and verified all 17 committed blob hashes. The report below preserves the reviewer's pre-commit wording.
 
 ## Reviewers and coverage
 
@@ -70,8 +70,8 @@ The owner and engine worker opened all six final 1280 by 720 images individually
 
 The exact-final-helper probe of the daylight map subsequently passed in `artifacts/unreal/probe-20261011-004923/report.json`, SHA-256 `7f7bb8ce07719a803783ac00e1835197e9855a302c52d2e1fe9baf3b9ebb7497`. Two validation-world iterations each restored all 116 actors, including 112 mesh actors, and preserved daylight map SHA-256 `6197141cdb38cbdf240f1c1e16e7c871d4fb83fdbf79993bb1584389e3cef1bc`. Axis verification passed. Graceful exit code 0, removal of the exact two temporary maps, unchanged retained hashes, and no owned editor/ShaderCompileWorker/Zen processes were reported by the engine worker.
 
-Historical Node gates are expressly superseded. This content-only project needs no Unreal C++ compilation. Remote CI is not yet available or verified. Final commit binding remains the orchestrator's integration check.
+Historical Node gates are expressly superseded. This content-only project needs no Unreal C++ compilation. No CI workflow is configured on this branch; a GitHub Actions query of exact implementation commit `9df42139ef1747bedc435cb60ecd226cfb69a60a` returned zero runs. Root verified the review inventory and instruction hashes against its committed blobs. Git whitespace checking with CRLF recognized reports only final blank lines in the two engine-generated INI files; the exact verified bytes are retained.
 
 ## Round outcome
 
-No new material code findings. R1 and R2 are closed for the exact frozen inventory above. The initial clean-branch/static-crop/native-MCP milestone is technically verified, pending commit binding. The full city work unit stays active; no photoreal, surveyed landmark, motion, runtime-control, or performance acceptance is granted by this report.
+No new material code findings. R1 and R2 are closed for the exact frozen inventory above. The initial clean-branch/static-crop/native-MCP milestone is technically verified and bound to pushed implementation commit `9df42139ef1747bedc435cb60ecd226cfb69a60a`. The full city work unit stays active; no photoreal, surveyed landmark, motion, runtime-control, or performance acceptance is granted by this report.

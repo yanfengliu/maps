@@ -4,7 +4,7 @@ This branch starts a fresh Unreal Engine 5.8 experiment for the same roughly 1 k
 
 Only `AGENTS.md` and `CLAUDE.md` were carried into this checkout. They preserve the owner's instructions byte for byte. Every other file here is new. The previous Vite project, dependencies, source code, configuration, documentation, scene cache, and assets are excluded.
 
-The initial clean-branch/static-crop/native-MCP milestone is verified on Unreal Engine 5.8.3, changelist 58210709: 70 fresh GLBs became 112 static mesh actors with 43 textures. Twenty unit checks passed, and independent focused review closed both code findings. The clean bootstrap is pushed as `af4403654cfa2917c17bc52caf838da61939770e` on `origin/codex/shibuya-unreal-5.8`; root will commit and bind the final reviewed implementation next. The [plan](docs/work/0_unreal-shibuya/plan.md) retains the full city's open criteria.
+The initial clean-branch/static-crop/native-MCP milestone is verified on Unreal Engine 5.8.3, changelist 58210709: 70 fresh GLBs became 112 static mesh actors with 43 textures. Twenty unit checks passed, and independent focused review closed both code findings. The reviewed implementation is committed and pushed as `9df42139ef1747bedc435cb60ecd226cfb69a60a` on `origin/codex/shibuya-unreal-5.8`. The [plan](docs/work/0_unreal-shibuya/plan.md) retains the full city's open criteria.
 
 The [branch rules](docs/policies/local-rules.md) record the owner's explicit stack and isolation instructions. They explain how the historical browser gates inside the preserved instruction file apply to this fresh Unreal branch.
 
@@ -42,7 +42,7 @@ These commands use the installed engine's bundled Python and native MCP, Editor 
 
 Build regenerates the city map and generated asset packages under `Content/`. These binary outputs are ignored; authored `Content/Python/` stays tracked. Reports and captures go under `artifacts/unreal/`. The final probe preserved the daylight map bytes and all 116 actors, including 112 mesh actors, through two validation worlds. It used the exact reviewed helper, removed its two temporary map files, and closed its owned processes. Five offline MCP contract checks also passed.
 
-Final capture passed on D3D12, RTX 4090 driver 616.64, with graceful exit code 0. All six 1280 by 720 images were opened individually; block and whole-crop geometry is visible, while close crossing views remain dark and obstructed. This is static-crop evidence, not photoreal acceptance. The content-only project needs no C++ compilation. Historical Node gates are superseded, and remote CI remains unavailable or unverified.
+Final capture passed on D3D12, RTX 4090 driver 616.64, with graceful exit code 0. All six 1280 by 720 images were opened individually; block and whole-crop geometry is visible, while close crossing views remain dark and obstructed. This is static-crop evidence, not photoreal acceptance. The content-only project needs no C++ compilation. Historical Node gates are superseded. No CI workflow is configured on this branch; the exact implementation commit has zero GitHub Actions runs.
 
 ## Branch ownership
 
