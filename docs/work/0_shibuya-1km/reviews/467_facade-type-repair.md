@@ -1,9 +1,0 @@
-# 467 — Facade callback type repair
-
-2026-10-01. The actual458 type log reports exactly two TS7006 errors at `src/scene/facade-pane-relief.ts:70`: callback parameters `v` and `i`. Annotate those two parameters as `number`. No expression, threshold, admission, profile, GLSL, API or runtime behavior changes. The focused97/97 result is root-reported prior evidence; this repair ran no tests or typecheck.
-
-Original source: 7,956 bytes, SHA-256 `b758d16a7fc726b9095a65b5befc6383ff4fb859d930b3db2b1704d7b837bd43`, preserved with CreateNew at `artifacts/facade463/facade-pane-relief.before467.ts`. Frozen repaired source: 7,972 bytes, SHA-256 `5b40d43ede13c84c79ce986eed6e8ce5629c37a3dc94cf1c8990ea973eb0c896`. All131 LF endings remain; no CRLF or BOM was introduced. The463 test and other two457 source paths stay unchanged.
-
-Independent focused review and a new owned directTSC run remain pending. Preserve458's original failure and test receipt. No primary, policy, progress, data/cache, Git mutation, browser or server action occurred; pending native450 approval remains untouched.
-
-Root acceptance, 2026-10-01: the separate after-467 run passes all 97 focused tests and direct TSC on the repaired source. Root inspected the actual logs/receipt and rehashed all 452 bound inputs without mismatch. The final receipt is artifacts/facade458/after467/run/final-receipt.json, SHA-256 e8c50f6779645ff6e8abde2e255e092f6dbefe0d77dac66277bd4c0bc1b0df28. The five-file CPU suite includes 37 pane cases with the disabled-response and shifted-division controls; default reporter output does not name each case. Owned processes and exact TEMP are closed. The original failed run remains preserved. This closes the focused CPU/type check only; external transitive dependency bytes are not exhaustively pinned. GPU compilation, native appearance/motion/cost, all five final gates and main adoption remain open.

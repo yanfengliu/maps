@@ -1,9 +1,0 @@
-# 619 — ordinary facade source identification
-
-The frozen 615 run established one connected east-facing source face for the visible left wall. Real controls reproduced the 600 dusk close pose; rays at (540,150), (540,240), (540,330) resolved to data518, batch 62, GML `bldg_46f3cd1c-4dc8-4e7e-b30f-db8c8c31f776`, node 0/primitive 1/triangles 1092 and 1091. Maximum point residual was 0.347 mm; maximum UV residual was 0.000007158. The plane spans approximately 44.865×31.781 m and points east/south, distinct from the previous north-face UVs.
-
-I inspected the sole 1280×720 original at native resolution: all three chosen coordinates lie on the unobstructed photographic wall. PNG 832,800 bytes, SHA-256 `4a66ac9ea4b42a273fd293fffa5da32b8941a88c8550568ab5150e86854fcd39`. The exact embedded 4096×4096 WebP is 2,966,552 bytes, SHA-256 `eed564fded549988afc20edc49a5bc67c19590c4ea53b4324eaee34ac76179fb`; source bounds [3,2287,263,2547] include a two-pixel margin. The full receipt records original UVs and geometry. Native source pane divisions have not been classified.
-
-One sandbox dispatch stopped at CIM before launch; its receipts are preserved. The identical reviewed command then ran once under pinned Core 7.6.5 with approved escalation, exit 0: native 29.412 s, owner 34.124 s. Existing 600 build reused; no build executed. All 335 prepared inputs and 7 handoff pins still match, including native before/after witnesses. Fresh CIM found no known children, descendants, marker processes or 4335 listener; owned TEMP is gone. The sole GPU/server lease is closed.
-
-This establishes source identity only. It does not accept pane semantics, authored layout, appearance, performance or adoption. Mounted input bytes were verified; browser HTTP body identity was not. Evidence remains under ignored `artifacts/facade619/receipt.json` and `artifacts/facade615/`.

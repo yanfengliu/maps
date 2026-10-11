@@ -1,103 +1,39 @@
-# maps — repo rules
+# Unreal Shibuya branch rules
 
-These constraints supplement [AGENTS.md](../../AGENTS.md). Its fleet workflow, code gates and world invariants remain authoritative. Plans, reviews, gate proofs and the defect register preserve history; this file keeps current local requirements.
+## Owner's instruction and precedence
 
-## Shibuya priorities and progress
+On 2026-10-11 the owner requested a new branch using Unreal Engine 5.8 MCP for the same city crop, with nothing inherited from the existing project setup except `AGENTS.md` and `CLAUDE.md`, and retained the orchestrator role. This instruction takes precedence over the historical Vite, three.js, TypeScript, browser harness, data preparation commands, and Node gates described in the retained instruction file. Those commands cannot verify an Unreal project and their implementation is deliberately absent.
 
-Prioritize supreme visual quality for the current Shibuya square. Detailed simulation research is deferred and must not block visual milestones. Judge progress by visible improvements integrated on main with independent visual review. Land frequent meaningful, self-contained verified increments on main before growing the next. Keep each independently reversible and preserve unresolved experiments separately. The five code gates and independent review still apply.
+Preserve the two instruction files exactly. Do not rewrite the fleet block or describe the old gates as passed. Define and exercise fresh Unreal build, automation, source, runtime, and visual checks before claiming corresponding acceptance.
 
-Facades must feel vibrant and believable rather than pasted-on wallpaper. Judge close, block and aerial views for material depth, readable windows, lighting response and variation between buildings. Increasing color alone does not establish that outcome. Preserve source attribution, geographic texture limits and temporal checks.
+The user requested a separate branch. Keep this experimental replacement tree on `codex/shibuya-unreal-5.8` rather than merge it onto main. The branch and worktree are intentionally retained while the experiment remains active. Any future integration into main needs a scope decision from the owner.
 
-Inspect the whole square proactively: every road needs clear supported markings, surfaces need structure at several scales, dusk needs distributed mounted lights, and trains must visibly run on admitted tracks in the ordinary experience. Include peripheral streets and blocks, noon/dusk, fixed views and held-out seeded exploration. Run the ordinary default experience through real controls to choose the next direction. Rank recurring defects and surprises, record source exceptions and findings, and do not wait for another annotation to discover the same class elsewhere.
+## No inherited setup
 
-Satellite is the sole detailed quality target. Defer Cartographic polish, paired style iterations and detailed Cartographic image review. Retain basic style-switch and shared-rendering checks; automated captures of both styles do not require a second detailed review or establish Cartographic acceptance. This supersedes the earlier requirement to inspect every Cartographic static frame during this focus period. Its later reference remains the clean default Apple Maps view with finer scene detail.
+Do not copy, link, or reuse old project source, packages, lockfiles, configuration, CI, tests, tools, authored documentation, rendered evidence, fetched data, or scene assets. Fetch and admit public data afresh under a documented source manifest. An upstream public source can be selected independently; old local output cannot establish new acceptance.
 
-Root owns shared contracts, canonical status and integrated acceptance, and delegates bounded implementation and review. Shibuya work continues autonomously in goal mode; the owner's instruction to continue until done overrides the default automatic-repair cap for this scope. Use scoped worker goals where supported, without overwriting another worker's or root's goal.
+No junctions or symlinks may connect the new project to the old project's caches or dependencies. Before cleanup, inspect owned paths without following reparse points and refuse on every enumeration error. Never delete through a link or broadly clean the primary checkout's artifacts.
 
-Maintain [the Shibuya progress board](../work/0_shibuya-1km/progress.md) against complete acceptance criteria and stable plan items. Read it at turn start and before delegation. Update meaningful handoffs, gates, reviews and integrations with owner, evidence scope, next acceptance and blockers. Distinguish implemented, verified, accepted and integrated work; keep full-map requirements visible.
+The only inherited instruction files were copied from the primary working tree on 2026-10-11. Their SHA-256 values are `20a0a9529ffad04a2fc72ffe4cef72cc65eb0b1b41b15c72dd33f0de89d73206` for `AGENTS.md` and `336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49` for `CLAUDE.md`. Root Git attributes disable text conversion for these exact files.
 
-The population/performance target in [AGENTS.md](../../AGENTS.md#invariants--boundaries) and `src/world/frame.ts` remains 3,000 animated pedestrians and 200 vehicles at 60 fps and 1920×1080. It is not measured acceptance. Deferring simulation research does not defer these eventual requirements. Styles share geometry, simulation and camera; switching the World style dropdown through real pointer and keyboard input must preserve camera and agent progress.
+## Requirements and contracts
 
-## Camera controls and visual review
+Build the Shibuya crop bounded by latitude 35.6550-35.6640 N and longitude 139.6950-139.7060 E around 35.6595 N, 139.7005 E. It is approximately 1 km square. Preserve the photoreal leaning direction, moving pedestrians and vehicles, and eventual target of 3,000 pedestrians and 200 vehicles at 60 fps at 1920 by 1080. These are intended requirements, not measured outcomes.
 
-Held WASD pans along the ground relative to the view. Middle-button drag rotates; preserve left-button rotation, right-button pan and wheel zoom. Suppress movement while a UI control or editor has focus.
+Choose a fresh coordinate contract appropriate to Unreal before importing geometry. Record axes, units, handedness, geographic datum, origin, vertical reference, and axis conversions. Check independently known landmarks and heights, and keep precision bounds visible. The old metre/Y-up scene code is not a new implementation authority.
 
-Compare fixed baselines across azimuth, elevation and zoom, then explore seeded randomized poses. Record each seed and actual pose, report surprises and state sampling/coverage bounds. Inspect original images at native resolution.
+Record data provenance, download identity, hashes, licences, attribution, and every processed-data statement required by the admitted sources. Keep large source and generated assets outside ordinary Git unless the owner authorizes an asset store or LFS. Review supply-chain choices and pin them. Native engine support is preferred when verified sufficient; a third-party MCP package is a new dependency decision.
 
-Default review clips to 30 fps when sufficient; use 60 fps only for a targeted motion question. Inspect sparse keyframes and short event-specific sequences. State actual sampled frame/time gaps and keep uninspected footage outside appearance claims. Preserve required static coverage and the fixed 60 Hz simulation step.
+MCP acceptance requires a live handshake with the intended project, an observed tool inventory, a bounded reversible action, and verified resulting state. An installed engine or a listening port alone does not establish connectivity.
 
-Dispatch a fresh-context critic at each meaningful product milestone or after two consecutive attempts produce no new substantive result. Give it the queue, a compact evidence index and at most three relevant existing images. Request a concise continue-or-redirect decision and act on justified findings before repeating the approach. Do not add a strategy review to every mechanical handoff.
+## Orchestration and work documents
 
-## World and source authority
+The orchestrator owns `docs/work/0_unreal-shibuya/plan.md`, shared contracts, final checks, and acceptance. Implementation workers own disjoint scopes; reviewers inspect exact recoverable revisions. Keep prepared, implemented, verified, reviewed, and accepted states distinct. Do not claim a city exists from a project skeleton or a successful tool response.
 
-The [world-frame and AOI invariants](../../AGENTS.md#invariants--boundaries) use `src/world/frame.ts` and `src/world/aoi.ts` as placement/bounds authorities. Global EPSG:6677 or ECEF positions must not reach browser vertex buffers. CityGML `posList` is latitude-first and EPSG:6677 northing-first; `test/aoi.test.ts` checks the axis chain. Fold the glTF Y-up/ECEF Z-up rotation once; `tools/tiles/tileset.ts` declares `gltfUpAxis: "z"`. `test/placement.test.ts`, the builder's 2 m horizontal residual limit and visual drawn-geometry bounds cover distinct parts of that transform.
+This fresh experiment starts its own work-document sequence at `0_unreal-shibuya`. The shared primary allocator would modify or import the old setup, contrary to the explicit zero-inheritance request. The orchestrator assigned this branch-local path; its registry is independent of main's work-document history. Do not run the old allocator against main or transplant its registry into this branch.
 
-The licence record is `src/world/sources.ts`, on-screen credit is `src/ui/attribution.ts`, and dataset provenance is [design.md](../work/0_shibuya-1km/design.md) plus `tools/data/manifest.ts`:
+## Owned processes and evidence
 
-- PLATEAU Shibuya-ku FY2025 supplies buildings, terrain, road surfaces and street furniture under PDL 1.0, with CC BY 4.0 expressly permitted. Copyright remains with the local authority; no share-alike is attached and commercial use is allowed.
-- OpenStreetMap supplies network topology and historical static-rail centrelines under ODbL 1.0. Keep derived graph/centreline databases separately identifiable from PLATEAU geometry for the section 4.6 offer of the database or a description of how it was made on publication. The rendered scene is a Produced Work without share-alike.
-- GSI elevation is an independent terrain cross-check and is not drawn. Preserve its PDL 1.0 category 2 attribution; no Survey Act application is required.
-- PLATEAU and GSI require both source credit and a separate processed/edited statement. Preserve both.
-- Fetched data stays outside Git. Promoted small extracts in `test/fixtures/` retain the provenance and terms in `test/fixtures/README.md`.
+Work headlessly unless engine verification needs a rendered editor or application and no headless option is sufficient. State that reason before any visible launch. Launch every engine, MCP, browser, and helper process with recorded ownership and a finite deadline, and close only the task's processes in a finally cleanup path. Keep a process alive only when the owner asked for it to remain available, and report why and how it will close.
 
-`npm run data:fetch` pins the PLATEAU archive by length/SHA-256 and records Overpass's `timestamp_osm_base` in `data/provenance.json`. Use the fetcher's bare User-Agent token for Overpass. Live OSM is not immutable; fresh remote data does not inherit reviewed cache byte pins or source-vintage acceptance.
-
-## Scene preparation and presentation bounds
-
-The [data preparation prerequisites](../../AGENTS.md#gates) remain required. `tools/vite/serve-scene-data.ts` serves scene data at `/scene/` and the installed Draco decoder at `/draco/` for dev/preview; another host must serve both because `dist/` is not self-contained. Missing inputs must name recovery requirements, never silently omit the scene.
-
-Before geometry cleanup, `tools/scene/rebuild-preservation.ts` checks `markings.mesh` and `markings-provenance.json`. Admit an absent pair as bootstrap or a consistent, structurally valid pair in the published-only producer format. Authored paint, unknown formats, a missing partner or malformed/inconsistent records must refuse without changing scene bytes. Restore a known pair; authored replacement needs reviewed regeneration. This read-only preflight is not a transaction, historical-absence proof or external-writer lock; see `test/scene-rebuild-preservation.test.ts` and [gate proofs](../learning/gate-proofs.md).
-
-Ordinary startup requires the admitted external static-rail packet and the reviewed scene cache containing its three original building tiles. Restore it with `npm run data:rail -- --from <path/to/manifest.json>`; `src/world/rail-trial.ts` owns the admitted manifest digest and preparation contract. The [retention record](../work/0_shibuya-1km/reviews/344_worktree_retention.md#completed-unlink-and-managed-archival) preserves the exact primary restoration path and hash; retain that recovery source while needed. `tools/scene/install-rail.ts` verifies assets/source pins, accepts an exact existing copy and refuses different, partial, foreign or linked destinations. The packet stays outside Git/dist and uses the finite `/rail-trial/` whitelist. `data:setup` does not recreate it. Authored heights/supports/finishes are not surveyed OSM measurements.
-
-PLATEAU `tran` LOD1/2 road polygons are flat at sea level and must be draped to terrain. `tools/scene/build-roads.ts` drops rings with off-terrain vertices; `data:scene` refuses roads more than 5 m below the lowest ground.
-
-Crossing/tactile paint selects nearby road/pavement support using source path elevation, never an unrelated highest X/Z layer or blind terrain fallback. [The pavement recipe](../reference/pavement-recipe.md#separate-physical-paint-overlay) records finite checks and omitted parts. Its maximum 10 mm opposed-edge seam allowance is paint presentation only; it cannot alter source meshes or authorize actor contact.
-
-Traffic hardware is authored presentation: OSM control coordinates retain logical authority, not surveyed pole/head placement. `data:hardware` requires network, final pavement and vehicle assets; every source control needs disclosed supported placement or an explicit unplaced result. Missing, malformed or stale inputs must refuse with the rebuild command. Unplaced hardware cannot delete a control or change signal authority. Before population acceptance, the shared actor factory must match the displayed fleet digest to `hardware.inputs.vehicles` and remain within recorded scale/clearance bounds; a fleet/scale change requires regeneration and recheck. Discrete pose checks do not prove continuous collision safety or whole-city pavement contact. Prepare `data:vehicles` before `data:hardware`; the human baker remains a separate unfinished population dependency.
-
-## Geographic texture limits
-
-`src/scene/texture-budget.ts` owns fixed load-time limits: 1024 px generally, 2048 px within 160 m of the crossing, and native 4096 px for the single final-detail leaf containing the observed frontage at world (-38.58,21.58). `npm run data:textures:verify` requires exactly one native leaf/atlas. Select by geographic metadata, not a tile filename. Both styles reuse capped atlases; release source ImageBitmaps after processing. This policy does not promise camera-dependent upgrades.
-
-Keep the 640 MiB cache floor and 768 MiB ceiling in `src/scene/buildings.ts`, including upward integer rounding, accounting and LRU disposal. Coarse PLATEAU ancestors omit buildings and cannot replace admitted leaf detail. Full-source estimates in [AGENTS.md](../../AGENTS.md#invariants--boundaries) are not measured whole-process GPU allocation or population performance. The frozen harness observes processed dimensions and per-view ray-hit atlas sizes; [cutout loading](../work/0_shibuya-1km/square-cutout-loading.md) records the final-detail contract.
-
-## Hardware verification and evidence
-
-Use the GPU for work it can perform and available CPU cores for independent CPU work. Use hardware rendering unless the instrument studies the software rasteriser, as in `tools/post-chain/`. SwiftShader is a [red-control baseline](../learning/gate-proofs.md), not an appearance verdict. The visual gate owns its GPU and preview port; exactly one expensive gate runs at a time.
-
-[AGENTS.md](../../AGENTS.md#the-visual-gate-is-only-half-a-gate) defines the five-gate chain, 44-frame/three-lifecycle certificate and appearance limits. The wrapper admits only the primary checkout root; integrate reviewed candidates there before the final gate. Linked worktrees/subdirectories, an absent step flag, software fallback or an unavailable GPU must refuse. The two style-return approach images are lane evidence outside the certified 44. A renderer/driver change requires new evidence. Certification does not replace native inspection of required Satellite originals.
-
-Appearance configuration uses three workers, one per specification file, `fullyParallel: false` and stop-on-first-failure. Lifecycle checks separately require 15 s navigation, 60 s replacement, no reported console/uncaught errors and completed outgoing `pagehide` teardown. All three records must name the hardware renderer and pass. Definitions live in `playwright.config.ts`, `playwright.lifecycle.config.ts`, `tools/visual/lifecycle.spec.ts` and `tools/visual/verify-output.ts`.
-
-Dev 5319 and preview 4319 bind explicit 127.0.0.1 with `strictPort`; configs use `reuseExistingServer: false`. Check `app-id` before capture: answering a port does not establish app identity.
-
-`tools/visual/budget.ts` owns capture budgets, checked by `test/visual-budget.test.ts`. The software-derived budget wrapper's deadline is 38,700 seconds (`WRAPPER_DEADLINE_MS`), the per-test sum plus two hours. These ceilings are arithmetic backstops, not expected hardware pace or a universal process deadline. Declare a separately reviewed finite owned deadline for each actual hardware dispatch. `tools/visual/progress.ts` records the capture ledger.
-
-`SETTLE_BUDGET` in `tools/visual/orbit.ts` permits 320 advanced frames, with a 30 min wall backstop and stale-frame refusal after 15 s or 8× the longest observed advance gap, whichever is larger. Read frame count, document epoch and full pose together; only fresh frames count. Ordinary capture uses angular/relative quietness. Dropdown preservation requires an 80 micrometre world-path bound, three quiet intervals and at least 12 advanced frames; the independent 5 mm post-switch bound remains. These waits do not cancel unresolved browser RPCs; outer stage/owned-runner deadlines must bound them. CPU fixtures do not replace the actual dropdown/native gate.
-
-Transfer earlier evidence only where that gate's own bound permits it: require identical built bundle bytes, unchanged `data/scene/**` and changed paths outside the bundle graph. Rebuild and compare `dist/assets/*.js` hashes to the recorded revision; an unread tooling file still requires comparison. Name the source revision and transfer check in the commit message, otherwise rerun. A remembered green run is not acceptance.
-
-## Harness and iteration lanes
-
-The [frozen-harness rule](../../AGENTS.md#the-harness-drives-the-controls-and-never-sets-state) requires real pointer/wheel input. Add observations to `src/harness/bridge.ts`, never mutations.
-
-`tools/visual/lane.ts` assigns separate ignored roots to frame-budget, populated, flythrough and flicker iteration; unknown lanes refuse. Only the complete gate's verdict run can issue `complete.json`. Iteration manifests name their renderer, and populated/moving sequences cannot inherit acceptance from static city-only frames.
-
-`npm run visual:flicker` (`tools/flicker/`, port 4324) is iteration, not certification. Q3 copies twelve adjacent native canvases inside RAF with same-task frame/pose/post observations and real sustained pointer/released-pointer wheel input, then encodes PNGs. Every copy must be nonblank, adjacent and moving with non-accumulating post state; invalid/gapped copies refuse. The provisional 0.005 unexplained-feature bound applies directly over shared complete 3×3 neighbourhoods, without cadence dilution. The integer-translation model rejects legitimate fractional, rotated and depth-varying motion, so reports retain `sceneVerdict: not-established`: high residual is unresolved model error and low residual only a bounded observation. Scene acceptance needs an independently reviewed model separating legitimate motion from injected defects. [The Q3 record](../work/0_shibuya-1km/snapshots/q3-motion-capture-review43.md) retains component history and frame hashes.
-
-Crop names from `tools/inspect/crops.ts` identify screen rectangles, not materials. Classify actual surfaces from inspected pixels and state the basis.
-
-## Shared inputs and cleanup
-
-Use each task/lane's own ignored artifact subdirectory. A visual specification replaces only its own `visual/hero` or style-sweep directory, preserving other specs and recovery evidence. Follow [AGENTS.md](../../AGENTS.md#fleet-conventions) for evidence promotion/retention. Do not unignore task output in place. Reclaim unused owned scratch at verification/step boundaries, preserving evidence needed by active handoffs or tracked records.
-
-Shared/junctioned `data/` and `node_modules/` are read-only. Data writers need a real owned directory or output path. Install/reinstall dependencies only in a real dependency directory or coordinated primary installation, never through a worktree junction. Shared tool caches require ownership; [lessons](../learning/lessons.md) records the owed checks.
-
-Never follow junctions/symlinks for measurement or deletion. Before cleaning a directory that has held links, complete a nonfollowing reparse census that fails on every enumeration error and reports its count. Detach exact links nonrecursively, verify shared-target counts/hashes, then delete only verified owned paths. `Remove-Item -Recurse` and `git worktree remove --force` are forbidden on any directory that has contained a junction.
-
-Managed archival is deletion. Preserve needed ignored files and original/resolved link targets. Before dispatch require a fresh zero-reparse census of the exact checkout and checked ancestors; a snapshot, clean status or link manifest is insufficient. Remaining links, changed shared targets or census errors block archival. [343a](../work/0_shibuya-1km/reviews/343a_archive-junction-incident.md) records the incident and owed reusable refusal gate. Merged commits do not prove ignored evidence is safe to remove.
-
-`npm run artifacts:size` measures real bytes without following links and refuses copied input trees above its 512 MiB limit. Confirm tracked content with `git diff HEAD`; status is a hint, not a content comparison.
-
-Landed-change citations must name a commit reachable from main. Unlanded citations name their revision/branch and say so; disclose an unresolved branch. Preserve each tracked document's existing line endings. Check line endings before attributing a whole-file diff to content.
+Use `Artifacts/` for run evidence and `data/` for fresh source/generated city data; both are ignored. Inspect native rendered images individually and bind reviews to their file digests. Exercise ordinary controls and movement over time. A NullRHI launch can support load or automation checks, but cannot prove rendered appearance.

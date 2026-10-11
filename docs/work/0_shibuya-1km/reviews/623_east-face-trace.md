@@ -1,9 +1,0 @@
-# 623 east-face trace: unsupported
-
-One native260×260 inspection and finite pixel read did not establish credible full rib widths and endcaps inside x18–124/y12–175. No geometry-ready segment is admitted. Source-trace JSON records five literal bright-core samples, unknown widths/endcaps and two unresolved horizontal transitions; these are observations, not authored profiles.
-
-At crop[50,22], adjacent luminances are78/140/97: the strongest core occupies one pixel, but its light/shadow mixture does not identify both physical boundaries. Horizontal rows38–41 spread108.8/121.6/115.3/91.7, while another band spreads over six rows. Neither a uniform width nor continuation through blurred intersections is justified. Filling those gaps would risk covering original pane pixels. No regular spacing, pane count, eight-storey layout or north-face transfer was used.
-
-The receipt maps actual source samples and selection corners barycentrically through619's triangles1092/1091, node0/primitive1/GML46f3cd1c. Image coordinates increase downward; original material UV0 is retained without an invented V reflection. The runtime photographic DataTexture uses flipY=false. Approximate selected scale is18.65×20.32m; one source pixel spans about0.176×0.125m. The bound east normal agrees with triangle winding and points outward relative to the identified building center. Point/selection containment does not prove unknown-width/endcap containment.
-
-CHANEL, construction diagonals, roof and lower frontage remain excluded. Atlas, ROI, tile, triangle receipts and orientation source are digest-bound and unchanged. An unavailable pngjs read is retained; existing620 Pillow completed the same pixel read without installation. Finite CPU processes exited; no browser/GPU/server/build/gate or texture edit occurred. Stop this mechanism before geometry. Appearance benefit, resource cost and implementation remain unproved.
