@@ -9,8 +9,12 @@ Saved/
 *.VC.db
 *.VC.opendb
 
+# Generated Unreal asset packages; authored Content/Python remains tracked.
+/Content/**/*.uasset
+/Content/**/*.umap
+
 # Fresh source downloads, generated city assets, and task evidence.
-data/
+/data/
 Artifacts/
 artifacts/
 tmp/

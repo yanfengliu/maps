@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "name": "Shibuya Scramble Crossing, fresh PLATEAU 2025 crop",
+  "origin": {"latitude": 35.6595, "longitude": 139.7005},
+  "bounds": {"south": 35.655, "north": 35.664, "west": 139.695, "east": 139.706},
+  "frame": {"glb": "metres; X east, Y up, Z north", "unreal": "centimetres; X east, Y north, Z up", "origin_height": "Defined by build manifest from freshly fetched ground data"},
+  "plateau": {
+    "dataset": "plateau-13113-shibuya-ku-2025",
+    "catalog": "https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025",
+    "metadata": "https://www.geospatial.jp/ckan/api/3/action/package_show?id=plateau-13113-shibuya-ku-2025",
+    "archive": "https://assets.cms.plateau.reearth.io/assets/51/de25a0-7611-4450-b650-bc0d402d00de/13113_shibuya-ku_pref_2025_3dtiles_mvt_1_op.zip",
+    "length": 637073925,
+    "md5": "0c2b675c68e9a9f495d92b56118e16f0",
+    "modified": "2026-03-16T05:25:24Z",
+    "license": "https://www.mlit.go.jp/plateau/site-policy/",
+    "attribution": "Source: Ministry of Land, Infrastructure, Transport and Tourism, Project PLATEAU, Shibuya 2025. Cropped and converted for this simulation."
+  },
+  "gsi": {
+    "dem": "https://cyberjapandata.gsi.go.jp/xyz/dem5a/{z}/{x}/{y}.txt",
+    "imagery": "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",
+    "license": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+    "attribution": "Source: Geospatial Information Authority of Japan, elevation tiles and seamless aerial photographs. Cropped and converted for this simulation."
+  }
+}

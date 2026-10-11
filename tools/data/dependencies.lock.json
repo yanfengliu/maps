@@ -1,0 +1,87 @@
+{
+  "python": "CPython3.13",
+  "platform": "Windowsx64",
+  "wheel_tag": "cp313-cp313-win_amd64",
+  "wheel_digests_measured": true,
+  "packages": [
+    {
+      "package": "DracoPy",
+      "version": "2.1.0",
+      "filename": "dracopy-2.1.0-cp313-cp313-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/c5/49/d0c97d898922f3ff0b61331c7d5ccc2c70de18b2ee8e157a3eeb6ff295ab/dracopy-2.1.0-cp313-cp313-win_amd64.whl",
+      "sha256": "c83236c3dc2724f4a6996dd2c6629a63d04f0648a0a622286ed3a0b030087f6c",
+      "bytes": 5231627,
+      "metadata_url": "https://pypi.org/pypi/DracoPy/2.1.0/json",
+      "requires_dist": null,
+      "license": "Apache-2.0",
+      "project_urls": {
+        "Homepage": "https://github.com/seung-lab/DracoPy"
+      }
+    },
+    {
+      "package": "numpy",
+      "version": "2.4.2",
+      "filename": "numpy-2.4.2-cp313-cp313-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/43/bc/6352f343522fcb2c04dbaf94cb30cca6fd32c1a750c06ad6231b4293708c/numpy-2.4.2-cp313-cp313-win_amd64.whl",
+      "sha256": "7df2de1e4fba69a51c06c28f5a3de36731eb9639feb8e1cf7e4a7b0daf4cf622",
+      "bytes": 12310848,
+      "metadata_url": "https://pypi.org/pypi/numpy/2.4.2/json",
+      "requires_dist": null,
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "project_urls": {
+        "documentation": "https://numpy.org/doc/",
+        "download": "https://pypi.org/project/numpy/#files",
+        "homepage": "https://numpy.org",
+        "release notes": "https://numpy.org/doc/stable/release",
+        "source": "https://github.com/numpy/numpy",
+        "tracker": "https://github.com/numpy/numpy/issues"
+      }
+    },
+    {
+      "package": "Pillow",
+      "version": "12.3.0",
+      "filename": "pillow-12.3.0-cp313-cp313-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/a6/9b/7a58e61d62be561da3a356fe2384d4059a6345fc130e23ef1c36a5b81d24/pillow-12.3.0-cp313-cp313-win_amd64.whl",
+      "sha256": "1cca606cd25738df4ed873d5ad46bbdb3d83b5cbca291f6b4ff13a4df6b0bbe8",
+      "bytes": 7239691,
+      "metadata_url": "https://pypi.org/pypi/Pillow/12.3.0/json",
+      "requires_dist": [
+        "furo; extra == \"docs\"",
+        "olefile; extra == \"docs\"",
+        "sphinx>=8.2; extra == \"docs\"",
+        "sphinx-autobuild; extra == \"docs\"",
+        "sphinx-copybutton; extra == \"docs\"",
+        "sphinx-inline-tabs; extra == \"docs\"",
+        "sphinxext-opengraph; extra == \"docs\"",
+        "olefile; extra == \"fpx\"",
+        "olefile; extra == \"mic\"",
+        "arro3-compute; extra == \"test-arrow\"",
+        "arro3-core; extra == \"test-arrow\"",
+        "nanoarrow; extra == \"test-arrow\"",
+        "pyarrow; extra == \"test-arrow\"",
+        "coverage>=7.4.2; extra == \"tests\"",
+        "defusedxml; extra == \"tests\"",
+        "markdown2; extra == \"tests\"",
+        "olefile; extra == \"tests\"",
+        "packaging; extra == \"tests\"",
+        "pytest; extra == \"tests\"",
+        "pytest-cov; extra == \"tests\"",
+        "pytest-timeout; extra == \"tests\"",
+        "pytest-xdist; extra == \"tests\"",
+        "setuptools; extra == \"tests\"",
+        "trove-classifiers>=2024.10.12; extra == \"tests\"",
+        "defusedxml; extra == \"xmp\""
+      ],
+      "license": "MIT-CMU",
+      "project_urls": {
+        "Changelog": "https://github.com/python-pillow/Pillow/releases",
+        "Documentation": "https://pillow.readthedocs.io",
+        "Funding": "https://tidelift.com/subscription/pkg/pypi-pillow?utm_source=pypi-pillow&utm_medium=pypi",
+        "Homepage": "https://python-pillow.github.io",
+        "Mastodon": "https://fosstodon.org/@pillow",
+        "Release notes": "https://pillow.readthedocs.io/en/stable/releasenotes/index.html",
+        "Source": "https://github.com/python-pillow/Pillow"
+      }
+    }
+  ]
+}
