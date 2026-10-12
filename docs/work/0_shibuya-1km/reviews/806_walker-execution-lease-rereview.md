@@ -1,0 +1,9 @@
+# 806 — walker execution lease rereview
+
+**ADMIT the exact corrected 804 runner for one separately owned finite cached two-root execution. Both 805 findings are closed in source.** This focused supported-agent rereview compared only the corrected ownership and comparison lines with their preserved 805 versions. The supplied launcher, inspector and handoff hashes match; exact pins are in `artifacts/walker806/handoff.json`. Frozen 799 admission and every earlier scope bound remain unchanged.
+
+**805 P1 closed:** [`run-owned.ps1:35–49,59`](../../../../artifacts/walker804/preparation/run-owned.ps1) opens `SafeHandle` before reading the child identity, refuses an invalid/closed/exited handle, and retains it alongside its `Process` through cleanup. Parent/executable/start/command checks occur while that handle remains held. The owning `Process` is disposed once after cleanup, and closure records the handle state before and after disposal. The existing owned Node handle/tree fallback remains.
+
+**805 P2 closed:** [`inspect.mjs:9–15,33`](../../../../artifacts/walker804/preparation/inspect.mjs) binds every correspondence input's bytes/hash to the actual own-root inventory. It requires exactly one extraction-receipt input and checks its raw identity, child PID, successful exit, completion and source preservation. Cross-root comparison changes only that exact receipt's already-validated bytes/hash fields in a derived comparison value. The original receipts, correspondence rows and differing metadata remain retained; deterministic payload checks remain strict.
+
+These are source conclusions. Lifecycle closure, Blender extraction, correspondence and packet reproduction remain NOT_RUN and require actual evidence from the single lease. No tests, probes, helper execution, producer rereview or generation ran. Only this report and its handoff were written; no task-owned browser, GUI or long-running process was created and no temporary output remains.
