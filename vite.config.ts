@@ -1,10 +1,14 @@
 import { defineConfig } from "vite";
+import { resolve } from "node:path";
 
 import { serveSceneData } from "./tools/vite/serve-scene-data.ts";
 import { railTrialServer } from "./tools/vite/serve-rail-trial.ts";
 import { RAIL_MANIFEST_SHA256 } from "./src/world/rail-trial.ts";
+import { localWalkServer } from "./tools/vite/serve-local-walk.ts";
+import { LOCAL_WALK_PACKET_DIRECTORY } from "./tools/agents/local-walk/packet.ts";
 
 const rail = railTrialServer(`${import.meta.dirname}/data/rail/manifest.json`, RAIL_MANIFEST_SHA256);
+const localWalk = localWalkServer(resolve(import.meta.dirname, LOCAL_WALK_PACKET_DIRECTORY));
 
 export default defineConfig({
   // Only the application document is a dependency-discovery entry. Retained
@@ -16,8 +20,8 @@ export default defineConfig({
   // `npm run data:scene` into a gitignored `data/scene/`. This serves that one
   // copy at `/scene/` rather than staging it through `public/`, which would copy
   // all of it into `dist/` on every build — and the visual gate builds first.
-  plugins: [serveSceneData(import.meta.dirname), rail.plugin],
-  define: { __MAPS_RAIL_TRIAL__: JSON.stringify(rail.binding) },
+  plugins: [serveSceneData(import.meta.dirname), rail.plugin, localWalk.plugin],
+  define: { __MAPS_RAIL_TRIAL__: JSON.stringify(rail.binding), __MAPS_LOCAL_WALK__: JSON.stringify(localWalk.binding) },
   build: {
     // The visual gate photographs the production build, not the dev server, so
     // sourcemaps are kept: a runtime failure in a gate run has to be readable.

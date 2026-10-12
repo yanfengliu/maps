@@ -1,4 +1,4 @@
-/** Bound: CPU shader-source composition and opt-in policy. No shader compile or appearance claim. */
+/** Bound: CPU shader-source composition and singleton selection. No shader compile or appearance claim. */
 import { afterEach,describe,it,expect,vi } from 'vitest';
 import { ShaderLib, MeshStandardMaterial } from 'three';
 import { patchLocalShader,localDrawUniforms,applyLocalDraw } from '../src/agents/render/local-walk-material.js';
@@ -24,7 +24,7 @@ describe('actual native walker draw-pass composition',()=>{
   });
   it('refuses a pass without the expected geometry hooks',()=>expect(()=>patchLocalShader({uniforms:{},vertexShader:'void main(){}',fragmentShader:''},localDrawUniforms(),true)).toThrow('position replacement hook'));
 });
-describe('private opt-in boundary through the real population parser',()=>{
+describe('supported singleton selection through the real population parser',()=>{
   const seed=5970698;
   const binding={url:'/local-walk/manifest.json',sha256:'fixture binding; no assets fetched'};
   afterEach(()=>vi.unstubAllGlobals());
@@ -36,6 +36,16 @@ describe('private opt-in boundary through the real population parser',()=>{
   }
   it.each(['','agents=0','agents=1'])('keeps unrequested startup unchanged for %s',async query=>{
     expect(await request(query,seed,false)).toBe(false);
+  });
+  it.each(['','style=satellite&time=noon','seed=5970698'])('selects the held singleton for prepared ordinary %s',async query=>{
+    expect(await request(query)).toBe(true);
+    expect(populationFromQuery(query,seed)).toMatchObject({pedestrians:0,vehicles:0});
+  });
+  it.each(['agents=0','agents=1','pedestrians=0&vehicles=0','agents=1&pedestrians=0&vehicles=0'])('keeps explicit generic/appearance mode separate for %s',async query=>{
+    expect(await request(query)).toBe(false);
+  });
+  it('does not select a singleton for another ordinary scene seed',async()=>{
+    expect(await request('seed=9137',9137)).toBe(false);
   });
   it.each([
     'local-walk=1&seed=5970698&style=satellite',
@@ -59,13 +69,13 @@ describe('private opt-in boundary through the real population parser',()=>{
   ])('retains parser refusal for %s',async(query,message)=>{
     await expect(request(query!)).rejects.toThrow(message!);
   });
-  it('still requires the private prepared binding',async()=>{
-    await expect(request('local-walk=1',seed,false)).rejects.toThrow('prepared prototype build');
+  it('still requires the prepared packet binding',async()=>{
+    await expect(request('local-walk=1',seed,false)).rejects.toThrow('admitted packet');
   });
   it('still refuses a different scene seed',async()=>{
     await expect(request('local-walk=1&seed=9137',9137)).rejects.toThrow('retained seed 5970698');
   });
   it('still refuses an unknown local walk mode',async()=>{
-    await expect(request('local-walk=2')).rejects.toThrow('prepared prototype build');
+    await expect(request('local-walk=2')).rejects.toThrow('admitted packet');
   });
 });
