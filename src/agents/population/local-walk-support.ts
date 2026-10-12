@@ -32,9 +32,13 @@ type Anchor = { mode: string; points: number[][] };
 /** Actual finite shoes/soles and unheld-owner checks, not an origin-height proxy. */
 export class LocalSupportAdmission {
   private anchors: Anchor[][];
+  declare private readonly scratch: { vertices: LocalRig['packet']['source']['vertices']; shoes: number[]; soles: number[][]; points: Float64Array; residuals: Float64Array; valid: Uint8Array }[];
   readonly floor: ReturnType<typeof createLocalFloor>;
   readonly measures = { samples: 0, minimumShoeM: Infinity, maximumPlantMinimumM: 0, maximumDriftM: 0, fullBodySamples: 0 };
-  constructor(readonly context: LocalContext, readonly rigs: LocalRig[], readonly engine: OrderedFootEngine) { this.floor=createLocalFloor(context);this.anchors=rigs.map(()=>[{mode:'',points:[]},{mode:'',points:[]}]); }
+  constructor(readonly context: LocalContext, readonly rigs: LocalRig[], readonly engine: OrderedFootEngine) {
+    this.floor=createLocalFloor(context);this.anchors=rigs.map(()=>[{mode:'',points:[]},{mode:'',points:[]}]);
+    this.scratch=rigs.map(rig=>{const vertices=rig.packet.source.vertices,slots=new Map(vertices.map((v,i)=>[v.id,i]));return {vertices,shoes:rig.packet.shoes.map(id=>slots.get(id)!),soles:rig.packet.soles.map(ids=>ids.map(id=>slots.get(id)!)),points:new Float64Array(vertices.length*3),residuals:new Float64Array(vertices.length),valid:new Uint8Array(vertices.length)};});
+  }
   checkpoint(): Anchor[][] { return structuredClone(this.anchors); }
   restore(anchors: Anchor[][]): void { this.anchors=anchors; }
   observe(sample: LocalGaitSample, fullBody=false): void {
@@ -42,14 +46,22 @@ export class LocalSupportAdmission {
     for(const j of c.authority)for(const a of j.areas)if(Math.hypot(p.x-a.position.x,p.z-a.position.z)<a.radiusM+.496*c.scale)throw Error('Local actor reached unheld physical authority '+j.id);
     for(const [index,rig] of this.rigs.entries()) {
       const pose=this.engine.scenePose(rig.d,rig.source,sample.gait,sample.input);if(!pose.valid||!pose.point)throw Error('Actual female leg solve failed at '+rig.packet.id);
-      const cache=new Map<number,{point:number[];residual:number}>();
-      const residual=(id:number)=>{const old=cache.get(id);if(old)return old;const q=pose.point!(rig.byId.get(id)!),point=[c.origin.x+q.x*c.scale,c.origin.y+q.y*c.scale,c.origin.z+q.z*c.scale],p={x:point[0]!,z:point[2]!},t=floors.find(t=>Math.min(...weights(t,p))>=-1e-10);if(!t)throw Error('Actual female foot VAT '+id+' has no retained support');const r={point,residual:(point[1]!-height(t,p))*t.ny};cache.set(id,r);return r;};
-      for(const id of rig.packet.shoes){const r=residual(id);this.measures.samples++;this.measures.minimumShoeM=Math.min(this.measures.minimumShoeM,r.residual);if(r.residual<-.015)throw Error('Actual female shoe penetration exceeds 15mm at '+rig.packet.id+'/'+id);}
-      for(let side=0;side<2;side++){const foot=sample.gait.feet[side],rs=rig.packet.soles[side]!.map(residual),anchor=this.anchors[index]![side]!;
-        if(foot.mode==='plant'){const minimum=Math.min(...rs.map(r=>r.residual));this.measures.maximumPlantMinimumM=Math.max(this.measures.maximumPlantMinimumM,Math.abs(minimum));if(Math.abs(minimum)>.015)throw Error('Actual female planted minimum exceeds 15mm');if(anchor.mode!=='plant')anchor.points=rs.map(r=>r.point);for(const [i,r] of rs.entries()){const a=anchor.points[i]!,drift=Math.hypot(...r.point.map((v,k)=>v-a[k]!));this.measures.maximumDriftM=Math.max(this.measures.maximumDriftM,drift);if(drift>=.005)throw Error('Actual female planted drift reaches 5mm');}}
+      const scratch=this.scratch[index]!,{points,residuals,valid}=scratch;valid.fill(0);
+      const point=(slot:number)=>{const offset=slot*3;if(!(valid[slot]!&1)){const q=pose.point!(scratch.vertices[slot]!);points[offset]=c.origin.x+q.x*c.scale;points[offset+1]=c.origin.y+q.y*c.scale;points[offset+2]=c.origin.z+q.z*c.scale;valid[slot]=1;}return offset;};
+      const residual=(slot:number)=>{
+        if(valid[slot]!&2)return residuals[slot]!;
+        const offset=point(slot),x=points[offset]!,z=points[offset+2]!;
+        // Exact incumbent arithmetic/order; avoid per-triangle arrays/callbacks.
+        for(const t of floors){const u=((x-t.a.x)*(t.c.z-t.a.z)-(z-t.a.z)*(t.c.x-t.a.x))/t.det,v=((t.b.x-t.a.x)*(z-t.a.z)-(t.b.z-t.a.z)*(x-t.a.x))/t.det;
+          if(u>=-1e-10&&v>=-1e-10&&1-u-v>=-1e-10){const r=(points[offset+1]!-(t.a.y+t.dx*(x-t.a.x)+t.dz*(z-t.a.z)))*t.ny;residuals[slot]=r;valid[slot]=3;return r;}}
+        throw Error('Actual female foot VAT '+scratch.vertices[slot]!.id+' has no retained support');
+      };
+      for(const slot of scratch.shoes){const r=residual(slot);this.measures.samples++;this.measures.minimumShoeM=Math.min(this.measures.minimumShoeM,r);if(r<-.015)throw Error('Actual female shoe penetration exceeds 15mm at '+rig.packet.id+'/'+scratch.vertices[slot]!.id);}
+      for(let side=0;side<2;side++){const foot=sample.gait.feet[side],sole=scratch.soles[side]!,anchor=this.anchors[index]![side]!;let minimum=Infinity;for(const slot of sole)minimum=Math.min(minimum,residual(slot));
+        if(foot.mode==='plant'){this.measures.maximumPlantMinimumM=Math.max(this.measures.maximumPlantMinimumM,Math.abs(minimum));if(Math.abs(minimum)>.015)throw Error('Actual female planted minimum exceeds 15mm');if(anchor.mode!=='plant')anchor.points=sole.map(slot=>{const offset=point(slot);return [points[offset]!,points[offset+1]!,points[offset+2]!];});for(let i=0;i<sole.length;i++){const offset=point(sole[i]!),a=anchor.points[i]!,drift=Math.hypot(points[offset]!-a[0]!,points[offset+1]!-a[1]!,points[offset+2]!-a[2]!);this.measures.maximumDriftM=Math.max(this.measures.maximumDriftM,drift);if(drift>=.005)throw Error('Actual female planted drift reaches 5mm');}}
         anchor.mode=foot.mode;
       }
-      if(fullBody)for(const v of rig.packet.source.vertices){const q=pose.point(v),point=[c.origin.x+q.x*c.scale,c.origin.y+q.y*c.scale,c.origin.z+q.z*c.scale];this.measures.fullBodySamples++;if(point.some((v,k)=>v<c.obstacles.actorEnvelope.min[k]!||v>c.obstacles.actorEnvelope.max[k]!))throw Error('Actual female body left the checked static corridor');for(const b of boxes)if(point.every((v,k)=>v>=b.min[k]!&&v<=b.max[k]!))throw Error('Actual female body entered conservative static obstacle '+(b.sourceId??b.id));}
+      if(fullBody)for(let slot=0;slot<scratch.vertices.length;slot++){const offset=point(slot),x=points[offset]!,y=points[offset+1]!,z=points[offset+2]!,envelope=c.obstacles.actorEnvelope;this.measures.fullBodySamples++;if(x<envelope.min[0]!||x>envelope.max[0]!||y<envelope.min[1]!||y>envelope.max[1]!||z<envelope.min[2]!||z>envelope.max[2]!)throw Error('Actual female body left the checked static corridor');for(const b of boxes)if(x>=b.min[0]!&&x<=b.max[0]!&&y>=b.min[1]!&&y<=b.max[1]!&&z>=b.min[2]!&&z<=b.max[2]!)throw Error('Actual female body entered conservative static obstacle '+(b.sourceId??b.id));}
     }
   }
 }
