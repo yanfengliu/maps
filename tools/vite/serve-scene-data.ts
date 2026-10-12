@@ -21,7 +21,7 @@
  */
 
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join, normalize, resolve, sep } from "node:path";
 
@@ -45,6 +45,12 @@ interface Mount {
   route: string;
   directory: string;
   missing: string;
+}
+
+function contains(directory: string, file: string): boolean {
+  const root = process.platform === "win32" ? directory.toLowerCase() : directory;
+  const target = process.platform === "win32" ? file.toLowerCase() : file;
+  return target === root || target.startsWith(root + sep);
 }
 
 export function serveSceneData(rootDirectory: string): Plugin {
@@ -91,10 +97,45 @@ export function serveSceneData(rootDirectory: string): Plugin {
       return;
     }
 
+    // This subtree belongs to the verified five-buffer /local-walk/ service.
+    // Refuse decoded/normalized aliases and keep producer receipts unserved.
+    const packetRoot = resolve(rootDirectory, "data", "scene", "local-walk");
+    const comparableFile = process.platform === "win32" ? file.toLowerCase() : file;
+    const comparableRoot = process.platform === "win32" ? packetRoot.toLowerCase() : packetRoot;
+    if (mount.route === "/scene/" && (comparableFile === comparableRoot || comparableFile.startsWith(comparableRoot + sep))) {
+      response.statusCode = 404;
+      response.end(`Local walker route ${url} is unavailable. The five prepared packet files are served through /local-walk/.`);
+      return;
+    }
+
     void (async (): Promise<void> => {
       let size: number;
+      let servedFile: string;
       try {
-        const info = await stat(file);
+        // Existing Windows short names and links can name a different subtree
+        // than the lexical request. Compare all three canonical identities.
+        const canonicalMount = await realpath(mount.directory);
+        servedFile = await realpath(file);
+        if (!contains(canonicalMount, servedFile)) {
+          response.statusCode = 403;
+          response.end(`Refused: ${url} resolves outside ${mount.route}.`);
+          return;
+        }
+        if (mount.route === "/scene/") {
+          let canonicalPacketRoot: string | undefined;
+          try {
+            canonicalPacketRoot = await realpath(packetRoot);
+          } catch (error) {
+            // A checkout without a walker packet still serves ordinary scene data.
+            if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+          }
+          if (canonicalPacketRoot !== undefined && contains(canonicalPacketRoot, servedFile)) {
+            response.statusCode = 404;
+            response.end(`Local walker route ${url} is unavailable. The five prepared packet files are served through /local-walk/.`);
+            return;
+          }
+        }
+        const info = await stat(servedFile);
         if (!info.isFile()) throw new Error("not a file");
         size = info.size;
       } catch {
@@ -104,14 +145,14 @@ export function serveSceneData(rootDirectory: string): Plugin {
         return;
       }
 
-      const extension = file.slice(file.lastIndexOf("."));
+      const extension = servedFile.slice(servedFile.lastIndexOf("."));
       response.statusCode = 200;
       response.setHeader("content-type", CONTENT_TYPES[extension] ?? "application/octet-stream");
       response.setHeader("content-length", String(size));
       // No caching. The gate rebuilds the scene between runs and a cached tile
       // from a previous build would be photographed as if it were this one.
       response.setHeader("cache-control", "no-store");
-      createReadStream(file).pipe(response);
+      createReadStream(servedFile).pipe(response);
     })();
   };
 

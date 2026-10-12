@@ -1,0 +1,11 @@
+# 828: actual production attempt
+
+Root admitted the exact executable successor and one attempt. The 23 producer prerequisite files were applied to PRIMARY main 4e39c0ea21ac021c1342db82ed82669f476facdc using the accepted source application helper. Every actual producer file still matches its candidate digest. All ten runtime/default/config paths remain at their prior bytes or absent. User 5319 was not killed or restarted.
+
+A preliminary sandbox Git read rejected backslash safe.directory spelling before its cache/ancestor checks. The privileged source writer independently verified main/source/target ancestors. A subsequent normalized read confirmed actual main/branch, all 83 producer/cache plus seven runtime pins and 30 zero-reparse absent-output ancestor rows before producer invocation. The refusal remains recorded; no product failure is inferred from it.
+
+The actual one-attempt caller failed before loading its observation preload or public ensure entry. Node 24.12.0 rejected the Windows absolute --import operand with ERR_UNSUPPORTED_ESM_URL_SCHEME (protocol c:); that operand requires a file URL. The immediate exit prevented the external live Node snapshot. No wrapper/command/extraction receipt or helper/Blender admission exists, and all five durable payloads are absent. No redispatch occurred. This is a private caller invocation defect; public 817/819 source remains unchanged.
+
+The actual held Node PID 66384, creation 2026-10-12T12:01:43.7775814Z, and inspection reader PID 79336 both positively closed and their retained Process objects were disposed. Streams and failure/comparison evidence were retained. The final narrow query returned zero rows. The conservative deletion guard preserved the exact actual/temp directory because no public Job closure receipt was available; the named PRIMARY Blender-user path is absent. This missing raw receipt is not evidence of a live Job. Runtime application remains refused.
+
+The smallest required caller correction is a file URL for the sole Node --import argument, in a separate successor preserving this failed attempt. Root must admit that exact correction before another attempt. No full gate, browser/server/GPU, Git mutation, runtime adoption or public timeout-cleanup qualification occurred.
