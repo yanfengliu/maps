@@ -1,0 +1,20 @@
+# 752 — Private portable producer pilot
+
+At HEAD `1ff554309d9c319a5309211a1bb0196497e4731d`, twelve private prospective `tools/agents/local-walk/` text files total 52,112 bytes. Nothing is installed; ordinary adoption stays withheld. The recovered female extractor/correspondence/rig, seeded route, support context, obstacle decoder and 253 assembler use project-relative paths and owned output below `data/agents`. The assembler exports a function instead of running implicitly and removes 253’s controller/source-writing side effect. Current controller/gait/solver bytes remain unchanged. Full weights, source poses, coordinate conversion, actual source legs, support math and contact limits are retained.
+
+Twelve syntax checks and 22 actual source-guard/pure-helper controls passed. Historical pavement, recipe and hardware guards still refuse current bytes; wrong baker/blend/network pins refuse. Geometry comparison rejects changed support/root/route/authority/building bounds and preserves missing-input refusal. Positive comparison is the retained context against its detached clone, not current decoded geometry parity. The unchanged consumer’s actual URL helper accepts draft `/data/...` paths. No whole producer, Blender, asset generation, parity experiment, build, full types or runtime ran.
+
+The concrete adoption boundary remains open. Historical guards cannot be replaced merely because a comparison helper passes. Proposed source parity must inspect all 1,577 selected support faces, current recipe ownership/parent identities, derived height/normal fields, route/authority and actual decoded obstacle geometry; provenance changes remain separate. Original index-ID/mesh-normal-byte parity needs the original mesh or the accepted 331 preservation evidence. No such claim comes from positions alone.
+
+The existing baker hash and whole female-manifest pin remain strict; its timestamped `reviewDirectory` is untouched. An additional actual path-helper check confirms two preparation roots produce different manifest source paths. Root must decide stable provenance/run-receipt separation before full five-file reproducibility can be claimed. Schema shape/version and consumer are unchanged; successor bytes require a new reviewed binding.
+
+After those decisions and a separate generation lease, the proposed two-root experiment extracts each female LOD, runs existing correspondence/wrong-palette/10 mm controls, compares rig payloads and complete context geometry, and retains every path/hash/refusal delta. Existing pinned archives are not cached; fresh blend/GLB/VAT repeatability remains untested. Existing manifests record CC0 sources/authored animation; no new dependency, source or licence qualification is introduced. Finite readers/children are closed; no runtime resource was launched.
+
+| Frozen handoff | SHA-256 |
+| --- | --- |
+| [source-proof.json](C:/Users/38909/.codex/worktrees/crossing-frontage/maps/artifacts/walker752/source-proof.json), all 12 candidate files and original/current owner pins | 1fd4ebc13dca6d575dea021c7b8e41b2b7c70a3f7cf5ff8db76382d6197cdf0b |
+| [controls.json](C:/Users/38909/.codex/worktrees/crossing-frontage/maps/artifacts/walker752/controls.json), 22 controls / 12 syntax checks | be8efd0e2585250c4ba80c52fcab8137b054129851ffec66531526dc3d22c5de |
+| [experiment-plan.json](C:/Users/38909/.codex/worktrees/crossing-frontage/maps/artifacts/walker752/experiment-plan.json), unexecuted stages and red controls | 206d92e85c9f88952d600931e5ff61b794f0ed04b06e7fa0a1005f3bcaa4ed8f |
+| [provenance-gap.json](C:/Users/38909/.codex/worktrees/crossing-frontage/maps/artifacts/walker752/provenance-gap.json), actual distinct-path helper result | 0ab28294364855f579e23bc14968391baa38457c88e562ed4c934c6647dc1f22 |
+
+`delta.patch` is a readable changed-body comparison, not an installation patch. Run receipts are separate; the old failures and accepted packet remain untouched. This handoff ends at source preparation and concrete contract gaps; root owns source admission, generation and later product integration.
