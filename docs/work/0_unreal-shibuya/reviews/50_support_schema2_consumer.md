@@ -1660,3 +1660,100 @@ Command durations are 0.3492365 s, 2.6529699 s and 0.7959209 s, within frozen 60
 Paths in this table except the handoff are under Artifacts/support-v2/r50-v11. The handoff's complete 358-file inventory binds the four inspected environment proofs and all remaining small actual artifacts.
 
 Release: fixed 7/39/21 functional result and original-nine physical closure accepted within the stated bounds. The historical failures and separate cleanup evidence remain intact. No later-stage authorization or full native acceptance is implied. Reviewer leaves no process, query, gate, worker or lease.
+## R50-24 static review — v12 generator-only freeze (2026-10-13)
+
+Independent read-only review of Native base af8bdbd34228c69dea45dd99af4ae20d7c2a9798 and Artifacts/support-v2/candidate-v12-generator. Preserve the complete preceding 352299 bytes, SHA-256 99756b6be56695edcb929284d7e0a5fd6acde7efb1acdd992e4bd92153422242. This round reads text, JSON, file metadata and hashes; it does not import or execute candidate code, generator functions, environment setters, Job helpers, CIM, compilers or Engine. Root retains dispatch and acceptance authority.
+
+Verdict: HOLD the generator lease. R50-24 is a concrete metadata admission blocker, with the same cause in both complete-evidence ordering and whole-run file ordering. No generator command has run. No additional material defect was found in the bounded adjacent source and conservation review.
+
+### R50-24 — P1: checkpoint metadata uses code-point order where both consumers require UTF-16 ordinal order
+
+The pinned decision-authority.json evidence array first puts the path ending census-controls/ps-ordinal-case-substitution-refused/\uE000.json at line 6465 before the path ending /\uD800\uDC00.json at line 6471. These represent U+E000 and U+10000. U+10000 starts with UTF-16 unit D800, which precedes E000, so the required ordinal order is the reverse. The same inversion occurs in ten retained fixture directories. Reviewer-owned literal metadata comparison established this discrepancy; this was not a candidate check execution.
+
+support_gate_contract.py:267–268 requires the complete 358 evidence paths to equal its unique UTF-16 ordinal ordering and raises “Fixed v11 decision complete evidence population mismatch” otherwise. census_support.ps1:141 applies Require-CensusOrderedIdentities to the same array. The outer wrapper calls decision_checkpoint at run_support_outer.py:37 before creating its child; the inner calls it at run_support_owned.py:68 before commands. Thus this exact freeze cannot reach deterministic-check.
+
+The same ten inversions also appear in decision-authority.json whole_run_population.files, beginning at lines 8845–8846, and in final-conservation.json accepted_run_population.files. Fixing evidence alone would leave a second refusal: support_gate_contract.py:270–271 captures the actual ordinal population and requires both arrays canonical; census_support.ps1:142 compares the actual ordinal capture with the pinned expected array. The 255-directory array is already correctly ordered.
+
+Required repair: preserve every member, byte count, hash, cap and original v11 artifact; rebuild the new authority evidence paths and whole-run files with explicit UTF-16 code-unit ordinal ordering, keeping exact uniqueness. Update the copied new conservation expectation and all enclosing v12 pins. Verify both arrays independently against the existing ordinal contract, including all ten U+10000/U+E000 pairs. Preserve the rejected freeze as evidence. Do not change the consumers, downgrade ordered equality to set equality, remove the beyond-BMP files, reorder the immutable v11 receipts or alter the three commands. This is an order-only metadata repair and needs focused static re-review before any lease.
+
+### Adjacent source and conservation bound
+
+All 358 authority evidence path/bytes/SHA mappings equal the accepted v11 handoff mappings, and all 358 files freshly hash-match. The present whole run has exactly those 358 files and 255 directories, with no reparse member observed; its membership sets match the declaration. Set equality establishes preservation here and does not satisfy the executable ordinal admission above. The accepted output subset remains 340 files, 170157 bytes and 247 directories. The v11 pending inner/outer passed=false records and separate passed=true census remain immutable.
+
+The fixed checkpoint binds the v11 inventory, plan, semantic set, commands, census set, prior prepare, both receipts, separate certificate and output manifest. It requires the seven-field identity, local readiness, the original pending receipt state, certificate/report hashes, complete expected command results, old prepare proof and pinned census selection. Its declared 910 source records are exact members of the freshly conserved 922-input execution set; the source array itself is correctly ordinal. The proof is required before launch and after conservation, and compared between inner, outer and census. This is a fixed accepted-decision checkpoint, not a generic stage hierarchy or a bypass of false result flags. Its semantics remain unexecuted in this v12 freeze.
+
+Stage and census sets each declare 922 distinct input records totaling 266721449 bytes and 20 discovery sets. Their path/bytes/hash/cap mappings match. The 20 discovery declarations remain the v11 declarations. External input records are the selected Python and bundled PowerShell dependencies; no Engine, SDK, compiler or arbitrary header corpus is newly hashed by this cheap stage. Current support_gate_contract.py 26315 bytes / 24d4b614c70f6274133b86837bd842827739c097248ad64ba73a8b34afc4747e is retained in the v11 source authority; historical stale copies are preserved as history, not substituted as executing inputs. The private checkpoint source adds its own enclosing pins.
+
+The private generator is byte-for-byte the shared generator with exactly two replacements: its inventory path and its fresh output path. It retains the old schema1 deployment metadata, 67 records and six snapshots, the independently pinned 9872-byte header SHA-256 6b5e02aef89d7f3f87cf23679c7549195d86ef0405998e03506f6fa0f170d026, lexical confinement, no-reparse ancestry, capped Limit+1 read, opened/final size and hash checks, CreateNew and readback. No Source schema2 adoption or policy2 interface change occurs.
+
+The plan retains eight stages and 95 commands. All seven other stage objects equal candidate-v8. Generator prerequisites remain []; its ordered commands are deterministic-check, fresh-copy-readback and existing-destination-refused, with required exits 0/0/1 and the two original marker strings. Only the private generator location, fresh output location and enclosing freeze/cache namespace change. The runner compares each actual exit to its declared expected exit; the third command's expected exit1 remains a successful negative control rather than a cleanup error. Job assignment and exact identity admission precede resume; held waits, exit APIs, accounting/events and final handle closure plumbing remain in place.
+
+The envelope retains the typed literal outer-nine and census-ten argv vectors, selected nine/two environment rows, durable before proof, admission before indexing, callback invocation, exact absence/empty/value restoration, independent original/restore/receipt diagnostics and post-disposal final reporting. These are source-preservation conclusions, not an observed v12 restoration or cleanup result.
+
+The 37 frozen leaves, 5085629 bytes, and handoff source pins were freshly verified. Final conservation declares 3076 unique protected rows / 426031248 bytes. All 2673 prior protected records outside candidate-v11 retain their recorded pins; the 1276 before records retain their path/bytes/hash mappings. Four descriptive before-record caps narrow in the merged conservation list without byte changes. The old 1631-file/893-directory prepare record remains bound through the unchanged prior-prepare descriptor. This review did not redundantly rehash the entire runtime or historical large corpus. The future r50-v12-generator root, generator-copy, cache and declared Python alternative-selection paths are absent at inspection.
+
+### Exact reviewed freeze
+
+All paths below are under Artifacts/support-v2/candidate-v12-generator unless stated otherwise.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 8443 | 03eb0d4a106226310f72f956a64a83102a37dc65eeebcd13af210335751b42d1 |
+| freeze-files.json | 12360 | 7400b8d3e0ccaceca6b1969626733ab1dce2100cc023b3ec4f3685dd2c5afbf9 |
+| inventory.json | 11300 | 9968ea39788b2be9ca563956e651e661438c5d3fda01d93b9f9ffd9f02735214 |
+| decision-authority.json | 446585 | 1a12c9fa08aeab065bb6f515758369abfce34b54a1dba34ecb7029ef1eb7d04e |
+| contract-before-code.json | 2705 | f6e124f36e58cf8234e16928fd391a1a18e562af4e66e4ccd79bd6e4bb8bc8f6 |
+| dispatch-proposals.json | 10707 | e6143227a950e7316d69914c38bdabbc563fbd395656ffafea0d9dcce2fa34db |
+| dispatch-plan.json | 219421 | cda803ca75e6bc8bff76cc0dec1412b18d01aa21c9568dad194d22a3481bc080 |
+| stage-inputs.json | 308340 | 59bb04fccf4200dfdaf9a25215c9e70bf74c2a5ad37caea659f7d0e06c04e4a8 |
+| census-inputs.json | 269946 | e0cc8a28a4b7e8d886ec821eab9d846ca6bd365511eeafdfe510658ce9966d8e |
+| generate_support_deployment.ps1 | 7256 | 632f9ba36174853c70e34688d5bcbfca26b0345498a068f135963a691852496a |
+| support_gate_contract.py | 33772 | f5a494c8c56af6b591ff17b9d4c30d91a14a826e2c61e1e48781c681b7e7a779 |
+| run_support_owned.py | 15457 | 34a80e33c463d25554552530e2a961a27424797497520d4be95efd8fc195d084 |
+| run_support_outer.py | 7605 | cf82f7572ff1aaf58a90b9b9d241b1445c050829bc1ecebe39bf8573518b5cac |
+| census_support.ps1 | 30601 | 0feff38678f352512de2c0676f29604ee5cc4f2a5c252e171216e1ee5fc08437 |
+| stage-environment.ps1 | 20623 | 79dfebb88da4b31d43b2f114f8d3238ba7ac3e8bb994224eefe46b59fbbba88f |
+| environment-contract.json | 6752 | a986ff6ed7a22fd4e050b75162788bb1515d17df3499016f5a3fb9894459fe92 |
+| changes.diff | 506232 | 5f27a08395755412238677c813edaf672c152a8a654ba4746a8077512e2e17fa |
+| final-conservation.json | 1134673 | 6a75b3848327121a2194a838abe6e2f76dc95d6b729da6ee38052718a45c217d |
+
+The configured bounds remain 30 seconds per generator command, 180 inner, 300 outer and 180 separate census. Generator Limit+1 allocation/provider cost has not been measured against the 30-second bound. The direct census host's own PID/FILETIME and descendant denominator remain unreported; the retained accepted v11 certificate is the exact original-nine query result, not additional census-host ownership evidence. All v12 generator/checkpoint/physical results are UNRUN. No full Native95, compiler, Engine, Source2 compatibility or product acceptance follows from this static review.
+
+Release: one metadata ordering finding requires narrow repair, refreeze and focused review. No execution lease is recommended for this freeze. The reviewer changed only this authored append and leaves no process, helper, query, gate or lease.
+
+## R50-24 focused static closure — ordinal metadata and propagated pins (2026-10-13)
+
+Independent read-only re-review of the frozen candidate-v12-generator repair at Native base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. The complete preceding 362749 bytes, SHA-256 28edff1f0c3a0d04b7791e287963a96bf1c030f4b4a9b831f45b18d57c0f03f4, are preserved. Scope is the R50-24 ordering repair, its enclosing pins, the explicitly authorized single envelope contract-digest replacement and preservation. No candidate import, syntax check, generator, environment mutation, Job helper, CIM, compiler, Engine or gate ran.
+
+Verdict: R50-24 CLOSED statically. No material finding remains in this focused repair. The frozen literal generator-only proposal is eligible for Root's separate lease decision after the shared execution resource is free; this review neither grants that lease nor establishes a semantic pass.
+
+The current decision authority equals the rejected authority with exactly two changes: its 358 evidence records are sorted by their absolute path in UTF-16 code-unit order, and its 358 whole-run file paths are sorted in that same order. Membership, uniqueness, bytes, hashes, caps, 910 source records, 255 directories and every other authority field are unchanged. Reviewer-owned metadata comparisons independently confirmed both complete vectors and all ten literal U+10000-before-U+E000 pairs. The current final-conservation.json equals its preserved predecessor with only the copied 358-file array reordered. The new repair conservation's ordered vectors agree. The existing Python and PowerShell guards are unchanged; no set-equality substitution or weakened admission was introduced.
+
+All 358 accepted v11 evidence files freshly hash-match. A fresh regular/non-reparse traversal finds exactly the declared 358 files and 255 directories in ordinal order. The accepted stage-output subset remains separately bound at 340 files, 170157 bytes and 247 directories. Original pending inner/outer receipts, the separate passing original-nine census, old source identity and prior-prepare authority remain unchanged.
+
+The five private executables other than stage-environment.ps1 match their preceding hashes exactly: generator, Python contract, inner runner, outer runner and census. The envelope is byte-identical after replacing exactly one 64-character literal at line112: the old environment-contract SHA with the current 4ce900e5520c69269e9c83268796875f4d51468d8e47c42b749ba8dda460a7b1. No control flow, setter, restoration, diagnostic, disposal, physical accounting or query logic changes. The environment contract changes only the two literal inventory digests. Its actual nonempty-string outer-nine and census-ten vectors exactly equal the proposal vectors; both carry the current inventory hash. Proposal argv and serialized command strings bind the current inventory and envelope hashes.
+
+Inventory, environment contract, proposal, prepared metadata and the updated precode descriptor equal their preserved predecessors after only the necessary hash substitutions. Active local enclosing references resolve to exact bytes; the review checked 3157 descriptor occurrences with 14 unique current v12 leaf targets. Stage and census documents each change only the decision-authority row digest. Both retain the same complete 922 records / 266721449 bytes and unchanged 20 discovery sets. Native-local checkpoint sources freshly match. The complete runtime corpus was not redundantly rehashed for this static repair; dispatch still must perform its required current before/after conservation.
+
+All 54 current frozen leaves / 8939373 bytes freshly match with regular, non-reparse ancestry. All 37 rejected freeze members are recoverable at their unchanged path or an exact narrow before copy. The 4035 original preservation roles independently map to exactly 3113 retained records / 431116877 bytes. This establishes the declared preservation mapping without substituting a new runtime gate for historical evidence. Original v11/v8 outputs, the old 1631-file/893-directory prepare authority and prior review remain bound. The full plan, generator command descriptor and prior-prepare descriptor are byte-unchanged. The new generator run, output-copy, cache and declared alternative Python-selection paths remain absent.
+
+Exact reviewed pins, under Artifacts/support-v2/candidate-v12-generator:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-24/handoff.json | 7597 | 85dcaa7fe3edae0bd9039a6013f96105dae63ef03e8dfb69dd7ca955c329080a |
+| handoff.json | 10224 | 9e6ab04423dc9ec2869c74c0a07dc20d49124cd21d5de1834e53b215f528fff9 |
+| freeze-files.json | 17972 | 30d602c3949686519f0d078fca8b334b668c604529a454f5d25d48ff2416d99d |
+| inventory.json | 11300 | d36e0c69d91892fab6c663a741b1e906ae9f36aeee6c3c5a9c2c5a409260ea30 |
+| decision-authority.json | 446585 | d7ecfe068a3c26ce89fcaab6f1a6430cacf15d6dacef2d0c2202985b76285cbf |
+| dispatch-proposals.json | 10707 | d82d3530557eae8fceecd8030f5c134ff12eb63972d60431e11a4eaf1dbf7e5a |
+| stage-inputs.json | 308340 | 59f741db6da5d9b720d5bd0be0bcb816832b7b5cc2092a2e6a9b5515292703f1 |
+| census-inputs.json | 269946 | 253753e372bf3d4901964e77c0af47e215ae356220d214e716951d9ea09f912f |
+| stage-environment.ps1 | 20623 | b8ad6f98c886a0dc8c6c38cb02a43ac71ee438bdacd3a663e8eb459000796c54 |
+| environment-contract.json | 6752 | 4ce900e5520c69269e9c83268796875f4d51468d8e47c42b749ba8dda460a7b1 |
+| r50-24/changes.diff | 42052 | 21f7b26a941b717a8eeaa459d5f69ca37aad348af79ac73ec832f4b098c2ed21 |
+| r50-24/conservation.json | 1191359 | 7f080b8d97b937f711dbbfae28509df8e1fbadf32ae5f133b37bcd153137fe9a |
+
+The original three command names, order, flags, required markers, expected exits0/0/1 and empty generator prerequisites remain intact, as do Native95/eight stages. Bounds remain 30 seconds per command, 180 inner, 300 outer and 180 census. Actual generator/checkpoint semantics, performance and physical cleanup are UNRUN. Limit+1/provider cost remains unmeasured, and direct census-host PID/FILETIME/descendant coverage retains its existing qualification. No Source2, policy2, native source-pair, full Native95, compile, Engine or product acceptance follows.
+
+Release: focused static closure accepted; Root may consider only the frozen generator-only dispatch and its required subsequent result/physical review. No later stage advances. The reviewer changed only this append and leaves no process, query, gate or lease.
