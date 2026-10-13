@@ -1086,3 +1086,69 @@ The metadata freeze contains exactly seven leaves totaling 344210 bytes. The rev
 The unchanged envelope remains 20586/bdf04f0e0c7adf1ccd951a151931a18ce41c9bcfab469e24411ca1cbbcf525ea; its contract remains 6703/950228493c09dedf7a4e3232437fdc8c751f062f1bcc3c1eb54b24e2e7567efb. Original Native inventory remains 107615/965c776e53ab371f405c99f6e20a48f3e03654618cae01749717f3cb7d900130 and Native census source remains 19153/2df461f4a67cfd4e89e80540d5a4b3d9c6d34a8b2c4ce1fd877c9ed3987b13d4. Old v9 and control freezes remain 3285/22aca18486a829af1b2d35f1cb2b36f64ca08f72090976be8ceed7f7e6dc085b and 2743/3a565e788fa249eca7412a7c9edfc0d2e28f480d4f296913d4d70aa17eb085c4. The old problematic proposal remains preserved rather than overwritten.
 
 No new full runtime or Native-output revalidation is claimed by the metadata package or this metadata review. Retained small-arm 851/312 populations, original Native prepare's 869 inputs and complete 1631 outputs, and the applicable Native census inputs remain subject to the assigned fresh checks before/during a later lease. Existing local prepare-three acceptance and separately closed physical cleanup are unchanged. Actual Native C++ fixtures, remaining Native95 commands, later full envelope/Native census, Engine and Source pair agreement remain outside this accepted small-arm/metadata bound. R50-16 is closed for the observed argument-construction/admission defect; R50-17 is closed for this frozen replacement proposal. Root alone decides and owns any subsequent execution. Reviewer assignment released with only this canonical append written and no process or lease retained.
+
+
+## Focused candidate-v10 static review — reader admission blockers (2026-10-13)
+
+Verdict: do not lease the small reader arm at this freeze. Two scoped findings require repair/refreeze: R50-18 blocks fixed input admission in the owned wrapper, driver and separate census; R50-19 misstates the two fresh output namespaces in metadata. No candidate code, selected function, syntax check, import, fixture/control, Job, CIM query, compiler, Engine or gate was executed. The review stopped at the adjacent admission contracts after readiness was disproved, as Root directed. No later prep-path-controls acceptance or performance result follows.
+
+The preceding complete 254242-byte Review50 prefix, SHA-256 484eec4aa70d425a2142cf9634c944f2604e9233188c20d5090d45b4c795bb0f, is preserved. Native workspace remains C:/Users/38909/Documents/github/maps/artifacts/unreal-support-v2/worktree at assigned base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. All paths below are relative to that workspace unless specified otherwise.
+
+### R50-18 — new required fixed inputs are outside the small arm's admission lists (P1)
+
+Three actual code boundaries disagree with the pinned small-input population. These are deterministic fixed-path refusals, not observed runtime failures or symbolic-link privilege failures.
+
+1. Artifacts/support-v2/r50-v10-reader-controls/run_controls_owned.py:15 omits tools/runtime/support_census_contract.ps1 from ROOTS. The small inventory includes that exact 4867-byte/ce72b4ec source at inventory.json:103. During main's before-conservation at line 131, conserve at lines 71–78 verifies every source; verify/read/guard then rejects this file at lines 20–21 because it is outside every admitted root. The refusal happens before Job creation at line 135. It cannot be fixed by changing the driver alone.
+
+2. Artifacts/support-v2/r50-v10-reader-controls/controls.ps1:36 sets the extracted production reader's roots to only the Native workspace. Line 38 then calls the extracted Verify on the independently pinned absolute bundled Microsoft.PowerShell.Management.psd1. That file is under C:/Users/38909/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/Modules/Microsoft.PowerShell.Management, outside the Native workspace. Verify calls Pin, which calls candidate-v10/census_support.ps1:11–18 Admit and throws "Census path outside approved roots." before the Management import, fixture creation and all 28 cases. The earlier Utility verification uses the driver's Fixed function and its explicit bundled boundary, so it does not resolve this later mismatch.
+
+3. Artifacts/support-v2/r50-v10-reader-controls/census_controls.ps1:12 likewise omits the exact shared helper leaf. New source-conservation loops at lines 48 and 113 verify all small inventory.sources, including that helper. The first loop refuses through Guard at lines 14–17 before it reads the outer result or executes the physical query. Therefore fixing only the owned wrapper and driver would leave the separate census blocked.
+
+Minimum action: keep the required helper row and its exact pin, admit that one fixed helper leaf in both small-wrapper read allowlists, and use the already pinned fixed bundled-module admission for the driver's Management verification. Do not broaden production read roots, admit all tools, remove a required input, skip before/after verification, or change the 28 expected cases. Preserve the current freeze, apply the narrow small-arm changes, update dependent source/inventory/proposal pins, and have the exact boundary changes re-reviewed before the first small lease. The original accepted OwnedJob/physical helpers need no change.
+
+### R50-19 — required_absent contains one concatenated path (P2)
+
+Location: Artifacts/support-v2/r50-v10-reader-controls/inventory.json:282–284. The required_absent array has one string containing the run path, a space and the owned-fixtures path. It does not contain two independently named paths. A preflight consumer would inspect a nonexistent combined path rather than establishing both intended absences.
+
+The current executable checks are separate: the owned runner checks BASE/run at lines 124–126, and controls.ps1 checks owned-fixtures at line 40. Thus this is a frozen metadata defect, not evidence those source checks are bypassed. Serialize two actual strings for the two intended paths and propagate the resulting inventory/proposal pins. Preserve those direct executable checks. At review time both real paths were absent; that observation does not make the joined contract valid.
+
+### Adjacent static observations and limits
+
+The production reader changes were inspected as source, including the complete census script and its extracted-control call sites. Pin uses fresh BCL attributes and FileInfo admission, the bounded sequential 1 MiB hashing buffer, actual stream length, actual byte count and SHA, then the shared final predicate and renewed ancestry check. Read-JSON retains its bounded first-size-plus-one read, opened-size/count checks and final check. Capture-CensusPopulation uses DirectoryInfo enumeration, fresh child admission, typed lists and the existing ordinal population helper. Require-CompleteOutputs still binds the complete file/directory population, canonical output identities, independent discovery expectations and every output pin. There is no new cache, intentionally omitted member, larger cap or expanded 180-second census budget in the inspected changes. This establishes static structure only; no acceleration or race behavior was measured.
+
+The 28 literal cases remain five positives and 23 negatives with 29 total proof rows. The driver selects exact pinned production function definitions and the exact shared ordinal helpers. The v1 literal contract remains retained; v2 records the existing helper diagnostic labels and distinct NTFS directory names without changing case names/counts. The final correction uses an actual first size of two followed by an actual append/opened size of three. The changed-final-size witness reads its actual owned file, then changes it and calls the shared final predicate. Those witnesses test the declared predicates; they do not claim a concurrent full Pin race. Actual link/junction creation remains a future host operation that must either work or stay RED. No primitive or case is accepted from its prepared source or lexical receipt.
+
+The small adapter diffs retain the prior ownership/physical implementation apart from the namespace, source and expected population changes. The fixed creator and physical helper pins remain 1abd74552bac8a61f6a136b2563512056bd5c1e491e74dc7acd6d9eabd440588 and a4bda9b00c18cdcfa203b351f3e1c8e61047693506ca08b11e1367188fe14899. No cleanup or physical success may be inferred when before-conservation refuses before Job creation. After repair, the actual 28-case result, complete before/after input population, fixture removal, held identities/waits/exit APIs/events/accounting/handle closure and separate exact census must still be observed and reviewed.
+
+The new Native execution inventory is explicitly separate from the old accepted prepare authority. The Python and PowerShell changes refer to independently pinned prior-prepare.json, old inventory/identity/plan/command/semantic/census metadata and old outer/inner/certificate/output records. They do not substitute the new inventory digest into the old certificate. The selected old dependency remains an empty output selector in the plan while complete old output verification is separately explicit. The stage source accepts only prep-path-controls; the original eight-stage plan is retained. Original old authority identifies 1631 outputs, 153377880 bytes and 893 directories. This review checked those manifest bindings, not the entire old output data again.
+
+The envelope diff retains the previously reviewed raw nine/ten-vector guard, explicit admitted-vector callback, nine/two selected Process environment rows, NullString/empty distinction, before-proof barrier, restoration and independent error/final-reporting flow. Its changed paths/stage/pins target v10 prep-path-controls. The three original commands remain prepared for their original output locations with inner/outer/census bounds 240/360/180. No prepare rerun is proposed. The new stage and census metadata enumerate 873/262075923 and 876/262398081 respectively; the small population is 16 sources plus 842 runtime records, or 858/260604553, with the separate 312/236646224 census runtime. These are prepared populations, not observed new runs.
+
+Root's accepted old real census is preserved as old authority. Its reported long duration motivates the reader change but supplies no new timing result. The unrecorded direct census host PID/FILETIME/descendant qualification remains explicit; neither the small arm nor this source review silently supplies it. The old v8/v9 failures, controls, actual receipts and current66/retained66 are preserved. Full downstream stage readiness was not certified after the small-arm blockers were found.
+
+### Inspected freeze and conservation pins
+
+The reviewer freshly matched all 36 candidate freeze leaves, totaling 1059327 bytes, plus the referenced old authority, narrow before-copies and current66/retained66: 190 unique local files totaling 8026642 bytes. All sizes/SHA-256 values matched. A metadata walk checked 268 unique leaves/ancestors with no reparse points. The actual small run, owned-fixtures and r50-v10 namespace are absent. No external SDK/runtime corpus or complete 1631-output hash pass was repeated.
+
+| Artifact under Artifacts/support-v2 | Bytes | SHA-256 |
+| --- | ---: | --- |
+| candidate-v10/handoff-v2.json | 4715 | e2c2a7b8b7ad8f0022d2eb33f88316fe2cc8a075e345924b08e269def41fb1f1 |
+| candidate-v10/freeze-files.json | 12065 | 5f18a8f2f1b744233e191c644ccfaac8541b5c5f9b1f7f21996a269611f22f6d |
+| candidate-v10/handoff.md | 5186 | 35388884fa1b5dfeea6baa58ee71dd85618cfd02ba407265b527983d6d71751d |
+| candidate-v10/inventory.json | 11103 | e5355ea4d40cc471bcdbfea3fecb2be00e43a89ba639b4096cde04ae4b6e3bf5 |
+| candidate-v10/dispatch-proposals.json | 10857 | 036cf07a0c59730d5fe00a865f8649086200084fc9f836b1b59261a4679c3369 |
+| candidate-v10/prior-prepare.json | 5990 | e58c820f747918aa71632e1885c0657481bd97ce1090dcc4bcbd2812a5b77d49 |
+| candidate-v10/census_support.ps1 | 23886 | 8cc7f47ae44d94e93e5426e19f0779affeda3562481ebc04e3bf5fa1c4f423e3 |
+| candidate-v10/support_gate_contract.py | 28705 | 39c163ab29bdfe36d481e5da8e9f100ad1eef5a90f4c18a676fa04b5c6489a19 |
+| candidate-v10/stage-environment.ps1 | 20622 | d5c7641cfd636cc80811f4328d9bbfdcfa2a1dc83bb3e526eb76bda36141fc0c |
+| candidate-v10/control-correction.json | 3396 | 1b90ad3a87736facd269de886b15ca42408a2fb67b9df22cf1e5564bc65bcc36 |
+| r50-v10-reader-controls/inventory.json | 14232 | 4f0ecf00b8520cb40f4a56c0862383daff892a16f1ad618fafbb1b1f87313ef1 |
+| r50-v10-reader-controls/dispatch-proposals.json | 5433 | 89798a4e0efd42a90922b1059c11799eb95e2024ddd7b690e92851922add507b |
+| r50-v10-reader-controls/controls.ps1 | 15449 | 181adc25686ae1e4c716727ee326e723ce4eed88b92707d46cc6afe1a59de456 |
+| r50-v10-reader-controls/run_controls_owned.py | 14396 | fb9a0eb68194255d3985fc1f4444882b43693d1be72f629c538a4ff4bf36d554 |
+| r50-v10-reader-controls/census_controls.ps1 | 17536 | 72a9ca38e397d0de4ea13e06c4a10cc822bd08a773b6f72014770b84324be03c |
+| r50-v10-reader-controls/expected-contract-v2.json | 7787 | 836cd4c1bc1c73041926f05e471f14a85c92409a1a41a2506dc588034582f79b |
+
+The four PowerShell/four Python lexical-file observations and corrected driver reparse observation are author receipts, not a reviewer semantic run. All small semantics, next-stage commands, real new census/timing, native compilation and Engine work remain UNRUN. No execution is recommended at this freeze. Root owns the narrow repair assignment, focused re-review and any eventual single small lease; a later Native stage requires actual small success, physical closure and result review first. Only this canonical appendix was written. The reviewer releases the assignment with no process or lease retained.
+
+Clarification: the corrected driver's repeated parser observation above means its lexical ParseFile receipt only. No filesystem reparse control was executed.
