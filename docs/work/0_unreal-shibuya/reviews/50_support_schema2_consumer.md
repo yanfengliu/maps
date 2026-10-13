@@ -594,3 +594,32 @@ The independently checked discriminator freeze has 11 leaves / 116,266 bytes; no
 The preserved lexical record is 3,152 bytes / `e6e4de9f1ec492eec0cf25bab21842edbb1540bd4089031d43026c9162bf0328`: it records the initial reserved `Data` invocation RED and retained source, then four authorized lexical checks passing after renaming to `OwnData`. Those are worker-observed lexical results, not reviewer-run or semantic evidence. Selected AST invocation, archived-old RED, all eight current dispositions, normal probe and actual Job/CIM behavior remain UNRUN.
 
 The discriminator remains one owned command with argv8/10/10, sources9 / 143,724 bytes and runtime842; the normal package remains argv8/14/10, sources6 / 136,847 bytes. Both use the unchanged PowerShell312 census set and process10/outer30/census20/whole60 configured bounds. Only the actual postexit outer-report hash is a deferred census argument. Root must accept a repaired/refrozen discriminator and its actual result before any separate normal-probe lease. This review grants neither lease and implies no environment-envelope, Native stage, Source agreement or city acceptance. Assignment released; no process or resource held.
+## 2026-10-13 — R50-12 narrow static closure
+
+**R50-12 is closed at the static preparation bound. No new material finding was found in this exact one-line repair. Root may consider one eight-case discriminator lease and its required separate postexit census against the pins below.** This is not a lease grant or a semantic pass. The normal nine-plus-two probe still requires its later, separate decision after the discriminator result is accepted.
+
+[discriminate.ps1:44](C:/Users/38909/Documents/github/maps/artifacts/unreal-support-v2/worktree/Artifacts/support-v2/r50-v6-null-proof-discriminator/discriminate.ps1:44) now checks `$pin.Parameters.Count` and `$pin.Parameters[2].DefaultValue.Extent.Text`. These address the function-signature parameters declared by both actual census Pin functions. The exact three-parameter and third-default-false assertions remain intact. Comparing the complete before/current source text confirmed exactly two replacements of `$pin.Body.ParamBlock.Parameters` with `$pin.Parameters`, both on that line, and no other source change. The 32-byte reduction matches the frozen length delta. The surrounding actual AST selection and assignment logic were not rewritten.
+
+I read/hash-checked only this delta, its metadata and preserved inputs. No candidate import, lexical parser, selected AST invocation, control, CIM query, native or Engine execution occurred in this review. The changed-source lexical receipt records the worker's authorized ParseFile result: exit0, zero errors, 0.0223717 parser seconds / 0.2623529 tool seconds. Its subject is the exact new driver below. That receipt does not establish the assertion's runtime behavior, the archived-old RED or any of the eight dispositions. Those remain UNRUN.
+
+The inventory changes only source pins/lengths and its descriptive preparation status. The proposal changes only dependent identities/lengths and the resulting source-byte total. Exact case names/order, archived actual old source, zero fixture, selected helpers, launcher, census adapter, owned output paths/caps and process environment declarations remain as previously reviewed. The normal package's eighteen frozen leaves are byte-identical; only its handoff cross-reference/status was refreshed. No settled R50-10, normal matrix, physical helper or production review was repeated.
+
+### Exact inspected pins
+
+Paths in this table are within Native `Artifacts/support-v2/r50-v6-null-proof-discriminator/` unless otherwise stated.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `handoff.json` | 8846 | `455abbea62da74fdc0228aad11dc311e0161c595e366003bdeaed11fb54ec291` |
+| `freeze-files.json` | 4563 | `acc47788e426840d6b82d9b10a94f173b1d7e37e2c970c068ac0486dac7e0daf` |
+| `discriminate.ps1` | 10181 | `30c0d2a65733d2c2558e86b186c162908a045cd76d521da1f760d47cf6d22dcc` |
+| `r50-12-source.diff` | 1887 | `30c3b2da417103e6d0787f00e625a0d6bff19162a921a435fffe2464511f7ccd` |
+| `inventory.json` | 12496 | `cefb2f3dc8ed3966f1ec08ce0491c03c88468f20e271e8bf15bc9f303fbe2b93` |
+| `dispatch-proposals.json` | 15287 | `5353cd90266e4adea0c4dc319cc0f83a66999df8499d5941e1ba6f4c4679ad33` |
+| `r50-12-lexical-results.json` | 1247 | `912f00d8b24dcd12726ce85975b82a2eee14897667153a0d2c69ce98cb91aafd` |
+| `../review50-before-null-r50-12/preservation.json` | 16177 | `b473e7b3173e3d72ed84c9640f42d5687519b4381bd1c5ec03f973a36bc07596` |
+| `../r50-v6-null-probe/handoff.json` | 10301 | `7609b2a680be572efa6de8728f12330f4a29102e47cd85d315b9cb933a541fb6` |
+
+All thirteen current discriminator leaves / 122,501 bytes and eighteen unchanged normal leaves matched their exact indices. The narrow preservation pass included the seven retained affected copies, recovered previous twenty-nine frozen references, all nine current discriminator source descriptors, old archive index and full private 139,241-byte review. It covered 81 descriptor rows / 44 unique paths / 1,035,809 bytes, with no hash/length conflict or reparse attribute among 59 examined leaf/ancestor paths. Both handoffs were separately hashed. Both future run namespaces remain absent. The current review's complete 139,241-byte / `41ecdba0f9e1a94ae8af4913b8c6b9ffae20acd74d8216008978d976a5e58f34` prefix is preserved byte-for-byte by this sole append. No unchanged runtime deployment, Source population or large historical output archive was redundantly rehashed for the one-line fix.
+
+The discriminator still has nine source descriptors, now 143,692 bytes; the owned set remains 851 records / 260,263,928 bytes. Runtime842 and separate PowerShell census312 / 236,646,224 bytes remain unchanged. Invocation dimensions are 8/10/10; configured process/outer/census/whole bounds remain 10/30/20/60 seconds. Only the actual outer-report SHA after physical wrapper exit is deferred in the separate census command. Use the newly pinned inventory/proposal for any Root-authorized run, preserve the actual eleven-row/eight-case result and old-RED detail, and require the existing exact identity/held-handle/Job accounting plus separate no-survivor census before acceptance. No normal probe, environment-envelope fix, Native stage, Source agreement or city acceptance follows from this static closure. Assignment released; no process, resource or lease held.
