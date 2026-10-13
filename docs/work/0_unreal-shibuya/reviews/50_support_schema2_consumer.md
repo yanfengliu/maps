@@ -1011,3 +1011,78 @@ The existing Native inventory remains 107615 bytes/SHA-256 965c776e53ab371f405c9
 Runtime descriptors remain286181/9f062be843ad60332ec069d49d001fed2b0aba3cead306ba3f86f01f61d2a71e and106216/5282118ff3dc1a1c7d471c3c9c93f8dd15d91df2409e61774bd71cfc7c85e915. Their data rows contain842/260120236 and312/236646224 respectively, with integer member byte values. Together with the nine local sources the semantic population is851/260274810. No broad runtime/SDK rehash was repeated here. The actual frozen bounds are integers10/30/20/60 and output caps100000/100000/1000000/1000000. Freeze/handoff aggregate sums formatted with .0 are descriptive metadata, not the stricter leaf admission inputs; they match exact integer member sums and are not a finding.
 
 The retained authoring and three-file PowerShell lexical receipts are author observations, not reviewer execution or semantic proof. Python syntax, selected AST execution, all nine causal rows, owned launch/cleanup and the separate control census remain UNRUN. The prior normal9+2, v8 eight reporting controls, local Native prepare3 and qualified physical cleanup prove only their recorded bounds. No native C++/Native95/Engine/Source pair agreement or outer-role adapter acceptance follows. R50-16 is statically repaired in this frozen v9 source, with actual closure pending the small arm; R50-17 remains open only for the later proposal. Root retains every lease and acceptance decision. This reviewer changed only this append and releases the assignment with no workload process or lease retained.
+
+
+## Combined v9 actual argv controls and R50-17 metadata review (2026-10-13)
+
+This round accepts the actual six-class argv control result within its declared bound and closes R50-17 for the separate frozen census-ready metadata package. No new material finding was found. R50-16 now has actual causal evidence for the selected archived/new initializer and actual candidate guard. This does not certify the complete v9 envelope dispatch, the original Native prepare stage or a later Native census. The later census remains UNRUN and requires Root's separate explicit lease and applicable fresh preflight.
+
+The complete preceding 240312-byte Review50 prefix, SHA-256 cef7227aef435732dcd44ef2ecf8b17f09ac1ba082d608cf9da2388a4dd362d1, is preserved. The initial actual-result review was completed and reported to Root without an append; this combined append was held until Root supplied the final frozen candidate-v9-census-ready metadata. No active author partial files were inspected. This reviewer used only file reads, hashes and JSON/TSV data comparison; no candidate execution, syntax check, AST evaluation, import, environment mutation, query, probe, gate, compiler, Engine or process cleanup was run. Native remains based at af8bdbd34228c69dea45dd99af4ae20d7c2a9798, with no reviewer lease.
+
+### Actual small-arm evidence and acceptance
+
+The full driver proof contains exactly ten rows: one binding and nine ordered case rows across six named classes. The binding identifies the approved control inventory, actual driver, repaired envelope, archived v8 envelope and independent expected contract. Each actual case was compared to its corresponding pre-edit literal, including decoding the diagnostic rather than accepting the final True field alone.
+
+| Actual witness | Raw result | Observed disposition |
+| --- | --- | --- |
+| Archived v8 census initializer | String, count 1, leading C | Actual Object[]/String[] container guard refused |
+| Repaired census initializer | Object[], count 10 | Admitted |
+| Unchanged outer initializer | Object[], count 9 | Admitted |
+| Joined command | String, count 1 | Container guard refused |
+| Boolean member | Object[], count 10 | Actual nonempty String member guard refused |
+| Null member | Object[], count 10 | Actual nonempty String member guard refused |
+| Missing member | Object[], count 9 | Frozen-phase count guard refused |
+| Extra member | Object[], count 11 | Frozen-phase count guard refused |
+| Reordered member | Object[], count 10 | Ordinal frozen-contract member guard refused |
+
+All nine actual rows match the independent names, witness labels, raw types/counts, leading-character literals and exact named diagnostics. The two positive rows contain no diagnostic. The archived initializer is therefore an observed causal RED witness in the same command, rather than a reconstructed string or inferred reproduction. Source selection and exact binding remain those statically reviewed in the previous round. The driver performs only selected argument construction and guard admission: zero environment setters, driver-created children, module imports or driver CIM queries. The separate owned process and separate post-exit census are outside that zero-child/zero-query driver statement.
+
+The 49-byte stdout is exactly the completion line required by the independent reader, emitted by the reviewed source after its applicable writer, stream and JSON-document disposal attempts. It is not the 27-field diagnostic population of the older envelope controls. The outer reader reports the exact six classes, nine case rows and ten total rows, with actual candidate identity matching the frozen bdf04f0e source. The child exited zero after 0.4454777999781072 seconds. The wrapper reports local_ready true, null original/cleanup/conservation/receipt errors and duration 2.311744699953124 seconds; its tool invocation exited zero in 2.3681468 seconds. Its passed flag remains false because its separate census was pending at receipt creation. That immutable flag was not rewritten after the separate census.
+
+The actual outer argument vector, child argument vector, serialized command lines, working directory and empty owned environment assignment set match the frozen proposal. The small census records the expected managed pwsh.dll command-line representation together with the actual pinned pwsh.exe host. Its selected process environment is exactly the two declared module-path/autoload values. The later Native envelope was not invoked by this small arm.
+
+### Actual conservation and physical closure
+
+The reviewer compared all 851 ordered semantic input records against the prepared nine source rows plus 842 runtime rows, with exact path/bytes/SHA/cap fields. Before and after arrays are identical and total 260274810 bytes. All 17 recorded directory/file/absent membership populations match their independently prepared discovery populations and are identical before and after. Both 312-row census runtime arrays match their prepared population, each totaling 236646224 bytes, and are identical before and after. The nine current local source pins and two runtime descriptor pins were freshly hashed; no broad external runtime rehash was repeated by this reviewer. Root separately supplied its fresh complete current 851/312 comparison and 0.409-second hash result. Those are Root's current-runtime observations, distinct from this reviewer's receipt comparison.
+
+The wrapper's actual before/after hash times are 0.6120403001550585/0.6478488000575453 seconds and membership times 0.18864049995318055/0.2041112999431789 seconds. All four actual output hashes match. The run contains exactly census-receipt.json, driver.tsv, outer-report.json and stdout.log, with no extra run directory; their ancestry and leaves are not reparse points.
+
+The wrapper identity is 80372/134363738992465518. The exact Job total is two: pwsh 56552/134363739002208081 and conhost 37312/134363739002355302. Assignment before resume is recorded. Both members have actual exact-Job admission API success, retained identities and held handles. Each held wait returned zero with wait error zero; each exit API succeeded with error zero and exit code zero. Two NEW events, two EXIT events and ACTIVE_ZERO reconcile; the post-quiescence empty notification poll is recorded. Final active lists are empty and active accounting is zero. Job, primary thread/process, member identity and completion-port handles are all closed. The existing limitation about late or dropped notification delivery remains part of the receipt; it was not promoted into a stronger claim.
+
+The first separately authorized elevated small-arm census completed its exact query for only PIDs 37312, 56552 and 80372. Query_completed is true, query_error is null, returned rows are empty, and no returned-PID identity is unresolved. Actual module and assembly paths both resolve to the pinned bundled root Microsoft.Management.Infrastructure.CimCmdlets.dll, with MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13 and the expected GetCimInstanceCommand implementation. Physical_clear and experiment_passed are true; native_prepare_certified is false. The actual query took 0.1723450000000002 seconds; recorded census duration is 3.1267166 seconds, and the tool invocation exited zero in 3.5009783 seconds. These individual measurements satisfy their 10/30/20-second stage bounds; the configured whole bound is 60 seconds, not a new measurement of elapsed orchestration between calls. No extra reviewer query or cleanup was needed. Root's physical closure is supported within this exact small-arm bound.
+
+### R50-17 closed in the new metadata
+
+The complete new proposal, exact delta, prerequisite record and conservation metadata were read. Applying the declared five JSON operations to the old proposal reproduces the new proposal exactly; no other field changed. The operations update the top-level and later-stage status, replace later expected_absent_outputs, add required_absent_phase_directory and add completed_prerequisites.
+
+The completed small run is now retained and pinned by its actual handoff, independent input/expected/proposal contracts and four immutable outputs. Historical initial-run absence remains in the old immutable control contract, where it belongs. The later census's own phase directory must be absent, together with its new before.clixml and after.clixml and the original v8 outer/prepare/external-census.json and census-write-timing.json destinations. The reviewer freshly found all five absent conditions true while the prerequisite run and all four outputs remain present and exact. This removes the contradiction without deleting evidence or weakening CreateNew freshness.
+
+Original child ten arguments, argument order, cwd, Native inventory, Native query source, selected two environment values, 180-second enclosure, permission statement and query scope remain unchanged. The new proposal still points at the repaired v9 envelope and its unchanged independent contract, with fresh v9 environment proofs and original v8 prepare target. The outer-nine proposal remains prepared/undispatched and expressly does not authorize rerunning the completed prepare commands. Existing failed v8 census proof and separately accepted physical cleanup remain immutable. A successful small census is not substituted for that later Native census.
+
+The prerequisite metadata's combined_independent_review PENDING text correctly records its freeze-time state. This authored review supplies the subsequent independent acceptance; no prerequisite or old receipt was edited to manufacture it. The later command recipe is statically ready for Root's single census-only lease decision, subject to fresh applicable input/output admission. The fixed code still performs the real checks and writes only its task-owned outputs; metadata readiness does not assert those checks have run.
+
+### Pins and preserved population
+
+Paths below are relative to C:/Users/38909/Documents/github/maps/artifacts/unreal-support-v2/worktree/Artifacts/support-v2. All SHA-256 values identify bytes inspected in this combined round.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-v9-argv-controls-actual/handoff.json | 4619 | 58d1e24a69673ce0a67c36bfe8c174f9ecc3bf5962482ddd6f452d5e877a71f9 |
+| r50-v9-argv-controls/run/driver.tsv | 1657 | e3ad3d3f5ae97204a30c662137be32e344009755cd0e026bc3be1342fea61abd |
+| r50-v9-argv-controls/run/outer-report.json | 599195 | 44cc0b23daae654dc49b79aac08676d90ce654155a124ffe36093dfe0d7b3ec4 |
+| r50-v9-argv-controls/run/stdout.log | 49 | 23945d97551c8e6a75715710f39e38c1e5a1cf646761859b63beed2848f9d23e |
+| r50-v9-argv-controls/run/census-receipt.json | 227282 | 109ec91e544b256b5629583fbd19cc2d9e85fcb5717cc5d025e117ec625ece36 |
+| candidate-v9-census-ready/handoff.json | 8829 | 845562023e0a4958f088ac7b8ffddb2b3647322f188c8aeb881a2ebeea99650d |
+| candidate-v9-census-ready/dispatch-proposals.json | 9353 | a95508a98d22c47ba3549222ebb2fb20f623a35c6f55a7003bc9adaa2ef3ef20 |
+| candidate-v9-census-ready/proposal.delta.json | 3751 | d2d945c82244741a0c54b2156255aa61edd362a20469b0f79d6814875c09f6b1 |
+| candidate-v9-census-ready/prerequisites.json | 3763 | 9e20fa38447c912c8087a687e67a684e05f0e34c46e8f90edcc99cbb457865a7 |
+| candidate-v9-census-ready/conservation.json | 69588 | 0be5cf089c29bda39a5aca680178a70158ab7a9258b14877bac9b456e6a0a048 |
+| candidate-v9-census-ready/freeze-files.json | 2431 | 1c9188dab741e34e8050ef0b653bfb2c4eff62b2d2ee1b9528f7961f731d16a6 |
+| candidate-v9-census-ready/dispatch-proposals.before.json | 8614 | 5464b78686c2076dd99105ef52ade25dc3a2d9ded93806922e534c3865f5de6c |
+| candidate-v9-census-ready/review50-private.md | 240312 | cef7227aef435732dcd44ef2ecf8b17f09ac1ba082d608cf9da2388a4dd362d1 |
+
+The metadata freeze contains exactly seven leaves totaling 344210 bytes. The reviewer freshly matched 245 distinct referenced local pins totaling 37497349 bytes and checked 330 unique paths/ancestors for reparse points; none were found. This includes the new metadata, old v9 candidate/control freeze leaves, old v8 native/control leaves, current66/retained66 and referenced actual small/Native artifacts. The full original 240312-byte Review50 is also preserved privately. No executable change, Native95 change, production-five/Source22/policy1/trusted67/Core/camera/pawn/lineage/instructions/helper/query change is present.
+
+The unchanged envelope remains 20586/bdf04f0e0c7adf1ccd951a151931a18ce41c9bcfab469e24411ca1cbbcf525ea; its contract remains 6703/950228493c09dedf7a4e3232437fdc8c751f062f1bcc3c1eb54b24e2e7567efb. Original Native inventory remains 107615/965c776e53ab371f405c99f6e20a48f3e03654618cae01749717f3cb7d900130 and Native census source remains 19153/2df461f4a67cfd4e89e80540d5a4b3d9c6d34a8b2c4ce1fd877c9ed3987b13d4. Old v9 and control freezes remain 3285/22aca18486a829af1b2d35f1cb2b36f64ca08f72090976be8ceed7f7e6dc085b and 2743/3a565e788fa249eca7412a7c9edfc0d2e28f480d4f296913d4d70aa17eb085c4. The old problematic proposal remains preserved rather than overwritten.
+
+No new full runtime or Native-output revalidation is claimed by the metadata package or this metadata review. Retained small-arm 851/312 populations, original Native prepare's 869 inputs and complete 1631 outputs, and the applicable Native census inputs remain subject to the assigned fresh checks before/during a later lease. Existing local prepare-three acceptance and separately closed physical cleanup are unchanged. Actual Native C++ fixtures, remaining Native95 commands, later full envelope/Native census, Engine and Source pair agreement remain outside this accepted small-arm/metadata bound. R50-16 is closed for the observed argument-construction/admission defect; R50-17 is closed for this frozen replacement proposal. Root alone decides and owns any subsequent execution. Reviewer assignment released with only this canonical append written and no process or lease retained.
