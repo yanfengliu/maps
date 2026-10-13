@@ -1555,3 +1555,108 @@ The stage has 879 unique inputs / 262139357 bytes; census has 882 / 262461515, w
 | shared tests/runtime/support_census_expected.json | 4184 | ee225819accb5199f29931d86ead2843e690257c1fd58f8e46f35fdb55e3508e |
 
 Release: no semantic lease recommended for this exact freeze. Root acknowledged the two concrete findings and owns the private literal/label repair and refreeze. Original v10 functional RED, original stage-certificate absence and separately accepted exact7 physical cleanup remain unchanged. All v11 7/39/21 checks, later Native95/compile/camera/Engine work and new Source compatibility remain UNRUN. Direct future census-host PID/FILETIME/descendant proof remains qualified as previously recorded. Reviewer leaves no process, worker, gate or lease.
+
+
+## R50-22/R50-23 focused static closure — private fixture and receipt labels (2026-10-13)
+
+**Verdict: R50-22 and R50-23 closed statically; no remaining material finding in this repair.** The repaired v11 freeze is ready for Root to consider one fixed prep-path-controls lease and its separately authorized census. This is not a lease or semantic PASS. All v11 7/39/21 checks, imports, codec lookup, Job/CIM, compiler and Engine execution remain UNRUN.
+
+This append preserves the complete 335801-byte prior review, SHA-256 db6a8cf8fe75139a3328c74cb31e0ef25aaf95a3f88dd0d3b65e3763d923eb06. Review used only static text, JSON, path attributes and hashes in the same Native workspace/base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. It did not reopen unrelated settled code or change any implementation.
+
+R50-22: independently compared the private test-copies/support_census_expected.json to the shared 4184-byte fixture. Its 4186 bytes are exactly the shared bytes with only the two independently declared r50-v8/census-controls/ps-output-nonempty-positive/ path prefixes changed to r50-v11. The ordered case names, 21-case population, flags, diagnostics, explicit counts and caps remain identical. The before-code contract separately lists both A_road.json and a-road.json substitutions. No expected value is derived from actual helper output.
+
+The copied test_support_census_contract.ps1:24 changes only its expected-file reference. Its census-control-inputs.json pins the private fixture and updated driver, retains the same helper/selection inputs, and all descriptor subjects have matching stage-input identities/caps. Outside the diff, the actual path construction and exact comparison at driver lines 35–53 and shared support_census_contract.ps1:14–33 remain unchanged. The positive case now declares the same two v11 identities that its fixed owned directory creates; absent/empty/malformed/output-population refusals are preserved. This closes the static mismatch without claiming execution of that positive or the 21 cases.
+
+R50-23: compared the complete envelope against its retained before copy. The only changes are the two receipt freeze literals at stage-environment.ps1:123 and :144, now support-consumer-envelope-v11-prep-path-controls, plus its independently pinned environment-contract SHA at line 112. Both receipt labels now agree with the contract. The environment contract itself differs only in the two propagated approved-inventory digests. The proposal is exactly its retained bytes with the new inventory, envelope and contract digests substituted. Raw outer9/census10 arrays equal the contract; flags, cwd, selected environment9/2, restore/error/disposal mechanisms and physical/query behavior remain unchanged.
+
+Independently verified all 32 current frozen leaves / 3400477 bytes and nine separately pinned repair artifacts / 428028 bytes, with regular-file and non-reparse ancestry checks. Recovered all prior31 leaves through their unchanged originals or exact retained copies, verified the ten before copies, old freeze/handoff, and full 335801-byte private review snapshot. The old shared fixture remains 4184 / ee225819accb5199f29931d86ead2843e690257c1fd58f8e46f35fdb55e3508e; the current corrected codec helper remains 26315 / 24d4b614c70f6274133b86837bd842827739c097248ad64ba73a8b34afc4747e.
+
+The stage and census input lists preserve every prior input. Their only differences are one new private literal fixture plus updated byte/SHA fields for the copied driver and its descriptor. Roles and caps remain unchanged. Stage: 880 / 262143644 bytes; census: 883 / 262465802 bytes. The original 19 discovery specifications are equal, while the twentieth explicitly lists all six private files; actual private-directory names match that exact set. The index's count and population summary, descriptor pins, prior-prepare authority and plan/command pins agree. Eight-stage/95-command plan and fixed 7/39/21 commands remain unchanged, including 60/120/60-second command limits and 240/360/180 inner/outer/census limits.
+
+All six required fresh paths, including the run root, owned test roots and pycache destination, remain absent with inspected existing ancestors. The prior complete conservation manifests are preserved. The author's new static receipt reports all 2673 protected hashes equal, retaining old1631 files/893 directories, raw13 RED, current/retained66 and production inputs. This focused reviewer verified recoverability and the new frozen records; it did not duplicate the full runtime/old-output hash census. Future actual input/output conservation remains required. The prior exact7 cleanup receipt is freshly unchanged at 8357 / 51e8571de59260af34baca90dc9dc68b1f4121938c907eb4f4dbe29ea57ec0a7.
+
+| Repaired v11 artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 8465 | 389056150075c0cf95cf14b66bfbd0348a459db6f608a865fbad88ca4b1aa55d |
+| freeze-files.json | 14252 | f8359e34c4c556ab8812475818a218b7bfea1cbd4cb3da4b2184bcd4f3356cab |
+| inventory.json | 11258 | d1369c4e08e537bdce1f3da3f51edd9fdee45b1e703f714979aa584296a53f43 |
+| dispatch-proposals.json | 11241 | 2d7dc82f2b334be721969b5f6d448237f1d75442d25acec3d0c4c50e2c87423f |
+| r22-r23/repair.diff | 24746 | d203e0000f06d4b97a93cb747317ef878c0018ebb678217953905ec0cac98029 |
+| test-copies/support_census_expected.json | 4186 | c3f37b54fe84b8aedbf944a09565e5028236c0ad9a3aa5a99ea0bea623faef15 |
+| test-copies/test_support_census_contract.ps1 | 8910 | 1089556162543139e3b07c811f56593f8cb1ef63df01d4b4b63548af7722daf8 |
+| stage-environment.ps1 | 20623 | 813df06f890275cd60fef3f230ac922a3643c27c6129d1a637d70968d82c90cc |
+| environment-contract.json | 6830 | c59e34fb685983b176662f1e71110e150ace8be86c962e9b3163857a8200e281 |
+| stage-inputs.json | 302096 | ee29d6118721b996c4155405f80774db1fed856bcdae7d2ed9c61bf62cbd7eae |
+| census-inputs.json | 263444 | e32a4eb7433f9d3c2aeb49448818dc38bdafe2ec7c71d5f03a1be78aa65af490 |
+
+Release: the two static blockers are resolved. Original v10 functional RED, original certificate absence and separately accepted original-seven physical cleanup remain historical evidence. Actual R50-20 repair acceptance still needs the authorized v11 result. No prepare rerun, later Native95 stage, source-compatibility claim or new census-host ownership proof follows from this review. Direct future census-host PID/FILETIME/descendant observability remains qualified. Reviewer leaves no process, gate, worker or lease.
+
+
+## Actual acceptance — v11 fixed prep-path-controls 7/39/21 and separate census (2026-10-13)
+
+**Verdict: accept the actual fixed prep-path-controls stage and its report-bound nine-identity physical closure. No material discrepancy found in the reviewed evidence.** This accepts the frozen three-command 7/39/21 population. It does not accept full Native95, a new prepare run, compile/Engine execution, source/native compatibility or city behavior. Root alone decides later work.
+
+This append preserves all 342264 prior bytes, SHA-256 4edb7693c0da29de3a24dfd4321ae3d53ec595afc11e62cf7fb69e843946a84c. Review used static raw text, JSON/XML, file attributes, hashes and existing directory membership only. No candidate import, test retry, process/Job API, query, compiler or Engine ran.
+
+### Actual functional result and repair bounds
+
+The raw inner report contains exactly the three frozen commands in order, with matching argv, Windows serialization and cwd, assigned-before-resume=true, exit_code=0 and physical_local_ready=true for each. The complete path log lists all seven named tests as ok and ends Ran 7 tests / OK. The Python contract log lists all four unittest methods as ok, including discovery, and emits SUPPORT_PREFLIGHT_CONTRACT_PASS cases=39. The PS log emits SUPPORT_CENSUS_CONTRACT_PASS cases=21 query=UNRUN children=0. The latter's query=UNRUN describes that control command; the separate real post-exit census did run.
+
+The 39-case marker is reached only after the unchanged independent expected-name population check; all 39 named owned case directories are present. The 21-case marker is likewise after its exact name population and per-case expected branch/diagnostic checks. These are results bound to the previously reviewed instrument; the logs do not provide a separate verbose row for every internal negative case. The source-controlled cases and assertions remain unchanged.
+
+R50-20's actual discovery failure is resolved within this scope: the corrected copied helper executes the response-order decode through the discovery cases, which now complete. The original v10 unknown-encoding RED remains preserved. The same spelling correction at current helper line 316, compile_readback's actual_response_order branch, remains statically reviewed but unexercised by this stage; the report's compile_readback timing is null. The run proves no actual compiler response readback.
+
+R50-22's repaired nonempty-positive fixture is exercised: both independently pinned v11 A_road.json and a-road.json exist in the captured output population with the expected witness content, and the exact whole-output identity comparison completes. R50-23's actual before/after CLIXML both declare support-consumer-envelope-v11-prep-path-controls and bind the repaired inventory, envelope and contract.
+
+### Inputs, outputs and immutable receipt bindings
+
+Freshly hash-checked all 358 handoff-pinned actual files / 461446 bytes, with regular-leaf/non-reparse ancestry checks. The stage outputs manifest lists exactly 340 files / 170157 bytes. Each file pin matches; independent directory enumeration equals all four frozen output populations, and their ordered union equals every manifest path. The four roots contain respectively 1 directory/1 file, 2/1, 229/296 and 15/42. The task-owned reparse test's junction is absent from the final captured population. No synthetic receipt under preflight-controls is treated as a real stage certificate.
+
+Inner-before/after and outer-before/after each report the exact frozen 880 inputs / 262143644 bytes and all 20 expected discovery populations. The current32 source freeze still hash-matches. The separate census source verifies all 883 frozen census inputs before and after its query; its successful bound receipt and exit follow those checks. The mechanical handoff additionally reports current883 with zero mismatches. This reviewer did not duplicate the complete runtime corpus hash. It checked the raw conservation records against the exact frozen inventory and retained source logic; fresh all-input checks are the recorded execution's evidence.
+
+All real report/output/census identities equal the seven-field v11 identity, including inventory d1369c4e08e537bdce1f3da3f51edd9fdee45b1e703f714979aa584296a53f43, semantic set ee29d6118721b996c4155405f80774db1fed856bcdae7d2ed9c61bf62cbd7eae and census set e32a4eb7433f9d3c2aeb49448818dc38bdafe2ec7c71d5f03a1be78aa65af490. The census pins the exact outer/inner hashes and the same outputs manifest. OLD v8 prepare authority remains separately identified and equal across all three prerequisite proof lists; its receipt, certificate and manifest pins match. No old prepare identity was replaced with v11.
+
+Both original inner and outer reports correctly remain passed=false, local_ready=true and external_census='pending after wrapper exit'. Their bytes were not backwritten. The separately produced external-census.json has passed=true and binds those exact reports; acceptance rests on the complete pair plus that later certificate.
+
+### Environment and physical closure
+
+Independently parsed all four CLIXML files as data. Outer captures/restores exactly nine selected names, census exactly two. Each before array equals the later restored array, including absence and original string values; intended equals actual applied. Captured counts and restore-attempt counts are 9/9 and 2/2, both child exits are zero, before-written/mutation/child flags are true, restoration matches, and original/restore/receipt errors are empty. Each after-proof pins its actual before-proof. Full environment values are not repeated here.
+
+Mechanical tool completion supplies outer chunks 2e40a5/bc70e7/5471b0, exit0, and first elevated census dd53f1/d969d8, exit0, with SUPPORT_ENV_FINAL_V1 outer True / census True and SUPPORT_EXACT_POSTEXIT_CENSUS_PASS. The handoff retains those final marker summaries rather than a separate file containing the full 27-field envelope stdout diagnostics. Post-disposal readiness is therefore bound to the pinned finalizer and recorded successful completion; the CLIXML is explicitly a pre-late-reporting snapshot and is not substituted for final completion evidence.
+
+The raw outer Job denominator is eight. Each command's nested denominator is two, and every nested identity exactly occurs in the outer denominator. All admissions record a held exact Job member, successful identity APIs and wait state 258 before termination. All final held waits return zero, GetExitCodeProcess succeeds with error0 and exit0, and terminated=true. NEW and EXIT notifications each cover the entire exact denominator once; a ZERO event and empty poll follow quiescence. Active sets/accounting are empty, no identity-observer error or missing EXIT identity remains, and Job/primary thread/primary process/member identity/completion-port handles are all closed. Notification completeness retains its stated observed-events/one-empty-poll limit.
+
+The census filter is exactly the following wrapper plus eight held members, with no additional identity admitted:
+
+| PID | Creation FILETIME (100 ns) |
+| ---: | ---: |
+| 9424 | 134363905707462729 |
+| 11752 | 134363905734203818 |
+| 20376 | 134363905707404291 |
+| 34712 | 134363905734053666 |
+| 37980 (outer wrapper) | 134363905561516778 |
+| 51260 | 134363905703779246 |
+| 56416 | 134363905634013339 |
+| 60316 | 134363905633944174 |
+| 76324 | 134363905703842892 |
+
+The actual query completes with remaining=[] and passed=true. Actual CmdletInfo uses the pinned bundled-root Microsoft.Management.Infrastructure.CimCmdlets.dll for Module.Path and assembly path, MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13. Host, manifest, assembly, actual pwsh.dll entrypoint, argv tail and selected two-key query environment match the independent declaration. The synchronous census host's own PID/FILETIME and descendant denominator remain unreported; this result does not create that additional ownership proof.
+
+### Timing and exact evidence
+
+Command durations are 0.3492365 s, 2.6529699 s and 0.7959209 s, within frozen 60/120/60 limits. The after-write receipts report whole inner 14.9233915 s, outer 26.0168270 s and census 20.7375111 s, within 240/360/180. Mechanical wall totals are 26.24352 s and 21.1720358 s. Actual CIM time is 0.1714851 s; recorded census output/prerequisite membership time is 9.6667453 s. These are this run's measurements, not a whole-pipeline estimate or generalized performance claim.
+
+| Actual artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-v11-actual/prep-path-controls-handoff.json | 96073 | f0f37a72c32f5b129be2725ca10b6f953121c0d3abd0b16b41d8c3f2cede960c |
+| outer/prep-path-controls/report.json | 20361 | 1bc262f9ba1a8e59532d6d4d355189ac07b25d1cce4558336d40151caef43ea9 |
+| dispatch/prep-path-controls/report.json | 24847 | 7efe476cb0d19522f8b4a4934ca5fcd7c71bf9becd1387818f1f03890aca680e |
+| dispatch/prep-path-controls/outputs.json | 162492 | 224c90fe387d7b98ee8e3100140b70518ddae38af3ea33a2fd70744cb89a5fb8 |
+| outer/prep-path-controls/external-census.json | 11895 | 47b6a3b0722564143acc793f09381c281c0326e65213d5f58b115e9b883655b8 |
+| dispatch/prep-path-controls/actual-preparation-path7.log | 821 | 18fcde3b2ad00192bc89a5d06216afa24ff3428949bdae6f79b822aee44839ba |
+| dispatch/prep-path-controls/actual-prelaunch-contract39.log | 465 | 9f05cdfd4bb58417fd2f17f1fa32449d511ef52b78d5fc2e001e39d8eba18c17 |
+| dispatch/prep-path-controls/actual-census-contract21.log | 62 | 11cc505e9f7c773038967c2b736ef69ab83b7af8fa92691765ffa4f1ec715735 |
+
+Paths in this table except the handoff are under Artifacts/support-v2/r50-v11. The handoff's complete 358-file inventory binds the four inspected environment proofs and all remaining small actual artifacts.
+
+Release: fixed 7/39/21 functional result and original-nine physical closure accepted within the stated bounds. The historical failures and separate cleanup evidence remain intact. No later-stage authorization or full native acceptance is implied. Reviewer leaves no process, query, gate, worker or lease.
