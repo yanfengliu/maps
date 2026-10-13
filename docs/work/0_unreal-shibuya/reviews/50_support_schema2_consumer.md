@@ -1500,3 +1500,58 @@ Exact actual pins, relative to Artifacts/support-v2/r50-v10-cleanup-only; hashes
 | dispatch-proposal.json | 5555 | 27fbd1863650e03b663214a0a9265c824100605f974b0d61f7f8edec5f14051f |
 
 Release: the cleanup-only result closes the preceding external physical-pending condition for the original seven identities. It leaves the original functional failure, incomplete contract39 population and unrun census-contract21 intact. Root owns any subsequent repair or lease. Reviewer leaves no process or lease.
+
+
+## R50-20 focused static re-review — candidate-v11 codec and fresh retry namespace (2026-10-13)
+
+**Verdict: hold this freeze; R50-22 and R50-23 require the narrow namespace repair below.** The current helper's two codec spellings are corrected exactly, but the fresh PowerShell control still consumes old output-path literals. No v11 semantic check, import, codec lookup, Job, CIM, compiler, Native or Engine command ran in this review. Root alone owns repair, refreeze, acceptance and any later lease.
+
+Reviewed the frozen Native workspace at base af8bdbd34228c69dea45dd99af4ae20d7c2a9798 under the existing independent reviewer assignment and multi-cli-review instructions. This append preserves all 326184 prior bytes, SHA-256 c2c037013ed70b628635427d643dc8cc1506e562819bd6931f718d57bfc7cdb3. No implementation or other canonical document was changed.
+
+### R50-22 — P1: fresh census controls consume the old nonempty-output paths
+
+Artifacts/support-v2/candidate-v11/test-copies/test_support_census_contract.ps1:24 still reads shared tests/runtime/support_census_expected.json. Its ps-output-nonempty-positive case at shared JSON line 6 declares two relative files under Artifacts/support-v2/r50-v8/census-controls/ps-output-nonempty-positive/. The copied script's base at line 8 is r50-v11. Lines 35–36 create the two v11 files, lines 43–46 enumerate and name those v11 files, and lines 49–52 union the explicit expected paths with the newly wanted paths before exact population comparison.
+
+The actual unchanged helper tools/runtime/support_census_contract.ps1:14–33 resolves the literal relative paths against the workspace; it does not translate their namespace. Its Require-OrdinalPopulation at lines 7–12 requires exact count and ordinal identity. Thus this positive case produces two actual v11 identities but four distinct expected identities, comprising the two v8 literals and two v11 files. It must refuse with Census expected-output-owned mismatch. This is a static consequence of the admitted strings and code, not a claim that the control ran. The driver will not complete the 21-case population.
+
+Minimum repair: retain the shared old expected file and all historical bytes. Freeze a private expected copy with exactly the two nonempty-positive relative-path namespace substitutions, then point the copied driver and its subject descriptor at that independent literal copy and propagate its input/population pins. Keep all 21 ordered cases, positive/negative flags, diagnostics, counts, caps and exact whole-population comparison. Do not replace the literal expectation with a value derived from the returned actual paths or weaken equality.
+
+### R50-23 — P2: envelope receipts declare v10 while the pinned contract declares v11
+
+Artifacts/support-v2/candidate-v11/stage-environment.ps1:123 and :144 still serialize freeze='support-consumer-envelope-v10-prep-path-controls'. The pinned environment-contract.json declares support-consumer-envelope-v11-prep-path-controls, and the actual intended output paths, script digest, approved inventory and dispatch vectors all name v11. This would leave both before/after receipt labels inconsistent with their independently frozen contract. Fresh source/inventory hashes still distinguish this execution, so this finding does not claim receipt replay or a raw-argv failure.
+
+Minimum repair: change only those two receipt freeze literals to the declared v11 value and propagate the affected launcher/source/proposal/freeze pins. Retain the proven selected-environment orchestration, raw vector guard, fixed diagnostic fields, disposal/error behavior and all command populations. No extra semantic population or broad envelope rewrite is needed.
+
+### Codec repair and unchanged boundaries
+
+Independently compared actual bytes: tools/runtime/support_gate_contract.py is the preserved 26313-byte before copy with exactly two .decode('utf8-sig') literals replaced by .decode('utf-8-sig'), now 26315 bytes. The observed discovery site remains line 135; the latent compile-readback site remains line 316. The fresh candidate helper carries the corresponding corrections at lines 136 and 339 plus only candidate/output namespace substitutions. R50-20's source correction is statically satisfied; the original RED and the required real v11 result remain distinct. The fixed prep-path stage does not establish actual compile-readback execution.
+
+The five test/helper copies normalize byte-for-byte to their declared current sources after the disclosed import/output/descriptor substitutions. Both Python tests insert the exact private directory; the copied gate helper differs from the corrected current helper only in OUTPUT. The PowerShell descriptor pins the shared helper, copied driver, shared expected JSON and original selection contract exactly, and all four subjects are included in the stage manifest. That correctly frozen shared expected JSON is precisely the source of R50-22, rather than an unpinned lookup.
+
+Outside the changed hunks, inspected candidate support_gate_contract.py:148–157 and :209–218: OLD prepare authority remains separately pinned, execution admits only prep-path-controls, command JSON must equal the selected plan commands, and semantic freeze/stage must equal the new inventory. The prior-prepare.json bytes remain equal to v10's 5990-byte e58c820f747918aa71632e1885c0657481bd97ce1090dcc4bcbd2812a5b77d49 authority. Original prepare receipts and output identities are not reinterpreted as v11.
+
+The complete plan comparison against the old inventory's actual candidate-v8 plan found only the disclosed freeze, pycache, three test-command paths/serializations and four capture-root substitutions. Eight stages and 95 commands remain; the other seven stages are unchanged and are not admitted by this new inventory. The fixed three commands retain order, expected exits, required diagnostics and 60/120/60-second limits. Inner/outer/census limits remain 240/360/180. Outer9 and census10 vectors exactly match their independent contract/proposal arrays; no argv coercion, selected nine/two environment states, restoration or physical/query mechanism changed.
+
+### Frozen conservation and limits
+
+Freshly hash-checked all 31 current frozen leaves, totaling 3395413 bytes, and handoff direct pins; leaf/ancestor reparse checks passed for these reads. Independently checked all 36 old candidate freeze leaves and a bounded 200 protected local records totaling 7925628 bytes, including the old evidence/source records selected for this review. The exact7 cleanup receipt remains 8357 bytes / 51e8571de59260af34baca90dc9dc68b1f4121938c907eb4f4dbe29ea57ec0a7.
+
+All 2673 before/after conservation records have equal path/order and contents except the authorized current helper's +2 bytes/new SHA. The supplied complete conservation evidence retains old raw13, current/retained66, and old prepare 1631 files/893 directories. This reviewer compared those frozen records and the preserved authority, but did not rehash the entire runtime corpus or all 153377880 old output bytes. Future actual dispatch conservation remains mandatory; the author's 8.1102-second static check is not a measured gate result.
+
+The stage has 879 unique inputs / 262139357 bytes; census has 882 / 262461515, with every stage descriptor represented exactly in census. Relative to the old manifests, changes are disclosed executing-source/plan/command replacements, the corrected current helper, and six added inputs: five private test/helper copies and the fresh PS descriptor. Roles/caps are retained. Original 19 discovery specifications are byte-equivalent; the twentieth independently enumerates exactly the five private files. The runtime/output/test/pycache paths listed as fresh are absent. R50-22's repair must update this population explicitly if it adds the private expected file.
+
+| Inspected v11 artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 11183 | 05ca678782bb0a500f8e0388520f16d2a96da5f03a0d0bb13fba5a5ffa15074b |
+| freeze-files.json | 10236 | 51c4f3c43929a39ff294167207ba35e7c68d5941e24d4d7d002466ec5ba48fbe |
+| inventory.json | 11258 | 3a7872ea3fc5d02b4f23ea7897e4a352270d1fd97a3ef21e696c3dd7b3911502 |
+| source-diff.patch | 18820 | 6af68962c02b10176c57185855f930fd7893ed5f3c98b7357f7109db2b18b0d7 |
+| dispatch-proposals.json | 11241 | 35ad6f1e5df7cda5c64db79c4e2d6cef2d0595821427435cc0d3f0d6e16f580a |
+| stage-inputs.json | 301686 | 49bc1fcdb33beff165836b1a8acac9aa1e66463244cf3f12214da9e27fe7a950 |
+| census-inputs.json | 263077 | 486fbc7ed42df0e5ef125970af2b48a654f7b4894d614734f1bed469553bd9a4 |
+| stage-environment.ps1 | 20623 | f767caddd7907048142bfa03c6dd56e73912ae98a79f2c80ef506bc60378bb5f |
+| environment-contract.json | 6830 | 513425ff05aa86adbdc75c8ad82acf401eb0e93d856905d4ce5672f1d074fc67 |
+| test-copies/test_support_census_contract.ps1 | 8877 | e06e121eef6a3f230c71f8e8c99500104cb5e3cd3fdd5de115ea4e59fcac3243 |
+| shared tests/runtime/support_census_expected.json | 4184 | ee225819accb5199f29931d86ead2843e690257c1fd58f8e46f35fdb55e3508e |
+
+Release: no semantic lease recommended for this exact freeze. Root acknowledged the two concrete findings and owns the private literal/label repair and refreeze. Original v10 functional RED, original stage-certificate absence and separately accepted exact7 physical cleanup remain unchanged. All v11 7/39/21 checks, later Native95/compile/camera/Engine work and new Source compatibility remain UNRUN. Direct future census-host PID/FILETIME/descendant proof remains qualified as previously recorded. Reviewer leaves no process, worker, gate or lease.
