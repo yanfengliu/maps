@@ -1,0 +1,21 @@
+# 876 — façade readability next step
+
+**UNSUPPORTED for a minimal product change from this evidence.** The inspected pipeline contains genuine sources of contrast loss and resolution loss, but the available observations do not identify a small correctable renderer defect responsible for the broad façade softness. I cannot justify another sampler, sharpening, lighting or window-grid pilot. Finish the current finite sign comparison; this finding adds no dependency to it.
+
+The two prior A1 dusk originals and the two source 866 crops were individually inspected at native size in review 872. Their bytes still match. The photographic portrait and lettering are already soft in the native source crops. This establishes local source softness before capped decoding, mip sampling, shading or post-processing. It does not establish that every visible façade is limited by its source image.
+
+The current cached tileset and unchanged geographic policy select data518 at 4096 and data488 at 2048. The selected data518 source image is 4096², so its decode does not reduce its size. Raising its cap cannot add detail. Historical 619 identifies an ordinary visible source face in that same tile and reports a roughly 44.865×31.781 m wall whose atlas bounds occupy only 260×260 pixels including margin. A 4096 atlas can therefore still contain very little detail for one large façade. That report is historical source identification; I did not repeat its decoding or bind its old rays to the current two views.
+
+| Pipeline stage | Evidence and bound |
+| --- | --- |
+| Decode/cap | FacadeTexturePlugin resizes oversized atlases once with createImageBitmap resizeQuality high. Current data518 stays native; other capped tiles lose source pixels. The current frames contain no per-face rays assigning all visibly soft surfaces to those tiles. |
+| De-light | The GPU operator fetches one integer texel with texelFetch and changes that pixel's color. Compression 0.6 and floor 0.02 can reduce local contrast; this pass has no spatial neighborhood and cannot directly blur adjacent texels. It also cannot recover source detail. |
+| Sampler | Replacement maps use trilinear mip filtering, generated mipmaps and at least 8× anisotropy. These code settings do not show a sampler defect or establish its actual contribution at a particular visible face. |
+| Satellite shader | The base 815 shader lifts photographic albedo and adds a near-only, world-aligned floor/frame modulation. Its 2.9 m horizontal grid is authored rather than traced from photographic divisions. Removal might improve coherence, but these stills do not isolate that term or prove a gain; proposing it now would be another untested appearance guess. The frozen 866 shader was not used for this analysis. |
+| Post | The retained A1 states report the active TAA/GTAO/bloom/output chain and 32 accumulated samples at sampleLevel 0. No causal comparison isolates TAA or bloom as the source of façade softness. Crisp authored boards in the same render make indiscriminate whole-frame sharpening especially poorly supported. |
+
+Reviews 528, 557 and 795 document earlier noon-fill, authored-curtain and generic-grid routes. Review 795 explicitly rejects readable pale rows without convincing glazing, depth or photographic richness. Those records support avoiding a return to global fill or another regular pane replacement merely to make edges sharper. I inspected their authored reports, not their historical candidate pixels in this turn.
+
+The remaining source-backed priority is still one street-level façade's readability and coherence. A concrete implementation needs an identified existing photographic surface and observable architectural divisions; the existing facadeSamples API already provides source-linked rays when that surface is selected. Current corridor A1 records contain aggregate atlas statistics, not those per-face samples. This is the evidence gap, not a request for another harness, framework, wider texture budget or research branch. No new implementation lease is justified by this bounded investigation.
+
+2026-10-12. Only this review and its ignored receipt were written. Read-only Git show supplied the overlapping base material source. No Git mutation, build, data generation, browser, GPU, server, product runtime or image edit ran. No task-owned runtime resources were created.

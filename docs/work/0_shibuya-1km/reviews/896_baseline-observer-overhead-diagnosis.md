@@ -1,0 +1,26 @@
+# 896 — Baseline observer overhead diagnosis
+
+The895 baseline refusal is dominated by recorded hook scopes, not polling. The retained aggregate cannot identify which hook component is dominant, so no specific performance fix or native-work subtraction is justified yet. The smallest missing observation is a reconciled component split of existing `hookMs`. Preserve the0.25ms limit, every guard and the full actual render/drain population.
+
+This review read actual frozen886 observer/caller/summary and the actual A1 raw report in run `3fa0b341c99346eeadc79e7d0cfc56aa`. The run contains five completed windows, no B arm or candidate cost, two baseline originals,130 strict body witnesses and successful GL disposal with ownedQueries0/pending0/errors[]. Its failure is summary line37's overhead-tracked refusal. Completing raw windows does not override that failure.
+
+| Actual population | Hook mean / p95 / max, ms | Poll mean / p95 / max, ms | Full mean / p95 / max, ms |
+| --- | --- | --- | --- |
+| inert30, no drain |0.590000 /0.800000 /1.000000|0 /0 /0|0.590000 /0.800000 /1.000000|
+| tracked30, no drain |0.650000 /1.000000 /1.000000|0.046667 /0.200000 /0.600000|0.696667 /1.000000 /1.100000|
+| plaza180, no drain |0.665000 /1.000000 /1.400000|0.030000 /0.100000 /0.400000|0.695000 /1.000000 /1.400000|
+| block180 plus one drain |0.693370 /1.000000 /1.300000|0.027624 /0.100000 /0.400000|0.720994 /1.000000 /1.300000|
+
+Tracked30 sums20.8999991417ms: hook19.4999992847ms (93.30%) and poll1.3999998569ms (6.70%). There are31 poll batches in that window and eight intervals with nonzero recorded poll time. Frame989's1.0000002384ms hook has poll0. Removing every poll would still leave hook p95 at1ms. Inert30 has no queries/polls and already exceeds the limit, so query polling or tracked colour bookkeeping cannot alone explain the shared excess. This inert mode retains hooks; it is not an uninstrumented baseline. Its difference from tracked CPU timing is not pure added overhead.
+
+Actual observer lines21,150–154 and158–160 time GL observation bookkeeping at high frequency. Every tracked plaza row has348 draw submissions (196 genuine colour); block rows have432 (248 colour). Inert returns early from detailed group tracking at121 but still runs firstSubmission, draw-wrapper clocks, useProgram/bind/clear hooks and bridge reads. The raw rows do not retain timing by call class or expose the number of every hook invocation. Values near multiples of0.1ms show the observed timestamp granularity; they do not prove timer cost or quantization caused the refusal.
+
+Most forwarded original GL work is outside the hook timer: direct native draws, clear, useProgram and bindFramebuffer execute after their recorded observation span. ShaderSource at135 is an exception, but invoking it in a tracked window records an error; this raw report has none. Observer-created query begin/check/end operations are legitimately inside its observation scopes. No native render duration may be subtracted from these aggregates on assumption.
+
+`hookMs` also includes before-read/init at184–186, after-query/read/state/row finalization at191–222, RAF registration timing at235 and carried outside-hook work at222/229. `read()` at27 calls the real bridge status, post and population getters twice per app callback. PRIMARY bridge183–196/353–359 performs renderer identity getExtension/getParameter calls; population223 clones status; post274–290 constructs its status. Those calls are observer-requested work. The source establishes that they occur, but the raw report does not time them separately from draw bookkeeping. Heavy tile/actor reads remain at boundaries. The final tracked boundary read0.4000000954ms is included in its final poll; it cannot explain hook-only high intervals elsewhere.
+
+Actual poll batches retain full start/end durations and one owning app interval, including completion. Summary10–19 checks ownership and sums;34–38 uses actual render rows plus actual drain rows. The tracked-control denominator is30, and block's overhead denominator is181 while GPU denominator remains180 completed render rows. This diagnosis finds no pending-query division or omitted drain explanation for the reported red. CPU callback/advance observations overlap hook work and contain simulation/render work; they cannot reconstruct the missing split.
+
+The precise next diagnostic correction, if root authorizes it, is to retain four per-frame buckets from the existing timestamp differences: before-read/init, timed GL-observation spans, return/read/finalization, and outside/registration carry. Reconcile their sum exactly to unchanged `hookMs`, retain poll separately and preserve the unchanged full-budget numerator/denominator. Reuse existing clock pairs rather than adding new per-draw timing pairs. This adds attribution, not an optimization or a new pass condition. It can distinguish the common inert hook path's components; the present artifact cannot.
+
+No threshold increase, guard removal, assumed native subtraction, coefficient/product change, new capture or adoption is proposed as already authorized. Root decides the next repair and runtime. Only this review and an ignored receipt were written; no browser/GPU/server, gate, source decoding, static rerun, product/Git/data or progress change occurred.

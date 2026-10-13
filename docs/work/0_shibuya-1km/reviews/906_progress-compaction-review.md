@@ -1,0 +1,9 @@
+# 906 — current progress compaction
+
+2026-10-12. **Documentation-only compaction prepared for root acceptance.** Root granted an exclusive serialized FRONTAGE writer lease for `progress.md`; no extra agent, worktree, product/Git/data edit, gate or runtime was used.903 private checker and905 source proposal stayed isolated. Root resumes the canonical writer after handoff.
+
+The board shrank from 52476 bytes / SHA-256 `cc9d7d81ce54e98dbec885868e7f49ace1f462005b3917f39b45745d9a2758a5` to 22824 bytes / SHA-256 `4040799229ced6e0792c6ed71dc1c11e83c3c2e72e225fa48cc75e34ca9c9a69`, a 56.5% reduction. The only recovery backup is the exact initial board at ignored `artifacts/progress906/initial-progress.md`; its bytes/digest match the original.
+
+The current active queue now has two outcomes:866 checker/cost/seeded qualification before required gates/review/main commit, and905's source-only physical proposal using accepted902/904 correspondence, with product work held until866 commits.900's diagnostic is accepted;903 remains source-only with its first realm-array fixture/control failure and unchanged0.25ms guard. Removed stale902/904 pending/unaccepted prose and moved rejected/completed branches to concise parked dependencies with existing permanent reviews. The accepted-main815/status prefix and PRIMARY/FRONTAGE/push/cleanup holds remain unchanged in meaning.
+
+Content checks pass: all 35 stable items covered; entire 11173-byte whole-map table, invariants and remaining criteria are byte-identical(SHA-256 `119938756f883d2bed75b8b9de26f704883e8d4eb63a3ef4478a0716f5c06903`); substantive group criteria remain verbatim; two active rows; obsolete pending claims absent; all 66 relative links exist. Runtime tests were not run for this documentation-only change. Root must inspect the actual board/diff before acceptance. No full-map, candidate-cost, physical-depth or adoption claim follows.
