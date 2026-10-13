@@ -1152,3 +1152,55 @@ The reviewer freshly matched all 36 candidate freeze leaves, totaling 1059327 by
 The four PowerShell/four Python lexical-file observations and corrected driver reparse observation are author receipts, not a reviewer semantic run. All small semantics, next-stage commands, real new census/timing, native compilation and Engine work remain UNRUN. No execution is recommended at this freeze. Root owns the narrow repair assignment, focused re-review and any eventual single small lease; a later Native stage requires actual small success, physical closure and result review first. Only this canonical appendix was written. The reviewer releases the assignment with no process or lease retained.
 
 Clarification: the corrected driver's repeated parser observation above means its lexical ParseFile receipt only. No filesystem reparse control was executed.
+
+
+## R50-18/19 focused static re-review — exact helper admission and two absent paths (2026-10-13)
+
+**Verdict: R50-18 and R50-19 closed statically at the pins below. No remaining material finding in this narrow repair. The small 28-case check is ready for Root to consider one bounded lease; this review does not dispatch it or accept its unrun results.** The original Native stage remains a separate decision after actual small-case, ownership and physical-cleanup evidence is reviewed.
+
+Scope and preservation: reviewer read the repair handoff, delta, conservation and raw diffs, independently compared the three current executable files with their preserved before copies, and checked the current freeze/preservation pins. The entire pre-round Review50 is retained byte-for-byte: 266,537 bytes, SHA-256 d6323f04319bac0b86b72a7e16df9e3f3a0ef26af86a98a0305a2441915e46df. Native workspace remains artifacts/unreal-support-v2/worktree, assigned base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. No candidate import, syntax gate, selected-function evaluation, control, fixture/link creation, environment mutation, Job launch, CIM query, compiler, Engine run or timing experiment was performed by this review. Only this authored append is written.
+
+### R50-18 closure: the three repaired admission points
+
+At r50-v10-reader-controls/run_controls_owned.py:15–16, the new SHARED_CENSUS value is exactly WORKSPACE/tools/runtime/support_census_contract.ps1 and is the sole added ROOTS entry. WORKSPACE still derives from BASE.parents[2], the assigned Native worktree. The existing lexical confinement, regular-file and ancestor/reparse checks remain unchanged. Adding this pinned file permits the declared helper input without admitting the tools directory or the whole workspace as a new wrapper root. A path beneath that file cannot become a regular admitted descendant through the existing ancestor checks. The helper's independent input record remains 4,867 bytes / ce72b4ecb9f7d2d4cfdb8e17ab8e8e008aa9c56b40341c3ef6231bf9fcfd0645.
+
+At r50-v10-reader-controls/controls.ps1:38–41, Management admission now uses the already-existing Fixed reader's bundled PowerShell boundary. The exact absolute manifest path still selects exactly one runtime input. The new explicit check requires role powershell-runtime and the existing 536,870,912-byte cap; Fixed checks the bounded actual read, ancestors/reparse state and final size, then the caller compares actual length and SHA-256 with that independently frozen record before the unchanged absolute Import-Module call. The extracted production roots at line 36 remain the single Native root. The repair therefore avoids the previous outside-production-root refusal without broadening the production reader roots or substituting a self-declared module pin.
+
+At r50-v10-reader-controls/census_controls.ps1:12, the only added root is the same absolute helper file. All before/after source verification, exact source population, output validation, selected CIM module, narrow query, physical accounting and error handling remain byte-identical outside that roots declaration. The helper can now reach those existing verification paths. This is static path readiness, not an observed successful import or query.
+
+The independently inspected executable diffs contain only those two helper-root additions and the Management verification replacement. No change to the actual reader functions, fixture cases, expected messages, control selection, ownership helpers, query or environment setup was found.
+
+### R50-19 closure: literal absence population
+
+The small inventory now has exactly two required_absent strings: the actual r50-v10-reader-controls/run path and the actual r50-v10-reader-controls/owned-fixtures path. They are distinct array members; the previous concatenated single string is preserved in the archived before copy. Neither output namespace is admitted as an already-existing prerequisite. Existing implementation checks of the run and fixture namespaces remain unchanged. Root separately reports fresh absence of both paths and the later r50-v10 path; no lease or creation is inferred from those observations.
+
+### Freeze, propagation and unchanged scope
+
+All 36 current freeze leaves matched their recorded size/SHA in this review, totaling 1,059,878 bytes. The conservation comparison has 31 unchanged leaves and five changed leaves: the three narrow executable repairs, small inventory and small dispatch proposal. All 11 repair-freeze leaves, all seven before copies, and the current/retained 66 pairs matched their declared pins. The private Review50 copy matches the entire prefix named above. No preserved before artifact was overwritten.
+
+The small source population remains 16 records, now 484,860 bytes. Together with the unchanged 842 runtime records / 260,120,236 bytes, the declared owned population is 858 / 260,605,096 bytes. The separate census population remains 312 / 236,646,224 bytes. Updated source sizes and digests agree across source descriptors, inventory, argv templates, proposal and freeze. No source member was added or removed. Root independently reports a fresh full owned/census hash and regular/non-reparse ancestry match for these exact populations; reviewer did not repeat that runtime corpus read or claim it as a new execution check.
+
+The fixed expected-contract-v2.json remains 28 ordered cases, 29 complete TSV rows, five positives and 23 negatives. Its bytes and literal expectations are unchanged. Child/outer/census/whole bounds remain 10/30/20/60 seconds. The actual child argv, names/order, two imports, no driver children/environment setters/CIM, outer environment, separate two-key census environment, output partitions and existing physical proof requirements are conserved. The only command argument changes are corresponding inventory/source digests. ACTUAL_OUTER_REPORT_SHA remains a deferred value requiring the actual future outer receipt. Link privilege, actual control outcomes, timing and physical clearance remain unobserved for this freeze.
+
+The stage inventory remains 11,103 bytes / e5355ea4d40cc471bcdbfea3fecb2be00e43a89ba639b4096cde04ae4b6e3bf5; production census reader remains 23,886 bytes / 8cc7f47ae44d94e93e5426e19f0779affeda3562481ebc04e3bf5fa1c4f423e3. The repair changes neither their code nor their roots. Stage population 873 / 262,075,923 bytes and stage-census population 876 / 262,398,081 bytes are unchanged. The separate immutable old prepare authority, old identity/certificate references, all 1,631 output and 893 directory records, original three next-stage commands, eight-stage/95-command plan, envelope, production Native/Source/policy/trusted inputs and ownership/query helpers remain preserved within the already-reviewed scope. No new old-output revalidation, prepare acceptance, speed improvement or Native/Engine/Source agreement is claimed.
+
+### Exact reviewed repair pins
+
+Paths below are relative to Artifacts/support-v2 in the assigned Native worktree. All hashes are SHA-256.
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| candidate-v10-r18/handoff.json | 5738 | 0788db204bd9cbf04d23c9a97e0cc9960d61614f2751da2c27942f1cd58d2600 |
+| candidate-v10-r18/diffs.json | 1391 | a7c40bd821f2897614efb77e44ec8d562223da23059d2b456da2da1d75d5a6f7 |
+| candidate-v10-r18/freeze-files.json | 4272 | 8668cec8b41dda839847e58117a8c0d15003c84ba154750bb159711dd96181b1 |
+| candidate-v10-r18/delta.json | 7643 | aa75b9d6ed9e117927a6e62a8edfda6c183a85e3fd8479edc19e97579af79dd1 |
+| candidate-v10-r18/conservation.json | 85628 | d304717dc492555eef6e061479c2737c965ec118ad913341d2358b1658eb0088 |
+| candidate-v10/freeze-files.json | 12105 | 997db4c024e432abf8f5df59a1830545321cf1967a6de71d7bcf85678753cbae |
+| r50-v10-reader-controls/inventory.json | 14240 | 3f2bd3e9be52ca1f8d8ac46c78e6779eb5eac4038b2ca7641de1f3a18b6580ab |
+| r50-v10-reader-controls/dispatch-proposals.json | 5433 | fd2a75cae978f38d52e281012ff46c6023decbb828e6466d01cb7b201801bb57 |
+| r50-v10-reader-controls/controls.ps1 | 15789 | 280235c4a9f75a45a941308cfe53a90d359a806395129435f4b6643ef27dd4d0 |
+| r50-v10-reader-controls/run_controls_owned.py | 14481 | fbbb7b59d5ef355b1a8564565c21c9e72a261271660e258b5ee02b614c19ed36 |
+| r50-v10-reader-controls/census_controls.ps1 | 17654 | 09d91cd2efbb756eb86fcc6dea83527cd9f0bd6662c04b8d2b2f2690c1f543ed |
+| r50-v10-reader-controls/expected-contract-v2.json | 7787 | 836cd4c1bc1c73041926f05e471f14a85c92409a1a41a2506dc588034582f79b |
+
+Release: the narrow repair resolves the prior static blockers. All 28 semantic controls and their actual ownership/census evidence are UNRUN. Root alone may authorize the next single small lease, read its complete results, and then decide whether any later Native stage may proceed. This reviewer leaves no owned process or execution lease.
