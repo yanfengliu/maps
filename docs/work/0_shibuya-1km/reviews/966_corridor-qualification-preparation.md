@@ -1,0 +1,21 @@
+# 966 — broader corridor still preparation
+
+2026-10-13. **Source-only preparation is complete; every build/runtime admission remains false.** Root accepted the contract for two separate later dusk/noon runs, each with fresh serial A1/B1 documents and three native views per arm. Six originals per run, twelve across both. Pending 965 runtime 3 copies/freeze/source review, a new actual CPU assembly/build/positive closure and independent 966 helper review remain null. No inflight 965 product bytes were read.
+
+Six bounded copies live under ignored `artifacts/corridor966-qualification/`. Every accepted 956 helper's exact length/hash was checked before construction and its bytes checked unchanged afterward. `delta.json` is 3,794 bytes/SHA-256 `81f14dca098d35b6586db75818e58919d5cdaf505e36564e663d68737bd24667`; `helpers.patch` is 23,243 bytes/`24b73c723d34cd39709bc3a8bfd4e4ec913d426027c8f609f6258f76d622a30c`. Caller changes are +14/−9 lines, recipe +150/−19, each corrected owner +1/−1. Overlay and builder are byte-identical. Each owner changes only its contained preparation-root line.
+
+The existing `appearance-first` mode truthfully covers these finite stills. Two false leases select one preset each. Dusk navigates the canonical `/`; noon uses the published `/?time=noon` entry configuration from PRIMARY `main.ts`, followed by actual-preset assertions. No time picker or setter is invented. Each arm navigates once, keeps one complete same-session body ledger and captures its three poses through the existing measured pointer/wheel/right-pan controls. The observer, full response identity, 256-response/512 MiB/32 MiB ceilings, hardware/TAA refusals, native pre/post stability, scene/build/source pins and finite 300/220/240-second cleanup contracts are preserved.
+
+| View | Target | Distance | Azimuth | Polar |
+| --- | --- | ---: | ---: | ---: |
+| Fixed close | `(15,15.2,-80)` | 42 m | −0.09497824179008603 | 0.48 |
+| Fixed block | `(15,15.2,-80)` | 120 m | −0.09497824179008603 | 0.62 |
+| Seed 42 exploration | `(15.808830015361309,15.2,-80.41367552801967)` | 124.0986317396164 m | 0.018353722791653204 | 0.5149627797491848 |
+
+The close reference remains exactly the accepted 948 reference. Every view now carries its own literal reference camera; native and settled checks use that view, and the existing strict A/B tolerances match each of the three pairs. Complete counts and unique view names refuse missing or duplicated pairs. No tolerance was widened. `instrumentPassed` remains the compatibility false field and is never promoted to true. The legacy exact data518 body remains a surrounding-image identity anchor, not paint support or visual proof.
+
+The exploration uses the actual PRIMARY `createRng(42)`, called once with compile caching disabled. Its 1,400-byte source pin is `e1c0ff4dadfacdc51211a6b7192f04ac203efad7119cda9ba65de59c780c0553`. `rng-seed42.json` records all five outputs, affine ranges, literal pose and reference camera. The exploratory camera is planned at `(16.930526035411976,123.20441098502529,-19.305088525362855)`, within published rig limits. Actual ground clearance, obstruction and pixels remain unmeasured; the existing native terrain-clearance refusal remains mandatory.
+
+Node `--check` passed for caller, builder and overlay. PowerShell `ParseFile` found zero errors in both owners. These are static syntax results; no helper/application import, owner invocation, build, runtime, browser, server, GPU, CIM/port query, product test, full gate, Git or board operation occurred. Only the pure RNG module ran. The one-shot authoring script was removed; no persistent process or temporary resource remains.
+
+Own `receipt.json` is 4,757 bytes/SHA-256 `6bc6abe75d6c6ac790920e4156d06585663d60765fef17bd8d33f61e95ef5b1a`; static checks 2,804 bytes/`e1d53969f99af2f6417a03c51cfd9dd53e68c6bb08c40f1f32554c8bb40ad99a`. The receipt pins all six prepared helpers, patch/delta, RNG record and the three false leases. Existing current-main ac2 authority is reused with 299 build and 320 runtime literals; no new input inventory was constructed. Only own ignored preparation and this report were written. Root owns the helper/source review, fresh CPU binding and each separate GPU/preset seal; source/build/runtime/appearance and whole-map acceptance remain open.

@@ -1,0 +1,9 @@
+# 977 — root broader road appearance acceptance
+
+2026-10-13. Root opened every one of the12 original1280×720 PNGs individually at original resolution after actual973 instrumentation and positive available closure acceptance, then rechecked every length/SHA-256. Dusk/noon each include A1/B1 fixed42m close, fixed120m block and seed42 exploratory views; sparse held stills only. Both run manifests and all inspected image identities are retained in the combined973 receipt,31,309B/SHA204fd327cc0a3e8a5b6feb7f8d0a6ca9e8b05be8d1de501af476c3b9a744f559.
+
+The paired white margins visibly distinguish road from paving at close range in both presets. At block/seed42 scale the gain remains visible but modest. Upper ends remain clear of the zebra crossing, tree occlusion looks consistent, and no new visible floating paint, stripe overlap, seam or surrounding change appears in these stills. The finite lower ends and small east interruption are visible; the displayed markings stop partway through the longer street. This accepts a bounded local addition, not a completed road or block treatment.
+
+Soft blue/pale photographic walls, flat paving, repeated trees and sparse visible activity remain dominant broader defects. Every-road lanes, facade vibrancy/material depth, powered city, recognizable trains and population/FPS/continuous motion remain open. No support authenticity, animation or measured startup gain follows from these pixels.
+
+Root admits frozen965/970 for final integration and canonical gates only, subject to independent976 pixel review and no material finding. Actual source968/helper971,972 Aroads1/B3 build12members, and973 two positive headless closures were read; RTX4090/D3D11/616.64, all44 idle leaves, TAA32, zero copy-pose delta, four130-response positive body ledgers and unchanged scene/build hold. Final five gates, independent integrated review, commit/main/push remain owed. No runtime remains.

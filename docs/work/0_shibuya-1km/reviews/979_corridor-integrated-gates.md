@@ -1,0 +1,21 @@
+# 979 — integrated corridor gate execution
+
+Placed exactly the six admitted road/test/fixture/README files and two owned 965 notes in PRIMARY on `codex/shibuya-road-margins-965`, with HEAD still `ac2ddc42292e3b34516b2fc56f515a892ad20df1`. All eight actual pins match root's integration lease, and all six protected pins remain unchanged. The index is empty; no commit or push ran. Before placement, the existing canonical visual evidence (183 files) and dist (six files) were copied byte-exact into ignored `artifacts/corridor979-integration/prior-canonical/`.
+
+The default `git diff --check` initially reported trailing whitespace at devlog lines 185–186. Root verified that the sealed additions preserve the byte-exact base prefix and its existing CRLF convention. The per-command `core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol` check exits 0. No source bytes, global configuration or index changed. The original RED receipt remains retained.
+
+Canonical build, types and full unit gates are GREEN on Node v24.12.0 through the exact reviewed 975 owners, one serial invocation per phase with work caps 120/120/240 seconds and 120-second cleanup caps. Build produced six dist members; typecheck has no diagnostics. Unit reports 124/124 files and 1,135/1,135 tests passed, including corridor 9/9. Every phase has an available empty six-category process census, removed and physically absent owned TEMP, and positive reviewed cache cleanup. All eight integrated and six protected byte pins remain unchanged.
+
+Audit dispatch was rejected by automatic approval review before CreateProcess because `npm audit` sends dependency metadata to the npm registry without the specific payload/destination authorization the reviewer requires. Audit is UNAVAILABLE; visual is NOT RUN under the stop-on-unavailable-required-gate contract. No retry or workaround was attempted. Audit/visual output directories were not created. No task-owned process, TEMP or cache remains. Commit, merge and push remain withheld.
+
+Actual partial receipt: `artifacts/corridor979-integration/gates-partial.json`, 13,434 bytes, SHA-256 `1961560cdceb18ec61c69122e6060146d82e3d40160c3c5268740537a7a31803`. Approval denial: `audit-approval-rejected.json`, 797 bytes, SHA-256 `b379f47cc58605efce3653988feca6d3c82bd2b98dfe9ab75dc46401cf50974d`. The receipt pins all actual command/log/closure/cache evidence, the EOL-aware check, source placement and original integration RED. The integrated source patch is 79,390 bytes, SHA-256 `5a53bd8e56d18c5099eb7b58fa721d237830b32e5483369a98531eddb474c0a8`. All historical evidence remains retained; root owns approval resolution and final integrated acceptance.
+
+## 990 — explicitly approved audit outcome
+
+The human explicitly approved the 124 public dependency names and versions being sent to https://registry.npmjs.org for canonical npm run audit, including the registry manifest requests described in 982. The original 979 automatic rejection and stopped-state receipts remain unchanged.
+
+Canonical npm audit --audit-level=high ran exactly once through the unchanged reviewed 975 owner and exited 0. The actual report contains two moderate findings: @vitest/mocker and dependent Vitest. No high-threshold blocker, dependency fix or install occurred. Exact package/lock, installed audit implementation, default registry/config and prepared public payload bindings matched 982 before dispatch and remain unchanged. The 120-second work and 120-second cleanup caps were preserved.
+
+Outer closure is available with all six categories empty; owned TEMP is physically absent. Reviewed audit cache cleanup then removed the owned cache. All eight integrated and six protected pins and the settled visual certificate remain unchanged. Together with the prior build, typecheck, full 1,135-test unit suite and separately sealed 983/984 visual run, all five prescribed gates now pass their stated bounds. Commit, main merge and push still await root actual acceptance and final integrated review.
+
+Actual command, advisory counts, input pins, explicit authorization, closure and cache evidence are bound in artifacts/corridor990-audit/receipt.json. This outcome appends to the existing report; no historical receipt, source, helper or canonical command was rewritten.

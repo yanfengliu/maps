@@ -27,6 +27,7 @@ import { SCENE_FILES } from "../world/scene-data.js";
 import { loadMesh, loadMeshWithDigest, toGeometry } from "./mesh-loader.js";
 import { surfaceSampler } from "../world/surface-sampler.js";
 import { createPaintSupport, type PaintSupport } from "./paint-support.js";
+import { createCorridorPaint } from "./corridor-paint.js";
 
 export interface RoadsInfo {
   triangleCount: number;
@@ -46,6 +47,8 @@ export interface Roads {
 export async function createRoads(style: WorldStyle = worldStyle(DEFAULT_WORLD_STYLE_ID)): Promise<Roads> {
   const [roadInput, pavementInput, markingMesh] = await Promise.all([loadMeshWithDigest(SCENE_FILES.roads), loadMeshWithDigest(SCENE_FILES.pavements), loadMesh(SCENE_FILES.markings)]);
   const mesh = roadInput.mesh, pavementMesh = pavementInput.mesh;
+  const paintHeightAt = createPaintSupport(mesh, pavementMesh);
+  const corridor = createCorridorPaint({ roads: mesh, pavements: pavementMesh, markings: markingMesh, inputDigests: { roads: roadInput.sha256, pavements: pavementInput.sha256 }, paintHeightAt }, style);
   const geometry = toGeometry(mesh);
   const roadAt = surfaceSampler(mesh, true); const pavementAt = surfaceSampler(pavementMesh, true);
 
@@ -76,16 +79,17 @@ export async function createRoads(style: WorldStyle = worldStyle(DEFAULT_WORLD_S
   const markings = new Mesh(markingGeometry, markingMaterial);
   markings.name = "roads:plateau-source-markings";
   markings.receiveShadow = true;
-  group.add(markings);
+  group.add(markings, corridor.root);
 
   return {
     root: group,
     inputDigests: { roads: roadInput.sha256, pavements: pavementInput.sha256 },
-    paintHeightAt: createPaintSupport(mesh, pavementMesh),
+    paintHeightAt,
     heightAt(x, z): number | undefined { const road = roadAt(x, z); const pavement = pavementAt(x, z); return road === undefined ? pavement : pavement === undefined ? road : Math.max(road, pavement); },
     info: { triangleCount: mesh.header.triangleCount, vertexCount: mesh.header.vertexCount },
-    setStyle(next): void { treatment.apply(next); paving.apply(next); markingMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); },
+    setStyle(next): void { treatment.apply(next); paving.apply(next); markingMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); corridor.setStyle(next); },
     dispose(): void {
+      corridor.dispose();
       geometry.dispose();
       pavementGeometry.dispose();
       markingGeometry.dispose();
