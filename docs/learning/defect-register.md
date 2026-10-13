@@ -1,5 +1,15 @@
 # Defect register
 
+## 2026-10-12 — internal facade prototype refused the live loader frame
+
+Observed internal regression: actual940 B1 failed before readiness with “Facade ribs data/data518.b3dm: source triangle1092 binding changed”; no candidate original or appearance verdict exists. This is separate from the owner's historical5319 “0 of44 ready” symptom, whose cause remains unexplained.
+
+Investigation/root cause: [941](../work/0_shibuya-1km/reviews/941_live-facade-binding-diagnosis.md) pins the small shear in cached node1. Installed GLTFLoader applies the matrix through TRS decomposition and automatic recomposition; the raw-matrix fixture disabled that step. All six reviewed corners shift4–6mm, beyond the unchanged1e-5m guard. The combined runtime error does not independently establish each other predicate's result.
+
+Repair/check bound: [943](../work/0_shibuya-1km/reviews/943_loader-frame-correction.md) changes only literal live-frame expectations and the consistent derived normal. The actual-source fixture retains scene/node1/node0/primitive1 and checked identity outer transforms. Independent fixed local/raw905/live rows precede the helper call. The exact frozen old929 helper, selected by a pinned private alias, fails at triangle1092; the corrected helper passes at the original tolerance with changed-source refusals retained. All49 focused cases/types pass. Source arrays, photographic material, geometry caps and resource/style checks remain protected. The crossing full-plugin fixture uses the live frame; its separate raw905 plane controls prove only offline arithmetic. This is a CPU class regression with an observed failing control, not a new live-loader browser run, native appearance, cost, final-gate or adoption qualification.
+
+Final status: root and fresh[949](../work/0_shibuya-1km/reviews/949_fresh-facade-native-verdict.md) rejected the prototype after actual948 native comparison. [950](../work/0_shibuya-1km/reviews/950_rejected-facade-recovery.md) archives its source/tests and restores exact85de62ac baseline. The loader-frame failing control and corrected fixture remain retained private experiment evidence; they are not an installed public gate or an adopted facade improvement. The historical5319 symptom remains unresolved.
+
 ## 2026-09-30 — building facades feel like pasted wallpaper
 
 Observed symptom: the owner asks for vibrant building textures and says they should not feel like fake wallpaper crawled from the internet. This extends the plain-texture report to facade believability; it does not establish that the mapped photographs are unrelated internet assets.
