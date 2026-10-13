@@ -1757,3 +1757,59 @@ Exact reviewed pins, under Artifacts/support-v2/candidate-v12-generator:
 The original three command names, order, flags, required markers, expected exits0/0/1 and empty generator prerequisites remain intact, as do Native95/eight stages. Bounds remain 30 seconds per command, 180 inner, 300 outer and 180 census. Actual generator/checkpoint semantics, performance and physical cleanup are UNRUN. Limit+1/provider cost remains unmeasured, and direct census-host PID/FILETIME/descendant coverage retains its existing qualification. No Source2, policy2, native source-pair, full Native95, compile, Engine or product acceptance follows.
 
 Release: focused static closure accepted; Root may consider only the frozen generator-only dispatch and its required subsequent result/physical review. No later stage advances. The reviewer changed only this append and leaves no process, query, gate or lease.
+
+## Actual acceptance — v12 original generator3 and separate exact census (2026-10-13)
+
+Independent read-only result review at Native base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. Preserve the complete 369216-byte prefix, SHA-256 6da5dc79afed2bb906ca3cca69092031d97b1a608829d7cba39c158a78cd1378. Scope is the one original generator3 dispatch and its first elevated separate census, as bound by generator-check-handoff.json. This review reads JSON/XML/text, metadata and hashes only; no generator, environment setter, import, Job, query, compiler, Engine or gate was run.
+
+Verdict: the bounded original three-command functional result and exact original-nine postexit physical closure are accepted without a material finding. Root owns final raw acceptance, physical release and any subsequent dispatch. Inner and outer passed=false remain immutable pending-census records; both local_ready=true and the separately bound external certificate passed=true form this result. No receipt was rewritten to turn a historical pending field green.
+
+The actual result sequence exactly matches the frozen names, argv, Windows command strings, cwd and expected exits: deterministic-check=0, fresh-copy-readback=0, existing-destination-refused=1. Each standalone result JSON equals its entry in the inner report. Both positive logs contain SUPPORT_DEPLOYMENT_EXACT_PASS. The third log names generate_support_deployment.ps1:75 and “Generator refuses an existing output destination.” The preceding fresh copy exists with the expected bytes; the negative arm therefore reached the intended existing-destination guard, rather than failing before exercising it. Its exit1 is expected functional evidence and its held process is physically terminated.
+
+The sole declared output is the fresh SupportDeploymentInventory.h copy: 9872 bytes / SHA-256 6b5e02aef89d7f3f87cf23679c7549195d86ef0405998e03506f6fa0f170d026. Reviewer byte comparison confirms equality with the original Source/ShibuyaRuntime/Public/SupportDeploymentInventory.h. This proves the old deployment metadata/header generator contract for its existing 67 records and six snapshots; it does not adopt a new Source2 policy, trusted population or actual Source pair.
+
+All 19 handoff output pins freshly match, totaling 442157 bytes, and equal the complete present file membership of the run namespace. All 922 current stage/census input pins, totaling 266721449 bytes, match with regular/non-reparse leaf and ancestry checks; reviewer hash/attribute traversal took approximately 0.319 s. The two input arrays are identical. Current traversal of all 20 declared discovery sets equals their complete expected populations, respecting the two explicitly nonrecursive roots. All four actual inner/outer before/after conservation summaries name that exact population. This current check is distinct from the actual before/after checks performed by the frozen runner and census.
+
+Inner, outer, output manifest, separate census and timing records bind the same seven-field generator identity: inventory d36e0c69d91892fab6c663a741b1e906ae9f36aeee6c3c5a9c2c5a409260ea30, plan cda803ca75e6bc8bff76cc0dec1412b18d01aa21c9568dad194d22a3481bc080, semantic set 59f741db6da5d9b720d5bd0be0bcb816832b7b5cc2092a2e6a9b5515292703f1, command set f4cc54c6d27f7e38e2abcc71ea322300e3911fb73d71f89dbeb694210b54e305 and census set 253753e372bf3d4901964e77c0af47e215ae356220d214e716951d9ea09f912f. All six actual fixed-decision before/after proofs equal the independently frozen authority, including its old v11 identity, 910 sources, 340 output files, 358 evidence files and 358-file/255-directory whole-run population. The original generator prerequisites remain empty. This observes successful admission of the repaired ordinal metadata; it does not claim unrun checkpoint corruption controls passed.
+
+The four CLIXML files were decoded as data with a reviewer-owned XML reader. They bind the current envelope, inventory, immutable environment contract, host, literal outer-nine/census-ten child vectors and cwd. Before proofs record capture before mutation with applied=null; after proofs bind those exact before bytes. Outer captures and restores exactly nine selected rows, census exactly two; every original presence/value pair equals the restored pair, with actual Boolean presence, string values for present variables and Nil for absence. Applied rows equal the independent intended rows. Outer absence for UE_USE_SYSTEM_DOTNET, UE_DOTNET_VERSION, INCLUDE, LIB and PSModuleAutoLoadingPreference is preserved as absence. Census uses the pinned module directory and literal autoload value None. Each phase reports the required restoration-attempt count, child exit0, no original error, no restore/receipt errors and stage_certified=false.
+
+These XML files are pre-late-reporting snapshots, not standalone evidence of their own final disposal. The 19-file set does not include a separate full 27-field post-disposal diagnostic stdout file. The handoff records successful completion of the two exact pinned envelope commands (outer chunks a1693a/1fc9e4; census d78967/d53296/2e2d0a). The unchanged envelope returns success only after final receipt completion, dependency verification, disposal and diagnostic output. Acceptance of the late-reporting path is therefore bound to those recorded successful completions and that pinned finalizer, without claiming direct inspection of an unretained stdout record.
+
+The raw outer Job denominator is eight. Each of the three nested command Jobs has exactly two members, all contained in the outer denominator; the inner wrapper equals the outer primary identity. Assignment-before-resume is recorded. Every admission retains an exact live Job identity with successful API membership, error0 and wait258. Every final held wait returns0 with wait error0; every GetExitCodeProcess succeeds with error0. The expected third command's primary reports exit1 and all seven other outer members report exit0. All are terminated. NEW and EXIT events each cover their exact denominator once, followed by ZERO; final active sets/accounting and missing-exit sets are empty. No identity-observer error remains. Job, primary thread, primary process, member identity and completion-port handles all report closed. Notification completeness retains its observed-events/one-empty-poll qualification.
+
+The separate certificate binds the exact inner and outer report hashes and queries precisely these nine identities:
+
+| PID | Creation FILETIME (100 ns) |
+| ---: | ---: |
+| 10764 (outer wrapper) | 134363953067347166 |
+| 15912 | 134363953096550911 |
+| 30328 (inner wrapper) | 134363953096493991 |
+| 62536 | 134363953175405454 |
+| 66632 | 134363953125077742 |
+| 67136 | 134363953150093798 |
+| 67628 | 134363953175371652 |
+| 79560 | 134363953149952028 |
+| 81712 | 134363953125222462 |
+
+Its exact PID filter has no extra identity, and remaining=[] with passed=true. Actual Get-CimInstance CmdletInfo uses the pinned bundled-root Microsoft.Management.Infrastructure.CimCmdlets.dll as both Module.Path and implementing assembly, MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13. Manifest, assembly, host, actual pwsh.dll entrypoint, argv tail and the two-key query environment match the frozen selection contract. Query arguments retain Win32_Process, the exact filter, OperationTimeoutSec10 and ErrorActionStop. The direct synchronous census host's own PID/FILETIME and descendants remain unreported; no additional census-host Job ownership is inferred.
+
+Actual command durations are 2.4596898 s, 2.5404618 s and 1.5345567 s, within each 30 s bound. After-write timing records report inner 12.4199973 s, outer 18.3302749 s and census 27.223612 s, within 180/300/180. Handoff tool wall totals are 18.5734551 s and 27.6532282 s. Actual CIM duration is 0.2103664 s; recorded census output/prerequisite membership time is 12.8029454 s. These are this run's measurements, including the original generator's bounded read/provider work; they are not a whole-pipeline performance claim.
+
+Exact actual pins below are relative to Artifacts/support-v2; entries other than the handoff are under r50-v12-generator.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-v12-generator-actual/generator-check-handoff.json | 27440 | d4606a57ec51137dd0fd96d2a9a78ccaf1ba8595ad32c829a4a3ed1b3b43c1fa |
+| r50-v12-generator/dispatch/generator-check/report.json | 125511 | 355e2a590a5b252e4d517dc29411a2a4794d8938168764f6c3e9563c8935818b |
+| r50-v12-generator/outer/generator-check/report.json | 121179 | 93bcf0962e6bcb373c1f7f8f65f4b6ed2ef4e2cd8f60792d265693c0938636d2 |
+| r50-v12-generator/outer/generator-check/external-census.json | 113605 | 1d2ba17ab2dffe76876058b655c074e6474dafa8dea8e32d13c397da60de1a32 |
+| r50-v12-generator/dispatch/generator-check/outputs.json | 946 | 57cfeb3004503e13e97fecc6b6e195220f217de76c9bddfd64fc556089f1e796 |
+| r50-v12-generator/generator-copy/SupportDeploymentInventory.h | 9872 | 6b5e02aef89d7f3f87cf23679c7549195d86ef0405998e03506f6fa0f170d026 |
+| r50-v12-generator/dispatch/generator-check/deterministic-check.log | 31 | 82721b7c6ba35d4bf3b50c5f4cc3ba8d9cb4335e7909b79ecaf6736755b9ce96 |
+| r50-v12-generator/dispatch/generator-check/fresh-copy-readback.log | 31 | 82721b7c6ba35d4bf3b50c5f4cc3ba8d9cb4335e7909b79ecaf6736755b9ce96 |
+| r50-v12-generator/dispatch/generator-check/existing-destination-refused.log | 396 | e6e9a40abc5fb2d09ed10d6130ab9a2a2e6259085d5023793f9574a04cf6cd30 |
+
+The handoff's exact 19-file inventory additionally binds the three individual result JSONs, four environment proofs, three write-timing records and zero-byte owned stdout log. No Source2 agreement, full Native95, compiler, Editor/Game, camera, Engine or city/product acceptance follows. No later stage is authorized by this review. The reviewer changed only this append and leaves no process, query, gate or lease.
+
+Root decision, 2026-10-13: Root full-read actual append9246bf and independently checked raw records/current922/19outputs/typed environment restoration and exactJob8pluswrapper9 closure (ee9e04/299a7d); generator3 is accepted within the reviewed bound and physical lease released. Receipt820/7f7c06cc remains separate. Direct census-host identity and unretained final stdout qualifications remain. The Native author may investigate original console-compile1 prerequisites read-only; no adapter, compiler, later95 or Source2/Engine execution is authorized.
