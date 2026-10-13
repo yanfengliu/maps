@@ -1204,3 +1204,111 @@ Paths below are relative to Artifacts/support-v2 in the assigned Native worktree
 | r50-v10-reader-controls/expected-contract-v2.json | 7787 | 836cd4c1bc1c73041926f05e471f14a85c92409a1a41a2506dc588034582f79b |
 
 Release: the narrow repair resolves the prior static blockers. All 28 semantic controls and their actual ownership/census evidence are UNRUN. Root alone may authorize the next single small lease, read its complete results, and then decide whether any later Native stage may proceed. This reviewer leaves no owned process or execution lease.
+
+
+## Focused static review — reader controls v2 generic junction fixtures (2026-10-13)
+
+**Verdict: no material blocker found in this scoped fixture repair. Fresh v2 is ready for Root to consider one small lease. Actual junction creation, all 28 controls, fixture cleanup and the new physical census remain UNRUN.** This is readiness for generic leaf/ancestor ReparsePoint coverage. File-symbolic-link subtype coverage and permission to create file symbolic links remain unproved. No Native stage, compiler, Engine run or 95-command acceptance follows from this review.
+
+Reviewed target: Artifacts/support-v2/r50-v10-reader-controls-v2 in the Native worktree at assigned base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. The entire 275,351-byte Review50 prefix is preserved, SHA-256 498d005bb6df6e4d3de519d95e6751007d5eae224686c79c4bdd91290feb8a19. Review was limited to file reads, hashes, JSON data comparisons and static source reasoning. No candidate source was imported, parsed as an executable check, evaluated or run; no fixture, link, Job, CIM query, environment change, permission change or execution lease was created.
+
+### Fixture and instrument bound
+
+The v3 literal contract fixes the same 28 ordered case names, expected acceptance booleans and diagnostics as the prior v2 literal contract. Reviewer compared those full case arrays; they are identical: five positive and 23 negative cases, with 29 TSV rows including the binding. The new literal independently specifies the fresh paths, two junction recipes, targets, intended production calls and cleanup. The preservation record captures that literal while code_created is false; this is retained authoring evidence, not a semantic result.
+
+At controls.ps1:25 and :63–79, the new leaf and ancestor links use distinct exact paths and distinct target directories beneath the newly absent owned-fixtures namespace. Both targets are populated with known abc bytes through the existing bounded NewFixture writer. Targets and links are separate siblings, so neither recipe is circular. Before creating either link, the driver requires its path absent, applies the existing production admission to the missing link and existing target, and compares the hardcoded paths with the independently frozen literal. It uses only the already-pinned/imported Management New-Item -ItemType Junction command. There is no added import, child process, environment setter, FSCTL, shared fixture or global Windows policy change.
+
+Before each actual production Pin call, the driver reads the created link's real Directory and ReparsePoint attributes and compares DirectoryInfo.LinkTarget ordinally with the exact target. The ancestor arm additionally requires the addressed abc.bin leaf to be a regular non-reparse file. The inspected production code outside the diff confirms the causal branch: candidate-v10/census_support.ps1:26–28 calls Admit before FileInfo/file-kind admission, and Admit:15–18 examines the inspected path and every ancestor, rejecting ReparsePoint first. Thus the directory junction at the leaf reaches the generic reparse refusal before the later directory/file-kind rejection; the ancestor arm reaches the same guard while climbing from a regular file. No substituted predicate or mocked attribute supplies that expected refusal. Actual reachability still requires the later run.
+
+The extracted production definitions and hash buffer selection, original read-size witnesses, whole-population controls and old/new identity cases are unchanged. The final-size controls retain their existing bound: real file/predicate witnesses, with no claim to reproduce a concurrent Pin race. The fixed literal guard remains "Census path crosses reparse." for both reparse arms. Neither arm can count an arbitrary link-creation error as the expected result because the unchanged case matcher requires the independently specified diagnostic.
+
+### Cleanup and error paths
+
+At controls.ps1:108–115, finally iterates both registered links independently. Each successfully registered link must still have actual Directory/ReparsePoint attributes and the exact ordinal LinkTarget before deletion. The target is separately admitted. Directory.Delete(path,false) removes only that link; the code then verifies link absence, target-directory survival and the target's actual three-byte abc SHA through production Pin. A failure in the first link's cleanup is retained while the second registered link is still attempted.
+
+The original bounded non-reparse tree cleanup follows at :116. Capture-CensusPopulation checks every remaining entry through production Admit before recursive deletion, and the existing file/directory caps remain 32/12. A surviving reparse entry causes refusal instead of recursive traversal through the link. If creation throws before the created flag can be set, that tree traversal also refuses any residual link; the run cannot issue completion while a cleanup error remains. This review does not claim every creation failure can be cleaned successfully.
+
+The first original failure, cleanup failures and receipt/disposal failures remain separate variables and are reported after finally at :120. The first cleanup error is retained and subsequent cleanup errors are appended. Writer flush/disposal and stream disposal are still attempted after fixture cleanup; a late failure prevents success. The final complete-population and proof-cap checks remain intact. The known fixture dimensions are nine initial files / 18 bytes / seven ordinary directories; the two existing append witnesses produce 20 actual fixture bytes. This is a static derivation, not observed filesystem evidence.
+
+### Frozen correspondence and conservation
+
+Reviewer matched all 17 freeze leaves, totaling 291,937 bytes, and all 16 declared source leaves, totaling 490,300 bytes. Reviewer also matched all 186 protected current files, totaling 7,492,178 bytes, and confirmed their recorded before/after arrays are identical. That protected population retains the old current36 freeze, current/retained source pairs, old actual outputs and associated reference evidence. The owned wrapper and separate census are byte-exact after reversing only the fresh namespace substitution; their ownership, read/admission, parser, output, timeout, module-selection and physical-query algorithms are unchanged.
+
+The proposal preserves child/outer/census/whole limits 10/30/20/60 seconds, proof/stdout caps 100,000 bytes and the existing 1,000,000-byte outer report cap. Driver imports remain two, with zero driver children, environment setters or CIM calls. The separate census keeps its exact two-key environment and its deferred ACTUAL_OUTER_REPORT_SHA argument. Actual launch, retained PID/FILETIME, held waits, Job admissions/notifications/accounting, API/handle closure and exact postexit physical query are still required; a fresh namespace does not reuse the old physical-clear result.
+
+The declared new owned population is 858 records / 260,610,536 bytes: 16 sources / 490,300 bytes plus the unchanged 842 runtime records / 260,120,236 bytes. Separate census remains 312 / 236,646,224 bytes. The conservation receipt reports the original and new owned populations and census population freshly matched; reviewer did not repeat that larger runtime hash pass or treat the static receipt as a runtime before/after proof. The two required_absent inventory members are the separate actual run and owned-fixtures paths; both were freshly absent in this review. The later r50-v10 namespace was also absent.
+
+Production reader remains 23,886 bytes / 8cc7f47ae44d94e93e5426e19f0779affeda3562481ebc04e3bf5fa1c4f423e3 and stage inventory remains 11,103 bytes / e5355ea4d40cc471bcdbfea3fecb2be00e43a89ba639b4096cde04ae4b6e3bf5. Production roots, role/cap/hash boundaries, original old-prepare authority and 1,631-output/893-directory contract, eight-stage/95-command plan, next three commands, Native production, policy/trusted inputs and physical helpers are unchanged by this repair. No full old-output, SDK or Native gate was rerun.
+
+The original small run remains functional RED: eight completed cases and twenty did not run after the file-symlink creation refusal. Root's separately accepted old Job/physical closure and token-context diagnostics are preserved as prior evidence, not a v2 pass. The launch-context whoami observations do not establish the failed PowerShell process's administrator status or file-symlink capability. Original malformed literal-backslash-n metadata and separately valid copies remain historical artifacts; this review does not describe malformed JSON as having passed parsing. New junction creation and cleanup need their own actual evidence.
+
+### Exact reviewed v2 pins
+
+Paths are relative to Artifacts/support-v2/r50-v10-reader-controls-v2. All hashes are SHA-256.
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 7111 | 612151b97d1c3a5dd1478ee821f015b08361f31f45ed673638f1084c583900cf |
+| freeze-files.json | 5740 | 4262330feef27483e722788b0bba6a71c6ef00162c1eaa2e83a762db955edc93 |
+| inventory.json | 14291 | 86bf1c25f5631f1af967f6fae11d539e116958e67b9fd73f045be462008c2efc |
+| dispatch-proposals.json | 5746 | 9732f71c98fb2f05163b227e648e2d4ebec0ee38f758779b46e4f934909f86a3 |
+| expected-contract-v3.json | 10281 | e4a5c094d5d1003f33a62b4f25acac8938a6e7b933a79af73ffa6022c4e46e05 |
+| controls.ps1 | 18729 | 309c51cd458901d8c5cd1beb8a01147f909289b2d12c6bee49cb8c5826ba0e3f |
+| run_controls_owned.py | 14484 | b076440d07c971963303cdbfdebebd40df2149a75113703f2b7a4b4403a6c3f9 |
+| census_controls.ps1 | 17657 | 4b721c926ace0f3ca6a6007311b2cd73f61b1bc12871e46da0fa2adec9d9edd3 |
+| delta.json | 3098 | ee786d66b288d62cb861c9897e21ed21fd9c4157d380b1ddea56d911f21e1581 |
+| preservation-before.json | 62110 | 2eadcb49a046bd067e14252aa3208e6619f9e587670a42bf37312c28ff9167d9 |
+| conservation-final.json | 124624 | 40e39492e55ee0fc101ee2eb4bbb8780a181f2b8e590df505e1aea56f7b14df1 |
+
+Release: static readiness is limited to this fresh generic junction experiment. Root alone grants any next single small lease and accepts its complete functional, fixture-cleanup, conservation and physical results. This reviewer leaves no process or lease and makes no Native-stage advancement.
+
+
+## Actual result review — junction v2 small 28 controls (2026-10-13)
+
+**Verdict: accept the actual bounded small experiment and its recorded original-process physical clearance. No material discrepancy found.** All 28 expected control outcomes and all 29 ordered TSV rows match the independently frozen literal contract. Generic leaf/ancestor junction reparse coverage and the driver's guarded fixture cleanup are now observed within this instrument. File-symbolic-link subtype/capability, a whole prepare/census run, Native95, compiler, Engine, Source agreement and any new census-host Job receipt are outside this acceptance.
+
+This round preserves the entire previous 285,604-byte Review50 prefix, SHA-256 9904831f38ad01489e0aa18c8ff97687ea91bb369f509a16b1795be00e49aae4. Native workspace and assigned base af8bdbd34228c69dea45dd99af4ae20d7c2a9798 are unchanged. Reviewer read the actual handoff, complete raw TSV/stdout, relevant raw outer/census receipt fields, frozen contract and current descriptors; decoded every negative diagnostic; compared the recorded populations and hashes as data; and matched the current small freeze. No candidate execution, import, syntax gate, semantic retry, fixture/link operation, Job or CIM query was performed in this review.
+
+### Complete functional evidence and fixture cleanup
+
+The binding row identifies inventory 86bf1c25f5631f1af967f6fae11d539e116958e67b9fd73f045be462008c2efc, driver 309c51cd458901d8c5cd1beb8a01147f909289b2d12c6bee49cb8c5826ba0e3f, production candidate 8cc7f47ae44d94e93e5426e19f0779affeda3562481ebc04e3bf5fa1c4f423e3, immutable prior prepare e58c820f747918aa71632e1885c0657481bd97ce1090dcc4bcbd2812a5b77d49, new stage inventory e5355ea4d40cc471bcdbfea3fecb2be00e43a89ba639b4096cde04ae4b6e3bf5 and literal e4a5c094d5d1003f33a62b4f25acac8938a6e7b933a79af73ffa6022c4e46e05. These match the actual frozen sources and descriptors.
+
+Reviewer independently compared all 28 case rows, in order, with the literal names, expected booleans and diagnostics. The five positives are regular SHA, empty SHA, exact cap, complete membership and old-prepare identity. All 23 negatives were actual False outcomes with matching diagnostics, and every matched field is True. Diagnostics were compared as complete decoded strings; the two pinned-dependency messages include the exact regular fixture and old external-census paths, respectively. There are no omitted or extra case rows.
+
+Both owned-leaf-reparse-refused and owned-ancestor-reparse-refused report exactly "Census path crosses reparse." The currently pinned driver establishes the causal bound already inspected in the static round: successful actual Junction creation, real Directory/ReparsePoint and ordinal LinkTarget checks before the production Pin call, plus a regular leaf check for the ancestor arm. The recorded branch diagnostic differs from the creation and fixture-precondition diagnostics, so neither an uncreated junction nor an arbitrary New-Item failure explains those matched rows.
+
+The sole stdout completion is SUPPORT_READER_CONTROL_COMPLETE cases=28 rows=28 cleanup=pass. Here rows=28 names the case rows; the actual proof includes one binding row and totals 29. Exit 0 follows the pinned finally path, which attempts both registered links, checks their actual attributes/targets, deletes each link with Directory.Delete(false), checks target existence and abc SHA survival, then traverses the remaining bounded non-reparse fixture tree before deleting it. Original, cleanup, conservation and receipt errors in the outer result are null; local_ready is true. Reviewer also observed owned-fixtures absent afterward. These are pinned-script execution and final-absence evidence. No persistent target snapshot survived cleanup, and this review does not claim one exists.
+
+The original symlink-privilege RED remains historical evidence. This successful directory-junction run does not establish permission to create file symbolic links. The changed-read cases remain the previously described actual file/shared-predicate witnesses; the pass does not broaden them into a concurrent Pin race test.
+
+### Input, command and output correspondence
+
+Reviewer matched the current 17 small freeze leaves and compared every recorded owned input row with the current source/runtime descriptors. Both before and after contain exactly 858 records / 260,610,536 bytes, with matching path, size, SHA, cap and role; their ordered arrays are identical. The 17 before/after membership sets also exactly match the independently frozen runtime discovery records. The census before/after arrays exactly match the 312 frozen runtime records / 236,646,224 bytes. Root reports the fresh actual current-file revalidation; reviewer checked receipt-to-current-manifest identity and current small files without repeating the large runtime hash pass.
+
+Outer and child argv match the frozen proposal exactly. The census arguments after the executable match the proposal with the actual outer-report SHA filled in. Its managed argv records pwsh.dll while its independent actual host is the pinned pwsh.exe, the already-reviewed managed-host representation. The outer owned environment assignments are empty; the separate census records exactly the pinned PSModulePath and PSModuleAutoLoadingPreference=None. Driver scope remains two imports, zero driver children, zero environment setters and no full census body execution.
+
+The run directory contains exactly driver.tsv, outer-report.json, stdout.log and census-receipt.json. Their fresh hashes match the handoff and receipt references. The census references this actual outer report and this actual proof, with the expected literal/candidate hashes. It does not replay the old small run. The outer passed field remains false because its external census was still pending when that report was finalized; the separate receipt supplies physical_clear=true and experiment_passed=true while keeping native_prepare_certified=false.
+
+Recorded timing is bounded evidence from this run: outer dispatch chunk 9a3dd7 exited 0 in 2.6644542 seconds; outer self-duration is 2.616645700065419 seconds and child command duration 0.7389354000333697 seconds. Before/after owned hashing took 0.6408202000893652 / 0.628133799880743 seconds in that receipt. First elevated census dispatch 25a144 exited 0 in 3.977516 seconds; its self-duration is 3.5869055 seconds and exact query portion 0.1546650999999999 seconds. These fit the frozen 10/30/20/60 child/outer/census/whole limits. They do not measure the later full Native stage.
+
+### Original owned processes and separate physical query
+
+The wrapper identity is Python PID 14856 / FILETIME 134363837313538115. The actual Job total is two: PowerShell PID 69192 / FILETIME 134363837323788704 and conhost PID 27992 / FILETIME 134363837323938221. Primary assignment occurred before resume. Both admissions retain the exact identity and successful exact-Job API check, with admission wait state 258.
+
+Both retained termination observations record WaitForSingleObject(0)=0, wait error 0, successful GetExitCodeProcess with API error 0 and exit code 0. The two NEW notifications and matching two EXIT notifications are followed by ACTIVE_PROCESS_ZERO; final active lists are empty, accounting is zero, no exit identity is missing, and the notification queue had an actual empty poll after quiescence. The report retains its notification-completeness limit rather than claiming immunity to lost/late events. Job, primary-thread, primary-process, member-identity and completion-port closure fields are all true. No observer error is recorded.
+
+The separate census's identities equal that wrapper plus those exact two Job members. Its filter is exactly ProcessId = 14856 OR ProcessId = 27992 OR ProcessId = 69192. The query completed, query_error is null, returned is empty and unresolved_returned_pid_identity is false. Module and assembly paths are the pinned bundled-root Microsoft.Management.Infrastructure.CimCmdlets.dll, MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13, implementing type GetCimInstanceCommand, under the pinned PowerShell host. This supports Root's physical-clear acceptance for the recorded original three identities. It is not a new Job/descendant ownership certificate for the census host itself.
+
+### Actual evidence pins
+
+Paths below are relative to Artifacts/support-v2 in the Native worktree. All hashes are SHA-256.
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-v10-reader-controls-v2-actual/handoff.json | 12617 | 71c5082e94b8ef3cd871cd6fccdcc4c1e4176812e446e28ae169a5582288ed7f |
+| r50-v10-reader-controls-v2/run/outer-report.json | 604672 | 041cd701095e6f4cfa7ebf6a09e3c8b4db9d6b7eafc246118137198dac80de60 |
+| r50-v10-reader-controls-v2/run/census-receipt.json | 227984 | 6fedb8519ae57012f40059d227a852edd76798cd19e2642cd3c07876027c3e9f |
+| r50-v10-reader-controls-v2/run/driver.tsv | 3277 | 9ed5951e693dfb27bf7161254a028866b1bd7be23c4acfa79e2f9167a1e339ae |
+| r50-v10-reader-controls-v2/run/stdout.log | 63 | 2716046f4a4a93ae5ef12b1bd4bc98308efac04f898a96987388610405cd7e74 |
+
+Release: the small experiment's functional results, guarded fixture cleanup, exact conservation and original-process physical evidence are accepted within the stated bounds. Root owns the next stage decision and any new lease. No later Native stage is authorized or certified by this append; this reviewer leaves no process or lease.
