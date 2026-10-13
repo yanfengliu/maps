@@ -1380,3 +1380,123 @@ Paths below are relative to Artifacts/support-v2 in the Native worktree. All has
 Release: R50-20 remains open, functional RED is preserved and external physical clearance is pending Root's separate cleanup-only process. No further material discrepancy was found in the reviewed reports and local structural evidence. This reviewer leaves no process or lease; later cleanup preparation needs its own frozen focused review.
 
 Pin transcription correction for this round: the outer report table above contains a one-character transcription error. The freshly rechecked r50-v10/outer/prep-path-controls/report.json is 17,144 bytes, SHA-256 4a9e2d30172566a7cd9b21cca9a820528b8c4cee71b387973c507fc6147a470d. This exact hash matches the retained handoff and was the actual file used in the receipt checks.
+
+
+## Focused static review — frozen exact7 cleanup-only query (2026-10-13)
+
+**Verdict: hold dispatch at this freeze for R50-21 below.** The report/identity bindings, one-filter query path, selected-environment restoration and fail-closed receipt logic are coherent for this bounded cleanup-only task. The new collection of returned process command lines is unnecessary and should be removed before any query. No query has run. Functional RED and R50-20 remain unchanged; no stage certification is proposed.
+
+This review preserves the entire prior 305,632-byte Review50 prefix, SHA-256 ee69eae89fe184fac007a14b8c3b0c9fe546a7c1a700e8cc3d11c44c8d8f0eed. Target is Artifacts/support-v2/r50-v10-cleanup-only in the Native worktree at assigned base af8bdbd34228c69dea45dd99af4ae20d7c2a9798. Reviewer read the complete frozen script, shared helper, contract, proposal and preservation metadata; compared identities with the previously reviewed actual reports; and checked small-file pins, ancestry and output absence. No helper import, PowerShell script/selected function execution, CIM query, Job, gate, environment change or Engine run occurred. The author's pinned lexical receipt remains preparation evidence; no runtime behavior is inferred from it.
+
+### R50-21 — P2: returned-row receipts collect unrelated process arguments without needing them
+
+At census_exact7.ps1:67–68, the exact PID query requests the ordinary Win32_Process object and the next line serializes both row.CommandLine and row.ExecutablePath into each unresolved returned record. Every returned row is unconditionally unresolved/refused, including a potentially recycled PID. Neither field is used to establish absence, compare the frozen identities or decide readiness. Thus this branch can persist unrelated process arguments even though the narrow task only needs the returned PID and creation date.
+
+Required minimal repair: request only the necessary ProcessId/CreationDate projection for the single exact query and omit returned CommandLine/ExecutablePath from the unresolved receipt fields. Keep the independently known expected identity from the original reports and the unresolved classification. Preserve the script's own frozen invocation record, module identity, exact seven-PID filter, one-query limit, any-row refusal and absence-only acceptance. Refreeze the changed source/proposal metadata and retain this original freeze. No new identity API, broader query, kill, retry, environment key or dependency is needed. The repaired source has not been reviewed or executed in this round.
+
+### Report and physical admission
+
+The script pins both exact RED report bytes at :37–38 before parsing them. The outer SHA is 4a9e2d30172566a7cd9b21cca9a820528b8c4cee71b387973c507fc6147a470d and the inner SHA is a09bbf15089997b4fe976eefd197be56886af9bd07dfcfb5797d3821616c35ec. Those are the actual files accepted as raw evidence in the preceding round, including their functional failures. The cleanup path does not require functional success or change either report.
+
+Physical at :24–36 checks the actual denominator, identities/held-observation counts, retained same-identity termination, held waits, API success/errors, exact-Job admissions, accounting, quiescence, closure flags and notification counts. The caller requires outer total6, two nested command results, exact retained outer/inner exits 2/0/1, the six held exit vector 2/0/0/0/1/0, and exactly five nested identity memberships bound to the outer Job. The function checks NEW/EXIT counts and recorded reconciliation flags; the immutable full report pins also bind the exact per-PID event sequences independently inspected in the actual-result round. This is admission of those specific reviewed reports, not a general validator for arbitrary future physical reports.
+
+At :60–64, the wrapper plus six members must match the independent seven PID/FILETIME pairs, in order, with unique PIDs. Reviewer compared the contract/proposal and script constants with the actual reports. They agree: wrapper 61532 and members 35080, 70400, 26120, 79900, 64888, 69592, with the already-recorded exact creation FILETIMEs. The only filter is exactly ProcessId = 26120 OR ProcessId = 35080 OR ProcessId = 61532 OR ProcessId = 64888 OR ProcessId = 69592 OR ProcessId = 70400 OR ProcessId = 79900.
+
+No retry or alternate query branch exists. A completed query with any returned row fails readiness; rows outside the seven identities also cause refusal. Returned rows are not classified as live exact matches or safely recycled. There is no additional identity API or kill. The output permanently keeps functional_pass=false and original_stage_certified=false.
+
+### Fixed host, helper, runtime and environment boundary
+
+Entry admission at :49–53 fixes the script namespace, actual host, cwd, eight total raw arguments and all seven literal tail arguments, including ScriptSHA. Verify checks absolute lexical confinement, each leaf/ancestor's non-reparse status, regular-file size/cap, actual stream byte count/hash and final size. Current helper, runtime manifest, PowerShell host, Utility manifest/assembly and CIM manifest/assembly match their independent fixed records. The complete runtime descriptor is 312 entries / 236,646,224 bytes and is verified before the query and again afterward.
+
+The reviewed helper at tools/runtime/support_census_contract.ps1:35–48 imports the absolute pinned CIM manifest, selects exactly one CmdletInfo whose module and implementing assembly paths match the bundled-root DLL, verifies the assembly again and returns that actual command and identity. The caller additionally requires MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13 before invoking the returned command. No unsupported helper field or function was found in this call contract. The helper contains no query at import.
+
+The selected Process environment rows are captured before either environment assignment. The script changes only PSModulePath and PSModuleAutoLoadingPreference; SetSelected preserves present empty/nonempty strings and uses the already-tested NullString.Value for absence. Once assignment starts, finally attempts every captured row independently, retains restoration errors and compares the final presence/value rows. The script's local PowerShell preference does not become a global environment change. Original, restoration and receipt failures remain separate.
+
+### Receipt, time and qualification
+
+The query has OperationTimeoutSec 10 and must start before the script timer reaches eight seconds. The whole20 requirement is a final clock/acceptance limit, checked before receipt construction and again when computing readiness after receipt disposal. It is **not a separately enforced outer watchdog**. This review makes no stronger wall-clock interruption guarantee for imports, filesystem operations or a stalled query.
+
+The output namespace is fixed and was absent at review. The receipt uses CreateNew, a one-million-byte payload cap, durable stream flush and disposal attempts. No existing evidence file is overwritten. A write/flush/disposal failure is retained in receiptErrors and prevents readiness. The BCL final diagnostic is emitted after disposal attempts, bounded to 8,192 bytes, with independent original/restore/receipt diagnostics and stage_certified=False. Failure to emit that final diagnostic exits 2. Only completed empty query, no original/restoration/receipt error, exact environment restoration and the final time check can produce ready=True/exit0.
+
+Acceptance must bind the created receipt, final CLEANUP_ONLY_FINAL diagnostic and successful exit together. The receipt's all_original_pids_absent field alone does not include later receipt/disposal failures and cannot certify completion. Early dependency/import failures also fail closed; they cannot turn did-not-query into a pass.
+
+The receipt expressly leaves the new direct census host PID/FILETIME and descendant denominator unreported. It only addresses the original seven recorded identities, after the original frozen census refused before querying. Neither this preparation nor a later empty result grants a new host Job certificate, repairs R50-20 or certifies Native95.
+
+### Freeze and preservation checks
+
+Reviewer matched all seven frozen leaves, all thirteen retained original actual files, seven explicit fixed dependencies and the original RED handoff. Leaf/ancestor reparse checks passed for this small inspected set. The complete runtime descriptor count and byte sum match 312 / 236,646,224; reviewer did not repeat the runtime binary corpus hash. The preservation record and Root's preceding current-input checks remain attributed evidence. The future cleanup-only-receipt.json path was absent. Product code and original reports were not edited by this review.
+
+Exact target pins, relative to Artifacts/support-v2/r50-v10-cleanup-only; hashes are SHA-256:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 2524 | cdba997a75a4a7e83964f827cb97de397bc02b2f9d3552ec9e2155defe16e246 |
+| census_exact7.ps1 | 15841 | 73168691ec0b046fe961096516379b2701943d3a299b73ace26e4f4def45f8f1 |
+| dispatch-proposal.json | 4913 | a7f451e4759169be67c8e93123cf90df2a8ab200952fc96355e6c532ad43abae |
+| freeze-files.json | 2352 | 233c793784f8cf210f909f74490ef6099b5c5cfd4344596331519c5df7edfb05 |
+| preservation.json | 7559 | 5f8fbaf1c36291298a6ee90334837aea834760cac1309edcbaabded4ce91048e |
+| contract-before-code.json | 2355 | acc339cd895aef299fb9c36705562091ab285462063931213a42279d40c35297 |
+| lexical-actual.json | 205 | f2ea5108f95ab96ccc4a6fa21fdf66ef82e4661eb8eb895e43ee4b93807fa89f |
+
+Release: R50-21 is the sole new scoped blocker. Root owns the minimum repair/refreeze, focused re-review and any separate query lease. Query/helper import and cleanup-only result remain UNRUN; original external physical clearance remains pending. Reviewer leaves no process or lease.
+
+
+## R50-21 focused static re-review — two-property cleanup projection (2026-10-13)
+
+**Verdict: R50-21 closed statically. No remaining material finding in this narrow repair.** The exact cleanup-only query is ready for Root to consider its separate one-query lease. Query execution, helper import, returned-row behavior, restoration and receipt completion remain UNRUN. Original functional RED and R50-20 remain open; original external physical clearance is still pending actual evidence.
+
+This round preserves the entire 315,548-byte Review50 prefix, SHA-256 869425be5a27afcdae13af9d9a1c3275910265704cec16e3057865c452152afb. The target remains Artifacts/support-v2/r50-v10-cleanup-only in the assigned Native worktree/base. Reviewer read the exact diff and new projection contract, compared the before/current bytes, checked small-file pins and metadata propagation, and consulted the primary cmdlet reference as text. No candidate/helper import, query, Job, control, gate, environment change or Engine run occurred.
+
+At census_exact7.ps1:67, the sole query now adds -Property ProcessId,CreationDate while preserving the exact class, seven-PID filter, returned CmdletInfo invocation, OperationTimeoutSec 10 and ErrorAction Stop. Get-CimInstance documents Property as String[] in the same ClassName parameter set as Filter and OperationTimeoutSec, including comma-separated property names. This is a supported static argument form; actual binding to the pinned runtime has not been exercised in this review. See [Microsoft's Get-CimInstance reference](https://learn.microsoft.com/en-us/powershell/module/cimcmdlets/get-ciminstance?view=powershell-7.5).
+
+At :68, returned rows now serialize only pid, the independently known expected original identity, cim_creation_date and classification. Both accesses to returned CommandLine/ExecutablePath are absent. The script's own invocation record is retained, which is needed to bind the dispatch. The unchanged any-row policy still refuses every returned result as unresolved; it makes no live/recycled identity inference from the creation date. This closes both unnecessary collection sites without broadening the query or changing its result criterion.
+
+Reviewer independently verified the entire new source equals the old preserved source after exactly two literal replacements: the query projection insertion and the two returned-field removals. All other executable bytes are unchanged. The projection-contract-before-code.json explicitly fixes the two properties, four unresolved-record fields, exact filter, one query and unchanged refusal/bounds. Its delta links the old source pin to the new one. The proposal has the same old fields apart from propagated source size/hash and corresponding ScriptSHA arguments; added metadata declares the projection, reduced fields, independent contract and whole20 qualification.
+
+All fifteen current freeze leaves, all thirteen original actual RED files and seven fixed dependencies matched their declared pins, with inspected leaf/ancestor non-reparse checks. The four archived pre-repair source/proposal/freeze/handoff files retain their exact old bytes. The future CreateNew receipt path remains absent. No runtime binary corpus was rehashed for this two-line repair. Both original report SHAs, seven PID/FILETIME identities, outer Job6 and nested identity/termination checks, helper/DLL/MVID contract, complete312 runtime descriptor, environment selection/restoration, receipt failure handling and functional_pass=false/original_stage_certified=false are unchanged from the prior full-script review.
+
+The bounds remain prequery less than eight seconds, query operation timeout ten seconds, and whole20 as a final elapsed-clock acceptance check. Whole20 is not a separately enforced outer watchdog. The acceptance must still combine the actual receipt, the post-disposal CLEANUP_ONLY_FINAL diagnostic and successful exit. An absent or incomplete query is not physical clearance. The new census host's own PID/FILETIME/descendant denominator remains explicitly unreported, and no Native stage certification follows.
+
+Exact reviewed pins, relative to Artifacts/support-v2/r50-v10-cleanup-only; hashes are SHA-256:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| handoff.json | 4266 | 460200e8e5772ce8cf0f2d9b2460bc498156458a4973c43b07cac628fe7f5734 |
+| census_exact7.ps1 | 15800 | 675fb6d01f5a9829b084da8dd18064338404def0d9ec5d83c6ebd6a4aada47c8 |
+| dispatch-proposal.json | 5555 | 27fbd1863650e03b663214a0a9265c824100605f974b0d61f7f8edec5f14051f |
+| freeze-files.json | 5076 | 9562a579044bc302f1af9dc5de2a11378516650237e2ca7a91011e7665e2bb7a |
+| projection-repair.diff | 2837 | 5891ebcbe1add608a158bc0589ef39d7475f9c710e9c036838c011d596cb1887 |
+| projection-delta.json | 2258 | 7a40296eae14c96d58589c61334c45a84d06ad53de24911d99b072a21c23ff99 |
+| projection-contract-before-code.json | 1108 | 6eb013b298b1ce8f0883d8f00ff48eb9ea556ffaebf191c516830f849f13f752 |
+| lexical-projection.json | 205 | 8ec336b84d720419620453bc1ff937907155f97a38bb8072ec5bc548d67ed2f2 |
+
+Release: the projection-only blocker is closed at these bytes. Root alone grants any separate query lease and accepts the actual cleanup-only result. This reviewer leaves no process or lease.
+
+
+## Actual acceptance — exact7 cleanup-only query (2026-10-13)
+
+**Verdict: accept physical closure for the seven original recorded identities, within the cleanup-only bound. No material discrepancy found.** Functional RED, R50-20 and original_stage_certified=false remain unchanged. This result is not a Native stage pass and does not supply a Job/PID/FILETIME/descendant certificate for the new direct census host.
+
+The complete 320,799-byte Review50 prefix is preserved, SHA-256 2b49bbc78f0a5f18676f104f343e841c463b594cc4fd88171ecb48023f285540. Reviewer read the complete 8,357-byte receipt, checked its actual hash and the frozen script/proposal, compared the original report bindings, exact identities/filter, invocation, selected environment and module records, and read the frozen runtime manifest as data. No additional query, helper import, process/Job API, candidate execution or gate was run. The codec author's new namespace was not inspected or modified.
+
+The receipt binds the unchanged original outer report, 17,144 bytes / 4a9e2d30172566a7cd9b21cca9a820528b8c4cee71b387973c507fc6147a470d, and inner report, 19,049 bytes / a09bbf15089997b4fe976eefd197be56886af9bd07dfcfb5797d3821616c35ec. Both still report functional failure. All seven identities exactly equal the original wrapper plus six retained Job members, including image paths and creation FILETIMEs; the five nested memberships are recorded as validated. The exact sorted filter is ProcessId = 26120 OR ProcessId = 35080 OR ProcessId = 61532 OR ProcessId = 64888 OR ProcessId = 69592 OR ProcessId = 70400 OR ProcessId = 79900.
+
+The actual query completed with return count zero. observed_rows and unresolved_returned are empty; all_original_pids_absent is true. There is no claimed live/recycled identity resolution. The source hash binds the reviewed ProcessId/CreationDate-only query and receipt projection, and no returned command line or executable path is collected into this result. The recorded actual command is the expected Get-CimInstance CmdletInfo, with both module and assembly at the pinned bundled-root Microsoft.Management.Infrastructure.CimCmdlets.dll, MVID 318781f8-5f07-4bf9-9a6e-7b0b37f04e13, implementing type Microsoft.Management.Infrastructure.CimCmdlets.GetCimInstanceCommand and the pinned PowerShell host. Its invocation tail and cwd match the frozen proposal; pwsh.dll in managed argv and pwsh.exe in the actual host retain the previously reviewed representation.
+
+The manifest pin is 106,216 bytes / 5282118ff3dc1a1c7d471c3c9c93f8dd15d91df2409e61774bd71cfc7c85e915 and its complete population is 312 files / 236,646,224 bytes. The exact frozen source verifies all 312 inputs before and after querying, as well as the reports/helper/module pins. With the null original_error and successful final completion, those loops completed in this run. This is evidence from the pinned executed script and completion result; the compact receipt does not contain separate per-file before/after arrays. Reviewer checked the manifest and explicit small dependencies without repeating the full binary corpus hash.
+
+Both selected Process environment rows have exactly equal before/after presence and values: the originally present PSModulePath is restored and the originally absent PSModuleAutoLoadingPreference is absent again. selected_environment_restored is true, original_error is null and restore_errors is empty. The actual module-selection environment records the intended fixed module path and None preference. No global or whole-environment restoration claim is made.
+
+Root supplies the mechanical tool result fd686d: exit 0, wall time 2.134 seconds, and the post-disposal marker CLEANUP_ONLY_FINAL query=True returned=0 unresolved=0 ready=True restored=True original_b64=<none> restore_b64= receipt_b64= stage_certified=False. This final marker and exit are required alongside the receipt because late receipt/flush/disposal errors are recorded there. Their stated absence completes the receipt-writing bound; the reviewer did not recreate that output or run a second query.
+
+The receipt measures query_seconds=0.17402299999999993 and whole_cleanup_seconds=1.7786675 before receipt writing. The mechanical wall time is separate from that earlier timestamp. The original prequery<8 and operation10 limits apply; whole20 remains a final elapsed-clock acceptance check, not a separately enforced watchdog. Physical closure covers absence of the original seven PIDs at the completed exact query, combined with the already-reviewed held-Job termination evidence. It makes no broader process census or new-host ownership claim.
+
+Exact actual pins, relative to Artifacts/support-v2/r50-v10-cleanup-only; hashes are SHA-256:
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| cleanup-only-receipt.json | 8357 | 51e8571de59260af34baca90dc9dc68b1f4121938c907eb4f4dbe29ea57ec0a7 |
+| census_exact7.ps1 | 15800 | 675fb6d01f5a9829b084da8dd18064338404def0d9ec5d83c6ebd6a4aada47c8 |
+| dispatch-proposal.json | 5555 | 27fbd1863650e03b663214a0a9265c824100605f974b0d61f7f8edec5f14051f |
+
+Release: the cleanup-only result closes the preceding external physical-pending condition for the original seven identities. It leaves the original functional failure, incomplete contract39 population and unrun census-contract21 intact. Root owns any subsequent repair or lease. Reviewer leaves no process or lease.
