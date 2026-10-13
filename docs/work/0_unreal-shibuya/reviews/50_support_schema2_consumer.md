@@ -1312,3 +1312,71 @@ Paths below are relative to Artifacts/support-v2 in the Native worktree. All has
 | r50-v10-reader-controls-v2/run/stdout.log | 63 | 2716046f4a4a93ae5ef12b1bd4bc98308efac04f898a96987388610405cd7e74 |
 
 Release: the small experiment's functional results, guarded fixture cleanup, exact conservation and original-process physical evidence are accepted within the stated bounds. Root owns the next stage decision and any new lease. No later Native stage is authorized or certified by this append; this reviewer leaves no process or lease.
+
+
+## Actual RED assessment — original v10 prep-path-controls (2026-10-13)
+
+**Verdict: functional RED; local held-Job termination evidence is coherent; external physical clearance remains PENDING. No Native stage acceptance.** The original three-command stage ran path7 successfully, failed contract39, and did not run census-contract21. The first frozen external census refused before its process query and produced no external certificate. This assessment does not review, authorize or predict the unfinished cleanup-only script.
+
+The complete previous 295,024-byte Review50 prefix is preserved, SHA-256 7f037585c1f3c5d4a216c6f20c27d0f3e9753d84ec862d26ca64b939c00e7eca. Native workspace/base remain artifacts/unreal-support-v2/worktree at assigned af8bdbd34228c69dea45dd99af4ae20d7c2a9798. Reviewer read the complete actual handoff, inner/outer reports, both test logs, adjacent codec/readback source and census refusal branch; parsed retained CLIXML as XML data without PowerShell deserialization; compared metadata and actual file hashes. No candidate import, test, gate, semantic retry, process query, Job, environment mutation, compiler or Engine run was executed. Only this authored review is appended.
+
+### R50-20 — P1: unsupported response-file codec blocks discovery, with the same spelling in compile readback
+
+Observed failure is at tools/runtime/support_gate_contract.py:135: bytes_at(...).decode('utf8-sig') raises LookupError: unknown encoding: utf8-sig. The actual traceback reaches this line through tests/runtime/test_support_gate_contract.py:76 approved-discovery-positive, the test's launch boundary at :36 and conserve. This is an actual failure of a positive control before its expected launch marker. The independently required population check then fails in tearDownClass at :173 with "Exact independent prelaunch control population incomplete." The failure is retained; it cannot be treated as a complete 39-case result.
+
+The same unsupported codec spelling appears at support_gate_contract.py:316 in compile_readback's actual_response_order loop. That second path is a static adjacent finding, not an observed compiler/readback failure in this run. The current source is 26,313 bytes / e9f8e5a03c4677202cfad380532d4cab7487e823c85e734cd8b20ddc83220f99, matching its exact record in the stage semantic manifest.
+
+Required repair after Root's physical-clearance and implementation decision: use a supported BOM-aware UTF-8 codec consistently at both response-file readers, preserving bounded byte reads, exact include/FI ordering and the independent expected population. Preserve this RED evidence, refreeze any changed inputs and obtain authorized evidence for the affected paths. This review does not perform the repair, evaluate a codec probe or grant a rerun.
+
+### What actually ran
+
+The frozen stage declares three commands. Reviewer compared the actual first two command names, argv, Windows command lines and cwd with their frozen records; they match. The path7 log contains exactly seven named successful tests and exit 0, including actual owned leaf/ancestor reparse, confined reads, traversal/role refusal and no-overwrite cases. Its recorded command duration is 0.3369264998473227 seconds.
+
+The contract39 process exited 1 after 1.9076988999731839 seconds. The retained unittest log reports four methods: discovery_population ERROR, generated_inputs ok, ordinal_population ok and receipt_population ok, followed by the independent incomplete-population tearDownClass ERROR. Four unittest methods are not 39 completed independent controls. No contract39 pass is inferred from its three method-level ok lines. The third command, actual-census-contract21, has no result and did not run.
+
+The inner report has passed=false/local_ready=false and "Actual named result/diagnostic did not match independent expectation." The outer report has passed=false/local_ready=false, inner process exit 2 and "Inner stage failed; retain exact report." The top environment command exited 1. No outputs manifest or successful stage certificate was produced. The prior old prepare authority remains a distinct unchanged prerequisite with its original identity and pins; none of these RED reports replaces or silently reinterprets it.
+
+### Local structural termination and unresolved external clearance
+
+The outer wrapper identity is Python PID 61532 / FILETIME 134363852341694424. Its held Job denominator is six, with exact retained identities:
+
+| PID | Creation FILETIME | Image | Held API exit |
+| ---: | ---: | --- | ---: |
+| 35080 | 134363852416317415 | Python inner wrapper | 2 |
+| 70400 | 134363852416373016 | conhost | 0 |
+| 26120 | 134363852488807515 | Python path7 | 0 |
+| 79900 | 134363852488864439 | conhost | 0 |
+| 64888 | 134363852492302517 | Python contract39 | 1 |
+| 69592 | 134363852492368398 | conhost | 0 |
+
+All six admissions record successful exact-Job membership and retained identities. All six held waits return 0, wait/API errors are 0, GetExitCodeProcess succeeds and held_process_terminated is true. Nonzero child exits are preserved functional results, not missing termination proof. The two inner command Jobs independently retain their corresponding two-member pairs and coherent termination records.
+
+The outer stream has exactly six NEW and six corresponding EXIT notifications, followed by ACTIVE_PROCESS_ZERO. Final active list is empty and accounting is zero; no exit identity or observer error is recorded. The initial cleanup snapshot still contained conhost 70400, so only the later final observation supports quiescence. The recorded final fields show the actual empty notification poll and closure of Job, primary-thread, primary-process, member-identity and completion-port handles. The report's limit on late or dropped notifications remains applicable. These facts substantiate local held-handle termination for the recorded Job members.
+
+External clearance remains unresolved. The handoff records the first elevated frozen census refusal at candidate-v10/census_support.ps1:141, "Actual inner/outer physical result refused." Reviewer inspected that branch: it checks inner/outer local_ready before the later query, and both actual values are false. The local_ready flags here include functional success, so this refusal does not contradict the separately coherent held termination observations. The external-census.json path is actually absent. No completed query or empty physical result may be inferred from an absent receipt.
+
+A later cleanup-only assessment must remain bound to both exact original report hashes and the original seven identities (outer wrapper plus six members), independently preserve functional RED, and obtain its own authorized completed query evidence. The script being prepared for that purpose was not inspected, approved or described as ready in this round. No extra query, kill or cleanup dispatch is authorized by this review.
+
+### Environment, conservation and timing
+
+The retained before/after CLIXML files bind the same inventory and envelope. Reviewer compared their decoded data: all nine outer selected presence/value rows and both census selected rows are restored exactly; actual applied rows equal the intended rows; captured/restoration counts are 9/9 and 2/2. Before-mutation and before-written flags are true. Outer child_exit_code is 2 and census child_exit_code is 1. Both after records preserve the original frozen-child refusal, empty restore/receipt error lists, stage_certified=false and envelope_ready_before_receipt=false. These are selected process-environment records, not a whole-environment or global-state claim. Root's handoff separately records final diagnostic flags from the dispatched commands; the CLIXML comparison does not fabricate a new post-disposal diagnostic.
+
+All four inner/outer conservation records match 873 inputs / 262,075,923 bytes and the same 19 independently declared population summaries. Their identities bind stage inventory e5355ea4d40cc471bcdbfea3fecb2be00e43a89ba639b4096cde04ae4b6e3bf5, semantic set 20a7a5f5d952c540ed957dbd8e8181a96327aab1d35ac242db3b8ef5bb534cc9, command set 32a9882b38b42725f4243ec25ea22049d536e101f354002ef9f202bb3dc776c8 and census set 71320b7d2338f998e2828af251381d7e7bca4f50de5d8fe22163bbc1bda951a3. Reviewer matched all 13 actual output pins and the exact handoff hash. Root reports fresh current validation of stage873 and census876 / 262,398,081 bytes before any change; reviewer did not repeat that larger runtime corpus hash or turn it into an external census pass.
+
+The handoff reports outer command exit 1 / 24.0638598 seconds and first census command exit 1 / 10.5045263 seconds. Inner and outer report durations are 12.840962700080127 and 23.80995270004496 seconds. These are observed failed-run timings. They prove neither successful completion of the full stage nor correctness of the commands that did not run.
+
+### Exact principal evidence pins
+
+Paths below are relative to Artifacts/support-v2 in the Native worktree. All hashes are SHA-256. The handoff retains the full thirteen-file actual population, including the four environment CLIXML files, result JSON files, logs and report-write timings.
+
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| r50-v10-actual/prep-path-handoff.json | 12281 | 67997efc9bd2ef544a04c26b427c1361fb9601b2e60110432a3ef0691be1fe07 |
+| r50-v10/outer/prep-path-controls/report.json | 17144 | 4a9e2d30172566a7cd9b21cca9a820528b8c4dee71b387973c507fc6147a470d |
+| r50-v10/dispatch/prep-path-controls/report.json | 19049 | a09bbf15089997b4fe976eefd197be56886af9bd07dfcfb5797d3821616c35ec |
+| r50-v10/dispatch/prep-path-controls/actual-prelaunch-contract39.log | 2651 | bd0c494df298031b1008adb5644e70ff3c2124a77caa287f17d570a4f1a5ae96 |
+| r50-v10/dispatch/prep-path-controls/actual-preparation-path7.log | 821 | ac4f4f453da1f58b0040b6d0a5012beb02ecfe63d4f061cd028421d5177d7240 |
+
+Release: R50-20 remains open, functional RED is preserved and external physical clearance is pending Root's separate cleanup-only process. No further material discrepancy was found in the reviewed reports and local structural evidence. This reviewer leaves no process or lease; later cleanup preparation needs its own frozen focused review.
+
+Pin transcription correction for this round: the outer report table above contains a one-character transcription error. The freshly rechecked r50-v10/outer/prep-path-controls/report.json is 17,144 bytes, SHA-256 4a9e2d30172566a7cd9b21cca9a820528b8c4cee71b387973c507fc6147a470d. This exact hash matches the retained handoff and was the actual file used in the receipt checks.
