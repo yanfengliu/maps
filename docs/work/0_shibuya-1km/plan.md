@@ -1,13 +1,19 @@
 # 1km x 1km animated Shibuya model
 
-Status: active; the owner resumed from [the saved handoff](resume-2026-09-28.md), and the app goal tracker confirms active.
+Status: active; the owner resumed the approved Shibuya deliverable on 2026-10-14, and root created a new active goal.
 Owner: root orchestrator
 Created: 2026-09-06
-Updated: 2026-09-29
+Updated: 2026-10-14
 
-## Current queue — 2026-09-29
+## Current queue — 2026-10-14
 
-This table is the current operational queue. The sections below retain the detailed requirements and evidence history.
+Use [the progress board](progress.md) as the current operational queue and full-map acceptance record. Main and origin/main are 69a33eef4a7825497cdd332208c29e7dcab56d27: docs checkpoint994 is complete after accepted road milestone991 on 49cfdb7. All 35 deliverable criteria remain represented on the board; this checkpoint accepts no new product behavior.
+
+Root assigned commercial_corner one complete authored commercial frontage in artifacts/commercial-corner-20261014/worktree, following [985](reviews/985_fresh-whole-block-direction.md) and [988](reviews/988_commercial-corner-source-selection.md). The former FG checkout is absent. Real owned node_modules dependencies are restored, and the exact building tile is recovered from backup and decoded. The current full scene and threshold pavement remain unavailable after a search of 38 retained filename candidates; original988 receipts are absent and recomputable. Owner scene_recovery is assessing recovery feasibility, and runtime/appearance qualification is blocked meanwhile. Source-dependent checks, native appearance, five final gates and independent integrated review remain required. This session continues Shibuya; it does not adopt the separate Unreal work.
+
+## Historical queue snapshot — 2026-09-29
+
+The following table and narrative retain their dated evidence and decisions. Current owners, dependencies and next acceptance steps are on the progress board.
 
 Owner steering, 2026-09-29: Satellite is the sole visual-quality target; retain basic Cartographic regression checks. Frontage352 resolves the reverse-view defect from351 and is accepted on local main 47da3ecb980fd1be8373a17871938953ca022cf5 after 355 all-five gates and independent356 review. Fresh critic353 supports moving to the inhabited crossing. Worktree344 preserved historical states; the fresh census still finds 58 checkouts, including 55 idle manual candidates awaiting explicit owner approval.
 
