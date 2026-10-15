@@ -1,0 +1,13 @@
+# 1210 — Compact-capture functional preparation
+
+Preparation only; no caller, helper, Process object, Node, calibration, constructor, browser or public gate was evaluated. Runtime permission remains false. Original1203 functional and1198 throughput HOLD remain unchanged.
+
+The frozen caller and launcher are exact1203-body inverses after the explicit namespace/input/output binding substitutions. Host and outer guard receipts belong to1210. The unchanged Node calibration owns1208 and would write its fresh producer outputs there. The launcher references the actual1203 owned-lifecycle.ps111717B/e4fb987d… directly; no helper copy or executable-body change was made. Both scripts and the referenced helper have zero unevaluated PowerShell AST errors. All five1176 function extents match their original byte/SHA pins and are not evaluated during preparation.
+
+The proposed single cold unprofiled run keeps300000ms Node execution wait plus one5000ms cleanup/drain grace; outer guard315000ms plus one5000ms grace. These are maximum allocations, not completion estimates. No controls, warmup, profile, retries, geometry/policy/arithmetic/recorder changes or deadline increases are proposed.
+
+The actual application is the immutable1208 capture closure:16 executable modules and34 literal relative import edges, with the exact patch predicate source and case-plan/assembly resources pinned. All237 IDs/targets/bodies, native predicates, uncached validation, full signatures and finalizer remain those reviewed in1208. This preparation does not claim those cases passed. The original capture-source leaves and pure evidence remain frozen.
+
+The false proposal binds89 input pins and137 preserved operational descriptors:117 earlier outputs plus20 actual1208 pure-control outputs. Other1208 source/preparation files are fixed inputs. The final input index adds the actual host/proposal/delta/AST pins. It records each reader separately: the host verifies the declared tuple; Node bootstrap enumerates its own source/plan/assembly and fixed external list and reads no input-index file. Selected1208 input metadata is an admission descriptor, not a child-finalizer observation.
+
+No giant1203 raw file was parsed or copied during this preparation; its admitted descriptors remain references to originals in place. The inherited Capture-Benchmark behavior is unchanged apart from its application path binding. A later failure/cap must preserve literal HOLD and original raw evidence without repair/retry. Even complete237PASS would leave construction, emitted geometry/union coverage, browser/lifetime, public gates, main/full35 and performance acceptance open. Root admission and exact-source review are required before a fresh true runtime release.
