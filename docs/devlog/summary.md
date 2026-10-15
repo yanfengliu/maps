@@ -6,3 +6,5 @@
 - 2026-10-11: **The Unreal experiment starts with a fresh file tree** — created `codex/shibuya-unreal-5.8` in an isolated worktree and preserved only the two instruction files from the primary setup. Engine 5.8.3 is identified; MCP, city building, rendering, and moving population acceptance remain open in the [plan](../work/0_unreal-shibuya/plan.md).
 
 - 2026-10-15: **Native module metadata fits the original limit** — one complete59319-byte installed-Utility capture passes the65536-byte boundary with observed normal closure under the original60 seconds. Source full32 integration and Runtime production verification remain active; crossing lighting, ordinary controls, pedestrians, vehicles and3000/200 performance are still unverified in Unreal.
+
+2026-10-15 Unreal orchestration: Source full12 receives a three-finding static HOLD and fresh repair; Native binding passes focused source review while remaining closure is implemented. Sole production wire completes19/55 and reader21/21 but stays RED at69.3324669/60; tool exit1/124.724s and normal outer closure are retained. Unreal lighting, controls, traffic and product acceptance remain unverified.
