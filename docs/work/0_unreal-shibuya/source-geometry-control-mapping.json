@@ -1,0 +1,399 @@
+{
+  "schema": "proposed-source-geometry-production-current-controls-contract-v1",
+  "status": "ROOT_AGREEMENT_REQUIRED_DESIGN_ONLY_NO_EXECUTION",
+  "owner": "/root/branch_review",
+  "integration_owner": "/root",
+  "base": "33d386299ff7bd02d91bca38f655f41597ddb756",
+  "original_control_authority": {
+    "relative": "topology-census-design-v4/control-populations-before-harness.json",
+    "bytes": 26091,
+    "sha256": "f3dd25097a3b67c6678486b7a5c534bdcd9488882d1aee24532c7eda199689ed"
+  },
+  "original_control_inputs": {
+    "relative": "topology-production-geometry-candidate-v1/control-inputs.json",
+    "bytes": 2710,
+    "sha256": "b70c0af667458a325f42869d05da81919a6f84fe4ac487ec335f17c51278abe0"
+  },
+  "frozen_source_authority": {
+    "relative": "topology-production-geometry-candidate-v1/four-source-freeze.json",
+    "bytes": 3638,
+    "sha256": "3dfed212ea0d813462e72ab59adebd4ca23c924270afc42a76dd0297cae97953"
+  },
+  "semantic_population": {
+    "fixtures": 9,
+    "ordered_logical_negatives": 106,
+    "exact_degeneracies": 6,
+    "historical_admission_records": 12,
+    "new_scoring_population": 0,
+    "positive_names": [
+      "nested",
+      "two_disjoint_removals",
+      "overlap_restore",
+      "coincident_occurrences",
+      "opposite_common_edge",
+      "vertex_touch",
+      "target_clip_shared_edge",
+      "empty_and_degenerate_accounted",
+      "empty-original-clips-to-target"
+    ],
+    "frozen_values": "All geometry, occurrence identities, S/I/P/E/F, positive_masks, negative order and six exact raw witnesses/outcomes remain those in original authority. Original R4 filesystem/admission controls and all original Source32 controls remain unchanged at their original entry."
+  },
+  "production_state": {
+    "class": "CensusState",
+    "factory": "new_state",
+    "slots": [
+      "q",
+      "active",
+      "active_name",
+      "active_ordinal",
+      "subject",
+      "phase",
+      "deadline",
+      "time_case",
+      "case_pin",
+      "phase_pin",
+      "closed",
+      "polygons",
+      "owners",
+      "edges",
+      "splits",
+      "occurrence_count",
+      "atomic",
+      "outgoing",
+      "roots",
+      "words",
+      "current_edge",
+      "current_polygon",
+      "current_vertex",
+      "current_owner",
+      "footprint_mask",
+      "restoration_mask",
+      "incidence_mask",
+      "cache",
+      "state",
+      "batch"
+    ],
+    "factory_nodes": 36,
+    "factory_derivation": "1 actual instance +30 admitted slots +4 actual owned container headers +1 retained bound full_mask_batch method object=36. Replaces original4 headers. cache/state are borrowed actual legacy cache/metrics; batch is created once after admission. No new cache slot/result cell/metric schema.",
+    "guard": "Exact original q and saved live scope/phase/deadline/timed identities, not closed. Invalid ownership/scope refuses before graph mutation; valid call takes work1, nodes0, arithmetic0. Guard has no container, tuple, slice, generator or copied key.",
+    "edge_boundary": "begin_edge(state,polygon_id,vertex_id,edge_ordinal,occurrence_ordinal,q); actual sequence/endpoints and captured owner checked before current edge accepted. All production add_incidence calls use accepted edge. Negative corrupts one invocation argument only.",
+    "wide_legacy": "Unsupported packed width retains complete original scalar legacy path; no new occurrence cap or oversized diagnostic word. All9 fixed fixtures packable; faithful actual occurrence observations replace a word if a nonfixture legacy width is unsupported.",
+    "early_legacy": "Same live state, complete original family counts and actual cache, graph inputs may be None; do not classify only a partial clipped prefix. All actual owned factory headers remain admitted; no invented temporary graph inputs."
+  },
+  "fixed_transactions": {
+    "state_init": {
+      "nodes": 36,
+      "negative_remaining_nodes": 35,
+      "atomic_boundary": "Before CensusState call and any of its four containers; no state allocation on refusal."
+    },
+    "new_atom": {
+      "segments": 1,
+      "nodes": 5,
+      "negative_remaining_nodes": 4,
+      "derivation": "Tuple header+2 endpoint refs=3; atomic dict key/value=2. Canonical rational preconditions complete before nodes gate; no quota call between allocation and publication."
+    },
+    "new_adjacency": {
+      "nodes": 3,
+      "negative_remaining_nodes": 2,
+      "derivation": "Actual neighbor-list header1+outgoing dict key/value2. Existing atom is genuinely admitted and held; no neighbor-list/dict entry on refusal. Later atom ref append reserves nodes1 separately.",
+      "actual_function": "_attach"
+    },
+    "borrowed_interval": {
+      "nodes": 0,
+      "new_segment_records": 0,
+      "boundary": "next_interval over actually held splits returns one borrowed point. Real loop/rational work charged; no tuple/slice/generator/yield record. Guard active even when nodes exhausted."
+    },
+    "incidence": {
+      "transaction_work": 1,
+      "arithmetic": 3,
+      "negative_remaining_arithmetic": 2,
+      "operations_in_order": [
+        "bit=1<<occurrence_ordinal",
+        "old&bit for duplicate refusal",
+        "new=old|bit"
+      ],
+      "commit": "Only then state.atomic[key]=new. All preconditions/width work separately admitted before this gate; duplicate never reaches OR/store. Independent literals3/2 do not come from checked function."
+    },
+    "put_face": {
+      "valid_guard_work": 1,
+      "transaction_work": 1,
+      "width_guard_arithmetic": 2,
+      "insertion_arithmetic": 7,
+      "insertion_operations": [
+        "13*direction",
+        "width+product",
+        "8191<<shift",
+        "~mask",
+        "word&inverse",
+        "face_id<<shift",
+        "OR"
+      ],
+      "negative_remaining_work_at_call_entry": 1,
+      "refused_face": 4097,
+      "readable_faces": [
+        4095,
+        4096
+      ],
+      "unchanged": "Original incidence bits and both face fields; no store until full valid operation completes."
+    },
+    "get_face": {
+      "width_guard_arithmetic": 2,
+      "extraction_arithmetic": 4,
+      "derivation": "multiply,add,shift,AND after width+26 and bit_length admission."
+    }
+  },
+  "raw_dispositions": [
+    {
+      "name": "empty-original",
+      "expected": "positive",
+      "boundary": "Actual empty cutter leaves full target, before owned normalization."
+    },
+    {
+      "name": "disjoint-raw",
+      "expected": "empty",
+      "boundary": "Actual raw intersection empty."
+    },
+    {
+      "name": "boundary-line",
+      "expected": "boundary-only",
+      "raw": [
+        [
+          "0",
+          "8"
+        ],
+        [
+          "0",
+          "2"
+        ]
+      ]
+    },
+    {
+      "name": "boundary-point",
+      "expected": "boundary-only",
+      "raw": [
+        [
+          "0",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "interior-line",
+      "expected": "fallback-old-entire-census",
+      "raw": [
+        [
+          "0",
+          "2"
+        ],
+        [
+          "0",
+          "-2"
+        ]
+      ],
+      "boundary": "Endpoints on different target edges do not prove whole line boundary-only.",
+      "fallback_provenance": false
+    },
+    {
+      "name": "interior-point",
+      "expected": "fallback-old-entire-census",
+      "raw": [
+        [
+          "5",
+          "5"
+        ]
+      ],
+      "fallback_provenance": false
+    }
+  ],
+  "positive_observation": {
+    "fast": "Actual complete propagated member word enters retained_from_membership; its return is used for count.",
+    "legacy": "Actual global_witness.classify uses retained bound CensusState.full_mask_batch; every original actual cache.contains result contributes to complete local membership and the actual common retained Boolean. State.state borrows cache.state for original lookup accounting. Cache class/metrics unchanged; no result cell. Every actual query/bit operation charged.",
+    "shared": "retained_from_membership accepts actual word where packable plus actual target/removed/restored membership flags; validates correspondence and returns the Boolean used in production. Wide scalar legacy retains actual complete flags, with no new width cap.",
+    "adapter": "One bounded adapter traces exact current production code-object boundaries read-only; pre-admitted observation slots hold actual masks/return/orientation/I/E/F. No source-data expectations, reference propagation or branch substitution. Source census serialized five-field schema unchanged.",
+    "expected": "Full original fixture positive_masks and original S/I/P/E/F from independent frozen authority, including all disconnected fallback routes."
+  },
+  "logical_negative_map": {
+    "missing-one": {
+      "mutation": "Remove exactly one required original occurrence bit from actual atomic state before verify_occurrences.",
+      "current_reason": "Finite topology expected original incidence missing"
+    },
+    "all-omitted": {
+      "mutation": "Omit the same complete required bit set as original control in actual atomic state.",
+      "current_reason": "Finite topology expected original incidence missing"
+    },
+    "foreign": {
+      "mutation": "Original foreign occurrence bit before labels; verify rejects bits outside captured original occurrence width before surplus count.",
+      "current_reason": "Finite topology foreign or empty incidence mask"
+    },
+    "valid-but-extra": {
+      "mutation": "Original extra in-range occurrence on the selected actual atom.",
+      "current_reason": "Finite topology incidence conservation differs"
+    },
+    "extra-empty-atom": {
+      "mutation": "Original extra empty atom in actual state, not expected/reference graph.",
+      "current_reason": "Finite topology foreign or empty incidence mask"
+    },
+    "original-edge-omitted": {
+      "mutation": "Omit exactly the original selected edge/split occurrence, retaining captured original polygons/owners.",
+      "current_reason": "Finite topology original edge population differs"
+    },
+    "all-original-edges-omitted": {
+      "mutation": "Omit original edge rows/splits while actual full original polygons remain.",
+      "current_reason": "Finite topology original edge population differs"
+    },
+    "original-owner-corrupt": {
+      "mutation": "Change one begin_edge invocation's occurrence_ordinal only; original owner catalog/polygons unchanged.",
+      "current_reason": "Finite topology original edge owner differs"
+    },
+    "wrong-owner": {
+      "mutation": "Pass another actual Budget facade to the live state operation; no dummy owner type.",
+      "current_reason": "Finite topology owner/scope differs"
+    },
+    "changed-scope": {
+      "mutation": "Change actual bound phase/scope identity as original logical negative, invoke real live guard, restore in finally.",
+      "current_reason": "Finite topology owner/scope differs"
+    },
+    "face-ID-overflow-before-write": {
+      "mutation": "Real put_face on actual owned word,4097; preserve original4095/4096 reads and bit extrema.",
+      "current_reason": "Directed cycle ID exceeds4096 before packing"
+    },
+    "work-refusal-before-write": {
+      "mutation": "Original remaining-work1 before real put_face; guard consumes1 then transaction work gate refuses, actual word unchanged.",
+      "current_reason": "Aggregate work quota refuses before operation:"
+    }
+  },
+  "historical12_current_counterparts": [
+    {
+      "historical": "v2-pending-admission",
+      "history": "expected_defect=true and pending_in_frame=true remain immutable",
+      "current_observation": "state-init-reservation",
+      "actual_call": "new_state with original target-only prepared fixture",
+      "injection": "remaining nodes35 at nodes36 gate",
+      "expect": "Refusal before CensusState constructor/owned containers; no returned state",
+      "rationale": "Retired raw_clip pending-list layout is not recreated. Replacement actually owned production context has36 real cells;5/old pending-frame becomes36/current state boundary. This is a counterpart, not a claim old v2 ran."
+    },
+    {
+      "historical": "v3-pending-admission",
+      "history": "pending_in_frame=false remains immutable",
+      "current_observation": "state-init-reservation",
+      "actual_call": "Same current real state-init observation",
+      "injection": "remaining nodes35 at nodes36 gate",
+      "expect": "Same actual allocation-free refusal",
+      "rationale": "Historical v2/v3 compare two retired implementations; both refer honestly to one replacement-context property, never counted as two independently executed current implementations."
+    },
+    {
+      "historical": "v2-guard-exhausted-nodes",
+      "history": "BUILD_TUPLE defect and zero node delta remain immutable",
+      "current_observation": "live-guard-no-allocation",
+      "actual_call": "guard(existing actual CensusState,q)",
+      "injection": "nodes exactly exhausted; work/arithmetic available",
+      "expect": "Valid guard succeeds, nodes delta0, no new container; changed actual phase refuses with owner/scope reason",
+      "rationale": "No token tuple is recreated. Actual30 scalar state fields replace old scope tuple; guard costwork1/nodes0/arithmetic0."
+    },
+    {
+      "historical": "v3-guard-exhausted-nodes",
+      "history": "empty container-opcode list and wrong-scope refusal remain immutable",
+      "current_observation": "live-guard-no-allocation",
+      "actual_call": "Same real current guard observation",
+      "injection": "nodes exhausted",
+      "expect": "No allocation and actual scope refusal",
+      "rationale": "Same semantic guarantee in current scope boundary; old guard frame/token names retired."
+    },
+    {
+      "historical": "v2-traversal-exhausted-nodes",
+      "history": "unadmitted slice/atom/yield tuples remain historical RED",
+      "current_observation": "borrowed-interval-walk",
+      "actual_call": "next_interval on real begun original edge and held split set",
+      "injection": "nodes exhausted; admitted state/points and fixed observation slots already exist",
+      "expect": "Borrowed original next point, no new segment/node/slice/tuple/generator; actual work/arithmetic still charged",
+      "rationale": "A record-free scalar result may legally succeed with zero free nodes; success cannot include an uncharged replacement record."
+    },
+    {
+      "historical": "v3-generator-refusal",
+      "history": "delegate_called=false remains immutable",
+      "current_observation": "state-init-exhausted",
+      "actual_call": "new_state",
+      "injection": "remaining nodes0",
+      "expect": "nodes36 refuses before actual State constructor/owned containers",
+      "rationale": "No generator/delegate exists; genuine replacement context admission is tested, not a never-used generator shim."
+    },
+    {
+      "historical": "v3-atom-refusal",
+      "history": "old spare2 and atom_absent remain immutable",
+      "current_observation": "canonical-atom-publication",
+      "actual_call": "new_atom on missing actual atom after successful canonical preconditions",
+      "injection": "remaining nodes4 at nodes5 gate",
+      "expect": "No new key tuple or atomic dict entry; existing graph unchanged",
+      "rationale": "Current atomic transaction is actual tuple3+dict2=5; insufficient literal4 replaces old tuple-only spare2 explicitly."
+    },
+    {
+      "historical": "v3-pair-refusal",
+      "history": "old spare3, atom_present/no yielded pair remain immutable",
+      "current_observation": "next-adjacency-publication",
+      "actual_call": "_attach with genuinely admitted current atom",
+      "injection": "remaining nodes2 at nodes3 gate",
+      "expect": "Atom remains owned; no new outgoing entry or neighbor list; no uncharged output pair",
+      "rationale": "Yield-pair record retired. Actual next owned growth is list1+dict2=3; current2-at3 replaces old3-at-later-pair. No fake pair allocated."
+    },
+    {
+      "historical": "v3-positive-clip-and-traversal",
+      "history": "original four clip vertices/four intervals and old complete budget snapshots immutable",
+      "current_observation": "positive-real-clip-and-walk",
+      "actual_call": "Actual intersection_raw/positive_owned plus real state edge/next_interval operations",
+      "injection": "None; one original literal Budget throughout",
+      "expect": "Same exact rectangle clip and four full original intervals; original inputs unmodified, exact complete current ledger/conservation and all actual reservations retained",
+      "rationale": "Current aggregate counts are independently audited actual charge ledger, not old49/79/336/72 copied as new expectations; no positive counter reset or timing-fit claim."
+    },
+    {
+      "historical": "v2-incidence-arithmetic-four",
+      "history": "reserved4/actual5/mutated RED remains immutable",
+      "current_observation": "incidence-atomic-arithmetic",
+      "actual_call": "Real add_incidence with actual zero word and absent original occurrence",
+      "injection": "remaining arithmetic2 immediately at arithmetic3 gate after preconditions",
+      "expect": "Quota Refusal before bit shift/duplicate AND/OR; actual atom before0/after0",
+      "rationale": "New actual operations are shift,AND,OR=3; old remaining4/required5 is retired, not padded. One current repaired observation may be referenced by both historical version identities."
+    },
+    {
+      "historical": "v3-incidence-arithmetic-four",
+      "history": "required5/before0/after0 remains immutable",
+      "current_observation": "incidence-atomic-arithmetic",
+      "actual_call": "Same current3-op production transaction",
+      "injection": "remaining arithmetic2 at3 gate",
+      "expect": "Actual word0 unchanged and exact arithmetic-quota cause",
+      "rationale": "Explicit representation-literal amendment proposed for Root agreement; no old field/value edited or current pass inferred from old record."
+    },
+    {
+      "historical": "v3-repeated-occurrence-atom",
+      "history": "actual duplicate refused/record unchanged remains immutable",
+      "current_observation": "duplicate-incidence-before-store",
+      "actual_call": "Real add_incidence on live accepted edge with that bit already present",
+      "injection": "No exhaustion; same actual original occurrence repeated",
+      "expect": "Finite topology repeated same occurrence/atom incidence; exact original word unchanged; OR/store not reached",
+      "rationale": "Same semantic repeated-update guarantee on real state; reserve3 is conservative for the short-circuit duplicate and never refunded."
+    }
+  ],
+  "reason_policy": "Current reason literals in this independent contract are proposed explicit representation mappings; original106 text remains immutable. Missing/different/generic refusal, later unrelated quota error, observation/restore failure or skipped route is RED/DNR. Root agreement needed before implementing changed literal expectations.",
+  "segment_model": {
+    "true_scalar_borrow": 0,
+    "new_atomic_record_even_borrowed_key": 1,
+    "actual_new_outline_segment": 1,
+    "restoration": "Original4/32 edge admissions per new rectangle/cap remain",
+    "new_index_state": "Always charged nodes/work/arithmetic before growth; not called a segment if no geometry/segment record exists",
+    "logical_cells": "Original per-cell/point admissions preserved despite physical slot reuse."
+  },
+  "caps_unchanged": {
+    "segments": 2048,
+    "work": 200000,
+    "nodes_cells": 16384,
+    "arithmetic": 2000000,
+    "intermediate_bits": 4096,
+    "setup_case_post_final_seconds": 17,
+    "child_seconds": 75,
+    "parent_seconds": 120,
+    "TOTAL_cleanup_seconds": 15,
+    "graph_bytes": 32000000,
+    "summary_bytes": 1048576,
+    "streams_bytes": 131072
+  },
+  "admission_before_lease": "Independent exact integrated source+adapter review and complete truthful cumulative charge map/no demonstrated exceeding lower bound. State36 replaces old4 (+32), plus all raw/mask/observation revisions. Unknown actual savings/tail/time permitted as risk; no refunds/reset/proven whole-case upper-bound requirement. No new characterization or execution authority."
+}
