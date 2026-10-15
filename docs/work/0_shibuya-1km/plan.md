@@ -1,6 +1,6 @@
 # 1km x 1km animated Shibuya model
 
-Status: active; the owner resumed the approved Shibuya deliverable on 2026-10-14, and root created a new active goal.
+Status: active work; the owner resumed the approved Shibuya deliverable on 2026-10-14. The existing goal tool still reports blocked through its exposed API; root continues the authorized work without claiming that tool state resumed.
 Owner: root orchestrator
 Created: 2026-09-06
 Updated: 2026-10-14
