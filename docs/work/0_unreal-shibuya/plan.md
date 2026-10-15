@@ -21,8 +21,8 @@ Earlier documentation milestone0e59004225eece593f25af6f2ddeb856268c8acb is pushe
 
 Current frontier, 2026-10-15 UTC:
 
-- Source: all30 controls and full152-stage evidence are verified, but actual16179 still exceeds work200000 and11207 is DNR. Signed arithmetic saved1116 node cells without resolving work. Fresh985-input spatial/transaction candidate is under review; two allocation-order/callable findings must be fixed before its Original32/FIRST run.
-- Native: selected bundled references compile successfully; original13 controls pass. Three of31 filesystem arms need junction/DACL-only setup repairs. Materialization also needs embedded SPEC_PIN and all command/descriptor bindings refreshed. No Class6/Native82 or fixture authority follows from current diagnostics.
+- Source: grid/transaction v2 passed focused static review and all30 controls, but actual16179 still refuses work200000+1 after19 completed census samples;11207 is DNR. Last local nodes15571/arithmetic651091. All152 stage and30 control payloads independently replay exactly; FIRST physical census is empty with complete history. Next repair must reduce measured exact membership cost without changing caps or source population.
+- Native: v27 actual original13 and all31 filesystem arms pass; compilation0.348 seconds. Materialization still RED at child60: both file populations exist without accepted receipts. Read-only profiling found repeated ancestor stats and stale future cases.json output descriptors; repair both before retry. Formal FIRST refused incomplete timeout exit notifications, while a separate narrow physical diagnostic found no survivors. Class6/Native82 remain DNR.
 - Runtime: lossless wire proposal remains HOLD; original76/18/POST motion, liveness/separation and final ordinary controls need accepted complete data.
 - Unreal: Source2/collision installation, crossing lighting and photorealism, ordinary controls/contacts and3000 pedestrian/200 vehicle performance are not verified. Goal remains active.
 
