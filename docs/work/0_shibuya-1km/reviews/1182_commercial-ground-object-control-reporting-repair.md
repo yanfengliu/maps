@@ -1,0 +1,11 @@
+# 1182 — Object-control reporting repair
+
+2026-10-15 UTC. Root accepts two1181 source findings in frozen1180 disposal-object-controls.ps1. The event count still gates PASS despite its informational role. Earlier action/mandatory-cleanup errors can be mislabeled behind an unguarded later Console error; that path can also leave the active case RUNNING. No runtime instance is observed and both proposed object controls remain DID_NOT_RUN.
+
+Owner1142 prepares only a new1182 object-script variant plus its small delta/input/report/index metadata in released1110,base0ab58a1a83e19db312bb18a2ffa8a90742029835. Baseline is the exact3,603-byte/SHA-256935e1da7214e2ad731083432a758245d438d3536d8952d8dc5256609bdc79afc frozen1180 script. Keep absolute own1180 imports/binding/literals deliberately fixed;1180 lifecycle controller/oracle/runtime input tuples and1171 helper/child/oldRED stay byte-exact. No application closure or launcher is copied.
+
+Remove only event count from normative admission/assertions while retaining the complete observation/context. Record the first chronological action,cleanup or reporting error at its recording point; append all later errors without replacement and set HOLD. Guard pre/post-cleanup and final-result Console reporting,including bounded fallback handling after resource cleanup. Finalize an affected active case FAIL and leave untouched later cases DID_NOT_RUN. Preserve mandatory finally disposal,the same two IDs/actions/native-state literals,zero Process.Start calls and complete raw observations.
+
+No extra control cases,fault injection,helper/geometry/237/policy/cap change or general reporting framework is selected. Freeze the small source preparation and hand over the immutable corrected leaf early. No Process object,reflection/control/helper/caller/Node,profiler,map,constructor,browser/server/GPU,public gate or Git execution is released.
+
+This is the narrow addendum to1181: retain the initial1180 source HOLD and both findings,then independently review only the exact1182 delta and the unchanged1180 combination before a final source verdict. Final review must bind both frozen input tuples and original source bytes. Source admission still grants no runtime lease or disposal/lifecycle/profile/product acceptance; root must explicitly select any later execution.

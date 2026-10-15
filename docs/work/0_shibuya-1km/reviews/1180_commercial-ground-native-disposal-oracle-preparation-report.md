@@ -1,0 +1,13 @@
+# 1180 — Native disposal oracle preparation
+
+2026-10-15 UTC. PREPARED ONLY; stop for root intake and focused review. No Process object, runtime reflection/subject/control/helper/caller/Node, profiler/processor, map/calibration, constructor, browser/server/GPU, gate or Git evaluation ran. Only native file/hash/source metadata and unevaluated AST were used.
+
+The new ten-case controller references the exact1171 helper, child and old RED by absolute path. Working/output files are isolated under1180; all24 frozen1178 outputs match. Twelve inverse-verified edits change only source/output bindings, disposal oracle and explicit raw-result handling. IDs, order, faults, expected behaviors, waits, SafeHandle/watchdog proof and first/later facts remain unchanged. No application closure, launcher or helper was copied or repaired.
+
+The control-only oracle binds the installed host/two DLL hashes, loaded assembly names/paths/MVIDs, actual private Boolean field metadata and all six method signatures/tokens/IL sequences from the pinned1179 metadata leaf. Missing/mismatched qualification refuses before cases. Actual native flagfalse-before/true-after is authoritative; event count is retained informationally. Old RED keeps its original failing code and checks nativefalse before unconditional manual cleanup/native true afterward.
+
+Two separate literal controls prepare never-started Process objects: omitted disposal staysfalse/refused; actual Dispose yieldstrue/admitted, with event0 and mandatory finally cleanup endingtrue. They use no helper flags or Process.Start. Neither control ran. Raw helper returns are retained literally; assertions select exactlyone proper schema record with only the expected0or2empty ancillary values, without changing the helper.
+
+All three PowerShell sources AST-parse; the independent object source has zero Start member calls. This does not prove native runtime binding, flag transition, raw-result acceptance or lifecycle success. One tool-transport quoting failure occurred before its PowerShell block started and is retained in source-delta.json; no source repair/runtime retry followed it.
+
+The last-written preparation index binds all own leaves, current/consumed-preserved inputs,24 frozen outputs, separate report and full native metadata without unrelated content hashes. Prior1178 timing/CPU remains separate; preparation/model/read/metadata costs are unknown. Syntax already passed and is not prepared again; no full caller rerun is prepared. Full1179 admission, independent exact-source review and a fresh runtime lease remain required; profiling/map/product acceptance remains open.

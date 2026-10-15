@@ -1,0 +1,11 @@
+# 1181 — Native disposal oracle source review
+
+2026-10-15 UTC. Canonical1153 reviews the frozen1180 control-only correction in released1111,base0ab58a1a83e19db312bb18a2ffa8a90742029835,after finishing1179. Root remains integration/acceptance owner. Read immutable root-admitted1178/1179 source and scope now; candidate reading starts only after root supplies its byte-exact early leaf or full preparation archive. Final review must bind the complete frozen preparation,not mutable producer output.
+
+Check actual-instance private _disposed reads against exact runtime DLL/MVID/methodIL/field bindings; absent or changed bindings refuse. A helper-reported flag must never generate an independent expectation. Both native no-start controls need literal false/refusal and true/admission observations plus unconditional cleanup; no control has run during preparation. Event count remains informational. Existing started-child SafeHandle/independent watchdog closure is required.
+
+Keep all ten lifecycle IDs,order,faults,first/later facts,waits and expected behavior. Confirm oldRED source byte-exact and native false-before/true-after manual cleanup discriminates its skipped Dispose. Durable complete observations precede assertions; reporting does not relabel first failure. Verify immutable1171 helper/child/oldRED and all original1178 outputs remain unchanged.
+
+Trace source/output path separation and fresh1180 output names,including normal stdout/receipt-write failure paths. Preserve raw returns and require exactly one schema-valid actual lifecycle record plus only the allowed empty ancillary values before property assertions. No helper rewrite,application closure copy,new launcher,extra syntax execution or cap/policy/geometry/237 change is in scope.
+
+Review new scripts with unevaluated AST/source comparison only. No Process object creation,subject/native-control/helper/caller/Node,profiler,processor,map,constructor,browser/server/GPU,public gate or Git execution is released. Return concise permanent findings/source verdict and flat pinned evidence/native census without unrelated blob hashes. Source ADMIT only permits root to consider a fresh bounded runtime lease; it proves no disposal/control/profile/product acceptance.
