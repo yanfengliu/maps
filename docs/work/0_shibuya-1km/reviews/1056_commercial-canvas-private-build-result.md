@@ -1,0 +1,11 @@
+# 1056 — Private canvas build refused before runtime
+
+2026-10-14 local. Root reads independent1053 and accepts its exact source/CPU ADMIT for1052, including its explicit non-logarithmic-renderer bound. Root rehashes63 reviewer and561 author/preserved binding occurrences, then creates the reviewed runtime admission with177 inputs. The product remains frozen1039 and the pre-existing facade-emission test remains SHA48a3d4d9c0ae833c2fe12082ba59c8fd32335e062de76f062f8508496a3fc52a.
+
+The first actual private Vite build runs under a60s child ceiling and exits1 after2368.8214ms. It transforms157 modules, then refuses `node_modules/3d-tiles-renderer/build/index.js` in the private generateBundle check. That real installed entry module is absent from the admission assembled from source files and historical rendered sourcemaps. Rendered sourcemaps are not a complete record of every module Rollup visits. No browser, server, GPU or screenshot runs, and no runtime pass is claimed.
+
+The refusal remains intact in ignored `depth-search1027/canvas1056/build-receipt.json`, `build.stdout.log` and `build.stderr.log`. Root dispatches1057 to the instrument author for a separately versioned deterministic installed-module closure and focused1058 review. Every real module must remain pinned; neither bypassing generateBundle nor silently admitting a newly encountered module during the authorized build is permitted. Original1052,1053, admission and failed-build bytes remain unchanged.
+
+Fresh root CIM finds recorded root46972, build15760 and current child edges absent, with no4324 listener. The first marker census matches its own PowerShell command text and is retained as an inspection error; the corrected census excludes the current inspector and restricts the capture marker to its Node executable. No process is terminated. A complete nonfollowing census of the exact owned TEMP and ancestors finds zero links/errors;43 files/1162969 bytes/3 directories are removed with literal nonrecursive operations. The cleanup receipts are retained beside the failed build.
+
+Canvas runtime and appearance remain unproved. Product circulation correction1050b proceeds only in separate private artifacts; product1054 remains undispatched. Root owns any new admission, private build, headless runtime, actual native review and final integration.
