@@ -1,5 +1,8 @@
 # Devlog Summary
 
+2026-10-16 — Continued the branch-only Shibuya work after `68914a9`, preserving nine exact independent reviews (274–282). Source's accepted live failure capture leaves its106.782-second normal import RED; concept R and corrected v4 are adopted for fresh implementation only, with13 scenarios/26 slots/22 methods unrun at the cutoff. Native lexical ordinary6/39+5/63 passes, but its sole materialization is consumed RED at child60 with pair return, fresh proof and first Root cleanup boundary unavailable. Runtime N8 remains instrument-only. No Unreal appearance, controls, agents, performance or main integration is accepted; no lesson retires.
+
+
 - 2026-10-11: **Fresh aerial surfaces and supported movement data are prepared** — 90 official GSI tiles preserve terrain and road geometry; 451 pedestrian routes, 18 source-legal vehicle cycles and one crossing entry/exit path have byte-bound support. Independent review 7 closes CLI conflict, OSM turn and Windows path-admission findings. All 47 canonical source checks pass. Native controls, motion, shadow lighting and performance remain active work.
 
 - 2026-10-11: **The fresh Shibuya crop imports through native Unreal MCP** — 70 GLBs produce 112 mesh actors and 43 textures; twenty unit checks pass and independent focused review closes the destructive-probe and Windows ZIP-confinement findings. Six final images show static crop geometry, with dark/obstructed close crossing views. Photoreal appearance, ground imagery, runtime controls, motion, performance, and surveyed placement remain open. Reviewed implementation committed and pushed as `9df42139ef1747bedc435cb60ecd226cfb69a60a` on the separate experimental branch.

@@ -1,5 +1,16 @@
 # Lessons awaiting retiring gates
 
+## Continuation additions — reports 274–282, 2026-10-16
+
+Retire none. Preserve every earlier lesson and consumed failure.
+
+Live capture versus diagnosis: B2's genuine registered-guard same-primary capture is accepted, while the unrecorded invocation operands leave the failing conjunct and cache cause unknown. Retiring gate: the real failed path must retain those live operands and provenance before cleanup, report unavailable evidence explicitly and preserve the same primary plus ordered secondaries. A well-formed diagnostic record does not complete a failed normal import or its B01/B02 cells.
+
+Diagnostic-credit consumers need their own fence: v3 GR11 could award credit after an unavailable snapshot. V4 requires live same-primary available guard/current/seed evidence before credit while preserving deliberately false mutant class relations and truthful current U/P absence. Retiring gate: execute the exact unavailable/missing/wrong-primary/wrong-guard and genuine mutation controls on the adopted implementation, with original restoration and refusal semantics. Static contract acceptance and planned 22 methods supply no actual result or lesson retirement.
+
+Pure lexical reuse versus full fit: Native's current6/39 and5/63 ordinary checks pass, then the sole timed materialization remains RED. Retiring gate: preserve fresh os.fspath conversion and current filesystem proofs, reject changed current inputs, and require all unchanged source1631/directory959/pair1748/fresh1749 and cleanup/readback barriers within the original clocks. Partial names, a shorter observed phase or comparison with a different uncontrolled run cannot establish completed work, causal gain or fit.
+
+
 ## Continuation additions — reports 261–272, 2026-10-16
 
 Retire none. Earlier status passages and every existing lesson remain history.

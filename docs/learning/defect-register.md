@@ -1,5 +1,14 @@
 # Defect register
 
+## Continuation status — reports 274–282, 2026-10-16
+
+The owner's dark crossing and missing working controls/agents remain unresolved native product defects. This documentation checkpoint adds no rendered, input, collision, population or performance acceptance. The active plan and earlier defect history remain intact.
+
+Source B2 normal reaches the actual Generic wrapper-return guard and fails after 106.782 seconds. The independently accepted capture preserves the real same-primary guard frontier, but not the individual inv/U-frame/U-return/A/current-argument operands or a proved cache cause. B01/B02 completion both remain DNR; five later routes remain absent STOP. Reviews [274](../work/0_unreal-shibuya/reviews/274_source_buffer_implementation_v2.md)–[278](../work/0_unreal-shibuya/reviews/278_source_generic_seed_contract_v4.md) retain preparation, actual RED, conditional concept, v3 diagnostic-credit HOLD and corrected v4 contract as separate facts. Root's v4 adoption permits implementation only. The 13-scenario/26-slot/22-method controls, original regressions, G/F, P2/P1, fullSource32 and Source2 remain pending; no whole-class gate has landed or retired.
+
+Native lexical ordinary6/39 plus5/63 passes within its bound, but the sole full materialization again times out at child60. Source1631 and mkdir959 return; pair work enters without a return, and fresh1749/source-after/normative work is DNR. Saved fna1477 names are not completed pairs. Actual887 conservation matches; declared886 is distinct. Two inner EXIT notifications, complete Job6 census and a valid first Root cleanup boundary remain unavailable. Reviews [279](../work/0_unreal-shibuya/reviews/279_native_lexical_cost_proposal_v1.md)–[282](../work/0_unreal-shibuya/reviews/282_native_lexical_capture_v1.md) do not certify timing, gain or Native acceptance. Retiring check still requires every original proof boundary and complete work under unchanged clocks, with ordinary controls and full saved evidence; no retry of this consumed root is permitted.
+
+
 ## Current continuation — reports 261–272, 2026-10-16
 
 Older statuses remain history. All existing defects and lessons stay; no instrument result retires a broader product gate.
