@@ -1,0 +1,11 @@
+# 1266 — Single corrected roof-union literal control run
+
+Root admits1264 source/entry at08:44:51.021Z after83 descriptor checks/72 frozen consumed files, with zero new material findings and all1259 findings resolved in the focused scope. This releases exactly one literal-control child, not production/corpus/constructor or public gates. Prior conditional1259 algorithm bounds remain. No result is claimed by this release.
+
+Exact child is C:/Program Files/nodejs/node.exe (89935872 bytes/SHA-2562ffe3acc0458fdde999f50d11809bbe7c9b7ef204dcf17094e325d26ace101d8), sole script1110-worktree/data/commercial-work/1262/run-controls.mjs (9235/04812a879f4d1f36abe2b6fc6322d3a7f6e2adbd8bb9dcb6306865c6948c2176), cwd the1110 worktree root at0ab58a1a83e19db312bb18a2ffa8a90742029835. Owned outputs are1262. The selected manifest has26 inputs and the exact plan has77 ordered IDs. No NODE_OPTIONS, execArgv, additional script or separate syntax step is allowed.
+
+Use only the five qualified1176 function-definition extents by reference, source13837/bdd097c80cd261224b954fe98c6cc65fbd41c429b2b0eb2f833fd2d66a7c5dd6 and the admitted extent index. Set own=1262 and target=1110 worktree root explicitly. One10000ms execution and one combined5000ms cleanup/drain grace; no retry or limit increase. The retained handle/watchdog, streams and unconditional disposal remain the existing implementation.
+
+Before dispatch root freezes a distinct TRUE authority, exact RUNNING caller observation,1259/1264 review pins, selected sources/runtime/proposal/manifest/plan and actual tuple. The bounded1262 environment handoff binds authority and caller without a reciprocal hash cycle. Refuse stale result/failure/guard/raw outputs. Preserve actual parent/child births, raw stdout/stderr/guard return/receipt and all entry/final pins; inspect serialized return structure rather than adapted PowerShell Count properties.
+
+Acceptance requires the complete exact77-ID/PASS raw result, complete guard with exit0/no cap/rescue/errors, unchanged inputs and successful reporting, followed by independent known-birth/scoped native closure. Entered-but-unreported cases remain UNKNOWN. First/later failures remain facts and prevent overall acceptance. The lease is consumed by its one dispatch; no production63-part compatibility, emitted geometry, performance target or product acceptance follows.
