@@ -1,5 +1,18 @@
 # Lessons awaiting retiring gates
 
+## Continuation additions — reports 261–272, 2026-10-16
+
+Retire none. Earlier status passages and every existing lesson remain history.
+
+Saved names versus stage completion: corrected Native D2 derives directory completion and copy entry from exact saved names plus original sole ownership/source order. It does not derive completed copies, payload equality, phase durations or fit. Retiring gate: preserve genuine misleading-old/corrected/model-name-as-completed-pairs distinctions, then require actual original-stage markers and complete unchanged work/clock barriers before attributing cost. An isolated diagnostic never recertifies consumed P11.
+
+Windows metadata channels: a stable file may have distinct lstat/fstat ctime. Retiring gate: retain the genuine OLD self-pin refusal, check each family's complete mutation-sensitive tuple independently and join only justified shared fields, with full EOF/byte pins and mutation/refusal controls. Static correction or coincident timestamps cannot retire that gate.
+
+Live failure evidence: Source BUF-I1 shows that computing a snapshot is insufficient when the positive-failure result discards it, and a retained receipt ID is insufficient without actual guard-code/globals/self and current operand joins. Retiring gate: real B01/finding paths must publish bounded before-cleanup same-primary evidence, truthful unavailable values, unchanged production, own-only restoration and ordered secondary errors; reintroduce dropped-publication/missing-frame/missing-operand failures as RED. The helper repair and all16 cells remain unrun.
+
+Instrument versus world: accepted N8's48/four/76+18/POST chain proves complete transport, exact diagnostic semantics and owned cleanup only. Both real path classifications remain inconclusive, full-path and Source-support false. Retiring gate: preserve full physical/logical/plain pins, same-run authorities and original caps through a persistent OLD-red/current-pass regression, then satisfy genuine whole-route/visible-surface support separately. No Runtime instrument pass admits Source, native city integration or Unreal appearance/controls/agents/performance.
+
+
 ## Continuation additions — 2026-10-16, DocsV3
 
 Retire none. Every existing lesson remains even where an isolated instrument, current prerequisite or one mechanism now passes.
