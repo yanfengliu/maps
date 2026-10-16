@@ -1715,5 +1715,720 @@
     },
     "integration": "Nineteen proposed documentation files only. Root owns separate independent integrated review243, exact application, final version/diff/pin checks, commit and authorized separatebranch push. No main merge or code/runtime/CI gate/lessonretirement occurs. Continue requested Unreal outcome."
   },
-  "root_post_preparation_243_244": {"state":"ROOT_POST_PREPARATION_FACTUAL_EXTENSION_243_244","rows":[{"number":243,"promoted_path":"docs/work/0_unreal-shibuya/reviews/243_source_hf_control_inventory_hold_v3.md","source":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v3\\review.md","bytes":8358,"sha256":"fd8d35b7ca8be0acc1c7ac92fbe63e70585e91eabf80a652829297278fae788d"},"authored_seal":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v3\\seal.json","bytes":1410,"sha256":"7902ae7e5a98d2ba1a47c1d28bbec23e573ef38c18b48e63a8a0bd2b69d75e63"},"copy":"BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION","target":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\docs\\work\\0_unreal-shibuya\\reviews\\243_source_hf_control_inventory_hold_v3.md","bytes":8358,"sha256":"fd8d35b7ca8be0acc1c7ac92fbe63e70585e91eabf80a652829297278fae788d"}},{"number":244,"promoted_path":"docs/work/0_unreal-shibuya/reviews/244_runtime_n5_native_waitmap_review_v1.md","source":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-native-waitmap-independent-review-v1\\review.md","bytes":7631,"sha256":"73bfbec17c6339591d838e0b8b51f31055893bca87af8951eea6e8a3f8cf3b6f"},"authored_seal":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-native-waitmap-independent-review-v1\\seal.json","bytes":1554,"sha256":"11eab83f3429d15b3b6a910714aeda25eb2687f1490d5023227512f3a5341f29"},"copy":"BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION","target":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\docs\\work\\0_unreal-shibuya\\reviews\\244_runtime_n5_native_waitmap_review_v1.md","bytes":7631,"sha256":"73bfbec17c6339591d838e0b8b51f31055893bca87af8951eea6e8a3f8cf3b6f"}}],"actual_N5_ordinary46":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-standard46-root-observation.json","bytes":42046,"sha256":"bf8b37ec2fd0f1ae764dc16eb60531c126c1802e4cc70728fc02032e74216681"},"Source_v4_control_adoption":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF3-inventory-after-restoration-root-adoption-v1.json","bytes":3117,"sha256":"8dc1de79ecabaa1f790a8eb6550a58624a779706fed284bdae23e67daabffe03"},"bound":"Ordinary46 actual only; Source12/41 and all fresh phases/censuses/Native/Unreal acceptance remain open. Prepared229-242 snapshots remain historical.","next_integrated_review":245}
+  "root_post_preparation_243_244": {"state":"ROOT_POST_PREPARATION_FACTUAL_EXTENSION_243_244","rows":[{"number":243,"promoted_path":"docs/work/0_unreal-shibuya/reviews/243_source_hf_control_inventory_hold_v3.md","source":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v3\\review.md","bytes":8358,"sha256":"fd8d35b7ca8be0acc1c7ac92fbe63e70585e91eabf80a652829297278fae788d"},"authored_seal":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v3\\seal.json","bytes":1410,"sha256":"7902ae7e5a98d2ba1a47c1d28bbec23e573ef38c18b48e63a8a0bd2b69d75e63"},"copy":"BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION","target":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\docs\\work\\0_unreal-shibuya\\reviews\\243_source_hf_control_inventory_hold_v3.md","bytes":8358,"sha256":"fd8d35b7ca8be0acc1c7ac92fbe63e70585e91eabf80a652829297278fae788d"}},{"number":244,"promoted_path":"docs/work/0_unreal-shibuya/reviews/244_runtime_n5_native_waitmap_review_v1.md","source":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-native-waitmap-independent-review-v1\\review.md","bytes":7631,"sha256":"73bfbec17c6339591d838e0b8b51f31055893bca87af8951eea6e8a3f8cf3b6f"},"authored_seal":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-native-waitmap-independent-review-v1\\seal.json","bytes":1554,"sha256":"11eab83f3429d15b3b6a910714aeda25eb2687f1490d5023227512f3a5341f29"},"copy":"BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION","target":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\docs\\work\\0_unreal-shibuya\\reviews\\244_runtime_n5_native_waitmap_review_v1.md","bytes":7631,"sha256":"73bfbec17c6339591d838e0b8b51f31055893bca87af8951eea6e8a3f8cf3b6f"}}],"actual_N5_ordinary46":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-standard46-root-observation.json","bytes":42046,"sha256":"bf8b37ec2fd0f1ae764dc16eb60531c126c1802e4cc70728fc02032e74216681"},"Source_v4_control_adoption":{"path":"C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF3-inventory-after-restoration-root-adoption-v1.json","bytes":3117,"sha256":"8dc1de79ecabaa1f790a8eb6550a58624a779706fed284bdae23e67daabffe03"},"bound":"Ordinary46 actual only; Source12/41 and all fresh phases/censuses/Native/Unreal acceptance remain open. Prepared229-242 snapshots remain historical.","next_integrated_review":245},
+  "subsequent_milestone_246_259": {
+    "base": "54ef5bf2d93bb019ddcdba4540730b36f88e948d",
+    "state": "DOCSV3_PREPARATION_ONLY_ROOT_APPLY_AND_REVIEW_REQUIRED",
+    "numbers": [
+      246,
+      247,
+      248,
+      249,
+      250,
+      251,
+      252,
+      253,
+      254,
+      255,
+      256,
+      257,
+      258,
+      259
+    ],
+    "rows": [
+      {
+        "number": 246,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/246_native_v11_serial_read_integrated_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-serial-read-integrated-independent-review-v1\\review.md",
+          "bytes": 14532,
+          "sha256": "89481780d75fbbc854124989b395bffc95d8a9142c620103463b863e0fcdae4c"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-serial-read-integrated-independent-review-v1\\seal.json",
+          "bytes": 4641,
+          "sha256": "74a41cacd8e64902c892da8d291f2f20e9d0d9216df8b48690b0f89774e496ef"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 247,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/247_native_v11_three_ordinary_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-three-ordinary-actual-independent-review-v1\\review.md",
+          "bytes": 8188,
+          "sha256": "ca252384119adecec22a884e10bb6c33a9383494363a36e6560c09a0262b4ccd"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-three-ordinary-actual-independent-review-v1\\seal.json",
+          "bytes": 2241,
+          "sha256": "f6c0ceb3339951c0f66f4fefd13d8b14bc33ebe5073c47e4d19c9b88075f2d4a"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 248,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/248_native_v11_mechanism_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-mechanism-actual-independent-review-v1\\review.md",
+          "bytes": 15264,
+          "sha256": "0049631cc72f51808a4b6877c0a1127cd43efee137f1b6ded12a313003e21f5d"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-mechanism-actual-independent-review-v1\\seal.json",
+          "bytes": 3147,
+          "sha256": "244d229931bb24a4f02354783939d8b30ad78105a88c0852e94414c20903e497"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 249,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/249_source_hf_prototype_v4.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v4\\review.md",
+          "bytes": 5783,
+          "sha256": "7c34b477c48871f98ebc4022a092120ab1dbf5c1881d92f9798db464d2442239"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-factory-HF-prototype-independent-review-v4\\seal.json",
+          "bytes": 1429,
+          "sha256": "e26edafb6ffa695ea0a962901b0eb4c74ebb9fc075cb9e2de72608d3e50715c5"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 250,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/250_source_hf4_ordinary12_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-ordinary12-actual-independent-review-v1\\review.md",
+          "bytes": 10767,
+          "sha256": "7b87df34e75507394784a771c5c45e71421d33e333d49b1c3cd0c7b0b5500554"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-ordinary12-actual-independent-review-v1\\seal.json",
+          "bytes": 1458,
+          "sha256": "93437876daf8e76c87babce56ee254f02f0be953aebe68e338745391f5a1b1e2"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 251,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/251_source_hf4_instrument_compatibility_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-instrument-compatibility-proposal-independent-review-v1\\review.md",
+          "bytes": 7833,
+          "sha256": "4b70838f14acb21ed4241e23dd2743ddd9af9d6502a502390ae5c2938f5c6d3e"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-instrument-compatibility-proposal-independent-review-v1\\seal.json",
+          "bytes": 1539,
+          "sha256": "08e6c4500af88beec58b6699f9ee78a2a5361d65d2ee9792d96850f583ff49bd"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 252,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/252_source_hf4_integration_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-integration-independent-review-v1\\review.md",
+          "bytes": 8530,
+          "sha256": "25a2e08b4c9761114159ed443d774f381b3c23b8df269674a6ab8844f11614ce"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-integration-independent-review-v1\\seal.json",
+          "bytes": 1411,
+          "sha256": "89ad5c35b58cd72be64177ff21707786221394a88d89d6f587b9cec005e565b9"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 253,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/253_runtime_n5_first_prerequisite_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-first-prerequisite-actual-independent-review-v1\\review.md",
+          "bytes": 9919,
+          "sha256": "0d5bc8a3aa86a62d3fa49b5dae634186e64602a1de86262bc6481e52e7fefafe"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-first-prerequisite-actual-independent-review-v1\\seal.json",
+          "bytes": 1576,
+          "sha256": "1913f5e207ab80a298604d7d6c9e58f5546c77f53a41853d05ef126259a16433"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 254,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/254_runtime_n5_second_prerequisite_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-second-prerequisite-actual-independent-review-v1\\review.md",
+          "bytes": 12179,
+          "sha256": "ddae4045e2e13b197c3360d34ba377092c2545b7c32e3fa887cf3461515596a8"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-second-prerequisite-actual-independent-review-v1\\seal.json",
+          "bytes": 2227,
+          "sha256": "3f691120922dd8ed056f8e7d684040b5f57603047b3d6f582abeedc0dbdaec23"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 255,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/255_runtime_n5_fourth_prerequisite_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-fourth-prerequisite-actual-independent-review-v1\\review.md",
+          "bytes": 12451,
+          "sha256": "34d722587fcf76039c2c216e2dc15005248e1450445cf7b162ae6adc2fc3a3bc"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N5-fourth-prerequisite-actual-independent-review-v1\\seal.json",
+          "bytes": 1889,
+          "sha256": "11c38da4c2e3f835a2212c9062e243f64785e52535d57c2969f3d407376e2dcc"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 256,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/256_runtime_n6_same_ordinal_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N6-same-ordinal-independent-review-v1\\review.md",
+          "bytes": 8469,
+          "sha256": "ba513d3333e0a825c806dbe83df0c2d1debd48153716ac89e2983b6b7f10bfba"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N6-same-ordinal-independent-review-v1\\seal.json",
+          "bytes": 1509,
+          "sha256": "4f2b2466c628e4bc5d01ed927b642be0ead9fb8602b86668e15ddafaf53375a1"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 257,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/257_native_p11_integrated_preparation_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-pipeline-integrated-independent-review-v1\\review.md",
+          "bytes": 12842,
+          "sha256": "88c983549fbf5606f733c5f90d82adacd56c3807e5e032f1d70efd24011bda83"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-v11-pipeline-integrated-independent-review-v1\\seal.json",
+          "bytes": 4547,
+          "sha256": "cf2a468413ce80baf5f00d2767d1153d5f1e810f4e9197022b1018019f9dae8d"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 258,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/258_source_hf4_repair_proposal_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-ordinary-repair-proposal-independent-review-v1\\review.md",
+          "bytes": 11557,
+          "sha256": "3e5b1b67db653dd5924e9fa1f872ed74c876a5dcca67bca2fcddefbf979aeec8"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-ordinary-repair-proposal-independent-review-v1\\seal.json",
+          "bytes": 1423,
+          "sha256": "2146f3db963eab3a7b367129d816e9e29118674300e7ef84bacb0c2e7b33cbaa"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      },
+      {
+        "number": 259,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/259_runtime_n6_four_prerequisites_actual_v1.md",
+        "source": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N6-four-prerequisites-actual-independent-review-v1\\review.md",
+          "bytes": 13194,
+          "sha256": "18fbc12c172e5678090974c9ca8f22b8aee34e8f51d5e1b46959f47ee2268e54"
+        },
+        "authored_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-N6-four-prerequisites-actual-independent-review-v1\\seal.json",
+          "bytes": 3262,
+          "sha256": "766aae637eec476ee53d108f14592dfca228a6f28c9ffaef36e2435840d88d57"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+      }
+    ],
+    "actual_root_evidence": [
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-mechanism-root-final-acceptance.json",
+        "bytes": 1542,
+        "sha256": "f5cd6797397b5ea97e8acd724cd7e9cb2db944fbbb9f61dabbd2e81f6c70c633"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-pipeline-transition-root-adoption.json",
+        "bytes": 4112,
+        "sha256": "26302ccbf03bdb775fac018d2d745f4f97e9ab5b6fdb033424deee0e30f9dd3c"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-rolling-eight-root-observation.json",
+        "bytes": 479219,
+        "sha256": "fcc80a807f0196b2e2c0d0c139ef27aa1296fb38e430ff96696ab0ed9310cd54"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-full4-root-observation.json",
+        "bytes": 58788,
+        "sha256": "027dff047a979d8100e73909de30d00f6ee1ed62c1a52ce348885bbe9c59d9de"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-short7-root-observation.json",
+        "bytes": 59316,
+        "sha256": "0e5f75b9ffc23e2083c4a8b9cc24ccc7986efda5bbb850f41e047dd32ea24087"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-v11-receipt5-root-observation.json",
+        "bytes": 58792,
+        "sha256": "ff7b36e1e88f3054d14ee14c64236dfc90089d5fde5bc4e4c77556a17dfc47d7"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF3-inventory-after-restoration-root-adoption-v1.json",
+        "bytes": 3117,
+        "sha256": "8dc1de79ecabaa1f790a8eb6550a58624a779706fed284bdae23e67daabffe03"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-ordinary12-root-observation.json",
+        "bytes": 11231,
+        "sha256": "8d76c7dd3b79b3f071b9a7d99c4dde3db4707242e4fb4949bcd4b0271c0d3d5d"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-instrument-compatibility-v2-root-adoption.json",
+        "bytes": 2959,
+        "sha256": "092a314751a09caa62fdeb562df6d6be720667f1e624e62672f2a0f93396b6d3"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-integration-OLD24-root-RED-observation.json",
+        "bytes": 58618,
+        "sha256": "686e5cf2756168c9a770ffb156277314a97e25bf61a75de85d51b2637143bb16"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-integration-NEW24-root-RED-observation.json",
+        "bytes": 171752,
+        "sha256": "3a865417641c925d6f11a747350378cd1e44d074633b63fd23ab19f405c6b68d"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-integration-PRIOR52_56-root-RED-observation.json",
+        "bytes": 175837,
+        "sha256": "191a5300d53dda7862ba082da6ac4fef5b32951b28e7945345f163058a3799ca"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\root-continuation-frontier-after-HF4-integrated-ordinary.json",
+        "bytes": 1414,
+        "sha256": "67275f58c80bebe44f1ab9b9d28e0a0bc4cc275ac8ebadd5f4a4dea55d48c760"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-old-cover-receipt-root-observation.json",
+        "bytes": 28333,
+        "sha256": "121655606cde8d82d160a8d361f5edfac471d80b15c3a023c2c7b6aa032036e8"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-old-cover-receipt-census-root-observation.json",
+        "bytes": 2531,
+        "sha256": "a70b7c9265843797ceb8b59ac3ee76306c70c4c29ea4788a8a143dec8f4d6357"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-old-cover-metadata-root-observation.json",
+        "bytes": 44946,
+        "sha256": "77a5450f9d7ea4a69865c363d3766f158eb6329d0e450116261e21d4ec257607"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-inspect-pre-root-observation.json",
+        "bytes": 40963,
+        "sha256": "3567529570406e8e02463e8dccb32e4204b1bff13269f7d08f31c4fc0042ad6f"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-pre-root-observation.json",
+        "bytes": 50034,
+        "sha256": "33d3d024f96dd07948a17340420efecbb1ed7ebd4e415d0b582dde6908a070cf"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-ordinary76-root-RED-observation.json",
+        "bytes": 57939,
+        "sha256": "db6fd86299fc7f95092ac2e716c063c9288c21688879f669c4044a53e37cfc23"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N5-same-ordinal-validator-root-adoption.json",
+        "bytes": 5584,
+        "sha256": "9d3cc5bb2994ff27cafcbf4f554cb493e1da5a05765054593bbfe0e287614a83"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-standard47-root-observation.json",
+        "bytes": 200902,
+        "sha256": "a2f59a40fc87b197517203fc6a96a903779c6ca0113a1c1f1c288d9ba9ff6080"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-standard47-actual-tool.json",
+        "bytes": 285,
+        "sha256": "88782b57898e15a68e6ba3cbf07ed342de5945306fefac0cc96e56c03b660656"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-old-cover-receipt-root-observation.json",
+        "bytes": 195866,
+        "sha256": "f7f881e15b3fecd7b813ab33ac5a5b745e970933d9c5ac4408cb27e3557c26de"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-old-cover-receipt-actual-tool.json",
+        "bytes": 283,
+        "sha256": "eb2fbdccebdf08295c9f1bd873a9296a294de489f01acff384d68539ca9e13c5"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-P11-ordinary7-root-observation.json",
+        "bytes": 146478,
+        "sha256": "688623a499ff636c69efbab79dc1387b45ccec934270aedcae5e713db5f4c5d8"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-P11-execution-boundary-root-adoption.json",
+        "bytes": 7362,
+        "sha256": "4c7de85287e007c07a50e394b14e154b9ac6b9ea95e3f3acad50817492b52534"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-AIM-repair-root-adoption.json",
+        "bytes": 2998,
+        "sha256": "99f92ad95c3036b6d4464fd79109a39f493a5e0c80e35f31ac55ea1dd4ca1a68"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-old-cover-metadata-root-observation.json",
+        "bytes": 196457,
+        "sha256": "fcd3ae592457bdb1c22ffe6b3df84bf5a336cb0b93698dc0114e257de1d6eed0"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-pre-root-observation.json",
+        "bytes": 196972,
+        "sha256": "82804f57e751fd0e9e9192e853912bf35f6dd270c318e67f3e26794b5ac3e799"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-inspect-pre-root-observation.json",
+        "bytes": 208824,
+        "sha256": "4c21257a488a1ba9e788189b2a472b36260ad191308755b9b2c47802bb943ce2"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-pre-authority-root-binding.json",
+        "bytes": 3367,
+        "sha256": "ae7f62c204b8df5da6126232408a35c4800faaf5816371cbe4d398a167a407a4"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-four-prerequisites-root-final-acceptance.json",
+        "bytes": 2899,
+        "sha256": "6ce4377b9322d0aa654ccfbc7bae63232a5cdb7a5556dd7888e315baecbfb5d2"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-ordinary76-root-RED-observation.json",
+        "bytes": 236515,
+        "sha256": "57840be0fdb872002fd5ca97d9e6feda72fa6a0901bec1a03863d8dee78bea2e"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-I2-binding-HOLD-root-adoption.json",
+        "bytes": 2984,
+        "sha256": "31beca7bb9c508c30f9c8f208535b53cd5899384391d9de6b445b808231fcbc2"
+      }
+    ],
+    "current_status_sources_not_promoted": [
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-repair-integration-v2-independent-review-v1\\review.md",
+        "bytes": 12242,
+        "sha256": "50d40b70c5eb21e1a91a9fb193c48e9da7ed6f3c58b89d92f288159052bbc2d4"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-repair-integration-v2-independent-review-v1\\seal.json",
+        "bytes": 1415,
+        "sha256": "7b72ef10716080974f58d91e833ad1374103d6e7f5f78126f70a02819144d2bc"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-P11-root-execution-preparation-v1\\handoff.json",
+        "bytes": 6976,
+        "sha256": "2bcd1807ad70f5c2b56feadfbfc11c81c7b0250323373cc59eafe027561b0902"
+      },
+      {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-P11-root-execution-preparation-v1\\seal.json",
+        "bytes": 9131,
+        "sha256": "5e62fc84e2c7c6a13718e3146bbe582669b78c2b66eef31d70f9644acfc75089"
+      }
+    ],
+    "supersedes_unapplied_closed_V1_V2": {
+      "closed_prior_packets": [
+        {
+          "seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs-milestone-246-preparation-v1\\seal.json",
+            "bytes": 31400,
+            "sha256": "b975588e6d419c156d4fc98319e21692940009f7c260be467de25d7dd9ee8e3b"
+          },
+          "handoff": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs-milestone-246-preparation-v1\\handoff.json",
+            "bytes": 23971,
+            "sha256": "9e7b1817521a4fb1c613a27602a98415e0272305aa955650d42daea833d41364"
+          },
+          "all_members_exact": 84,
+          "all_names_exact": 85,
+          "mutated": false
+        },
+        {
+          "seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs-milestone-246-preparation-v2\\seal.json",
+            "bytes": 37555,
+            "sha256": "1e3ea468f9cec212439424863cfa784a5df938f5903522719f643eb1d2f6ab5f"
+          },
+          "handoff": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs-milestone-246-preparation-v2\\handoff.json",
+            "bytes": 32569,
+            "sha256": "a3dee23a2b74acc143b0bf8a1b65c64acd4410cd2e2129140d356f01befa4b4b"
+          },
+          "all_members_exact": 100,
+          "all_names_exact": 101,
+          "mutated": false
+        }
+      ],
+      "V1_V2_mutated": false
+    },
+    "current_frontier": {
+      "snapshot": "DocsV3 actual consumed ordinary76+18 RED; Source I2 HOLD3 adopted; Native execution preparation closed/unrun with exact review active. Future operational results excluded.",
+      "Native": {
+        "mechanism": "ACCEPT_CURRENT_MECHANISM_ONLY",
+        "stage_exits": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "groups": 14,
+        "arms": 31,
+        "full_roles": 11,
+        "elapsed_s": 52.709256299975095,
+        "effective_headroom_s": 0.39658820000477135,
+        "physical_placeholders": [
+          "DID_NOT_RUN",
+          "DID_NOT_RUN"
+        ],
+        "physical_bound": "Unchanged complete actual held identity/API/exit0/EOF/Job active0/closure/resources0 facts; no PASS enum rewrite.",
+        "P11_integrated_preparation": "INDEPENDENT_ACCEPT_PREPARATION_ONLY_REPORT257",
+        "P11_original_current_ordinary": {
+          "PASS": true,
+          "methods": 7,
+          "cases": 113,
+          "elapsed_s": 2.856,
+          "terminal_chunk": "796a7c",
+          "exit": 0,
+          "complete_ordered_113_ledger": true,
+          "resources": 0,
+          "bound": "Selected-definition/model controls; no actual physical/CIM/pipeline/full26/fit credit."
+        },
+        "execution_preparation": {
+          "state": "CLOSED_UNRUN",
+          "independent_exact_review": "ACTIVE_NO_RESULT_CREDIT",
+          "helper_methods": 3,
+          "helper_cases": 29,
+          "helper_actual": "UNRUN",
+          "handoff": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-P11-root-execution-preparation-v1\\handoff.json",
+            "bytes": 6976,
+            "sha256": "2bcd1807ad70f5c2b56feadfbfc11c81c7b0250323373cc59eafe027561b0902"
+          },
+          "seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-P11-root-execution-preparation-v1\\seal.json",
+            "bytes": 9131,
+            "sha256": "5e62fc84e2c7c6a13718e3146bbe582669b78c2b66eef31d70f9644acfc75089"
+          },
+          "pipeline_execution_lease": false
+        },
+        "pipeline180_full26": "UNRUN",
+        "Native82_Class6": "OPEN",
+        "seven_missing_outputs": "Historical partial file-set observation, never census denominator."
+      },
+      "Source": {
+        "H_instrument": {
+          "PASS": true,
+          "methods": 12,
+          "cells": 41,
+          "elapsed_s": 33.211,
+          "Source_cases": 0
+        },
+        "original_integration": {
+          "OLD24": "RED_2_ASSERTIONS_24_RECORDS",
+          "NEW24": "RED_16_ASSERTIONS_24_RECORDS",
+          "prior52": "RED_2_ASSERTIONS_52_RECORDS",
+          "prior56": "PASS_56_RECORDS",
+          "all156_retained": true,
+          "all156_pass": false
+        },
+        "failed_causal_operands": "UNKNOWN",
+        "AIM_proposal": "REPORT258_ACCEPT_AND_ROOT_ADOPTION_FRESH_IMPLEMENTATION_ONLY",
+        "I2_three_exact_products": "PREPARED_UNRUN",
+        "I2_integration_review": {
+          "verdict": "HOLD_3_FINDINGS",
+          "review": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-repair-integration-v2-independent-review-v1\\review.md",
+            "bytes": 12242,
+            "sha256": "50d40b70c5eb21e1a91a9fb193c48e9da7ed6f3c58b89d92f288159052bbc2d4"
+          },
+          "seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-HF4-repair-integration-v2-independent-review-v1\\seal.json",
+            "bytes": 1415,
+            "sha256": "7b72ef10716080974f58d91e833ad1374103d6e7f5f78126f70a02819144d2bc"
+          },
+          "findings": [
+            "P1: Five Ready routes select consumed I1 and require absent pin-closure.json.",
+            "P2: A06.defaults expected cause lacks numpy._utils.",
+            "P2: P1.prepared ledger claims363350/67c293d8801a957a6b65cad25f7e0196e95b127bd4f7d32b9fe4016f27104609; actual current target363546/2fa0658a85b77675973dd4e178fe54183757c2760b527c4a9bb2685e8db8220c."
+          ],
+          "Root_adoption": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-HF4-I2-binding-HOLD-root-adoption.json",
+            "bytes": 2984,
+            "sha256": "31beca7bb9c508c30f9c8f208535b53cd5899384391d9de6b445b808231fcbc2"
+          },
+          "all_I2_gates": "UNRUN",
+          "fresh_I3": "REPAIR_PENDING"
+        },
+        "concrete_A_seams": "HELD_BEFORE_CODE_NO_ACCEPTED_A_INSTRUMENT",
+        "G_F_P2_P1_Source32_Source2": "OPEN_NO_CREDIT"
+      },
+      "Runtime": {
+        "N5": "Four historical prerequisites independently accepted; later76RED/companion18DNR and false overall census retained beside all3gone query fact.",
+        "N6_standard47": {
+          "PASS": true,
+          "methods": 47,
+          "elapsed_s": 12.382,
+          "original46_preserved": true,
+          "actual_AST_loop_regression": true
+        },
+        "N6_four_current_prerequisites": {
+          "independent_review": 259,
+          "Root_final_acceptance": "ACCEPT_BOUNDED_CURRENT_PREREQUISITES_ONLY",
+          "cases_stages_markers": [
+            [
+              9,
+              27,
+              54
+            ],
+            [
+              12,
+              64,
+              128
+            ],
+            [
+              11,
+              32,
+              64
+            ],
+            [
+              6,
+              17,
+              34
+            ]
+          ],
+          "complete1030_passes": 76,
+          "ordered_record_outcomes": 78280,
+          "four_distinct_censuses": "Each genuine report-bound JobTotal2 plus wrapper derives3 identities, query completed/allgone/handlesclosed.",
+          "before_run_files": 85,
+          "cache_declarations": 44,
+          "N5_files_preserved": 89,
+          "PRE_authority": {
+            "bytes": 2067,
+            "sha256": "57eb963090b11ff0bdfb0ba03f300608ddf7415cc58c291d6854309e31708511",
+            "same_actual_PRE_run": true,
+            "stored_report_bytes": 19669,
+            "logical_report_bytes": 116424,
+            "stored_not_logical_pin": true
+          }
+        },
+        "ordinary76_companion18": {
+          "state": "CONSUMED_RED_UNACCEPTED",
+          "UUID": "1347aa05ff1c4066b4a270a48aba0c91",
+          "terminal_chunk": "bdfba2",
+          "exit": 1,
+          "observation": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\runtime-N6-ordinary76-root-RED-observation.json",
+            "bytes": 236515,
+            "sha256": "57840be0fdb872002fd5ca97d9e6feda72fa6a0901bec1a03863d8dee78bea2e"
+          },
+          "main_wire": {
+            "bytes": 911033,
+            "sha256": "31c39d4dce421762695dc02700959a41bf485136a9285eea4f5b3cb1b409c019"
+          },
+          "main_logical": {
+            "bytes": 2080930,
+            "sha256": "0f5f915ec1ebba6379b7b273b71fe9f2d71711174be9ab81aa46bc8422d65878"
+          },
+          "child_main_complete_immutable": true,
+          "child_companion_claim": "complete",
+          "required_tag": "REL_METADATA_COMPANION_V1",
+          "actual_companion_record": "ABSENT",
+          "first_child_error": "Refusal('Source-relative complete tagged metadata exceeds its unchanged record byte limit.')",
+          "metadata_semantic_state": "RED",
+          "whole_companion_bytes": "UNPUBLISHED_UNKNOWN",
+          "all18_acceptance": "UNAVAILABLE",
+          "full_ordinary_acceptance": false,
+          "wrapper_report": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-motion-diagnosis\\vehicle-path-provider\\d-circle-union-discriminator\\source-relative-hybrid-prerequisites-v6\\runs\\1347aa05ff1c4066b4a270a48aba0c91\\report.json",
+            "bytes": 117180,
+            "sha256": "1159f69aa5966b157f768c71cec50ec019813d4f2572bf847c23edb8bc7c67ea"
+          },
+          "inventory": {
+            "wrapper_passes": 5,
+            "child_passes": 3,
+            "records_per_pass": 1030,
+            "full1030_all3": true,
+            "workers": 8,
+            "inflight": 16,
+            "all_retired": true
+          },
+          "child_s": 28.638030800007982,
+          "dispatch_s": 28.825518600002397,
+          "wall_s": 31.464914400014095,
+          "postflight": {
+            "all85_before_run_files_exact": true,
+            "prior4_and_PRE_preserved": true,
+            "current_files": 90,
+            "static_inputs_including_seal": 64,
+            "direct_inputs": 69,
+            "N5_files": 89,
+            "cache_declarations": 44
+          },
+          "census": {
+            "exit": 1,
+            "functional_PASS": false,
+            "query_completed": true,
+            "exact_identities": 3,
+            "all_gone": true,
+            "live": [],
+            "recycled": [],
+            "bound": "CLEANUP_ONLY_NOT_CENSUS_PASS"
+          },
+          "passive_observation_correction": "First postflight saved the opaque census tool, then misread the persisted wrapper chunk list as an object. The corrected large command was refused before process creation by Windows206. No selected work reran; this file reads the exact existing terminal list entry.",
+          "selected_replay": false
+        },
+        "POST": "UNRUN_REQUIRES_ACTUALLY_ACCEPTED_SAME_RUN_ORDINARY_POSITIVE_AUTHORITY",
+        "full_validate_runtime": "UNVERIFIED"
+      },
+      "Unreal": "Source2/deployment67_6/collision/support/save-restart/six valid GI cameraAB/photorealism/ordinary controls/moving agents/3000_200 performance OPEN; no UE launch."
+    },
+    "history_policy": "All original canonical Markdown bytes and prior provenance fields preserved; no lesson retired; one current dated devlog entry.",
+    "raw_run_blobs_promoted": false,
+    "canonical_or_Git_writes_by_preparer": false,
+    "Root_unrelated_diff_guard": {
+      "argv": [
+        "git",
+        "--no-optional-locks",
+        "-c",
+        "safe.directory=C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree",
+        "-c",
+        "core.autocrlf=false",
+        "-c",
+        "gc.auto=0",
+        "-c",
+        "core.whitespace=cr-at-eol",
+        "-c",
+        "core.excludesFile=C:/Users/38909/Documents/github/maps/artifacts/unreal-source-next/worktree/Artifacts/promotion-126-127-v1/empty-excludes",
+        "-C",
+        "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree",
+        "diff",
+        "--binary",
+        "--",
+        ".",
+        ":(exclude)docs/work/0_unreal-shibuya/plan.md",
+        ":(exclude)docs/learning/defect-register.md",
+        ":(exclude)docs/learning/lessons.md",
+        ":(exclude)docs/devlog/summary.md",
+        ":(exclude)docs/work/0_unreal-shibuya/reviews/continuation-20261016-provenance.json"
+      ],
+      "bytes": 215536,
+      "sha256": "52348dbe1017913cb5b98fe4f6b66a41d1478d55153dac4ab7f7ffde11b30f5d"
+    }
+  }
 }

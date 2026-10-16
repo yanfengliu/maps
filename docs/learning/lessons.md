@@ -1,5 +1,18 @@
 # Lessons awaiting retiring gates
 
+## Continuation additions — 2026-10-16, DocsV3
+
+Retire none. Every existing lesson remains even where an isolated instrument, current prerequisite or one mechanism now passes.
+
+Source instrument versus integration: actual H12/41 did not make OLD24, NEW24 or prior52 pass, and the separate prior56 pass did not make all 156 records passing guards. A/I/M adoption did not catch I2's consumed Ready consumers, absent required closure, incorrect A06 cause or stale P1 descriptor. Fresh I3 repair is pending; all I2 gates remain unrun and A seams stay held before code. Retiring gate: bind concrete command/import ancestry and every current descriptor role, retain exact original populations/classifications, then require real finite caller/provider/binding evidence, natural I/O and restoration, integrated regressions and their red controls. Keep H, G/F, P2/P1 and Source32 verdicts separate.
+
+Runtime ordinal partners: the actual-loop OLD/NEW regression and current 47-method suite pass, followed by four independently accepted prerequisites with full named-reader checks and genuine censuses. They did not make the subsequent ordinary76+18 pass. Retiring gate: preserve the original 46-method prefix, genuine same-ordinal facts and adjacent negative controls through integration, then require the complete actual ordinary76/18 saved report, same-run census and genuine POST authority/outcome. No broader lesson is retired.
+
+Runtime logical completion versus published evidence: N6's child claims a complete companion but the unchanged tagged-record byte limit refuses publication. The required record and complete companion bytes remain unavailable; main publication, full inventory passes and all-three-gone cleanup do not repair the semantic RED. Retiring gate: exercise the actual default route at its complete ordinary population, preserve unchanged bounds and exact physical publication/readback pins, and require the real complete companion and ordinary-positive POST authority. Report a failed census's cleanup fact separately. A passive report-reader correction or command refused before creation supplies no selected replay or product credit.
+
+Native mechanism versus pipeline: one mechanism passes with 0.3965882-second headroom, and original P11 ordinary7/113 passes only selected-definition/model controls. Closed execution preparation, active review and unrun 3/29 helper controls supply no physical pipeline fit, full26 or final-tool persistence. Retiring gate: preserve historical state labels, actual held/API/EOF/closed facts, every original source/output/readback barrier and the original native clock after required persistence. Distinct review, declared controls and a separate Root lease remain necessary; Native82/Class6/Unreal criteria stay open.
+
+
 
 2026-10-15 Source predicate optimization: the warm-heavy pure kernel saved19.47% work, but real Source completed12 samples versus the prior19 because59 cached edges served only137 evaluations. Retiring gate: add a pinned cold-heavy cost discriminator (measured59 edges/21 rings/13 samples) that goes red for the inference that this warm-heavy result improves Source progress within its cap; preserve whole Original32 as the fit gate. Keep this lesson until that discriminator lands and its red proof is recorded.
 
