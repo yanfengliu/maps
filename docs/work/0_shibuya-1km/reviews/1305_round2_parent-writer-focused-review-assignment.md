@@ -1,0 +1,7 @@
+# 1305 round2 — Selected parent writer correction
+
+Owner: union1292_review independently reviews1307's frozen1110/data/commercial-work/1304/v2/parent correction; root owns admission and release. Existing ORIGINAL/base69a33eef4a7825497cdd332208c29e7dcab56d27, fresh1305/round2 metadata and authored report only. Retain the existing fleet reviewer model/effort pin. Preserve all earlier source/review/runtime bytes.
+
+Check only open F1: first write/flush failure and later Dispose failure reach the parent's existing errors/firstError/laterErrors in occurrence order, cleanup is attempted once where a stream exists, and neither failure returns successful durable completion. Check operation-only, cleanup-only, combined and subsequent readback/reporting branches in source. Verify three exact source inverse hunks, the necessary own-path/command/descriptor rebases and retained final syntax. Reuse the admitted1305 directed fixture/import review and unchanged component by reference; do not repeat unchanged-body audits.
+
+Preserve38/61 closures,390 case identities/assertions, inherited reviews/admissions,67/44 final vectors, schema1291 and exact30000ms/single5000ms/one-attempt bounds. Verify genuine FALSE templates and fresh output paths. Source/hash/JSON/inverse work only; no subject parser/import/evaluation/fault control/guard/runtime/Git. Return a concise conditional source admission or material findings, exact consumed pins and final unchanged check. Actual B237, writer failure controls, public gates and product acceptance remain separate.
