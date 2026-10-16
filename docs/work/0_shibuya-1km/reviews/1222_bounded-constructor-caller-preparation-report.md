@@ -1,0 +1,13 @@
+# 1222 bounded constructor caller preparation
+
+SOURCE ONLY. The new caller is prepared for one constructor/capture in the parked original 1220 tree. All subject, control, Node, profiler, browser and constructor execution remains DID_NOT_RUN. No Process object was observed or instantiated during this preparation; native metadata and unevaluated PowerShell AST parsing were used.
+
+The caller reuses the exact five admitted 1176 function extents by reference and the original 1220 launcher, which references the unchanged 1203 lifecycle helper. All fifteen current subject files match the frozen source archive. Four native ASTs have zero errors. No mathematical, ownership, geometry, material, source, cache, tolerance, helper, dependency or postcheck body changed.
+
+The FALSE caller proposal binds corrected child proposal 5675/fe2d9e73... and input manifest 15820/e0598915.... Its 49 proposed inputs match their current bytes. Root's corrected 1220 preparation tuple 8236/798ce796... is also bound. The original bad metadata tuple remains preserved and is not selected. The input index is preparation metadata, not a subject-consumed manifest.
+
+A future TRUE authority must retain schema 1220-constructor-runtime-authority-v1, owner root, subject base 69a33eef4a7825497cdd332208c29e7dcab56d27, all child-required fields and admission premises. Additional callerProposal and hostSource pins bind this caller; step/guard bind exact outer argv and guard own1222/target1220. The same authority file is passed literally to the original launcher, which conveys its exact raw pin to Node before subject import. Caller workspace remains base 0ab58a1a83e19db312bb18a2ffa8a90742029835.
+
+Proposed bounds are 60,000 ms Node and 75,000 ms outer, each with the admitted single 5,000 ms combined cleanup/drain grace. These are unapproved runtime allocations. Success requires strict constructor/capture status, complete entry/final pins and error-free retained-handle/watchdog/stream/disposal facts. Refusal, cap or unexpected output stops HOLD without retry. Host output keeps compact status/finalizer/lifecycle projections and raw file descriptors; emitted buffers, geometry and provenance remain in original 1220/run without tree duplication.
+
+The caller and all source metadata are frozen for independent review and separate root admission. Earlier HOLD records, postchecks, 1157 union/emitted-model, browser/lifetime, public/main/full35 and target-performance obligations remain open. Preparation/tool/model CPU is unmeasured; no performance or whole-wall runtime claim is made. No Git or product adoption occurred.
