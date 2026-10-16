@@ -1,0 +1,13 @@
+# Correction to implementation review v1: HR-01 withdrawn
+
+2026-10-16. **Withdraw HR-01. The review remains HOLD on HR-02, HR-03 and HR-04 only.** This addendum corrects the immutable authored review8,714 bytes / `572aae0d5e75a8fa964bdb874355c6e9b17f3c28a595791693703368536f548e` and its seal1,996 bytes / `828a912b839c1f103ba9b0f3d578958befa420501f931a37b93c221b0d012316`. Neither earlier artifact was rewritten.
+
+I resolved the imported `strict` name to the wrong function. In the actual sealed `after/old_cover_receipt_controls.py:51`, `strict` is imported from `old_cover_metadata_controls`, not `rel_protocol`. The actual metadata function at lines24-32 takes one argument and calls `json.loads` with duplicate-key/nonfinite rejection; it has no byte-cap parameter or default1MiB check. Inspection of every `strict` occurrence in the receipt source finds the import and calls, with no later static rebinding. Both source hashes still match the original packet.
+
+Consequently, the earlier claim that receipt lines236 and344 necessarily refuse above1MiB is unsupported and is withdrawn. `_inspect_expanded_result` already has an explicit33,554,432-byte outer guard. The capture path receives expanded bytes through the bounded `decode_control` mechanism before this JSON parse. This correction does not establish an executed complete receipt result or timing fit, but the asserted old-default-cap blocker does not follow from these actual bindings.
+
+Root's requested explicit complete-control guard/role expression and real acquisition-path regression remain reasonable forward work. They must use the actual parser interface and adopted32MiB role while preserving global/file1MiB and individual limits. They are not evidence of the withdrawn defect. Do not fabricate an old-RED expectation by substituting `rel_protocol.strict`, adding a cap to the old parser, or selecting a different import environment. No actual OLD/NEW, parse, capture, inspector or control ran for this correction.
+
+HR-02 through HR-04 concern separate `report_storage` failure metadata, successful-row rejection and forensic acquisition code. This binding correction changes none of their cited control flow; those findings remain standing within their original static bounds. Root's successor policy/code must receive its own focused review. No unit/phase execution authorization or lease is issued here.
+
+`pins-and-evidence.json` records the exact actual sources, original immutable review/seal pins and all receipt `strict` occurrences. Only this fresh ignored correction namespace was written. No selected module evaluation/import/test, process/query/API/engine, source change or canonical edit occurred.

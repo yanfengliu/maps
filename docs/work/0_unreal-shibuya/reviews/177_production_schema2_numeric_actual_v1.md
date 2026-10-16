@@ -1,0 +1,20 @@
+# Independent actual numeric-unit acceptance
+
+2026-10-16. **ACCEPT within the Python role-boundary unit scope.** Actual evidence now reproduces PS2-01/02 on preserved v1 and passes the same complete46-case suite on the two-predicate repair. No material finding remains in this bounded result. This gives no Source2, native/C++ geometry, asset, Unreal, controls, appearance or performance acceptance. Historical67/6 deployment remains HELD.
+
+Fully parsed both saved receipts, reconciled every test status/name and all18 complete old error records against their copies in the full raw unittest transcript, and read Root's actual tool/receipt observation. The old tool console was truncated; its complete81,023-byte saved receipt is retained and was checked independently. Root observation is15,811 bytes / `df10fe4af20ca8f9180de86393cec6ea6a156b8ef186b41cad54cae4d96d28e7`.
+
+| Actual arm | Exit | Named tests | OK | Errors | Failures | Skips |
+| --- | --- | --- | --- | --- | --- | --- |
+| Preserved v1 | 1 | 46 | 28 | 18 | 0 | 0 |
+| Repaired v2 | 0 | 46 | 46 | 0 | 0 | 0 |
+
+All46 names and class identities match between arms and match the23 original plus23 focused definitions, without duplicate, omitted or extra cases. The precise18 old errors are positive/negative huge schema integers and positive/negative huge byte counts for geometry, integration, topology, build_city, surface configuration, city configuration, ledger and preservation. Every traceback contains its exact signed input call, the actual preserved-old path, the expected unsafe line195 or137, and the terminal `OverflowError: int too large to convert to float`. No missing-file, path-admission or unrelated failure replaces the intended reproduction. The remaining28 old cases pass. Every new case is `ok`; the pinned tests require exact `ValueError` type and file/role/schema diagnostics, and also exercise2/2.0, boolean, fractional and nonfinite boundaries.
+
+Old receipt:81,023 bytes / `c38c817de114715a80797d04fff2683f7502469c2eae6c93ce2ad4d24bb1d384`. New receipt:7,274 bytes / `ea299544978090c0840f306d532cb80277a8ab95b19dfb453fc5f433905c7b48`. Root's saved tool outcomes independently record exits1/0 and bind those exact full receipts. Raw unittest durations are6.280s/4.406s, with tool wall times6.464079s/4.5663131s; these are unit-run observations, not a production performance comparison.
+
+Both arms bind the same focused check `3c20d6740f871bee712b5bf5793ffa16abd832c5935830f973f61d7e59d9b8f1` and original cases `f71863859bba2c25a2d7d4ff960f02f67fb934a1290050bd793a86b2b54e18d4`, matching current actual bytes. The old runner remains50,895 bytes / `ed16028644a65051f1c0afec46974e3f08ac9348891d607fe3dbef497106d5a6`; repaired runner remains50,895 bytes / `06449d6f27796982c385807a820e6dfb612ab56f7ce21f34d46f2f314cbe5b0f`. Prior accepted static review establishes the exact two-line inverse and unchanged caps/diagnostics. The actual comparison uses the same pinned checks and deterministic authored tiny-input recipe; temporary directory identities differ, and no retained fixture-byte archive is claimed.
+
+All seven protected product files match their reviewed pins: the repaired runner, C++ world, four Native admission/read-limit/deployment headers, and deployment JSON. No hash refresh or production asset admission occurred. Fresh direct listing finds zero `role-boundary-*` directories under the unit folder, matching Root's empty cleanup list. This does not claim a process census or a whole-source inventory.
+
+`proof.json` retains all46 reconciled names/statuses, each old traceback's complete-byte hash and predicate checks, exact evidence pins and all seven product hashes. This review performed reads, JSON/text comparisons, hashes and writes only in its new ignored namespace. It did not replay/import a candidate, execute tests, alter code, or launch any engine/browser/GUI/process. The prior unrun preparations and old RED remain preserved. Source adapter repair and all genuine production duties stay outside this acceptance.
