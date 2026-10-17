@@ -589,21 +589,51 @@ def cut_polygon(polygon, a, b, inside):
     return result
 
 
-def subtract(polygon, footprint):
+def rational_polygon(points):
+    """Preserve native-cm geometry or declared cm metadata without rounding."""
+    return [[value if isinstance(value, Fraction) else Fraction(float(value)) for value in point[:2]] for point in points]
+
+
+def exact_polygon_area(polygon):
+    if len(polygon) < 3: return Fraction(0)
+    return abs(sum(a[0]*b[1]-a[1]*b[0] for a, b in zip(polygon, polygon[1:]+polygon[:1])))/2
+
+
+def subtract(polygon, footprint, *, exact=False):
     """Local convex subtraction; no physical distance or small-area exemption."""
-    footprint = np.asarray(footprint, dtype=float)[:, :2].tolist()
-    a, b, c = np.asarray(footprint[:3])
-    if np.linalg.det(np.stack((b-a, c-a))) < 0: footprint.reverse()
+    if exact:
+        polygon, footprint = rational_polygon(polygon), rational_polygon(footprint)
+        a, b, c = footprint[:3]
+        orientation = (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+        area = exact_polygon_area
+        if not orientation: return [polygon] if area(polygon) else []
+    else:
+        footprint = np.asarray(footprint, dtype=float)[:, :2].tolist()
+        a, b, c = np.asarray(footprint[:3])
+        orientation = np.linalg.det(np.stack((b-a, c-a)))
+        area = polygon_area
+    if orientation < 0: footprint.reverse()
     overlap = polygon
     for a, b in zip(footprint, footprint[1:]+footprint[:1]):
         overlap = cut_polygon(overlap, a, b, True)
-        if not polygon_area(overlap): return [polygon]
+        if not area(overlap): return [polygon]
     remaining, current = [], polygon
     for a, b in zip(footprint, footprint[1:]+footprint[:1]):
         outside = cut_polygon(current, a, b, False)
-        if polygon_area(outside): remaining.append(outside)
+        if area(outside): remaining.append(outside)
         current = cut_polygon(current, a, b, True)
-        if not polygon_area(current): break
+        if not area(current): break
+    return remaining
+
+
+def uncovered_exact(polygon_cm, footprints_cm):
+    """Exact union coverage in one common centimetre frame; no area waiver."""
+    polygon = rational_polygon(polygon_cm)
+    if not exact_polygon_area(polygon): return []
+    remaining = [polygon]
+    for footprint in footprints_cm:
+        remaining = [piece for old in remaining for piece in subtract(old, footprint, exact=True)]
+        if not remaining: break
     return remaining
 
 
@@ -622,21 +652,25 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         raw = part[2]['POSITION'][integer(anchor['vertex'], 'anchor.vertex', len(part[2]['POSITION']))][[0, 2, 1]]
         if not np.array_equal(raw, anchor['raw_enu_m']): raise ValueError('Source3 raw road anchor XYZ differs from its immutable source')
         return native_metres(raw)
-    regions = {r['id']: [np.asarray(p, dtype=float)/100 for p in r['native_xy_polygons_cm']] for r in ledger['regions']}
+    region_cm = {r['id']: r['native_xy_polygons_cm'] for r in ledger['regions']}
+    regions = {name: [np.asarray(p, dtype=float)/100 for p in polygons] for name, polygons in region_cm.items()}
     region_keys = {name: {tuple(sorted(map(tuple, polygon))) for polygon in polygons} for name, polygons in regions.items()}
     def in_region(triangle, region_id):
         # Literal declared native vertices prove containment before subtraction
         # can introduce residuals while clipping earlier overlapping entries.
         if tuple(sorted(map(tuple, triangle[:, :2]))) in region_keys[region_id]: return
         remaining = [triangle[:, :2].tolist()]
-        for polygon in regions[region_id]:
+        relevant = []
+        for index, polygon in enumerate(regions[region_id]):
             # Region entries are explicit triangles; arbitrary concave polygons
             # require a declared triangulation rather than a convex-hull guess.
             if len(polygon) != 3: raise ValueError('Source3 edit region polygons require explicit triangles')
             lo, hi = polygon.min(axis=0), polygon.max(axis=0)
             if np.any(triangle[:, :2].min(axis=0) > hi) or np.any(triangle[:, :2].max(axis=0) < lo): continue
+            relevant.append(region_cm[region_id][index])
             remaining = [piece for p in remaining for piece in subtract(p, polygon)]
             if not remaining: return
+        if not uncovered_exact(native_centimetres(triangle), relevant): return
         raise ValueError(f'Source3 geometry extends outside declared region {region_id}')
     for edit in ledger['terrain_edits']:
         in_region(native_metres(parent_surface.terrain_index.triangles[edit['parent_triangle']]), edit['region_id'])
@@ -695,25 +729,40 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         inferred.append(triangle)
     ground = np.concatenate((roads, np.asarray(inferred).reshape(-1, 3, 3)))
     ground_index = api.support_geometry.TriangleIndex(ground)
+    # One index over complete CURRENT consumed terrain serves both coverage
+    # and occlusion; original/deleted reference terrain is never a cover.
+    terrain_index = api.support_geometry.TriangleIndex(output_triangles)
+    inferred_ids = {len(retained)+i for i, face in enumerate(labels) if face['kind'] == 'inferred-ground-road'}
     # A deleted parent footprint must still be covered by actual road/fill/fragment
     # geometry. Whole-face removal cannot silently create an exterior hole.
     fragments = collections.defaultdict(list)
+    fragment_ids = collections.defaultdict(set)
     for i, face in enumerate(labels):
-        if face['kind'] == 'retained-parent-fragment': fragments[face['parent_triangle']].append(output_triangles[len(retained)+i])
+        if face['kind'] == 'retained-parent-fragment':
+            fragments[face['parent_triangle']].append(output_triangles[len(retained)+i])
+            fragment_ids[face['parent_triangle']].add(len(retained)+i)
     for parent_id in ledger['deleted_parent_triangles']:
         old = native_metres(parent_surface.terrain_index.triangles[parent_id])
         remaining = [old[:, :2].tolist()]
         candidates = ground_index.candidates(old[:, :2].min(axis=0), old[:, :2].max(axis=0))
-        for triangle in [*fragments[parent_id], *(ground[i] for i in candidates)]:
+        footprints = [*fragments[parent_id], *(ground[i] for i in candidates)]
+        for triangle in footprints:
             remaining = [piece for polygon in remaining for piece in subtract(polygon, triangle)]
             if not remaining: break
         if remaining:
-            raise ValueError(f'Source3 deletion {parent_id} leaves uncovered native XY area {sum(map(polygon_area, remaining))} m2')
-    terrain_ids = [i for i in range(len(output_triangles)) if i < len(retained) or labels[i-len(retained)]['kind'] == 'retained-parent-fragment']
-    terrain_index = api.support_geometry.TriangleIndex(output_triangles[terrain_ids])
+            # Keep the historical fast float-pass decisions. A refusal needs
+            # the complete current surface, including neighboring fragments.
+            terrain_candidates = terrain_index.candidates(old[:, :2].min(axis=0), old[:, :2].max(axis=0))
+            footprints.extend(output_triangles[i] for i in terrain_candidates
+                              if i not in inferred_ids and i not in fragment_ids[parent_id])
+            exact_remaining = uncovered_exact(native_centimetres(old), (native_centimetres(t) for t in footprints))
+            if exact_remaining:
+                area_m2 = sum(map(exact_polygon_area, exact_remaining))/10000
+                raise ValueError(f'Source3 deletion {parent_id} leaves uncovered native XY area {float(area_m2)} m2')
     changed_ground = inferred + [roads[i] for i, ref in enumerate(parent_surface._source3_new_road_refs) if ref['kind'] == 'derived-road']
     for triangle in changed_ground:
         for i in terrain_index.candidates(triangle[:, :2].min(axis=0), triangle[:, :2].max(axis=0)):
+            if i in inferred_ids: continue
             terrain = terrain_index.triangles[i]
             overlap = terrain[:, :2].tolist()
             footprint = triangle[:, :2].tolist()
@@ -723,9 +772,9 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
             for xy in overlap:
                 gap = float(barycentric(terrain, xy)@terrain[:, 2]-barycentric(triangle, xy)@triangle[:, 2])
                 if gap > 0:
-                    raise ValueError(f'Source3 retained terrain {terrain_ids[i]} occludes declared road by {gap} m')
+                    raise ValueError(f'Source3 retained terrain {i} occludes declared road by {gap} m')
     return {'changed_face_coverage': True, 'inferred_faces': len(inferred), 'deleted_parent_faces': len(ledger['deleted_parent_triangles']),
-            'scope': 'Changed projected footprints, exact raw anchors, inferred plane grade and retained-terrain occlusion. Route width/body, native collision and capacity remain separate acceptance.'}
+            'scope': 'Changed footprints covered by complete current terrain/roads. Exact native-cm coverage fallback on floating refusal; floating passes are not exact-certified. Raw anchors, inferred grade and retained-terrain occlusion checked separately. Route width/body, native collision and capacity remain separate acceptance.'}
 
 
 
