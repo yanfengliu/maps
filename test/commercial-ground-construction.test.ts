@@ -146,6 +146,7 @@ it("constructs the actual ground replacement from the unchanged categorical sour
   scene.updateMatrixWorld(true);
     const sourceState=()=>scene.children.filter((o):o is Mesh=>o instanceof Mesh).map(mesh=>[mesh.geometry.index,...["position","normal","uv","_batchid"].map(name=>mesh.geometry.getAttribute(name))].filter(Boolean).map(a=>createHash("sha256").update(new Uint8Array(a!.array.buffer,a!.array.byteOffset,a!.array.byteLength)).digest("hex")));
     const originalArrays=sourceState();
+  const releases:(()=>void)[]=[];const lifetime={onRelease(cleanup:()=>void){releases.push(cleanup);}};const release=():void=>{for(const cleanup of releases.splice(0))cleanup();};
   const result: Record<string, unknown> = { status: "RUNNING", process: process.pid, model: null, meshes: [] };
   try {
     emitted.canopy.length = 0;
@@ -161,7 +162,7 @@ it("constructs the actual ground replacement from the unchanged categorical sour
     prepareCommercialCorner(scene, CROSSING_CORNER.tileUri, CROSSING_CORNER.tileSha256);
     const originalSourceCompile=(photo.material as MeshStandardMaterial).onBeforeCompile;
     const options={ style: createFacadeStyle(worldStyle("satellite")), signageIntensity: { value: 2.15 } };
-    expect(addCommercialCorner(scene, CROSSING_CORNER.tileUri, CROSSING_CORNER.tileSha256, options)).toBe(true);
+    expect(addCommercialCorner(scene, CROSSING_CORNER.tileUri, CROSSING_CORNER.tileSha256, options,lifetime)).toBe(true);
     const group = scene.getObjectByName(R.name)!; expect(group).toBeDefined();
     expect(sourceState(),"Original source geometry, normals, UVs, indices and batch IDs are byte exact").toEqual(originalArrays);
     const binding=photo.geometry.getAttribute("mapsCommercialSource"),index=photo.geometry.index!;
@@ -231,25 +232,30 @@ it("constructs the actual ground replacement from the unchanged categorical sour
     applyFacadeStyle(options.style,worldStyle("cartographic"));expect(hidden(1,19,options.style.procedural.value)).toBe(0);expect(light.intensity).toBe(0);
     applyFacadeStyle(options.style,worldStyle("satellite"));expect(light.intensity).toBeCloseTo(19.35);options.signageIntensity.value=.05;expect(light.intensity).toBeCloseTo(.45);
     for(const object of group.children)if(object instanceof Mesh)expect(getCommercialCornerNormalMaterial(object),`Actual normal registration for ${object.name}`).toBeDefined();
-    expect(addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,{style:createFacadeStyle(worldStyle("satellite")),signageIntensity:{value:2.15}})).toBe(true);
+    expect(addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,{style:createFacadeStyle(worldStyle("satellite")),signageIntensity:{value:2.15}},lifetime)).toBe(true);
     const stone=group.getObjectByName(`${R.name}:cladding`)as Mesh;
-    (stone.material as MeshStandardMaterial).dispose();
-    expect(scene.getObjectByName(R.name),"Unload removes the actual replacement").toBeUndefined();
-    expect((photo.material as MeshStandardMaterial).onBeforeCompile,"Unload restores the original source hook").toBe(originalSourceCompile);
-    expect(getCommercialCornerNormalMaterial(stone),"Unload unregisters the private normal pass").toBeUndefined();
+    release();
+    expect(scene.getObjectByName(R.name),"Logical release removes the actual replacement").toBeUndefined();
+    expect((photo.material as MeshStandardMaterial).onBeforeCompile,"Logical release restores the original source hook").toBe(originalSourceCompile);
+    expect(getCommercialCornerNormalMaterial(stone),"Logical release unregisters the private normal pass").toBeUndefined();
+    // The next logical parse owns a fresh relief, including its private normal.
+    // Reusing a truly released private normal would not model a new tile parse.
+    const releasedRelief=scene.getObjectByName("crossing-frontage-surround")!,releasedResources=new Set<{dispose():void}>();
+    releasedRelief.traverse(o=>{if(o instanceof Mesh)for(const resource of[o.geometry,o.material as Material,o.customDepthMaterial!,o.customDistanceMaterial!])releasedResources.add(resource);});
+    releasedRelief.removeFromParent();for(const resource of releasedResources)resource.dispose();
     prepareCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256);
     const add=scene.add.bind(scene),guard=vi.spyOn(scene,"add").mockImplementation((...objects)=>{if(objects.some(o=>o.name===R.name))throw Error("controlled late ground attach failure");return add(...objects);});
-    try{expect(()=>addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,options)).toThrow("controlled late ground attach failure");}finally{guard.mockRestore();}
+    try{expect(()=>addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,options,lifetime)).toThrow("controlled late ground attach failure");}finally{guard.mockRestore();}
     expect(scene.getObjectByName(R.name)).toBeUndefined();expect((photo.material as Material).onBeforeCompile).toBe(originalSourceCompile);expect(getCommercialCornerNormalMaterial(photo)).toBeUndefined();
-    prepareCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256);expect(addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,options)).toBe(true);
-    ((scene.getObjectByName(`${R.name}:cladding`)as Mesh).material as Material).dispose();
-    result.lifecycle={normalRegistration:true,beautyDepthDistanceNormalSharedStyle:true,sourceUpperPreserved:true,idempotentAdd:true,unloadRestoration:true,lateRollback:true,exactRestoredConstruction:true};
+    prepareCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256);expect(addCommercialCorner(scene,CROSSING_CORNER.tileUri,CROSSING_CORNER.tileSha256,options,lifetime)).toBe(true);
+    release();
+    result.lifecycle={normalRegistration:true,beautyDepthDistanceNormalSharedStyle:true,sourceUpperPreserved:true,idempotentAdd:true,logicalReleaseRestoration:true,lateRollback:true,exactRestoredConstruction:true};
     result.status = "CONSTRUCTED_RESOURCE_TRIANGLE_AND_CANOPY_BOUNDARY_CHECKS";
   } catch (error) { result.status = "FAILED"; result.error = { name: (error as Error).name, message: (error as Error).message, stack: (error as Error).stack }; throw error; }
   finally {
     mkdirSync(new URL("../artifacts/1413/",import.meta.url),{recursive:true});
     writeFileSync(new URL(`../artifacts/1413/construction-${process.pid}-${Date.now()}.json`, import.meta.url), JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
     const resources = new Set<{ dispose(): void }>(); scene.traverse(object => { if (object instanceof Mesh) { resources.add(object.geometry); for (const material of [...(Array.isArray(object.material) ? object.material : [object.material]), object.customDepthMaterial, object.customDistanceMaterial]) if (material) resources.add(material); } });
-    for (const resource of resources) resource.dispose(); texture.dispose();
+    release();for (const resource of resources) resource.dispose(); texture.dispose();
   }
 }, 30000);

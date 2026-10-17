@@ -19,6 +19,8 @@ const b3dm = parseB3dm(bytes), glb = parseGlb(b3dm.glb);
 const decoded = await decodePrimitive(glb.json, glb.binary!, glb.json.meshes![0]!.primitives[1]!, true);
 const untextured = await decodePrimitive(glb.json, glb.binary!, glb.json.meshes![0]!.primitives[0]!, true);
 const gml = readBatchColumn(b3dm.batchTableJson, b3dm.batchTableBinary, "gml_id", b3dm.featureTableJson.BATCH_LENGTH as number);
+const storeys = readBatchColumn(b3dm.batchTableJson, b3dm.batchTableBinary, "bldg:storeysAboveGround", b3dm.featureTableJson.BATCH_LENGTH as number);
+const heights = readBatchColumn(b3dm.batchTableJson, b3dm.batchTableBinary, "bldg:measuredHeight", b3dm.featureTableJson.BATCH_LENGTH as number);
 const geometry = new BufferGeometry();
 geometry.setAttribute("position", new BufferAttribute(decoded.positions, 3));
 geometry.setAttribute("normal", new BufferAttribute(decoded.surface!.normals, 3));
@@ -27,8 +29,10 @@ geometry.setAttribute("_batchid", new BufferAttribute(decoded.batchIds!, 1));
 geometry.setIndex(new BufferAttribute(decoded.surface!.indices, 1));
 afterAll(() => geometry.dispose());
 function fixture(identity = true, parserPlacement = false) {
+  const releaseHooks: (()=>void)[] = [];
+  const lifetime={trackTexture(_texture:Texture){},releaseTexture(texture:Texture){texture.dispose();},onRelease(cleanup:()=>void){releaseHooks.push(cleanup);}};
   const scene = new Group() as Group & { batchTable: { getDataFromId(id: number): Record<string, unknown> } };
-  scene.batchTable = { getDataFromId: id => ({ gml_id: identity ? gml[id] : "bldg_wrong" }) };
+  scene.batchTable = { getDataFromId: id => ({ gml_id: identity ? gml[id] : "bldg_wrong", "bldg:storeysAboveGround": storeys[id], "bldg:measuredHeight": heights[id] }) };
   const texture = new Texture({ width: parserPlacement ? 4096 : 1, height: parserPlacement ? 4096 : 1 } as never); texture.flipY = false; texture.colorSpace = SRGBColorSpace;
   const material = new MeshStandardMaterial({ map: texture });
   const mesh = new Mesh(geometry.clone(), material);
@@ -39,7 +43,7 @@ function fixture(identity = true, parserPlacement = false) {
   if (parserPlacement) scene.applyMatrix4(new Matrix4().fromArray(glb.json.nodes![1]!.matrix!));
   else { scene.matrix.fromArray(glb.json.nodes![1]!.matrix!); scene.matrixAutoUpdate = false; }
   scene.add(mesh); scene.updateMatrixWorld(true);
-  return { scene, mesh, plain, material, texture, dispose() { const owned = new Set<{ dispose(): void }>(); for (const name of ["crossing-frontage-surround", "crossing-commercial-corner"]) scene.getObjectByName(name)?.traverse(object => { if (object instanceof Mesh) { owned.add(object.geometry); owned.add(object.material as MeshStandardMaterial); if(object.customDepthMaterial)owned.add(object.customDepthMaterial);if(object.customDistanceMaterial)owned.add(object.customDistanceMaterial); } }); for (const pass of [mesh.customDepthMaterial,mesh.customDistanceMaterial]) if (pass) owned.add(pass); for (const resource of owned) resource.dispose(); plainGeometry.dispose(); plainMaterial.dispose(); mesh.geometry.dispose(); material.map?.dispose(); if (material.map !== texture) texture.dispose(); material.dispose(); } };
+  return { scene, mesh, plain, material, texture, lifetime, dispose() { const owned = new Set<{ dispose(): void }>(); for (const name of ["crossing-frontage-surround", "crossing-commercial-corner"]) scene.getObjectByName(name)?.traverse(object => { if (object instanceof Mesh) { owned.add(object.geometry); owned.add(object.material as MeshStandardMaterial); if(object.customDepthMaterial)owned.add(object.customDepthMaterial);if(object.customDistanceMaterial)owned.add(object.customDistanceMaterial); } }); for (const pass of [mesh.customDepthMaterial,mesh.customDistanceMaterial]) if (pass) owned.add(pass); scene.traverse(object=>{if(object instanceof Mesh){owned.add(object.geometry);for(const resource of[object.material as Material,object.customDepthMaterial,object.customDistanceMaterial])if(resource)owned.add(resource);}});for(const cleanup of releaseHooks.splice(0))cleanup();for (const resource of owned) resource.dispose(); plainGeometry.dispose(); plainMaterial.dispose(); mesh.geometry.dispose(); material.map?.dispose(); if (material.map !== texture) texture.dispose(); material.dispose(); } };
 }
 function sample(mesh: Mesh, face: number, weights: number[]) {
   const p = new Vector3(), n = new Vector3(), uv = [0, 0];
@@ -86,7 +90,7 @@ describe("source-bound lower crossing frontage", () => {
       if (mode === "other-lod") { prepareCrossingCorner(f.scene,"data/data517.b3dm",undefined); expect(f.mesh.geometry.getAttribute("mapsCornerEligible")).toBeUndefined(); return; }
       await plugin.fetchData("/scene/buildings/data/data518.b3dm", {});
       if (mode === "wrong-uv") { f.texture.offset.set(.1,.2); await expect(plugin.processTileModel(f.scene,nativeLeaf)).rejects.toThrow(/UV0-orientation/); expect(f.material.map).toBe(f.texture); return; }
-      await plugin.processTileModel(f.scene,nativeLeaf);
+      await plugin.processTileModel(f.scene,nativeLeaf,f.lifetime);
       const sections = buildingSections(f.scene,CROSSING_CORNER.tileUri); for (const section of sections) section.geometry.dispose();
       expect(f.plain.geometry.getAttribute("mapsCornerEligible")).toBeUndefined();
       const attribute = f.mesh.geometry.getAttribute("mapsCornerEligible");

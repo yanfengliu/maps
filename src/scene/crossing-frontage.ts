@@ -3,6 +3,7 @@
  * The source wall and photograph remain intact behind the open surround. */
 import { BoxGeometry, Float32BufferAttribute, FrontSide, Group, Matrix3, Mesh, MeshDepthMaterial, MeshDistanceMaterial, MeshNormalMaterial, MeshStandardMaterial, NoBlending, RGBADepthPacking, Triangle, Vector3, type Material, type Object3D } from "three";
 import { CROSSING_CORNER } from "./crossing-corner-material.js";
+import type { FacadeTextureLifetime } from "./facade-textures.js";
 
 const NAME = "crossing-frontage-surround";
 const NORMAL = new Vector3(...CROSSING_CORNER.normal);
@@ -38,7 +39,7 @@ const floorY = (x: number, z: number): number => Math.max(
 
 /** Called after the original SHA/GML/UV eligibility check and material pass,
  * before tile-cache admission. Ordinary tile disposal owns these resources. */
-export function addCrossingFrontage(scene: Object3D, tileUri: string, verifiedSha256: string | undefined): void {
+export function addCrossingFrontage(scene: Object3D, tileUri: string, verifiedSha256: string | undefined, lifetime?: Pick<FacadeTextureLifetime, "onRelease">): void {
   if (tileUri !== CROSSING_CORNER.tileUri || scene.getObjectByName(NAME)) return;
   if (verifiedSha256 !== CROSSING_CORNER.tileSha256) throw new Error("TSUTAYA surround requires the reviewed data518 SHA-256 before adding relief.");
   scene.updateMatrixWorld(true);
@@ -80,14 +81,16 @@ export function addCrossingFrontage(scene: Object3D, tileUri: string, verifiedSh
   const distance = new MeshDistanceMaterial();
   const normal = new MeshNormalMaterial({ blending: NoBlending });
   for (const pass of [material,depth,distance,normal]) { pass.name = NAME; sourceFacing(pass); }
-  // The tile transaction captures custom shadow materials. The private normal
-  // lookup is not a mesh property; its owning beauty material releases it once.
+  // GPU eviction retains the parsed model. Only logical release removes this
+  // private normal lookup; standalone direct callers retain disposal fallback.
   let normalReleased = false;
-  material.addEventListener("dispose", () => {
+  const releaseNormal = (): void => {
     if (normalReleased) return; normalReleased = true;
     for (const object of group.children) if (object instanceof Mesh) normalMaterials.delete(object);
     normal.dispose();
-  });
+  };
+  if (lifetime?.onRelease) lifetime.onRelease(releaseNormal);
+  else material.addEventListener("dispose", releaseNormal);
   const yaw = Math.atan2(NORMAL.x,NORMAL.z);
   const add = (width: number, height: number, centre: Vector3, grounded: boolean): void => {
     const box = new BoxGeometry(width,height,DEPTH);

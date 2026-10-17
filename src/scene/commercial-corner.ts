@@ -8,6 +8,7 @@ import { buildCommercialCanopy, type CanopyRoom } from "./commercial-ground-cano
 import { CROSSING_CORNER } from "./crossing-corner-material.js";
 import { COMMERCIAL_CORNER as R } from "./commercial-corner-recipe.js";
 import type { FacadeStyleUniforms, SignageUniform } from "./tile-materials.js";
+import type { FacadeTextureLifetime } from "./facade-textures.js";
 
 type Point = readonly number[];
 type Plan = [number, number];
@@ -375,14 +376,16 @@ function roomRadiance(material: MeshStandardMaterial, options: Options, amount: 
 
 /** Ground-only construction. The original upper source, its material chain and
  * main relief remain owned by the tile; all suppression is committed last. */
-export function addCommercialCorner(scene: Object3D, uri: string, digest: string | undefined, options: Options): boolean {
+export function addCommercialCorner(scene: Object3D, uri: string, digest: string | undefined, options: Options, lifetime?: Pick<FacadeTextureLifetime, "onRelease">): boolean {
   if (uri !== CROSSING_CORNER.tileUri) return false;
   if (digest !== CROSSING_CORNER.tileSha256) fail("construction SHA-256");
   if (scene.getObjectByName(R.name)) return true;
   const source = sources.get(scene); if (!source) return false;
+  const registerRelease = lifetime?.onRelease?.bind(lifetime);
+  if (!registerRelease) fail("missing logical parse lifetime");
   // Main's original relief exists in both success and fallback. Its geometry,
   // source-facing hook and private normal registration are never replaced.
-  addCrossingFrontage(scene, uri, digest);
+  addCrossingFrontage(scene, uri, digest, lifetime);
   const relief = scene.getObjectByName("crossing-frontage-surround");
   if (!relief) return constructionFail("original main relief");
   const stone = new Assembly(), metal = new Assembly(), glass = new Assembly(), rooms = new Assembly(), objects = new Assembly(), lamps = new Assembly();
@@ -457,11 +460,12 @@ export function addCommercialCorner(scene: Object3D, uri: string, digest: string
   metal.quad([p[0], base, p[1]], [q[0], base, q[1]], [q[0], ceiling, q[1]], [p[0], ceiling, p[1]], 0x4b5655);
   buildCommercialCanopy({ stone, metal, rooms, panels: canopyRooms, south: s, east: { ...e, length: R.eastReturnEnd }, origin: corner, ceiling, high, cut: R.groundCutY, seams, refuse: constructionFail });
   const group = new Group(); group.name = R.name; group.matrix.copy(scene.matrixWorld).invert(); group.matrixAutoUpdate = false;
-  const owned: { dispose(): void }[] = [], restored: (() => void)[] = [], released = new Set<object>();
+  const owned: { dispose(): void }[] = [], privateResources: { dispose(): void }[] = [], restored: (() => void)[] = [];
   let closed = false;
   const own = <T extends { dispose(): void }>(r: T): T => { owned.push(r); return r; };
+  const ownPrivate = <T extends { dispose(): void }>(r: T): T => { privateResources.push(r); return r; };
   const restore = (): void => { for (const undo of restored.toReversed()) undo(); restored.length = 0; };
-  const cleanup = (): void => { if (closed) return; closed = true; restore(); group.removeFromParent(); for (const resource of owned) if (!released.has(resource)) { released.add(resource); resource.dispose(); } sources.delete(scene); };
+  const cleanup = (): void => { if (closed) return; closed = true; restore(); group.removeFromParent(); for (const resource of privateResources) resource.dispose(); sources.delete(scene); };
   const wrap = (mat: Material, mode: "source" | "ground" | "relief"): void => { const compile = mat.onBeforeCompile, key = mat.customProgramCacheKey; presentation(mat, options, mode); restored.push(() => { mat.onBeforeCompile = compile; mat.customProgramCacheKey = key; }); };
   const register = (mesh: Mesh, normal: Material): void => { const previous = normals.get(mesh); normals.set(mesh, normal); restored.push(() => { if (previous) normals.set(mesh, previous); else normals.delete(mesh); }); };
   try {
@@ -472,7 +476,7 @@ export function addCommercialCorner(scene: Object3D, uri: string, digest: string
     for (const [name, out, mat] of [["cladding", stone, stoneMat], ["metal", metal, metalMat], ["glazing", glass, glassMat], ["rooms", rooms, roomMat], ["furnishings", objects, objectMat], ["fittings", lamps, lampMat]] as const) {
       const geometry = own(out.geometry()), mesh = new Mesh(geometry, mat); mesh.name = `${R.name}:${name}`; wrap(mat, "ground");
       mesh.userData.authoredFrontage = { gmlId: CROSSING_CORNER.gmlId, source: false }; mesh.castShadow = name !== "glazing" && name !== "fittings"; mesh.receiveShadow = true;
-      const depth = own(new MeshDepthMaterial({ depthPacking: RGBADepthPacking })), distance = own(new MeshDistanceMaterial()), normal = own(new MeshNormalMaterial({ blending: NoBlending }));
+      const depth = own(new MeshDepthMaterial({ depthPacking: RGBADepthPacking })), distance = own(new MeshDistanceMaterial()), normal = ownPrivate(new MeshNormalMaterial({ blending: NoBlending }));
       if (name === "glazing") { normal.visible = false; normal.depthWrite = false; }
       for (const pass of [depth, distance, normal]) wrap(pass, "ground");
       mesh.customDepthMaterial = depth; mesh.customDistanceMaterial = distance; register(mesh, normal); group.add(mesh);
@@ -481,7 +485,7 @@ export function addCommercialCorner(scene: Object3D, uri: string, digest: string
     // Every change has an exact undo before the first resource can be released.
     wrap(source.mesh.material as Material, "source");
     const sourceDepth = source.mesh.customDepthMaterial, sourceDistance = source.mesh.customDistanceMaterial;
-    const depth = own(new MeshDepthMaterial({ depthPacking: RGBADepthPacking })), distance = own(new MeshDistanceMaterial()), normal = own(new MeshNormalMaterial({ blending: NoBlending }));
+    const depth = own(new MeshDepthMaterial({ depthPacking: RGBADepthPacking })), distance = own(new MeshDistanceMaterial()), normal = ownPrivate(new MeshNormalMaterial({ blending: NoBlending }));
     for (const pass of [depth, distance, normal]) wrap(pass, "source");
     restored.push(() => { source.mesh.customDepthMaterial = sourceDepth; source.mesh.customDistanceMaterial = sourceDistance; });
     source.mesh.customDepthMaterial = depth; source.mesh.customDistanceMaterial = distance; register(source.mesh, normal);
@@ -489,12 +493,12 @@ export function addCommercialCorner(scene: Object3D, uri: string, digest: string
     relief.traverse(o => { if (o instanceof Mesh) for (const mat of [o.material as Material, o.customDepthMaterial, o.customDistanceMaterial, getCrossingFrontageNormalMaterial(o)]) if (mat) reliefPasses.add(mat); });
     if (reliefPasses.size !== 4) constructionFail("four original relief passes");
     for (const pass of reliefPasses) wrap(pass, "relief");
-    const fixture = own(new PointLight(0xffdeb0, 1, 4, 2)), location = s.at(R.south.length / 2, 0, .16);
+    const fixture = ownPrivate(new PointLight(0xffdeb0, 1, 4, 2)), location = s.at(R.south.length / 2, 0, .16);
     fixture.position.set(location[0], 19.37, location[1]); Object.defineProperty(fixture, "intensity", { configurable: true, get: () => options.style.procedural.value < .5 ? options.signageIntensity.value * 9 : 0 }); group.add(fixture);
     const meshes = group.children.filter((o): o is Mesh => o instanceof Mesh), modelBytes = meshes.reduce((sum, m) => sum + Object.values(m.geometry.attributes).reduce((n, a) => n + a.array.byteLength, 0), 0), sourceBindingBytes = source.mesh.geometry.getAttribute("mapsCommercialSource").array.byteLength;
     const triangles = meshes.reduce((sum, m) => sum + m.geometry.getAttribute("position").count / 3, 0), bytes = modelBytes + sourceBindingBytes;
     if (meshes.length > R.limit.beautyDraws || triangles > R.limit.triangles || bytes > R.limit.geometryBytes) constructionFail(`resource ceiling (${meshes.length} draws, ${triangles} triangles, ${bytes} bytes)`);
     group.userData.commercialCorner = { beautyDraws: meshes.length, triangles, geometryBytes: bytes, modelGeometryBytes: modelBytes, sourceBindingBytes, newAtlases: 0, localLights: 1 };
-    stoneMat.addEventListener("dispose", cleanup); scene.add(group); return true;
-  } catch (error) { cleanup(); throw error; }
+    registerRelease!(cleanup); scene.add(group); return true;
+  } catch (error) { cleanup(); for (const resource of owned) resource.dispose(); throw error; }
 }

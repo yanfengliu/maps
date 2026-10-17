@@ -281,8 +281,8 @@ export class FacadeTexturePlugin {
       });
       const sourceTile = tile as { content?: { uri?: string; url?: string } };
       const tileUri = sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown";
-      addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
-      addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options);
+      addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), lifetime);
+      addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addPeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addPeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);

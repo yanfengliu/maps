@@ -21,25 +21,24 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). Source-bound quad/radiance0.65; non-letter border unlit, photo/glazing/roof preserved. Existing0.05 noon floor visually normal. No added geometry/textures/lights; isolated cost unmeasured. Earlier work preserved; no final criterion closes.
+Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). Source-bound radiance0.65; no added geometry/textures/lights, photo/glazing/roof preserved. No final criterion closes.
 
-PRIMARY five gates PASS: build/types,133 files/1,173 tests in71.479s, audit(two existing moderate advisories), visual `82fa77ecdca2b44c`:44frames/three lifecycles in288.179s, RTX4090/616.64. Native review:matched noon/dusk block pair,22canonical Satellite/two current Satellite-to-Cartographic control frames. Four runtime files match worker build; maps excluded. Default5970698 actual actor started locally; no motion/actor-continuity/FPS claim. Pre-start permission refusals retained; scoped completions passed.
+PRIMARY five gates PASS: build/types,133 files/1,173 tests71.479s, audit(two existing moderate), visual `82fa77ecdca2b44c`:44frames/three lifecycles288.179s, RTX4090/616.64. Independent1450 reviewed22Satellite/two actual style-control frames. No motion/continuity/population/FPS acceptance. Remote CI unavailable:zero checks/statuses/workflows. Pre-start refusals retained; scoped completions passed.
 
-9e4508 remote APIs:zero checks/statuses/workflows; CI unavailable.1449 checkout retired after preservation;51 owned identities/markers/4319/TEMP clear at18:54UTC. Historical trees/unrelated tail untouched.
-
-Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `test/facade-emission.test.ts`, AGENTS.md and991 snapshot.
+Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older157-file certificates do not transfer. Preserve user-owned facade-emission.test.ts, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
 Stopped1445/1452/[1455](reviews/1455_hachiko-stone-transition-stop.md) trials stay failed; frozen evidence preserved and checkouts retired. [1456](reviews/1456_stone-edge-stop-review.md) confirms1455. [1454](reviews/1454_tsutaya-source-quality.md): local TSUTAYA chart128x512; other imagery UNKNOWN.
 
-[1457](reviews/1457_next-visible-milestone.md) accepts the [future benchmark](1457_visual-benchmark.md)/[disqualifiers](1457_visual-disqualifiers.md), no old rescore. Source/views sealed; one photo-recess trial. Actual518 GPU unload reveals inherited commercial cleanup fault. A separable logical-release repair is approved; finish/shape unchanged by repair.
+[1457](reviews/1457_next-visible-milestone.md) [benchmark](1457_visual-benchmark.md)/[disqualifiers](1457_visual-disqualifiers.md) remain.1458 photo-recess STOP:1461 rejects framed-photo appearance in two native noon pairs. Frozen source/build/captures preserved; no tuning/full gates. Separable inherited commercial/frontage-normal logical-release repair proceeds, geometry/finish unchanged.
 
 Profile COMPLETE/worker CPU UNAVAILABLE; follow-up PARKED. `artifacts/orchestration-context-20261017/profile/profile-summary.json`. Historical65 worktrees: inventory COMPLETE/removal PARKED; preserve first, product priority. `artifacts/retained1421-inventory/summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Recessed photo windows | windows1458 CAPTURING;review1460 source RUNNING | Frozen `artifacts/windows1458/code-freeze.json`:20 bays/0.32m/224tri/23,424B. Types/build/20 checks PASS; lifetime RED/GREEN. Native quality pending; no tuning. |
+| GPU cleanup repair | GREEN;root adoption NEXT | PRIMARY five PASS; integrated1460 PASS; commit/push pending. |
+| Next visible milestone | population1465 COMPLETE;probe PREPARED | 1464 NO QUALIFIED SET; existing agents=1 needs native8-frame discriminator. No default change authorized. |
 | Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | Ignored `artifacts/visual-gallery/index.html`;15min updates plus milestones. Never Git. |
 
 No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
