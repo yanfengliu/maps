@@ -21,25 +21,24 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `e483cd5dfa58ee89876fba268c55c619daca9d5f` adds five south/four east occupied glazed bays, continuous canopy, supported graded entrance and one dusk fixture, preserving the upper photograph. It follows road `49cfdb7` and verification fix `f5c8e95`. [1413](reviews/1413_direct-ground-construction.md) and independent [1417 PASS](reviews/1417_commercial-ground-combined-review.md) bind actual production geometry/source/lifetime checks and native appearance. Acceptance is bounded to this ground frontage.
+Adopted product revision `8ff08fe54089294149d9b2448afddb5f673c6121` adds path-aligned tactile tile joints, directional relief and roughness variation across the 16 mapped features near the crossing/approaches. All 267 segments retain their routes/support decisions (260 placed, seven refused). [1422](reviews/1422_tactile-paving-implementation.md) and independent [1423 PASS](reviews/1423_tactile-integrated-review.md) bind source, static appearance and lifetime acceptance. The occupied corner `e483cd5` remains preserved; [1417](reviews/1417_commercial-ground-combined-review.md) retains its bounded construction review.
 
-All five integrated gates passed: build/types, 126 files/1,148 unit tests in 88.09 s, unchanged audit threshold (two moderate advisories), and run `9943546020d4f9ba`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1417 covers 22 Satellite originals, four Cartographic heroes and matched/exploratory comparisons. Occlusion/inside-building views limit claims. Saved cleanup closes 45 identities, 4319 and TEMP; no fresh census is claimed.
+All five final primary gates pass: build/types, 127 files/1,152 unit tests in 84.05 s, unchanged audit threshold (two moderate advisories), and run `59b500b75a1abf60`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1423 inspected 45 native originals, including 22 Satellite frames/four Cartographic heroes; occlusion and temporal limits remain explicit. Fixture/sandbox setup failures are resolved and retained. Remote CI had zero check runs/statuses/workflows, not a remote pass. Fresh cleanup closes 45 identities, 4319 and TEMP; both task worktrees are removed.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md); worktree removed. Fresh critique 1420: 24 originals, 20 usable/four occluded; controls/style/cleanup passed. Priorities: tactile construction, mounted dusk light, facade depth. No final criterion closes.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Fresh critique 1420 selected tactile construction; fresh-context review 1423 recommends the east-first mounted-light prototype next, then facade depth. No final criterion closes.
 
 Profile diagnostic COMPLETE; unchanged test passed, parent-only capture leaves worker CPU attribution UNAVAILABLE. Inputs unchanged, resources closed. Follow-up PARKED; no optimization selected. Evidence: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Readable tactile paving, milestone 1422 | Root; INTEGRATED, uncommitted; five gates and [1423](reviews/1423_tactile-integrated-review.md) PASS | Base `c42c526`; final 127 files/1,152 tests, run `59b500b75a1abf60` (44 frames/three lifecycles). Setup failures retained; source frozen to 1422 hashes. Remaining: commit/push and fresh worktree cleanup. |
-| Mounted dusk lighting proposal | Root; `lighting1424_selection` COMPLETE, preparation only | Report 1424 proposes three source faces and an east-first visible prototype. Mounting/receivers/appearance unaccepted; no implementation dispatched. Follow after 1422. |
-| Retire retained historical worktrees safely | Root accountable; inventory COMPLETE; removal PARKED | 67 registrations, including active critique; no safe batch. Three original commercial trees retain distinct docs/private packets. Bounded evidence: `artifacts/retained1421-inventory/summary.json`. Preserve before removing; do not delay the visual lane. |
+| East-side mounted-light prototype | Root accountable; QUEUED, no worker dispatched | Source proposal [1424](reviews/1424_dusk-frontage-source-selection.md) is prepared. Done: real-control matched noon/dusk and oblique views show an actual supported mount and bounded receiver response. Inspect source UVs/placement first; expand west/south only if the east pilot is visibly useful. No lighting is accepted yet. |
+| Retire retained historical worktrees safely | Root accountable; inventory COMPLETE; removal PARKED | 65 historical checkouts retain distinct/unclassified data; no safe batch. Three original commercial trees retain distinct docs/private packets. Bounded evidence: `artifacts/retained1421-inventory/summary.json`. Preserve before removing; do not delay visual work. |
 
-No global blocker is established. Next product decision: fresh critique selects the visual milestone. Full acceptance needs matching final evidence and independent integrated review on main; this docs repair closes no product criterion.
+No global blocker is established. Next product action: dispatch the east-first visible prototype, following review 1423. Full acceptance needs matching final evidence and independent integrated review on main; this milestone closes no final criterion.
 
 ## Acceptance criteria
 
@@ -116,6 +115,6 @@ Private union 1324 remains UNMET. Its 387/63-part proof chain constrains that ex
 
 ## Outcome
 
-Active; full deliverable incomplete. Tactile finish passes all five primary gates and independent source/native review within its static/lifecycle bounds. Commit/push and fresh worktree cleanup remain. Bounded frontage and context repair stay adopted.
+Active; full deliverable incomplete. Tactile finish is reviewed, committed and pushed at `8ff08fe`; both fresh worktrees are removed and needed evidence retained. The next visible pilot is queued, while full-map, temporal and population/FPS acceptance remain open.
 
 Exact old `plan.md` and `progress.md` remain in [Git at e483cd5](https://github.com/yanfengliu/maps/tree/e483cd5dfa58ee89876fba268c55c619daca9d5f/docs/work/0_shibuya-1km). Recover with `git show <commit>:<path>`; exact sizes/digests are in [1418](reviews/1418_orchestration-context-implementation.md). Authored reviews are unchanged; history is not a current queue.
