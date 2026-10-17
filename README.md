@@ -1,5 +1,7 @@
 # Shibuya in Unreal Engine 5.8
 
+The repaired ordinary game startup passes native inventory on the real map. Walking, look, flight, landing, pause, resume, reset and both animated populations work through viewport input at60/12. The overall controls check remains RED:22 posed contacts exceed20cm, maximum25.057cm. [Integrated review356](docs/work/0_unreal-shibuya/reviews/356_native_startup_actual.md) binds the exact code, both builds and observations; it does not accept final support or performance.
+
 The current verification correction passes all125 Source tests in19.524seconds (20.304seconds wall). [Review351](docs/work/0_unreal-shibuya/reviews/351_complete_current_coverage.md) establishes that physical coverage must use complete current output geometry; [review352](docs/work/0_unreal-shibuya/reviews/352_source_exact_coverage.md) accepts the exact rational fallback after ordinary float refusals. Real gaps still refuse. The actual packet retains two physical holes and19 narrow occlusions; ordinary Source3 publication, native controls and3000/200performance remain open.
 
 The numeric verification follow-up passes all 120 source tests in 20.942 seconds. [Review349](docs/work/0_unreal-shibuya/reviews/349_source_numeric_region.md) accepts the same-face native-plane grade fallback and exact declared-triangle containment proof; [diagnosis350](docs/work/0_unreal-shibuya/reviews/350_native_plane_grade_diagnosis.md) independently checks the actual lane53 geometry. The old functions reproduce both false refusals. Source3 publication still refuses a separate deleted-parent coverage residual; exact coverage diagnosis, final import, controls and full-population performance remain open.
@@ -78,6 +80,14 @@ pwsh -NoProfile -File (Join-Path $ProjectRoot 'tools/runtime/test_core.ps1')
 ```
 
 The core test compiles actual simulation code against synthetic supported routes; it proves neither city collision nor native input. The build wrapper compiles and links with four parallel actions and UBA disabled; it launches no game. Native MCP `probe` performs a nondestructive live handshake/tool/action check with NullRHI. `build` creates `/Game/Maps/Shibuya`; `surface` replaces only the source terrain/road surfaces with the admitted aerial material and checks geometry/actor preservation. Material preparation creates `/Game/Runtime/M_Agent*` packages using real commandlet rendering. Each material must finish its own shader resource with positive vertex/pixel instruction counts before a checked save; NullRHI does not satisfy this shader gate. City and runtime packages, native binaries and receipts stay ignored.
+
+After publishing and reprofiling Source3, select its schema3 support manifest explicitly for the combined import and fixed-six capture:
+
+```powershell
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') surface --surface-manifest data/prepared/surface/support-surface-manifest.json --road-manifest data/prepared/surface/road-photo-manifest.json --startup-timeout 360
+```
+
+The earlier photo-manifest command selects legacy photo-only terrain. The Source3 operation needs the published support manifest; omit `--surface-only` to include lighting captures.
 
 ## Explore and run headless checks
 

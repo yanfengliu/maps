@@ -88,6 +88,7 @@ private:
     UPROPERTY() TObjectPtr<UFloatingPawnMovement> Movement;
     float Forward = 0, Right = 0, Vertical = 0;
     bool Flying = false, Fast = false;
+    TSharedPtr<FJsonObject> ResetAdmission;
     AShibuyaWorld* City() const;
     void MoveForward(float Value);
     void MoveRight(float Value);
@@ -149,7 +150,10 @@ class SHIBUYARUNTIME_API AShibuyaGameMode : public AGameModeBase
     GENERATED_BODY()
 public:
     AShibuyaGameMode();
+    virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+    virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer,const FTransform& SpawnTransform) override;
     virtual void StartPlay() override;
+    TSharedPtr<FJsonObject> PlayerStartAdmission;
 };
 
 UCLASS()

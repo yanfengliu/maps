@@ -157,6 +157,8 @@ void AShibuyaController::PlayerTick(float DeltaTime)
     ProbeTime+=DeltaTime;
     AShibuyaWorld* World=City(GetWorld());AShibuyaExplorer* Explorer=Cast<AShibuyaExplorer>(GetPawn());
     if(ProbeTime>50+BenchmarkSeconds || (World && !World->Ready)){FinishProbe();return;}
+    // A ready city after the startup warmup cannot make progress without its pawn.
+    if(World && World->Ready && !Explorer && ProbeTime>=5){FinishProbe();return;}
     if(!World || !Explorer || !World->Ready || ProbeTime<5)return;
     if(InventoryOnly)
     {
@@ -224,6 +226,10 @@ void AShibuyaController::FinishProbe()
     Finished=true;
     auto Report=MakeShared<FJsonObject>();Report->SetStringField(TEXT("bound"),TEXT("Native standalone game viewport input events, seeded fixed-step runtime motion and route/native collision support; screenshots and GPU performance require a hardware-rendered run."));
     Report->SetBoolField(TEXT("inventory_only"),InventoryOnly);Report->SetBoolField(TEXT("negative_input_control"),NegativeInput);Report->SetStringField(TEXT("input_entry"),TEXT("UGameViewportClient::InputKey/InputAxis"));
+    AShibuyaWorld* StartupWorld=City(GetWorld());AShibuyaExplorer* StartupPawn=Cast<AShibuyaExplorer>(GetPawn());
+    Report->SetStringField(TEXT("startup_readiness"),!StartupWorld?TEXT("world_missing"):!StartupWorld->Ready?TEXT("world_not_ready"):!StartupPawn?TEXT("explorer_pawn_missing"):!StartupPawn->InputComponent?TEXT("pawn_input_component_missing"):TEXT("ready"));
+    if(const auto* Mode=GetWorld()->GetAuthGameMode<AShibuyaGameMode>();Mode && Mode->PlayerStartAdmission.IsValid())
+        Report->SetObjectField(TEXT("player_start_admission"),Mode->PlayerStartAdmission);
     Report->SetArrayField(TEXT("physics_motion_samples"),PhysicsSamples);
     Report->SetObjectField(TEXT("input_routing"),InputRoutingSnapshot());Report->SetArrayField(TEXT("input_event_attempts"),InputEvents);
     Report->SetArrayField(TEXT("snapshots"),Snapshots);Report->SetNumberField(TEXT("frame_samples"),FrameMilliseconds.Num());

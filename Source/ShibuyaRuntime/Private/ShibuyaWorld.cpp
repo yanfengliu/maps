@@ -4,6 +4,7 @@
 #include "RuntimeReadLimit.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "CollisionShape.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine/Canvas.h"
@@ -120,6 +121,31 @@ AShibuyaWorld* FindCity(UWorld* World)
 {
     for(TActorIterator<AShibuyaWorld> It(World);It;++It) return *It;
     return nullptr;
+}
+// Admit the same native support and walking slope/height bounds used by
+// Explorer movement, then require room for its complete collision capsule.
+bool ExplorerStart(AShibuyaWorld* City,const AActor* Ignore,FVector& Position,TSharedPtr<FJsonObject>& Evidence)
+{
+    Evidence=MakeShared<FJsonObject>();Evidence->SetBoolField(TEXT("admitted"),false);
+    auto Refuse=[&](const TCHAR* Reason){Evidence->SetStringField(TEXT("reason"),Reason);return false;};
+    if(!City || !City->Ready)return Refuse(TEXT("city_not_ready"));
+    Evidence->SetField(TEXT("source_spawn_feet_cm"),VectorJSON(City->SpawnFeet));
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(ShibuyaExplorerStart),true,Ignore);
+    FHitResult Ground;
+    if(!City->GetWorld()->LineTraceSingleByChannel(Ground,City->SpawnFeet+FVector(0,0,120),City->SpawnFeet-FVector(0,0,130),ECC_Visibility,Query))
+        return Refuse(TEXT("source_spawn_has_no_native_ground"));
+    Evidence->SetStringField(TEXT("support_actor"),GetPathNameSafe(Ground.GetActor()));
+    Evidence->SetField(TEXT("support_impact_cm"),VectorJSON(Ground.ImpactPoint));
+    Evidence->SetNumberField(TEXT("support_normal_z"),Ground.ImpactNormal.Z);
+    Evidence->SetNumberField(TEXT("source_height_residual_cm"),Ground.ImpactPoint.Z-City->SpawnFeet.Z);
+    if(Ground.ImpactNormal.Z<0.65 || FMath::Abs(Ground.ImpactPoint.Z-City->SpawnFeet.Z)>45)
+        return Refuse(TEXT("source_spawn_ground_outside_walking_bounds"));
+    Position=Ground.ImpactPoint+FVector(0,0,90);
+    const bool Blocked=City->GetWorld()->OverlapBlockingTestByProfile(Position,FQuat::Identity,TEXT("Pawn"),FCollisionShape::MakeCapsule(28,88),Query);
+    Evidence->SetBoolField(TEXT("capsule_clear"),!Blocked);
+    Evidence->SetField(TEXT("capsule_position_cm"),VectorJSON(Position));
+    if(Blocked)return Refuse(TEXT("source_spawn_capsule_blocked"));
+    Evidence->SetBoolField(TEXT("admitted"),true);Evidence->SetStringField(TEXT("reason"),TEXT("native_ground_and_capsule_admitted"));return true;
 }
 #include "BoundaryAdmission.h"
 #include "SupportSource3Admission.h"
@@ -505,10 +531,19 @@ AShibuyaWorld* AShibuyaExplorer::City() const { return FindCity(GetWorld()); }
 void AShibuyaExplorer::BeginPlay() { Super::BeginPlay();ResetView(); }
 void AShibuyaExplorer::ResetView()
 {
-    AShibuyaWorld* World=City();if(!World || !World->Ready) return;
+    AShibuyaWorld* World=City();FVector Position;
+    if(!ExplorerStart(World,this,Position,ResetAdmission))
+    {MovementNotice=TEXT("Reset needs clear native ground at the source start; restore the imported scene.");return;}
     Movement->StopMovementImmediately();Forward=Right=Vertical=0;Fast=false;
-    SetActorLocation(World->SpawnFeet+FVector(0,0,90),false);
-    if(Controller) Controller->SetControlRotation(FRotator(0,World->SpawnYaw,0));
+    SetActorLocation(Position,false);MovementNotice.Empty();
+    ResetAdmission->SetNumberField(TEXT("source_spawn_yaw_degrees"),World->SpawnYaw);
+    ResetAdmission->SetBoolField(TEXT("controller_rotation_applied"),Controller!=nullptr);
+    if(Controller)
+    {
+        Controller->SetControlRotation(FRotator(0,World->SpawnYaw,0));
+        ResetAdmission->SetNumberField(TEXT("actual_control_yaw_degrees"),Controller->GetControlRotation().Yaw);
+    }
+    else ResetAdmission->SetStringField(TEXT("reason"),TEXT("native_start_admitted_waiting_for_possession"));
 }
 void AShibuyaExplorer::SetupPlayerInputComponent(UInputComponent* Input)
 {
@@ -590,18 +625,44 @@ TSharedPtr<FJsonObject> AShibuyaExplorer::Snapshot() const
     Result->SetStringField(TEXT("movement_notice"),MovementNotice);
     Result->SetNumberField(TEXT("forward_input_events"),ForwardEvents);Result->SetNumberField(TEXT("look_input_events"),LookEvents);
     Result->SetNumberField(TEXT("mode_input_events"),ModeEvents);Result->SetNumberField(TEXT("pause_input_events"),PauseEvents);Result->SetNumberField(TEXT("reset_input_events"),ResetEvents);
+    if(ResetAdmission.IsValid())Result->SetObjectField(TEXT("reset_start_admission"),ResetAdmission);
     Result->SetNumberField(TEXT("blocked_walk_steps"),BlockedWalkSteps);return Result;
 }
 AShibuyaGameMode::AShibuyaGameMode()
 {
     DefaultPawnClass=AShibuyaExplorer::StaticClass();PlayerControllerClass=AShibuyaController::StaticClass();HUDClass=AShibuyaHUD::StaticClass();
 }
+void AShibuyaGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+    // Login precedes StartPlay. Do not try the map's absent PlayerStart at
+    // world zero, where native ground can prevent a pawn from spawning.
+    if(AShibuyaWorld* World=FindCity(GetWorld());World && World->Ready)
+    {
+        Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+        // FinishRestartPlayer applies the fallback StartSpot rotation after
+        // spawning. Restore the source view through the possessed pawn.
+        if(NewPlayer)
+            if(AShibuyaExplorer* Pawn=Cast<AShibuyaExplorer>(NewPlayer->GetPawn()))Pawn->ResetView();
+    }
+}
+APawn* AShibuyaGameMode::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer,const FTransform& SpawnTransform)
+{
+    AShibuyaWorld* World=FindCity(GetWorld());FVector Position;
+    if(!ExplorerStart(World,nullptr,Position,PlayerStartAdmission))return nullptr;
+    APawn* Pawn=Super::SpawnDefaultPawnAtTransform_Implementation(NewPlayer,FTransform(FRotator(0,World->SpawnYaw,0),Position));
+    PlayerStartAdmission->SetBoolField(TEXT("spawn_created"),Pawn!=nullptr);
+    return Pawn;
+}
 void AShibuyaGameMode::StartPlay()
 {
     AShibuyaWorld* World=GetWorld()->SpawnActor<AShibuyaWorld>();World->LoadNetwork();
     Super::StartPlay();
-    if(APlayerController* Player=GetWorld()->GetFirstPlayerController())
-        if(AShibuyaExplorer* Pawn=Cast<AShibuyaExplorer>(Player->GetPawn()))Pawn->ResetView();
+    for(FConstPlayerControllerIterator It=GetWorld()->GetPlayerControllerIterator();It;++It)
+        if(APlayerController* Player=It->Get())
+        {
+            if(!Player->GetPawn())HandleStartingNewPlayer(Player);
+            else if(AShibuyaExplorer* Pawn=Cast<AShibuyaExplorer>(Player->GetPawn()))Pawn->ResetView();
+        }
 }
 void AShibuyaHUD::DrawHUD()
 {
