@@ -35,14 +35,16 @@ Stops1445/1452/1455 confirmed1456;retired/evidence preserved.1454:TSUTAYA128x512
 
 Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:inventory COMPLETE/removal PARKED;preserve first.
 
-1466 boot is not population acceptance;1467 HOLD/cause UNKNOWN persists. [1469](reviews/1469_native-head-fixture-discriminator.md)/[1470](reviews/1470_native-agent-fixture-review.md):gross Near rotation not reproduced. Failed selector arm preserved;cleanup closed;source/assets/global dist unchanged.
+1466 boot≠population acceptance;1467 HOLD/world cause UNKNOWN.1469/1470:no gross Near rotation;failed selector arm preserved,source/assets/dist unchanged,cleanup closed.
+
+[1472 STOP](reviews/1472_western-road-source-stop.md)/reference1472:NO QUALIFIED PAINT SET;2019 GSI cannot distinguish paint/curbs or≥80m. Intent UNKNOWN,not absent;no prototype/edit/worktree/capture/gates.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Western road segment | road1472 ELIGIBILITY DISPATCHED;21:21:13–21:41:13UTC | [1471](reviews/1471_western-approach-direction.md):two parents/134pieces;paint intent,source/display layer,paint exclusions,≥80m supported useful margin/side. One owner through ONE whole prototype if eligible;negative STOP,no short fallback/full gates. Positive before five gates;no code/capture yet. |
-| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 30 originals/18,082,656B;7 diagnostic/static only,prior23 immutable. Ignored,Never Git;15min. |
+| Moving train passage | train1473_resume IMPLEMENTING;WT artifacts/train1473/worktree@8bb2200 | Source/sightline viability PASS;root inspected2 baseline originals. One connected4-car candidate→native→PRIMARY five gates/independent review. Partial code recovered;no accepted product gain. |
+| Private visuals | gallery1473_refresh COMPLETE;heartbeat ACTIVE | 35 images/23,310,783B;32 app/diagnostic+3 references,including2 train baselines. Prior bytes immutable;ignored,Never Git;15min. |
 
-Head captures/telemetry/baker fixes/default activation STOP/PARKED;central probe PARKED. No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
+Road/head/central/default-population PARKED;no head telemetry/baker fix. No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
 ## Acceptance criteria
 
