@@ -7,6 +7,7 @@ import sys
 import tempfile
 import types
 import unittest
+from fractions import Fraction
 from unittest import mock
 from pathlib import Path
 
@@ -38,6 +39,143 @@ class Source3Tests(unittest.TestCase):
             source3.span_grade([0, 0, 0], [1e-6, 0, .001], .2)
         with self.assertRaisesRegex(ValueError, 'zero-length'):
             source3.span_grade([0, 0, 0], [0, 0, .001], .2)
+
+    def native_grade_fixture(self):
+        # Frozen actual data68.glb face 3861, raw SHA 791592b5717f45fcc8d393a615ec22a4dccb2add467fd464d1ad738c2f3f0b36.
+        native_cm = np.array([[14225.8115234375, 812.3246459960938, 141.88304138183594],
+            [18969.576171875, -703.6281127929688, 310.0639953613281],
+            [16207.04296875, -458.0350036621094, 199.97853088378906]])
+        triangle = native_cm/100
+        np.testing.assert_array_equal(source3.native_centimetres(triangle), native_cm)
+        ref = {'kind': 'road', 'source': 11, 'mesh': 0, 'primitive': 0, 'triangle': 3861, 'source_triangle_index': 3861}
+        # Other faces are padding; only the captured native triangle participates.
+        mappings = [{'triangles': 1, 'source': {'sha256': '0'*64}} for _ in range(11)]
+        mappings.append({'triangles': 3862, 'source': {'sha256': '791592b5717f45fcc8d393a615ec22a4dccb2add467fd464d1ad738c2f3f0b36'}})
+        triangles = np.repeat(triangle[None], 11+3862, axis=0)
+        refs = [None]*(len(triangles)-1)+[ref]
+        surface = types.SimpleNamespace(support_manifest={'schema_version': 3, 'native_roads': mappings},
+            support_record={'sha256': 's'*64}, derived_record={'sha256': 'd'*64},
+            road=types.SimpleNamespace(layer_refs=refs), road_index=types.SimpleNamespace(triangles=triangles))
+        proof = {'source': 'PLATEAU-road', 'triangle': 3861, 'layer_ref': ref,
+            'support_geometry': 'exact-derived-triangle-native-cm', 'support_surface_sha256': 's'*64,
+            'derived_terrain_sha256': 'd'*64, 'support_road_sha256': mappings[-1]['source']['sha256'],
+            'gradient_enu': [0.04154389008886288, 0.01905961977714173]}
+        previous = [150.8789179837405, 3.355502637860143, 1.6861007112717092]
+        current = [150.8789179837405, 3.3555026378601434, 1.6861007112717095]
+        return surface, proof, previous, current
+
+    def test_lane53_native_plane_resolves_rounded_absolute_height_cancellation(self):
+        surface, proof, previous, current = self.native_grade_fixture()
+        with self.assertRaisesRegex(ValueError, 'grade 0.5 exceeds'):
+            source3.span_grade(previous, current, .2)
+        proof['gradient_enu'] = [900, 900]  # Descriptive gradients cannot authorize the fallback.
+        grade = source3.span_grade(previous, current, .2, surface=surface, previous_record=proof, current_record=copy.deepcopy(proof))
+        self.assertAlmostEqual(grade, 0.01905961977714173, places=15)
+        self.assertEqual(previous[:2], [150.8789179837405, 3.355502637860143])
+        self.assertEqual(current[:2], [150.8789179837405, 3.3555026378601434])
+
+    def test_native_grade_fallback_refuses_other_faces_generations_and_real_steps(self):
+        surface, proof, previous, current = self.native_grade_fixture()
+        for key, value in (('source', 'GSI-DEM5A'), ('triangle', 3860),
+                           ('support_surface_sha256', 'x'*64), ('derived_terrain_sha256', 'x'*64),
+                           ('support_road_sha256', 'x'*64), ('layer_ref', {**proof['layer_ref'], 'primitive': 1})):
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'exceeds'):
+                source3.span_grade(previous, current, .2, surface=surface, previous_record=proof, current_record={**proof, key: value})
+        # Both falsely claim the same absent primitive: the actual ref must still match.
+        false = {**proof, 'layer_ref': {**proof['layer_ref'], 'primitive': 1}}
+        with self.assertRaisesRegex(ValueError, 'exceeds'):
+            source3.span_grade(previous, current, .2, surface=surface, previous_record=false, current_record=false)
+        for a, b, road, face, terrain in (
+            ([-40.807024096124174, 7.333387587091961, -.023885772774675223],
+             [-40.8070240760265, 7.333387584339315, -.1277112423715983], 14, 1179, 513580),
+            ([144.2175073893475, 426.2787683249117, .9306360514904453],
+             [144.21749880287985, 426.2789632674485, .8619020838587791], 9, 3842, 998850)):
+            road_proof = {**proof, 'triangle': face, 'layer_ref': {'kind': 'road', 'source': road,
+                'mesh': 0, 'primitive': 0, 'triangle': face, 'source_triangle_index': face}}
+            terrain_proof = {**proof, 'source': 'GSI-DEM5A', 'triangle': terrain, 'layer_ref': {'kind': 'terrain', 'triangle': terrain}}
+            with self.assertRaisesRegex(ValueError, 'exceeds'):
+                source3.span_grade(a, b, .2, surface=surface, previous_record=road_proof, current_record=terrain_proof)
+        surface.road_index.triangles[-1] = [[0, 0, 0], [1, 0, 0], [0, 1, 1]]
+        with self.assertRaisesRegex(ValueError, 'exceeds'):
+            source3.span_grade(previous, current, .2, surface=surface, previous_record=proof, current_record=proof)
+        with mock.patch.object(source3, 'same_native_triangle') as resolve:
+            with self.assertRaisesRegex(ValueError, 'zero-length'):
+                source3.span_grade(previous, [*previous[:2], current[2]], .2, surface=surface, previous_record=proof, current_record=proof)
+            resolve.assert_not_called()
+
+    def test_actual_corridor_uses_the_bound_native_plane_fallback(self):
+        surface, proof, previous, current = self.native_grade_fixture()
+        surface.road_index.segment_breakpoints = lambda a, b: []
+        surface.terrain_index = types.SimpleNamespace(segment_breakpoints=lambda a, b: [])
+        def check(point, kind, **kwargs):
+            if list(point) == previous[:2]: height = previous[2]
+            elif list(point) == current[:2]: height = current[2]
+            else: height = previous[2]+float(np.asarray(proof['gradient_enu'])@(point-np.asarray(previous[:2])))
+            return [*map(float, point), height], copy.deepcopy(proof)
+        surface.check = check
+        rows = api.Surface.corridor(surface, [previous[:2], current[:2]], 'vehicle', 2.)
+        self.assertEqual(rows[0]['point'], previous)
+        self.assertEqual(rows[-1]['point'], current)
+        self.assertEqual(len(rows[-1]['cross_section']), 3)
+        with mock.patch.object(api.support_source3, 'same_native_triangle', return_value=None), self.assertRaisesRegex(api.SupportRejection, 'grade 0.5 exceeds'):
+            api.Surface.corridor(surface, [previous[:2], current[:2]], 'vehicle', 2.)
+
+    def test_native_grade_resolver_preserves_flat_local_and_terrain_namespaces(self):
+        surface, proof, previous, current = self.native_grade_fixture()
+        ref = {**proof['layer_ref'], 'primitive': 1, 'triangle': 0}
+        surface.road.layer_refs[-1] = ref
+        row = {**proof, 'layer_ref': ref}
+        self.assertIsNotNone(source3.same_native_triangle(surface, row, row))
+        triangle = surface.road_index.triangles[-1].copy()
+        terrain_ref = {'kind': 'terrain-fragment', 'triangle': 18, 'parent_triangle': 3}
+        surface.source3_terrain_refs = [terrain_ref]
+        surface.terrain_index = types.SimpleNamespace(triangles=np.array([triangle]))
+        row = {**proof, 'source': 'GSI-DEM5A', 'triangle': 18, 'layer_ref': terrain_ref}
+        self.assertIsNotNone(source3.same_native_triangle(surface, row, row))
+        inferred_ref = {'kind': 'inferred', 'triangle': 19, 'patch_triangle': 2}
+        surface.road.layer_refs.append(inferred_ref)
+        surface.road_index.triangles = np.concatenate((surface.road_index.triangles, triangle[None]))
+        row = {**proof, 'source': 'inferred-ground-road', 'triangle': 19, 'layer_ref': inferred_ref}
+        self.assertIsNotNone(source3.same_native_triangle(surface, row, row))
+
+    def test_actual_region_validator_accepts_literal_native_triangle_after_overlapping_entries(self):
+        # Actual parent491338 and first four native-curb-trim region entries
+        # from frozen aa5a742b0d72bfcf55a26b25e70378adc096c2e1a2ced6d1decae9b2b82f4472.
+        triangle = np.array([[120.261376953125, -10.1598779296875, .6815383148193359],
+            [120.36736328125, -9.98501220703125, .6820641326904296],
+            [120.049970703125, -10.509609375, .6805110931396484]])
+        polygons = [[[12026.173828125, -1015.9971313476562], [12036.70703125, -998.501220703125], [12036.736328125, -998.501220703125]],
+            [[12026.173828125, -1015.9971313476562], [12036.736328125, -998.501220703125], [12036.76171875, -998.501220703125]],
+            [[12026.173828125, -1015.9971313476562], [12036.76171875, -998.501220703125], [12036.7900390625, -998.501220703125]],
+            [[12026.1376953125, -1015.98779296875], [12036.736328125, -998.501220703125], [12004.9970703125, -1050.9609375]]]
+        ledger = {'terrain_edits': [{'parent_triangle': 0, 'region_id': 'native-curb-trim'}],
+            'deleted_parent_triangles': [], 'regions': [{'id': 'native-curb-trim', 'native_xy_polygons_cm': polygons}]}
+        parent = types.SimpleNamespace(road=types.SimpleNamespace(source_parts={}, sources=[]),
+            terrain_index=types.SimpleNamespace(triangles=triangle[None]), _source3_new_road_refs=[])
+        empty = np.empty((0, 3, 3))
+        def admit(value):
+            parent.terrain_index.triangles = value[None]
+            return source3.validate_local_geometry(api, ledger, parent, empty, empty, [], [])
+        self.assertTrue(admit(triangle)['changed_face_coverage'])
+        self.assertTrue(admit(triangle[[2, 0, 1]])['changed_face_coverage'])
+        outside = triangle.copy(); outside[:, 0] += 1
+        nearby = triangle.copy()
+        nearby[0, 0] = float(np.nextafter(np.float32(triangle[0, 0]*100), np.float32(-np.inf)))/100
+        self.assertNotEqual(nearby[0, 0], triangle[0, 0])
+        # Exact orientation signs confirm the moved vertex lies outside every
+        # actual declared polygon; this refusal is not a rounding artifact.
+        point = list(map(Fraction, nearby[0, :2]))
+        for polygon in polygons:
+            vertices = [[Fraction(float(value/100)) for value in row] for row in polygon]
+            signs = [(b[0]-a[0])*(point[1]-a[1])-(b[1]-a[1])*(point[0]-a[0])
+                     for a, b in zip(vertices, vertices[1:]+vertices[:1])]
+            self.assertLess(min(signs), 0)
+            self.assertGreater(max(signs), 0)
+        for value in (outside, nearby):
+            with self.assertRaisesRegex(ValueError, 'outside declared region'):
+                admit(value)
+        ledger['regions'][0]['native_xy_polygons_cm'] = [[[0, 0], [100, 0], [0, 100]]]
+        self.assertTrue(admit(np.array([[.1, .1, 0], [.2, .1, 0], [.1, .2, 0]]))['changed_face_coverage'])
 
     def test_unique_inventory_refuses_conflicting_duplicate(self):
         r = {'path': 'data/source/a', 'bytes': 1, 'sha256': 'a'*64}

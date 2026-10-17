@@ -6,6 +6,7 @@ This module uses the normal surface_network entry point and its confined I/O.
 """
 from __future__ import annotations
 
+import bisect
 import collections
 import copy
 import json
@@ -13,6 +14,7 @@ import math
 import pathlib
 import tempfile
 import time
+from fractions import Fraction
 
 import numpy as np
 import support_surface as geometry
@@ -31,14 +33,69 @@ def native_metres(points):
     return native_centimetres(points) / 100
 
 
-def span_grade(previous, current, maximum):
+def same_native_triangle(surface, previous, current):
+    """Resolve two in-process witnesses to one actual admitted consumed face."""
+    if surface is None or previous is None or current is None: return None
+    if surface.support_manifest.get('schema_version') != 3: return None
+    ref = previous.get('layer_ref')
+    if not isinstance(ref, dict) or ref != current.get('layer_ref'): return None
+    provider = {'road': 'PLATEAU-road', 'derived-road': 'derived-ground-road',
+                'inferred': 'inferred-ground-road', 'terrain': 'GSI-DEM5A', 'terrain-fragment': 'GSI-DEM5A'}.get(ref.get('kind'))
+    expected = {'source': provider, 'support_geometry': 'exact-derived-triangle-native-cm',
+                'support_surface_sha256': surface.support_record['sha256'],
+                'derived_terrain_sha256': surface.derived_record['sha256']}
+    if provider is None or any(row.get(key) != value for row in (previous, current) for key, value in expected.items()): return None
+    flat = previous.get('triangle')
+    if type(flat) is not int or type(current.get('triangle')) is not int or flat < 0 or current.get('triangle') != flat: return None
+    kind = ref['kind']
+    if kind in ('road', 'derived-road'):
+        source = ref.get('source')
+        mappings = surface.support_manifest['native_roads']
+        if type(source) is not int or not 0 <= source < len(mappings): return None
+        mapping = mappings[source]
+        if flat != ref.get('source_triangle_index') or flat >= mapping['triangles']: return None
+        if any(row.get('support_road_sha256') != mapping['source']['sha256'] for row in (previous, current)): return None
+        index = sum(row['triangles'] for row in mappings[:source]) + flat
+    elif kind == 'inferred':
+        first = sum(row['triangles'] for row in surface.support_manifest['native_roads'])
+        index = bisect.bisect_left(surface.road.layer_refs, flat, lo=first, key=lambda row: row['triangle'])
+    else:
+        refs = surface.source3_terrain_refs
+        index = bisect.bisect_left(refs, flat, key=lambda row: row['triangle'])
+        if index >= len(refs) or refs[index] != ref or ref.get('triangle') != flat: return None
+        return surface.terrain_index.triangles[index]
+    if index >= len(surface.road.layer_refs) or surface.road.layer_refs[index] != ref: return None
+    if kind == 'inferred' and ref.get('triangle') != flat: return None
+    return surface.road_index.triangles[index]
+
+
+def exact_native_span_grade(triangle, previous, current, maximum):
+    """Directional plane delta without subtracting rounded absolute heights."""
+    a, b, c = [[Fraction(float(value))/100 for value in vertex] for vertex in native_centimetres(triangle)]
+    u, v = [y-x for x, y in zip(a, b)], [y-x for x, y in zip(a, c)]
+    determinant = u[0]*v[1]-u[1]*v[0]
+    if not determinant: return None
+    dx, dy = [Fraction(float(y))-Fraction(float(x)) for x, y in zip(previous[:2], current[:2])]
+    dz = ((u[2]*v[1]-v[2]*u[1])*dx + (u[0]*v[2]-v[0]*u[2])*dy)/determinant
+    distance2 = dx*dx+dy*dy
+    if dz*dz <= Fraction(float(maximum))**2 * distance2:
+        return math.sqrt(float(dz*dz/distance2))
+    return None
+
+
+def span_grade(previous, current, maximum, *, surface=None, previous_record=None, current_record=None):
     distance = math.dist(previous[:2], current[:2])
     height = abs(current[2]-previous[2])
     if distance == 0:
         if height: raise ValueError('Source3 zero-length span has unequal support heights')
         return 0.
     grade = height/distance
-    if grade > maximum: raise ValueError(f'Source3 span grade {grade} exceeds {maximum} across {distance} m')
+    if grade > maximum:
+        triangle = same_native_triangle(surface, previous_record, current_record)
+        if triangle is not None:
+            exact_grade = exact_native_span_grade(triangle, previous, current, maximum)
+            if exact_grade is not None: return exact_grade
+        raise ValueError(f'Source3 span grade {grade} exceeds {maximum} across {distance} m')
     return grade
 
 
@@ -566,7 +623,11 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         if not np.array_equal(raw, anchor['raw_enu_m']): raise ValueError('Source3 raw road anchor XYZ differs from its immutable source')
         return native_metres(raw)
     regions = {r['id']: [np.asarray(p, dtype=float)/100 for p in r['native_xy_polygons_cm']] for r in ledger['regions']}
+    region_keys = {name: {tuple(sorted(map(tuple, polygon))) for polygon in polygons} for name, polygons in regions.items()}
     def in_region(triangle, region_id):
+        # Literal declared native vertices prove containment before subtraction
+        # can introduce residuals while clipping earlier overlapping entries.
+        if tuple(sorted(map(tuple, triangle[:, :2]))) in region_keys[region_id]: return
         remaining = [triangle[:, :2].tolist()]
         for polygon in regions[region_id]:
             # Region entries are explicit triangles; arbitrary concave polygons

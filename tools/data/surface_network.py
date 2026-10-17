@@ -1162,7 +1162,8 @@ class Surface:
                     previous=samples[-1]["point"]
                     distance=math.dist(point[:2],previous[:2])
                     if strict_native:
-                        try:support_source3.span_grade(previous,point,.2 if kind=="vehicle" else .6)
+                        try:support_source3.span_grade(previous,point,.2 if kind=="vehicle" else .6,
+                            surface=self,previous_record=samples[-1],current_record=record)
                         except ValueError as error:
                             raise SupportRejection(str(error),{"previous":samples[-1],"current":{"point":point,"cross_section":cross,**record},"segment_xy_length_m":distance}) from error
                     if not strict_native and distance<=1e-4 and abs(point[2]-previous[2])>CONFIG["support_surface"]["contact_gap_m"]:
