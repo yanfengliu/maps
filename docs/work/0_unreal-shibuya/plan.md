@@ -1,11 +1,21 @@
 # Fresh Shibuya city in Unreal Engine 5.8 through MCP
 
+Current mission, owners and todos: [current.md](current.md). This file retains detailed history; use current.md as the active task queue.
+
 Status: active
 Owner: Orchestrator in the current Codex chat
 Created: 2026-10-11
 Updated: 2026-10-17
 
 ## Active priority - verification efficiency repair, 2026-10-16
+
+Active continuation: milestone0a925b7 is committed/pushed and Source3 support9ef164ef is published. The normal replacement network timed out600.058seconds without publication; old movement0575/7c24/c339 is unchanged. Synchronous90second diagnostics report initialization40.937seconds and73493 vehicle checks afterward; standard cProfile identifies certified orientation overhead. Allocation reuse saves only7.76% kernel time and is not integrated. A distinct scalar interval candidate30226900 preserves original vector/exact-fallback semantics and passes26 focused checks. Its unprofiled one/two/four-row medians fall28.075/28.501/28.557 to3.120/5.035/8.936microseconds with nonoverlapping observed ranges; the64query subset median falls58.5%, with no whole-source extrapolation. Minimal wrapper compatibility and explicit normal progress output are included for independent review. Full Source still has two old-movement/current-geometry failures; no assertion is relaxed.
+
+Native cache6/main-view integration builds both targets and passes29 runtime runner tests. The bounded failure packet passes151 Unreal helpers. Actual normal surface-only retry completes82.420seconds:2080 queries execute,2012 pass,68 fail,DNR0. Patch64 hits Roaddata68 at52.432cm below expected terrain68.916cm because its tiny rendered face fails actual Chaos cook predicates. Whole-mesh classification0.746seconds finds227 new and220659 inherited distinct-vertex cook rejects, separate from1690 endpoint-coincident render exclusions. No geometry change was made. The proposed correction models actual cook-survivor PHYSICAL queries separately from raw/render/domain conservation, preserving every original1040 sample/XY/reference/ray window and all2080 actual native checks. Engine cleaning/remap/scale/settings context and independent contract review precede implementation. No threshold/actor/sample waiver is approved. Map remains unsaved/unchanged and owned jobs are empty.
+
+Vehicle pose candidate0b8a6a59 is sealed, not integrated: seven product files plus permanent tests/gate. Portable6364+36+220 assertions and four constructor tests pass; actual UE reader/build, coherent new network/qualified sidecar/native contacts, final crossing/game visual review and3000/200performance remain open. Independent review is active. An initial cached-boundary suspicion did not reproduce and is not an accepted finding. Physical cook-model interface must propagate into sidecar candidate completeness/readback.
+
+### Earlier recorded states
 
 The normal Source3 support producer succeeds in83.593seconds within default150/110second budgets and publishes schema3 surface9ef164ef from independently reviewed literal-parent closure370. The identity-only serializer fix371 passes134 Source tests21.865seconds (22.715wall). Source publication is now complete; replacement route capacity/crossing coverage372, native fullbody contacts, final rendered appearance373 and3000/200performance remain open. Current owners: Source adds minimal pedestrian source-segment/refusal metadata before one normal replacement network build; Native extends the existing ordinary-input capture with two completed frames and actual-view settings, and corrects cached-lighting range for the physical EV13 view. No repeat full470 diagnostic, coordinate-nudge retry or final-only contact substitution. Actual game PNG22fa8077 is visibly unaccepted and warns EV13 outside cached[-8,12]; the3000/200target and20cm contact limit remain unchanged.
 
