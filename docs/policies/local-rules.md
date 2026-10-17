@@ -1,41 +1,62 @@
 # Unreal Shibuya branch rules
 
-## Owner's instruction and precedence
+## Owner instruction and branch exception
 
-On 2026-10-11 the owner requested a new branch using Unreal Engine 5.8 MCP for the same city crop, with nothing inherited from the existing project setup except `AGENTS.md` and `CLAUDE.md`, and retained the orchestrator role. This instruction takes precedence over the historical Vite, three.js, TypeScript, browser harness, data preparation commands, and Node gates described in the retained instruction file. Those commands cannot verify an Unreal project and their implementation is deliberately absent.
+The owner's 2026-10-11 request starts a new Unreal Engine 5.8 MCP branch for the same Shibuya crop, preserving only `AGENTS.md` and `CLAUDE.md` from the previous setup. Historical Vite/three.js/TypeScript source, dependencies, browser harness and Node gates are absent and superseded here. Keep the two instruction files byte-exact: SHA-256 `20a0a9529ffad04a2fc72ffe4cef72cc65eb0b1b41b15c72dd33f0de89d73206` and `336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49`, respectively.
 
-Preserve the two instruction files exactly. Do not rewrite the fleet block or describe the old gates as passed. Define and exercise fresh Unreal build, automation, source, runtime, and visual checks before claiming corresponding acceptance.
+The explicit branch request overrides the generic merge-to-main rule for this replacement tree. Keep it on `codex/shibuya-unreal-5.8`, retaining the active experimental worktree and ignored inputs. Integration into main requires a later owner scope decision. The source milestone at `e0d33fe` is reviewed and pushed; it does not establish full native city acceptance.
 
-The user requested a separate branch. Keep this experimental replacement tree on `codex/shibuya-unreal-5.8` rather than merge it onto main. The branch and worktree are intentionally retained while the experiment remains active. Any future integration into main needs a scope decision from the owner.
+Do not import or link old project code, setup, assets, caches, tests, documentation or evidence. Fresh Unreal outputs may pass between declared worker scopes only through exact source/hash inventories with preserved provenance. No symlink/junction connects dependencies or data to an old checkout. Inspect every ancestor and leaf without following reparse points; refuse on reparse or enumeration/inspection error before reading, writing, fetching, promoting or deleting owned source/output paths.
 
-## No inherited setup
+## World, surfaces and movement contracts
 
-Do not copy, link, or reuse old project source, packages, lockfiles, configuration, CI, tests, tools, authored documentation, rendered evidence, fetched data, or scene assets. Fetch and admit public data afresh under a documented source manifest. An upstream public source can be selected independently; old local output cannot establish new acceptance.
+The crop is latitude 35.6550–35.6640 N by longitude 139.6950–139.7060 E, with origin 35.6595 N, 139.7005 E. Prepared GLBs are X east/Y up/Z north in metres. Movement schema 1 is local-east-north-up in metres; native placement converts to X east/Y north/Z up centimetres. Preserve origin, geographic bounds, geometry, transforms and source vertical reference. Approximate local DEM/road calibration is not surveyed accuracy.
 
-No junctions or symlinks may connect the new project to the old project's caches or dependencies. Before cleanup, inspect owned paths without following reparse points and refuse on every enumeration error. Never delete through a link or broadly clean the primary checkout's artifacts.
+Photographs use the admitted 90-tile z18 GSI atlas. Terrain replacement preserves original positions, normals, indices and UVs. All 25 road assets preserve original geometry/transforms and compute geographic UVs for the shared atlas; native material assignment must actually use that atlas. Source hashes, native actor/bounds conservation and inspected image hashes are distinct acceptance evidence.
 
-The only inherited instruction files were copied from the primary working tree on 2026-10-11. Their SHA-256 values are `20a0a9529ffad04a2fc72ffe4cef72cc65eb0b1b41b15c72dd33f0de89d73206` for `AGENTS.md` and `336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49` for `CLAUDE.md`. Root Git attributes disable text conversion for these exact files.
+Mapped routes use actual admitted OSM ways, directed no/only turn relations and measured PLATEAU-road/GSI support. Unsupported conditional/via-way/incomplete restriction forms remain conservatively excluded. Vehicle lanes use source-directed Japanese left-hand centres. Every route segment and declared corridor uses measured support at no more than 2 m spacing, with vehicle grade at most 0.2, pedestrian grade at most 0.6, building-interior exclusion and no unsupported overpass/tunnel/layer ambiguity.
 
-## Requirements and contracts
+Closed endpoints coincide within 1e-6 m and repeat the same point; closures are real sampled connected segments. One unique central open vehicle path is admitted only through `boundary_flow` with original OSM continuation outside the actual crop, inward/outward heading, supported entry/exit within 20 m of the boundary and hash-bound full 4.4 m by 1.8 m endpoint-body profiles. Native traffic ends a generation at the supported exit and creates the next generation only at an available validated entry. Interior wrapping and invented last-to-first connectors are excluded.
 
-Build the Shibuya crop bounded by latitude 35.6550-35.6640 N and longitude 139.6950-139.7060 E around 35.6595 N, 139.7005 E. It is approximately 1 km square. Preserve the photoreal leaning direction, moving pedestrians and vehicles, and eventual target of 3,000 pedestrians and 200 vehicles at 60 fps at 1920 by 1080. These are intended requirements, not measured outcomes.
+Every fresh stop declares direction +1 or -1. Mapped pedestrian crossing entry stops are distance 0/+1 and exact route length/-1; agents already inside may finish after phase change. Vehicle stops use direction +1. Signals are simulated choices, not real Tokyo timing facts. Seeded fixed-step simulation, route/source/profile digests, physical occupancy across route IDs, native support and boundary generations remain explicit runtime contracts. Discrete source profiles do not prove unsampled corner arcs or actual native collision.
 
-Choose a fresh coordinate contract appropriate to Unreal before importing geometry. Record axes, units, handedness, geographic datum, origin, vertical reference, and axis conversions. Check independently known landmarks and heights, and keep precision bounds visible. The old metre/Y-up scene code is not a new implementation authority.
+## Toolchain and gates
 
-Record data provenance, download identity, hashes, licences, attribution, and every processed-data statement required by the admitted sources. Keep large source and generated assets outside ordinary Git unless the owner authorizes an asset store or LFS. Review supply-chain choices and pin them. Native engine support is preferred when verified sufficient; a third-party MCP package is a new dependency decision.
+Use the exercised Unreal 5.8.3, changelist 58210709, bundled native MCP/Editor Toolset/Python/Interchange plugins and CPython 3.13 Windows-x64 source wheels. Hash-pinned requirements live in `tools/data/requirements.txt`; install to ignored `data/runtime`. Review any dependency change and rerun the exact-pin audit. The runtime is a C++ module, so build both Editor and Game targets; the old content-only project's no-compile statement no longer applies.
 
-MCP acceptance requires a live handshake with the intended project, an observed tool inventory, a bounded reversible action, and verified resulting state. An installed engine or a listening port alone does not establish connectivity.
+The actual portable Microsoft .NET Framework 4.6.2 SDK cache contains 152 original signed-payload-mapped files. `build_native.py --sdk-manifest` validates their bytes and confines `UE_SDKS_ROOT` to the child build environment. A cache is neither a global SDK installation nor an engine patch. UBT discovery, actual header/import-library use and resulting native binary digests are separate witnesses. New-machine paths/cache admission must be checked before building.
 
-## Orchestration and work documents
+Use the [README command sequence](../../README.md). Gates have these bounds:
 
-The orchestrator owns `docs/work/0_unreal-shibuya/plan.md`, shared contracts, final checks, and acceptance. Implementation workers own disjoint scopes; reviewers inspect exact recoverable revisions. Keep prepared, implemented, verified, reviewed, and accepted states distinct. Do not claim a city exists from a project skeleton or a successful tool response.
+| Check | Bound |
+| --- | --- |
+| `tests/data/test_*.py` and exact-pin dependency audit | Actual admitted source/cache geometry, photo/UV/provenance, route restrictions, support and path/failure controls; no native scene claim. |
+| `tools/runtime/test_core.ps1` and runtime runner units | Actual C++ core on synthetic routes and receipt/path verdict logic; no ordinary native input, physics or renderer claim. |
+| `tools/runtime/build_native.py --target both` | Editor/Game compile and link with unchanged authored inputs and binary hashes. |
+| `tools/unreal/mcp_run.py probe` | Live intended-project handshake, tool inventory and nondestructive observed action under NullRHI. |
+| Native MCP `build`/`surface` | Fresh city import and scoped photo replacement with source geometry/actor checks. |
+| Native runtime material preparation | D3D12/SM6 commandlet rendering, completed positive own-resource vertex/pixel shader evidence, instanced usage and checked saves; NullRHI is excluded from shader acceptance. |
+| Native MCP `diagnose`/`render` | Actual SM6/D3D12/current-view resource and capture readiness, fresh exact PNG witnesses, fixed camera appearance and native image review. |
+| Runtime `inventory` phase | Prepare the actual loaded map/package set and hashes, implementation and admitted source input bindings; every later arm requires this `--asset-receipt`. |
+| `tools/runtime/run_native.py` functional/negative arms | Controls, negative-input, report-write-negative, oversize-negative and suppressed-source-failure on the same bound implementation/source/assets; ordinary native viewport controls, collision/support, animation/population and required failures. |
+| Separate runtime `performance` phase | At least 30 actual warm unpaused seconds with 3,000 pedestrians/200 vehicles at 1920×1080, the asset inventory, all five same-implementation/source/assets prerequisite receipts and independent required performance verdict. |
 
-This fresh experiment starts its own work-document sequence at `0_unreal-shibuya`. The shared primary allocator would modify or import the old setup, contrary to the explicit zero-inheritance request. The orchestrator assigned this branch-local path; its registry is independent of main's work-document history. Do not run the old allocator against main or transplant its registry into this branch.
+A successful response, process exit, compile or report-save attempt is not acceptance by itself. Read the artifact and its required fields; failed, skipped and did-not-run remain distinct. The [active plan](../work/0_unreal-shibuya/plan.md) records current native observations and open product gates. Keep compiler/core proofs, ordinary native input, exact source/collision support, per-view hardware readiness, visual review and full-population performance separate. No remote CI workflow is configured on this branch.
 
-## Owned processes and evidence
+The full-coverage software Lumen experiment sets postprocess scene-view/max-trace distance to240000cm and first global-SDF clipmap extent to7500cm. It remains diagnostic and is not an accepted final appearance configuration. Preserve original fixed viewpoints and scoring thresholds while testing physical camera or lighting choices. Do not substitute alternate bright viewpoints, smaller populations, software/NullRHI rendering or source-only checks for a failed required gate.
 
-Work headlessly unless engine verification needs a rendered editor or application and no headless option is sufficient. State that reason before any visible launch. Launch every engine, MCP, browser, and helper process with recorded ownership and a finite deadline, and close only the task's processes in a finally cleanup path. Keep a process alive only when the owner asked for it to remain available, and report why and how it will close.
+## Source attribution and persistence
 
-Use `Artifacts/` for run evidence and `data/` for fresh source/generated city data; both are ignored. Inspect native rendered images individually and bind reviews to their file digests. Exercise ordinary controls and movement over time. A NullRHI launch can support load or automation checks, but cannot prove rendered appearance.
+Record acquisition identity, exact hashes, selected-member CRCs, licences, attribution and processed-data notices for PLATEAU, GSI and OpenStreetMap/ODbL in manifests and the running HUD. A PLATEAU selected-member digest does not prove the whole ZIP. A rebuilt base manifest includes a new timestamp/digest; changed base or OSM bytes require source admission before updating the pinned surface config. Missing pinned inputs fail, rather than fetching implicitly or skipping checks.
+
+Source/prepared data, project-local dependency/runtime caches, generated `/Game` packages, native binaries, DDC and task-run evidence remain ignored. Preserve exact manifest-bound inputs needed to reproduce accepted checks. Task evidence is retained only while a gate, review or integration needs it. It enters Git only through explicit review promotion under fleet size limits; large assets require an owner-approved asset store/LFS decision. A checkout is not a self-contained scene package, and session save/persistence compatibility remains unaccepted.
+
+## Orchestration and owned resources
+
+The orchestrator owns `docs/work/0_unreal-shibuya/plan.md`, shared interfaces, integration and final acceptance. Workers own disjoint bounded scopes and recoverable exact-byte handoffs; independent reviewers judge those bytes. This branch-local work-document sequence intentionally avoids the old main allocator/registry. Keep implementation, local checks, review, integration and final acceptance distinct.
+
+Work headlessly by default. Serialize engine/UBT/GPU operations under the orchestrator's lease. Native rendered gates use offscreen hardware rendering; NullRHI serves only suitable load/probe checks. A visible launch requires an explained verification or user-exploration need. Every task-owned engine/MCP/helper/server has an identifiable process/session, finite deadline and finally cleanup of its own process tree; leave unrelated user processes alone. Keep a process alive only at the owner's request, with its closure plan reported.
+
+Use ignored `artifacts/`/`Artifacts/` for evidence and `data/` for fresh source/generated data. Inspect rendered frames individually at native resolution, bind reviews to inspected digests and exercise controls through ordinary input over time. Check process leftovers before handoff. Cleanup validates absolute owned paths and reparse ancestry before deletion; it never follows a junction or broadly cleans another checkout.
 
 Verification correction (owner steering, 2026-10-16): use the actual README product entry points to identify the next blocker. Experimental Source32/selected-loader and fixture-relocation qualification are not universal prerequisites for unrelated native observation. Retain actual source/geometry/support, ordinary input, hardware appearance, original population/performance and owned cleanup checks. Reject known-invalid requests before expensive unrelated reads; report end-to-end and phase times. Profiled process exits are not product verdicts: local cProfile catches SystemExit; read the native receipt and engine exit, and run native acceptance directly.

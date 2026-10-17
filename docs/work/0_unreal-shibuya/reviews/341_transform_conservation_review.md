@@ -1,0 +1,18 @@
+# Exact Transform conservation repair — independent review
+
+2026-10-17. **ACCEPT for the scoped numeric comparison repair.** No material finding. This does not accept the next native import, saved support geometry, rays, appearance, gameplay or performance.
+
+Reviewed donor `shibuya_tools.transform-donor.py` 107948 bytes, SHA-256 `8b5aa37e1e13c78125fb41d3a09ecee212a03aff02de1e0c40d3455e6ef18e1b`; candidate 108620 bytes, `648e56fe57fb77454865a4af178f822aedca3a169032f65476e443c422e46373`; implementation patch 4381 bytes, `ffa338c1c4501c7263a9fa0b21c4e9f57a3e3be6f33e5bcfa0d1e3266092c341`. All are under `C:/Users/38909/Documents/github/maps/artifacts/unreal-native-triangle-import-v1`. The test candidate is 9167 bytes, `e609d630554ab2112a989ba658d5ea2552e7e0a1e90c62cabd316078a78ced6d`; test patch `1d57ae63e6f82959b1ec1bb43809be1fc196343f4380a6a984ee6f7d976271b9`.
+
+The actual failed `surface-20261017-015133/report.json` contains equal translation `[0,0,0]`, quaternion `[0,0,0,1]` and scale `[1,1,1]` before/after, while the old wrapper inequality reports a difference. Bounds error is 0.0010986328125 cm, within the existing 0.1 cm bound; all 111 other source actors match. Complete native triangle conservation is separately recorded. The correction addresses the demonstrated failing conjunct and leaves those other guards in place.
+
+Installed `PyWrapperStruct.cpp:810–840` dispatches Python `!=` to its separate NotEqual slot; `:701–765` returns NotImplemented when no applicable slot exists. `KismetMathLibrary.h:3939` supplies Transform's equality operator, with no Transform inequality operator in that API. Its implementation at `.inl:928` calls NearlyEqual. Using `==` would therefore introduce a tolerance. The new ten-component finite numeric comparison avoids both wrapper identity fallback and approximate equality. Translation and scale each contribute three scalars; the quaternion contributes four. A quaternion sign change remains a change under this deliberately exact contract. Boolean, NaN and infinity cannot be admitted even when both wrappers carry the same invalid value; diagnostic tags remain JSON safe.
+
+Both the live conservation guard and failure receipt call the same predicate. The helper AST delta is confined to `_prepare_support_terrain`, `_support_terrain_failure` and the two new transform helpers. No light, exposure, photo, source geometry, bounds tolerance, exclusion, rollback or save policy changes occur in the reviewed diff.
+
+I independently reran the new causal test against the donor with bundled Python `-B`: it failed at `AssertionError: False is not true`, exit 1, in 0.078 seconds. The candidate's eleven tests passed, exit 0, in 0.219 seconds. They cover all ten individual nextafter changes in both operand orders, forty nonfinite/Boolean placements, the identity fallback reproducer and seven prior receipt cases. This is Python/mock evidence, not a fresh Unreal wrapper or import result. Exact logs and installed-primary hashes are in `transform-review-evidence.json` beside this review.
+
+No canonical file or Git state was changed. No engine, renderer, browser or GUI was launched. Root owns application to the current donor, affected helper tests and the next ordinary MCP surface result. Preserve that result's exact transform readback and all existing conservation/ray/material guards before accepting support.
+
+---
+Promotion provenance: exact authored source `C:/Users/38909/Documents/github/maps/artifacts/unreal-lighting-physical-fix-v1/transform-review.md`; 3381 bytes; SHA-256 `20bb3d72ba57b8173bd28de938db01ccb668b31a0615bf1e14b66e4079a4bfc8`. Original review text is preserved above; this footer records promotion only.

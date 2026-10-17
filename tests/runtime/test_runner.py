@@ -1,5 +1,6 @@
 """Receipt/path verdict unit checks; these do not claim a native Game ran."""
 import importlib.util
+import hashlib
 import ctypes
 from ctypes import wintypes
 import json
@@ -45,7 +46,7 @@ class Verdicts(unittest.TestCase):
         for flag in ['both_populations_moved','native_support_verified','agent_separation_verified','actual_native_population_verified','actual_inputs_unchanged','native_pedestrian_gait_rotated','native_vehicle_spokes_rotated','benchmark_unpaused_warm_interval']:report[flag]=True
         bindings={str(i):'a'*64 for i in range(5)}
         states=['initial','walk','look','flight_mode','flight','walk_refused','descent_ground','walk_recovered','pause_start','pause_end','resume','reset','benchmark_start','benchmark_end']
-        report['snapshots']=[{'stage':stage,'elapsed_s':i,'simulation':{'ready':True,'error':'','pedestrian_count':60,'vehicle_count':12,'fixed_steps':i*60,'simulation_time_s':i,'paused':False,'actual_input_sha256':bindings},'native_geometry':{'actual_counts_and_transforms_valid':True},'pawn':{key:0 for key in ['forward_input_events','look_input_events','mode_input_events','pause_input_events','reset_input_events']}} for i,stage in enumerate(states)]
+        report['snapshots']=[{'stage':stage,'elapsed_s':i,'simulation':{'ready':True,'error':'','pedestrian_count':60,'vehicle_count':12,'fixed_steps':i*60,'simulation_time_s':i,'paused':False,'actual_input_sha256':bindings,'actual_input_roles':{name:'source' for name in bindings},'source_manifest_path':'0','source_manifest_sha256':'a'*64},'native_geometry':{'actual_counts_and_transforms_valid':True},'pawn':{key:0 for key in ['forward_input_events','look_input_events','mode_input_events','pause_input_events','reset_input_events']}} for i,stage in enumerate(states)]
         report['final_simulation']=report['snapshots'][-1]['simulation'];report['input_entry']='UGameViewportClient::InputKey/InputAxis'
         return report
 
@@ -73,6 +74,64 @@ class Verdicts(unittest.TestCase):
         with self.path.open('wb') as stream:stream.truncate(runner.LIMIT+1)
         with self.assertRaisesRegex(ValueError,'before reading'):runner.read_report(self.path)
         with self.assertRaises(ValueError):runner.digest(self.path,runner.LIMIT)
+
+    def source_role_fixture(self, size=1, source2=True):
+        def put(name, raw):
+            path=self.folder/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+            return {'path':name,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+        terrain_path='data/terrain.glb';terrain=self.folder/terrain_path;terrain.parent.mkdir(parents=True,exist_ok=True)
+        with terrain.open('wb') as stream:stream.truncate(size)
+        derived={'path':terrain_path,'bytes':size,'sha256':runner.digest(terrain,64*1024*1024),'triangles':1}
+        support=put('data/support.json',json.dumps({'schema_version':2,'derived_terrain':derived}).encode())
+        source=put('data/source.json',json.dumps({'support_surface':support,'derived_terrain':derived} if source2 else {}).encode())
+        records=[source,support,derived,put('data/ledger.bin',b'ledger'),put('data/rays.json',b'{}')]
+        bindings={row['path']:row['sha256'] for row in records};roles={name:'source' for name in bindings}
+        if source2:roles.update({support['path']:'support_manifest',terrain_path:'derived_terrain'})
+        return {'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source['path'],'source_manifest_sha256':source['sha256']}
+
+    def test_large_mesh_requires_real_source2_role_and_terminal_hash(self):
+        state=self.source_role_fixture(40800172)
+        runner.verify_source_inputs(self.folder,state)
+        self.assertEqual(runner.source_digest_limits(self.folder,state)['data/terrain.glb'],64*1024*1024)
+        with self.assertRaises(ValueError):runner.digest(self.folder/'data/terrain.glb',runner.LIMIT)
+        with (self.folder/'data/terrain.glb').open('r+b') as stream:stream.write(b'X')
+        with self.assertRaisesRegex(ValueError,'Actual admitted source input changed'):
+            runner.verify_source_inputs(self.folder,state)
+
+    def test_ordinary_large_file_cannot_acquire_derived_role_from_report(self):
+        state=self.source_role_fixture(runner.LIMIT+1,source2=False)
+        with self.assertRaisesRegex(ValueError,'size bound'):runner.verify_source_inputs(self.folder,state)
+        state['actual_input_roles']['data/terrain.glb']='derived_terrain'
+        with self.assertRaisesRegex(ValueError,'without a Source2 pair'):runner.verify_source_inputs(self.folder,state)
+
+    def test_source_roles_require_complete_keys_and_exact_pair_identity(self):
+        state=self.source_role_fixture()
+        for roles in ({},state['actual_input_roles']|{'data/extra':'source'},state['actual_input_roles']|{'data/ledger.bin':'unbounded'}):
+            with self.subTest(roles=roles),self.assertRaisesRegex(ValueError,'role map'):
+                runner.source_binding_metadata(state|{'actual_input_roles':roles})
+        malicious=state['actual_input_roles']|{'data/ledger.bin':'derived_terrain'}
+        with self.assertRaisesRegex(ValueError,'Only the Source2 pair'):
+            runner.source_digest_limits(self.folder,state|{'actual_input_roles':malicious})
+        source=self.folder/'data/source.json';original=json.loads(source.read_bytes());value=json.loads(source.read_bytes())
+        value['derived_terrain']['triangles']=True
+        raw=json.dumps(value).encode();source.write_bytes(raw);new_hash=hashlib.sha256(raw).hexdigest()
+        state['actual_input_sha256']['data/source.json']=new_hash;state['source_manifest_sha256']=new_hash
+        with self.assertRaisesRegex(ValueError,'same derived terrain record'):runner.source_digest_limits(self.folder,state)
+        raw=json.dumps(original).encode();source.write_bytes(raw);new_hash=hashlib.sha256(raw).hexdigest()
+        state['actual_input_sha256']['data/source.json']=new_hash;state['source_manifest_sha256']=new_hash
+        support=self.folder/'data/support.json';value=json.loads(support.read_bytes());value['derived_terrain']['triangles']=2
+        raw=json.dumps(value).encode();support.write_bytes(raw);new_hash=hashlib.sha256(raw).hexdigest()
+        state['actual_input_sha256']['data/support.json']=new_hash
+        source=self.folder/'data/source.json';value=json.loads(source.read_bytes());value['support_surface'].update(bytes=len(raw),sha256=new_hash)
+        raw=json.dumps(value).encode();source.write_bytes(raw);new_hash=hashlib.sha256(raw).hexdigest()
+        state['actual_input_sha256']['data/source.json']=new_hash;state['source_manifest_sha256']=new_hash
+        with self.assertRaisesRegex(ValueError,'same derived terrain record'):runner.source_digest_limits(self.folder,state)
+
+    def test_control_snapshots_keep_their_complete_source_roles(self):
+        report=self.negative_fixture()
+        report['snapshots'][1]['simulation']['actual_input_roles']={'0':'source'}
+        with self.assertRaisesRegex(ValueError,'role map'):
+            runner.validate_arm('negative-input',1,report,'',self.run_id,self.started,self.path,0)
 
     def test_windows_path_escape_class(self):
         for relative in ['../a','/a','C:/a','a:ads','data\\a','data//a','data/NUL.json','data/COM1','data/trailing.','data/bad?file']:
@@ -116,12 +175,15 @@ class Verdicts(unittest.TestCase):
             path.write_text('fresh admitted source version two: '+path.name)
             current={item.name:runner.digest(item) for item in paths}
             for phase in phases:
-                receipt={'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':old}
+                roles={name:'source' for name in old}; source_path=next(iter(old))
+                receipt={'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':old,'actual_input_roles':roles,'source_manifest_path':source_path}
                 self.path.write_text(json.dumps(receipt));loaded=runner.read_report(self.path)
                 with self.subTest(dataset=path.name,phase=phase):
                     with self.assertRaisesRegex(ValueError,'actual source inputs'):
-                        runner.validate_prerequisite(loaded,phase,implementation,assets,current)
-                    runner.validate_prerequisite(loaded|{'actual_input_sha256':current},phase,implementation,assets,current)
+                        runner.validate_prerequisite(loaded,phase,implementation,assets,current,roles,source_path)
+                    runner.validate_prerequisite(loaded|{'actual_input_sha256':current},phase,implementation,assets,current,roles,source_path)
+                    with self.assertRaisesRegex(ValueError,'actual source roles'):
+                        runner.validate_prerequisite(loaded|{'actual_input_sha256':current,'actual_input_roles':{}},phase,implementation,assets,current,roles,source_path)
             path.write_text('admitted source version one: '+path.name)
 
     def test_missing_required_receipts_refuse_before_source_admission(self):
@@ -141,7 +203,7 @@ class Verdicts(unittest.TestCase):
 
     def test_performance_requires_complete_control_native_source_map(self):
         from unittest import mock
-        a='a'*64; bindings={'data/'+str(i)+'.json':a for i in range(5)}
+        a='a'*64; bindings={'data/'+str(i)+'.json':a for i in range(5)}; roles={name:'source' for name in bindings}; source_path='data/0.json'
         implementation={'ShibuyaUnreal.uproject':a,'Binaries/Win64/UnrealEditor-ShibuyaRuntime.dll':a,'@native_runner':a}
         assets={'project:Content/Map.umap':a}
         inventory_path=self.folder/'inventory'/'report.json'
@@ -155,18 +217,68 @@ class Verdicts(unittest.TestCase):
               ('wrong',bindings|{'data/0.json':'b'*64}),('complete',bindings)]
         for label,control_map in maps:
             def read_fixture(path):
-                if path==inventory_path:return {'passed':True,'phase':'inventory','source_sha256':implementation,'asset_sha256':assets,'native_report_sha256':a}
-                if path==inventory_path.parent/'native.json':return {'actual_assets_after':{},'final_simulation':{'actual_input_sha256':bindings}}
-                if path==prior_paths['controls'].parent/'native.json':return {'final_simulation':{'actual_input_sha256':control_map}}
+                if path==inventory_path:return {'passed':True,'phase':'inventory','source_sha256':implementation,'asset_sha256':assets,'native_report_sha256':a,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path}
+                if path==inventory_path.parent/'native.json':return {'actual_assets_after':{},'final_simulation':{'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}}
+                if path==prior_paths['controls'].parent/'native.json':return {'final_simulation':{'actual_input_sha256':control_map,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}}
                 for phase,prior in prior_paths.items():
-                    if path==prior:return {'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':bindings,'native_report_sha256':a}
+                    if path==prior:return {'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'native_report_sha256':a}
                 self.fail('Unexpected fixture read: '+str(path))
             with self.subTest(control_map=label):
-                with mock.patch.object(sys,'argv',arguments), mock.patch.object(runner,'project_root',return_value=self.folder), mock.patch.object(runner,'confined',side_effect=lambda root,relative,exists=True: root/relative), mock.patch.object(runner,'guard_path',side_effect=lambda path,exists=True:path), mock.patch.object(runner,'digest',return_value=a), mock.patch.object(runner,'read_report',side_effect=read_fixture), mock.patch.object(runner,'asset_set',return_value=assets), mock.patch.object(runner,'hash_assets',return_value=assets), mock.patch.object(runner,'content_assets',side_effect=AssertionError('All prerequisite admission completed')):
+                with mock.patch.object(sys,'argv',arguments), mock.patch.object(runner,'project_root',return_value=self.folder), mock.patch.object(runner,'confined',side_effect=lambda root,relative,exists=True: root/relative), mock.patch.object(runner,'guard_path',side_effect=lambda path,exists=True:path), mock.patch.object(runner,'digest',return_value=a), mock.patch.object(runner,'read_report',side_effect=read_fixture), mock.patch.object(runner,'verify_source_inputs'), mock.patch.object(runner,'asset_set',return_value=assets), mock.patch.object(runner,'hash_assets',return_value=assets), mock.patch.object(runner,'content_assets',side_effect=AssertionError('All prerequisite admission completed')):
                     if label=='complete':
                         with self.assertRaisesRegex(AssertionError,'All prerequisite admission completed'):runner.main()
                     else:
                         with self.assertRaisesRegex(ValueError,'complete current admitted source input map'):runner.main()
+
+    def test_job_cleanup_failure_still_waits_and_closes_process_with_red_receipt(self):
+        from unittest import mock
+        for cascading in (False, True):
+            events = []
+            class FailedJob:
+                def close(self):
+                    events.append('job.close')
+                    raise OSError('controlled job close failure')
+            class Process:
+                pid = 43210
+                resumed = True
+                calls = 0
+                def wait(self, timeout):
+                    self.calls += 1; events.append('process.wait:'+str(timeout))
+                    if cascading:
+                        if self.calls == 1: raise RuntimeError('primary dispatch failure')
+                        raise RuntimeError('controlled process wait failure')
+                    return 0
+                def close(self):
+                    events.append('process.close')
+                    if cascading: raise RuntimeError('controlled process handle failure')
+            process = Process(); receipts = []
+            def launch(command, root, log, job):
+                # Model only native/process IO. Actual main cleanup, verdict
+                # error accumulation and persisted receipt are exercised.
+                relative = next(arg.split('=',1)[1] for arg in command if arg.startswith('-ShibuyaRuntimeCheck='))
+                native = root/relative
+                native.write_text(json.dumps({'final_simulation':{},'actual_assets_before':{},'actual_assets_after':{}}))
+                receipts.append(native.parent/'report.json')
+                return process
+            bindings = {'data/source.json':'a'*64}; roles = {'data/source.json':'source'}
+            arguments = [str(source),'--project-root',str(self.folder),'--phase','inventory']
+            with self.subTest(cascading=cascading):
+                with mock.patch.object(sys,'argv',arguments), mock.patch.object(runner,'project_root',return_value=self.folder), mock.patch.object(runner,'confined',side_effect=lambda root,relative,exists=True: root/relative), mock.patch.object(runner,'guard_path',side_effect=lambda path,exists=True:path), mock.patch.object(runner,'digest',return_value='a'*64), mock.patch.object(runner,'content_assets',return_value={}), mock.patch.object(runner,'OwnedJob',FailedJob), mock.patch.object(runner,'launch_owned',side_effect=launch), mock.patch.object(runner,'validate_arm'), mock.patch.object(runner,'source_binding_metadata',return_value=(bindings,roles,'data/source.json')), mock.patch.object(runner,'asset_set',return_value={}), mock.patch.object(runner,'hash_assets',return_value={}), mock.patch.object(runner,'validate_assets'), mock.patch.object(runner,'verify_source_inputs'), mock.patch('builtins.print'):
+                    result = runner.main()
+                self.assertEqual(events, ['process.wait:300','job.close','process.wait:30','process.close'])
+                self.assertEqual(result, 1)
+                self.assertEqual(len(receipts), 1)
+                receipt = json.loads(receipts[0].read_text())
+                self.assertIs(receipt['passed'], False)
+                self.assertIs(receipt['cleanup']['job_empty_verified'], False)
+                self.assertEqual(receipt['cleanup']['terminated_owned_remaining_pids'], [])
+                self.assertIn('controlled job close failure', receipt['error'])
+                if cascading:
+                    for message in ('primary dispatch failure','controlled process wait failure','controlled process handle failure'):
+                        self.assertIn(message, receipt['error'])
+                    self.assertTrue(receipt['error'].startswith('primary dispatch failure'))
+                else:
+                    self.assertEqual(receipt['exit_code'], 0)
 
     def cleanup_known_child(self,pid):
         api=ctypes.WinDLL('kernel32',use_last_error=True)

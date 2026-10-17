@@ -1,49 +1,135 @@
 # Shibuya in Unreal Engine 5.8
 
-This branch starts a fresh Unreal Engine 5.8 experiment for the same roughly 1 km square around Shibuya Scramble Crossing. The intended result is a photoreal leaning city with moving pedestrians and vehicles.
+This experimental branch builds a roughly 1 km Shibuya city crop from fresh public geometry, photographs and mapped movement routes. It uses Unreal Engine 5.8.3 and the engine's native MCP server. Only `AGENTS.md` and `CLAUDE.md` came from the previous project; all implementation, dependencies, configuration, source data and assets were prepared afresh.
 
-Only `AGENTS.md` and `CLAUDE.md` were carried into this checkout. They preserve the owner's instructions byte for byte. Every other file here is new. The previous Vite project, dependencies, source code, configuration, documentation, scene cache, and assets are excluded.
+The source milestone is reviewed, accepted and pushed at `e0d33fe` on `codex/shibuya-unreal-5.8`: 70 city GLBs, the 90-tile GSI aerial atlas, 25 road photo UV assets, 451 pedestrian routes, 18 legal vehicle cycles and one legal crop entry/exit vehicle path. All 47 canonical source tests passed in 18.440 seconds. Reviewed native Editor/Game targets also compile; compilation does not establish gameplay or appearance acceptance. The current fixed-six-view appearance gate still fails; native controls, collision, boundary lifecycle and the 3,000-pedestrian/200-vehicle 60 fps target at 1920 by 1080 remain pending final verification. The [plan](docs/work/0_unreal-shibuya/plan.md) owns acceptance and the [branch rules](docs/policies/local-rules.md) define the exception to the historical browser project.
 
-The initial clean-branch/static-crop/native-MCP milestone is verified on Unreal Engine 5.8.3, changelist 58210709: 70 fresh GLBs became 112 static mesh actors with 43 textures. Twenty unit checks passed, and independent focused review closed both code findings. The reviewed implementation is committed and pushed as `9df42139ef1747bedc435cb60ecd226cfb69a60a` on `origin/codex/shibuya-unreal-5.8`. The [plan](docs/work/0_unreal-shibuya/plan.md) retains the full city's open criteria.
+## Current native verification
 
-The [branch rules](docs/policies/local-rules.md) record the owner's explicit stack and isolation instructions. They explain how the historical browser gates inside the preserved instruction file apply to this fresh Unreal branch.
+Both native targets compile and link. The offscreen inventory initializes the actual map at 1920 by 1080. Ordinary viewport input has demonstrated walking, mouse look, flight, landing, pause/resume, reset and visibly refused unsupported walking, with animated moving pedestrians and vehicles at60/12. That controls run remains RED on30 native support failures; it does not establish final-source support or the3000/200 performance target.
 
-## Geographic scope
+The new support importer verifies the entire native terrain triangle multiset, including1698 exact float32 endpoint exclusions, and preserves the other111 source actors. Both transform guards now use exact finite component values. The actual import reaches its first collision ray and fails before saving the map; its actual hit diagnosis remains pending. The corrected capture driver retains all six original views and both raw material probes. Under the retained f/16 baseline, crossing/block fail darkness, west/north pass, and both distant views lack current Lumen cards and remain unadmitted. The uniform f/8 trial passes all four admitted near views with 18 actual camera-policy witnesses; the wider software comparison passes all six numerical gates but returns a visible rounded pavement-shadow artifact, so that combined policy remains rejected. Complete appearance, photorealism, final native arms and full-population performance remain open in the [plan](docs/work/0_unreal-shibuya/plan.md).
 
-The origin is Shibuya Scramble Crossing at latitude 35.6595 N, longitude 139.7005 E. The crop is latitude 35.6550-35.6640 N and longitude 139.6950-139.7060 E, approximately 1 km square. Fresh PLATEAU FY2025 buildings and roads accompany a GSI elevation terrain grid. The GLB frame is X east, Y up, Z north in metres; a native asymmetric fixture verified Unreal X east, Y north, Z up in centimetres. Independent surveyed landmark and vertical accuracy remain open.
+## Install and select the toolchain
 
-The source pipeline retains triangles only when all vertices lie inside the crop, omitting 120,099 triangles not wholly inside the crop and two empty road members. Ground has a neutral material because aerial imagery retrieval failed; building photos are present. Close crossing views remain dark and obstructed. Photoreal appearance, recognizable frontage, interactive runtime controls, motion, independent surveyed placement, and the population/performance target remain open.
+Install Unreal Engine 5.8.3 through the [Epic Games Launcher](https://dev.epicgames.com/documentation/unreal-engine/install-unreal-engine). The exercised installation is `C:\Program Files\Epic Games\UE_5.8`, changelist 58210709. The runner checks the exact 5.8.3 `Build.version`. The project enables the bundled ModelContextProtocol, EditorToolset, PythonScriptPlugin, EditorScriptingUtilities and Interchange plugins; it needs no third-party MCP server or global MCP configuration.
 
-## Prepare and check the fresh source
+The source pipeline requires CPython 3.13 on Windows x64; the exercised interpreter is 3.13.9. Its NumPy, Pillow and DracoPy wheels are hash-pinned in `tools/data/requirements.txt` and installed only into ignored `data/runtime`. The engine's bundled Python runs the MCP driver. Native C++ compilation additionally needs the Microsoft C++/Windows toolchain described by [Epic's development setup](https://dev.epicgames.com/documentation/unreal-engine/setting-up-your-development-environment-for-cplusplus-in-unreal-engine); the current wrappers use Visual Studio 18 Build Tools at `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools`.
 
-Run from this checkout in PowerShell. The source runtime is CPython 3.13 on Windows x64; the local interpreter verified here is 3.13.9. Install only the hash-pinned wheels into the ignored project-local runtime:
-
-```powershell
-& 'C:\Users\38909\miniconda3\python.exe' -m pip install --only-binary=:all: --require-hashes --no-deps --target data/runtime -r tools/data/requirements.txt
-& 'C:\Users\38909\miniconda3\python.exe' tools/data/build_city.py --inspect
-& 'C:\Users\38909\miniconda3\python.exe' tools/data/build_city.py --sample
-& 'C:\Users\38909\miniconda3\python.exe' tools/data/build_city.py --build
-& 'C:\Users\38909\miniconda3\python.exe' -m unittest discover -s tests/data -p 'test_*.py' -v
-& 'C:\Users\38909\miniconda3\python.exe' tools/data/check_dependencies.py
-```
-
-The inspect/sample/build commands, fifteen repaired source tests, and three-pin OSV audit were exercised. The audit covers known OSV records for the exact pins at query time. The removed DEM fallback is not available; a missing or failed required DEM5A tile stops preparation. Downloads and generated data stay under `data/`; the manifest records selected-member hashes rather than claiming a measured digest of the entire remote ZIP. [Focused independent review](docs/work/0_unreal-shibuya/reviews/2_implementation.md) closed the source and probe findings.
-
-## Native MCP build and captures
-
-These commands use the installed engine's bundled Python and native MCP, Editor Toolset, Python, and Interchange plugins. No global MCP configuration or third-party MCP server is required. The runner owns loopback port 18758 and closes its editor process; probe uses NullRHI, while build/render use D3D12 offscreen rendering.
+Run the commands below in PowerShell from the isolated experimental project worktree. These variables name the exercised installation; select the matching installed paths on another machine.
 
 ```powershell
-& 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' tools/unreal/mcp_run.py probe --manifest data/prepared/manifest.json --startup-timeout 360
-& 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' tools/unreal/mcp_run.py build --manifest data/prepared/manifest.json --startup-timeout 360
-& 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' tools/unreal/mcp_run.py render --manifest data/prepared/manifest.json --startup-timeout 360
-& 'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' -m unittest discover -s tools/unreal -p test_mcp_run.py -v
+$ProjectRoot = (Get-Location).Path
+$Python = 'C:\Users\38909\miniconda3\python.exe'
+$Engine = 'C:\Program Files\Epic Games\UE_5.8'
+$UnrealPython = Join-Path $Engine 'Engine/Binaries/ThirdParty/Python3/Win64/python.exe'
+$EditorCmd = Join-Path $Engine 'Engine/Binaries/Win64/UnrealEditor-Cmd.exe'
 ```
 
-Build regenerates the city map and generated asset packages under `Content/`. These binary outputs are ignored; authored `Content/Python/` stays tracked. Reports and captures go under `artifacts/unreal/`. The final probe preserved the daylight map bytes and all 116 actors, including 112 mesh actors, through two validation worlds. It used the exact reviewed helper, removed its two temporary map files, and closed its owned processes. Five offline MCP contract checks also passed.
+The genuine Microsoft .NET Framework 4.6.2 SDK is available on this machine as an ignored, manifest-bound portable AutoSDK cache at `artifacts/toolchain/portable-netfx/sdk-files-manifest.json`. `build_native.py --sdk-manifest` verifies all 152 extracted files and sets `UE_SDKS_ROOT` only in the child build environment. It neither installs the SDK nor edits the registry, global environment or engine. The cache was extracted from signed original SDK payloads; a new machine needs a genuine installed SDK or a separately admitted portable cache with correct local paths. The flag is not a downloader or a substitute SDK implementation. `tools/runtime/prove_sdk.py --sdk-manifest <manifest>` checks actual header/import-library compilation and linkage separately from UBT discovery.
 
-Final capture passed on D3D12, RTX 4090 driver 616.64, with graceful exit code 0. All six 1280 by 720 images were opened individually; block and whole-crop geometry is visible, while close crossing views remain dark and obstructed. This is static-crop evidence, not photoreal acceptance. The content-only project needs no C++ compilation. Historical Node gates are superseded. No CI workflow is configured on this branch; the exact implementation commit has zero GitHub Actions runs.
+## Prepare or restore the reviewed source
 
-## Branch ownership
+The crop is latitude 35.6550–35.6640 N and longitude 139.6950–139.7060 E, with origin 35.6595 N, 139.7005 E. Prepared GLBs use X east/Y up/Z north in metres; movement JSON uses X east/Y north/Z up in metres, converted by native code to Unreal centimetres. The original vertical calibration is approximate and does not establish surveyed accuracy.
 
-The orchestrator owns scope, shared contracts, and acceptance. Workers own bounded implementation and independent review. This experiment stays on `codex/shibuya-unreal-5.8`; main and its active work remain separate. Its worktree and ignored source/generated assets are intentionally retained for the active city work. Task-owned engine processes have been closed. Do not merge the replacement tree onto main under the standing generic merge rule.
+Restore the exact reviewed project-local cache using the source handoff manifests when reproducing acceptance. Sources and generated data are ignored, so a Git checkout alone cannot render the city. For a new acquisition, the explicit base pipeline is:
+
+```powershell
+& $Python -m pip install --only-binary=:all: --require-hashes --no-deps --target (Join-Path $ProjectRoot 'data/runtime') -r (Join-Path $ProjectRoot 'tools/data/requirements.txt')
+& $Python (Join-Path $ProjectRoot 'tools/data/build_city.py') --inspect
+& $Python (Join-Path $ProjectRoot 'tools/data/build_city.py') --sample
+& $Python (Join-Path $ProjectRoot 'tools/data/build_city.py') --build
+```
+
+The base manifest records build time, so a newly rebuilt manifest has a new digest even when its geometry is unchanged. `sources/surface_network.json` pins the reviewed base manifest and OSM snapshot. Restore those admitted bytes or review the new snapshot before preparing surfaces; current remote OSM responses can differ from the pinned XML and are refused until admitted. Required DEM failures stop preparation. PLATEAU selected-member CRC/SHA checks do not claim a measured hash of the entire remote ZIP.
+
+Once the base/source pins are admitted, prepare the photograph and movement files in separate modes:
+
+```powershell
+& $Python (Join-Path $ProjectRoot 'tools/data/surface_network.py') --fetch --photo-only
+& $Python (Join-Path $ProjectRoot 'tools/data/surface_network.py') --roads-only
+& $Python (Join-Path $ProjectRoot 'tools/data/surface_network.py') --network-only
+& $Python -m unittest discover -s (Join-Path $ProjectRoot 'tests/data') -p 'test_*.py' -v
+& $Python (Join-Path $ProjectRoot 'tools/data/check_dependencies.py')
+```
+
+`--fetch` is the explicit certificate-checked source acquisition step. The three mode flags are mutually exclusive. `--network-only` preserves frozen photo outputs. The admitted atlas covers all 90 z18 XYZ tiles; road UVs share it without duplicating embedded image bytes. Source tests require the actual pinned inputs and fail when they are absent or changed. The dependency check queries known OSV records for the exact pins at its query time.
+
+Movement files live under `data/prepared/surface/`. Their manifests bind route profiles, original OSM turn restrictions and two full vehicle-body endpoint profiles. The one open vehicle path has supported entry/exit centres within 20 m of the real crop boundary and original OSM continuation outside it; it has no invented closing segment. Static supported length does not establish moving crowd or queue capacity. Signals use a declared simulated 70-second phase, with pedestrian green from 50 to 70 seconds; those timings are not Tokyo source facts. [Source details and limits](docs/work/0_unreal-shibuya/source-next.md) retain the rejected candidates and review proofs.
+
+## Build the native module and import the city
+
+The project now contains the `ShibuyaRuntime` C++ module. Build both Editor and Game targets before using the inspector or gameplay. Close owned engine runs before compiling, and serialize native builds/rendered gates with the orchestrator's engine lease.
+
+```powershell
+pwsh -NoProfile -File (Join-Path $ProjectRoot 'tools/runtime/test_core.ps1')
+& $Python -m unittest discover -s (Join-Path $ProjectRoot 'tests/runtime') -p 'test_runner.py' -v
+& $Python (Join-Path $ProjectRoot 'tools/runtime/build_native.py') --target both --timeout 600 --sdk-manifest (Join-Path $ProjectRoot 'artifacts/toolchain/portable-netfx/sdk-files-manifest.json')
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') probe --manifest data/prepared/manifest.json --startup-timeout 360
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') build --manifest data/prepared/manifest.json --startup-timeout 360
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') surface --surface-manifest data/prepared/surface/surface-manifest.json --road-manifest data/prepared/surface/road-photo-manifest.json --startup-timeout 360
+& $EditorCmd (Join-Path $ProjectRoot 'ShibuyaUnreal.uproject') -run=pythonscript "-script=$ProjectRoot/tools/runtime/prepare_assets.py" -AllowCommandletRendering -RenderOffscreen -d3d12 -sm6 -unattended -nosplash -DDC=Shibuya
+```
+
+The core test compiles actual simulation code against synthetic supported routes; it proves neither city collision nor native input. The build wrapper compiles and links with four parallel actions and UBA disabled; it launches no game. Native MCP `probe` performs a nondestructive live handshake/tool/action check with NullRHI. `build` creates `/Game/Maps/Shibuya`; `surface` replaces only the source terrain/road surfaces with the admitted aerial material and checks geometry/actor preservation. Material preparation creates `/Game/Runtime/M_Agent*` packages using real commandlet rendering. Each material must finish its own shader resource with positive vertex/pixel instruction counts before a checked save; NullRHI does not satisfy this shader gate. City and runtime packages, native binaries and receipts stay ignored.
+
+## Explore and run headless checks
+
+For interactive exploration after the native module, source and generated map are ready:
+
+```powershell
+& (Join-Path $Engine 'Engine/Binaries/Win64/UnrealEditor.exe') (Join-Path $ProjectRoot 'ShibuyaUnreal.uproject') -game -windowed -ResX=1920 -ResY=1080 -DDC=Shibuya
+```
+
+| Input | Implemented behavior |
+| --- | --- |
+| W/A/S/D and mouse | Move and look in walking or flight mode. |
+| Left Shift | Move faster while held. |
+| Tab | Toggle walking/flight; walking requires reachable native ground. |
+| Q/E | Descend/ascend in flight. Descend before requesting walking from height. |
+| P | Pause/resume simulation. |
+| R | Reset the seeded population and crossing-side camera. |
+
+The HUD shows counts, simulation/movement state, source attribution and a visible notice when walking cannot be entered. These controls are implemented; ordinary native viewport input, collision and motion still require their final gate. Close the interactive window when exploration ends.
+
+Offline native-helper checks and rendered MCP diagnostics use:
+
+```powershell
+& $UnrealPython -m unittest discover -s (Join-Path $ProjectRoot 'tools/unreal') -p 'test_*.py' -v
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') diagnose --explore --startup-timeout 360
+& $UnrealPython (Join-Path $ProjectRoot 'tools/unreal/mcp_run.py') render --startup-timeout 360
+```
+
+Rendered diagnostics require the compiled inspector, actual SM6/D3D12 and current-view Lumen card/resource witnesses. Reports and fixed-view images go under `artifacts/unreal/`; inspect each native image and bind its review to its digest. Successful capture readiness is separate from acceptable crossing brightness or photorealism. A genuine SM6/current-view-card full-coverage capture completed with clean exit, but its appearance gate failed. The coarse first-clipmap extent of 7,500 cm (75 m) was rejected; the software coverage experiment used PPSceneViewDistance/MaxTrace of 240,000 cm (2,400 m). `--full-crop-coverage` remains diagnostic work and is not recommended as the final appearance configuration.
+
+The runtime runner owns an offscreen 1920×1080 game and closes its process tree. First prepare an actual loaded-package and source inventory:
+
+```powershell
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase inventory
+```
+
+Set `$AssetReceipt` to the `report.json` path printed by that successful preparation. Every subsequent arm requires `--asset-receipt`; the runner checks the actual loaded map/package set, package hashes, implementation hashes and admitted source input hashes. Reprepare after those inputs change. Run all five functional/negative prerequisites against that same inventory; each prints its own receipt path:
+
+```powershell
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase controls --asset-receipt $AssetReceipt
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase negative-input --asset-receipt $AssetReceipt
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase report-write-negative --asset-receipt $AssetReceipt
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase oversize-negative --asset-receipt $AssetReceipt
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase suppressed-source-failure --asset-receipt $AssetReceipt
+```
+
+The default functional population is 60 pedestrians/12 vehicles with a 10-second measured benchmark interval. Boundary lifecycle acceptance additionally needs `--minimum-boundary-events 1` and enough population/time to observe an actual exit and available entry; the default small run does not promise this. Negative arms pass only by observing the intended input/report/allocation failure. `suppressed-source-failure` combines disabled input with an invalid oversized source and must report the source failure independently of input suppression. The viewport harness uses ordinary keyboard/mouse events, not camera setters. Reports are under `Artifacts/runtime-game/<run-id>/`.
+
+Then supply the inventory and all five actual same-implementation/source/assets prerequisite receipt paths to the separate full-population phase:
+
+```powershell
+& $Python (Join-Path $ProjectRoot 'tools/runtime/run_native.py') --phase performance --benchmark-seconds 30 --asset-receipt $AssetReceipt --controls-receipt $ControlsReceipt --negative-input-receipt $NegativeInputReceipt --report-failure-receipt $ReportFailureReceipt --oversize-receipt $OversizeReceipt --source-failure-receipt $SourceFailureReceipt
+```
+
+Set the five prerequisite variables to the corresponding `report.json` paths printed by the five arms. The performance phase forces 3,000/200, measures at least 30 warm unpaused seconds, requires unchanged implementation, admitted source inputs and actual loaded assets, and accepts only its independent required performance field. Passing compilation, synthetic core tests, reduced population checks or NullRHI cannot close that target. Final native results are pending; no CI workflow is configured on this branch.
+
+## Sources, persistence and branch ownership
+
+Preserve the processed-source notices and licence links for [PLATEAU](https://www.mlit.go.jp/plateau/site-policy/), [GSI elevation/aerial data](https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html) and [OpenStreetMap contributors/ODbL](https://www.openstreetmap.org/copyright). The source manifests and runtime HUD carry attribution. Aerial shadows/capture dates and approximate heights remain reconstruction limits. The scene is project-local data and generated assets, not a self-contained Git checkout or packaged release; user session persistence/save compatibility has not been accepted.
+
+The orchestrator owns shared contracts and final acceptance. This replacement tree stays on `codex/shibuya-unreal-5.8` under the owner's explicit branch exception; it is not merged onto main. Keep reviewed caches and active evidence for reproduction, and remove only owned obsolete outputs/processes. Large assets require a separate owner-approved storage decision before distribution or ordinary Git promotion.

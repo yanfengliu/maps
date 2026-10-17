@@ -22,6 +22,9 @@ import uuid
 ROOT = Path(__file__).resolve().parents[2]
 ENGINE = Path(r'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe')
 LIMIT = 32 * 1024 * 1024
+INPUT_ROLE_LIMITS = {'source': LIMIT, 'support_manifest': 16 * 1024 * 1024,
+                     'derived_terrain': 64 * 1024 * 1024, 'code_snapshot': 2 * 1024 * 1024,
+                     'configuration_snapshot': 100_000}
 ENGINE_ROOT = ENGINE.parents[2]
 ASSET_LIMIT = 512 * 1024 * 1024
 
@@ -114,6 +117,58 @@ def read_report(path: Path) -> dict:
     return json.loads(read_bytes(path))
 
 
+def source_binding_metadata(state: dict) -> tuple[dict, dict, str]:
+    bindings = state.get('actual_input_sha256'); roles = state.get('actual_input_roles')
+    source_path = state.get('source_manifest_path')
+    if not isinstance(bindings, dict) or len(bindings) < 5 or any(not isinstance(name, str) or not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value) for name, value in bindings.items()):
+        raise ValueError('Native source binding needs the complete path/SHA-256 map.')
+    if not isinstance(roles, dict) or roles.keys() != bindings.keys() or any(not isinstance(role, str) or role not in INPUT_ROLE_LIMITS for role in roles.values()):
+        raise ValueError('Native source role map needs exactly the bound input keys and known fixed roles.')
+    if not isinstance(source_path, str) or source_path not in bindings or roles[source_path] != 'source' or state.get('source_manifest_sha256') != bindings[source_path]:
+        raise ValueError('Native source manifest path/SHA-256 must identify its ordinary admitted source input.')
+    return bindings, roles, source_path
+
+
+def source_digest_limits(root: Path, state: dict) -> dict:
+    """Only a hash-bound Source2 pair can grant the fixed derived-terrain cap."""
+    bindings, roles, source_path = source_binding_metadata(state)
+    raw = read_bytes(confined(root, source_path), LIMIT)
+    if hashlib.sha256(raw).hexdigest() != bindings[source_path]:
+        raise ValueError('Actual source manifest differs from the native bound SHA-256: ' + source_path)
+    source = json.loads(raw)
+    if not isinstance(source, dict) or ('support_surface' in source) != ('derived_terrain' in source):
+        raise ValueError('Source2 admission needs both support_surface and derived_terrain records.')
+    derived_paths = {name for name, role in roles.items() if role == 'derived_terrain'}
+    if 'support_surface' in source:
+        def record(role, value):
+            if not isinstance(value, dict): raise ValueError('Source2 ' + role + ' needs its published path/bytes/SHA-256 record.')
+            name = value.get('path'); size = value.get('bytes'); sha = value.get('sha256')
+            if not isinstance(name, str) or type(size) is not int or not 1 <= size <= INPUT_ROLE_LIMITS[role] or not isinstance(sha, str) or not re.fullmatch('[0-9a-f]{64}', sha):
+                raise ValueError('Source2 ' + role + ' record exceeds or differs from its fixed role contract.')
+            if roles.get(name) != role or bindings.get(name) != sha or confined(root, name).stat().st_size != size:
+                raise ValueError('Source2 ' + role + ' record differs from the actual complete native binding: ' + name)
+            return name
+        support_path = record('support_manifest', source['support_surface'])
+        support_raw = read_bytes(confined(root, support_path), INPUT_ROLE_LIMITS['support_manifest'])
+        if hashlib.sha256(support_raw).hexdigest() != bindings[support_path]:
+            raise ValueError('Actual Source2 support manifest SHA-256 changed: ' + support_path)
+        support = json.loads(support_raw)
+        if not isinstance(support, dict) or type(support.get('schema_version')) is not int or support['schema_version'] != 2 or json.dumps(support.get('derived_terrain'),sort_keys=True) != json.dumps(source['derived_terrain'],sort_keys=True):
+            raise ValueError('Source2 needs schema2 and exactly the same derived terrain record in both admitted manifests.')
+        if derived_paths != {record('derived_terrain', source['derived_terrain'])}:
+            raise ValueError('Only the Source2 pair derived terrain may use the64 MiB role.')
+    elif derived_paths:
+        raise ValueError('Ordinary source inputs cannot claim the64 MiB derived-terrain role without a Source2 pair.')
+    return {name: INPUT_ROLE_LIMITS[role] for name, role in roles.items()}
+
+
+def verify_source_inputs(root: Path, state: dict) -> None:
+    bindings, _, _ = source_binding_metadata(state)
+    for name, maximum in source_digest_limits(root, state).items():
+        if digest(confined(root, name), maximum) != bindings[name]:
+            raise ValueError('Actual admitted source input changed; restore its bound bytes: ' + name)
+
+
 def benchmark_duration(phase: str, value: int | None) -> int:
     seconds = (30 if phase == 'performance' else 10) if value is None else value
     minimum = 30 if phase == 'performance' else 10
@@ -131,6 +186,8 @@ def complete_probe(report: dict) -> dict:
         sim = state.get('simulation', {}); geometry = state.get('native_geometry', {})
         if sim.get('ready') is not True or sim.get('error') or sim.get('pedestrian_count', 0) <= 0 or sim.get('vehicle_count', 0) <= 0 or geometry.get('actual_counts_and_transforms_valid') is not True:
             raise ValueError('Native control stage lacks a ready loaded world and actual populations.')
+        if source_binding_metadata(sim) != source_binding_metadata(report.get('final_simulation', {})):
+            raise ValueError('Native control stage changed its complete source digest/role/manifest binding.')
     return {s['stage']: s for s in snapshots}
 
 
@@ -263,11 +320,13 @@ def validate_assets(report: dict, admitted: dict, full: bool, prepared_inventory
     return {key: admitted[key] for key in sorted(actual)}
 
 
-def validate_prerequisite(proof: dict, phase: str, implementation: dict, assets: dict, source_inputs: dict) -> None:
+def validate_prerequisite(proof: dict, phase: str, implementation: dict, assets: dict, source_inputs: dict, source_roles: dict, source_manifest_path: str) -> None:
     if proof.get('passed') is not True or proof.get('phase') != phase or proof.get('source_sha256') != implementation or proof.get('asset_sha256') != assets:
         raise ValueError('Prior native arm is missing, failed, wrong-phase or stale against current implementation: ' + phase)
     if proof.get('actual_input_sha256') != source_inputs:
         raise ValueError('Prior native arm has stale actual source inputs; rerun this arm against the current admitted dataset: ' + phase)
+    if proof.get('actual_input_roles') != source_roles or proof.get('source_manifest_path') != source_manifest_path:
+        raise ValueError('Prior native arm has stale actual source roles or manifest identity: ' + phase)
 
 
 class OwnedJob:
@@ -444,7 +503,7 @@ def main() -> int:
     sources = [root/'ShibuyaUnreal.uproject', *sorted((root/'Config').glob('*.ini')), *sorted((root/'Source').rglob('*.h')), *sorted((root/'Source').rglob('*.cpp')), *sorted((root/'Source').rglob('*.cs')), root/'Binaries/Win64/UnrealEditor-ShibuyaRuntime.dll']
     before = {p.relative_to(root).as_posix(): digest(confined(root, p.relative_to(root).as_posix())) for p in sources}
     before['@native_runner']=digest(Path(__file__))
-    asset_before = {}; asset_preparation = None; prepared_inventory = None; source_inputs = {}
+    asset_before = {}; asset_preparation = None; prepared_inventory = None; source_inputs = {}; source_roles = {}; source_manifest_path = ''
     if args.phase != 'inventory':
         if args.asset_receipt is None: raise ValueError('Native arms first need the completed actual-loaded inventory preparation receipt.')
         prepared_path = confined(root, guard_path(args.asset_receipt.absolute()).relative_to(root).as_posix()); prepared = read_report(prepared_path)
@@ -455,10 +514,10 @@ def main() -> int:
         native_preparation = read_report(preparation_native)
         prepared_inventory = native_preparation['actual_assets_after']
         if set(asset_set(prepared_inventory)) != set(prepared['asset_sha256']): raise ValueError('Preparation asset binding does not match actual loaded native packages.')
-        source_inputs = native_preparation['final_simulation']['actual_input_sha256']
-        if not isinstance(source_inputs,dict) or len(source_inputs)<5: raise ValueError('Actual inventory source binding did not run.')
-        for name,value in source_inputs.items():
-            if digest(confined(root,name),LIMIT)!=value: raise ValueError('Source changed after native inventory preparation: '+name)
+        source_inputs, source_roles, source_manifest_path = source_binding_metadata(native_preparation['final_simulation'])
+        if prepared.get('actual_input_sha256') != source_inputs or prepared.get('actual_input_roles') != source_roles or prepared.get('source_manifest_path') != source_manifest_path:
+            raise ValueError('Inventory receipt differs from its complete native source binding.')
+        verify_source_inputs(root, native_preparation['final_simulation'])
         asset_before = hash_assets(root, prepared['asset_sha256'])
         if asset_before != prepared['asset_sha256']: raise ValueError('Actual asset bytes changed after native preparation.')
         asset_preparation = {'path':str(prepared_path), 'sha256':digest(prepared_path)}
@@ -466,13 +525,14 @@ def main() -> int:
         for expected,prior in [('controls',args.controls_receipt),('negative-input',args.negative_input_receipt),('report-write-negative',args.report_failure_receipt),('oversize-negative',args.oversize_receipt),('suppressed-source-failure',args.source_failure_receipt)]:
             if prior is None:raise ValueError('Full population benchmark first needs all five completed native functional/negative arms on the same exact project.')
             previous=confined(root,guard_path(prior.absolute()).relative_to(root).as_posix());proof=read_report(previous)
-            validate_prerequisite(proof,expected,before,asset_before,source_inputs)
+            validate_prerequisite(proof,expected,before,asset_before,source_inputs,source_roles,source_manifest_path)
             if expected=='controls':
                 native=confined(root,(previous.parent/'native.json').relative_to(root).as_posix())
                 if digest(native)!=proof.get('native_report_sha256'):raise ValueError('Prior native control result bytes changed.')
-                control_inputs=read_report(native)['final_simulation']['actual_input_sha256']
-                if not isinstance(control_inputs,dict) or control_inputs != source_inputs:
+                control_state = read_report(native)['final_simulation']
+                if control_state.get('actual_input_sha256') != source_inputs or control_state.get('actual_input_roles') != source_roles or control_state.get('source_manifest_path') != source_manifest_path:
                     raise ValueError('Prior native control source map differs from the complete current admitted source input map.')
+                source_binding_metadata(control_state)
     content_before = content_assets(root)
     output = confined(root,relative,False); output.mkdir(parents=True,exist_ok=False); output = confined(root,relative)
     native_path = confined(root,relative+'/native.json',False)
@@ -480,6 +540,7 @@ def main() -> int:
     people, cars = (3000, 200) if args.phase == 'performance' else (args.pedestrians, args.vehicles)
     command = [str(ENGINE), str(root/'ShibuyaUnreal.uproject'), '-game', '-RenderOffscreen', '-Unattended', '-NoSound', '-NoSplash', '-NoP4', '-windowed', '-ForceRes', '-ResX=1920', '-ResY=1080', '-stdout', '-FullStdOutLogOutput', '-DDC=Shibuya', '-ShaderWorkingDir='+str(confined(root,'Intermediate/Shaders',False)), '-ShibuyaRuntimeCheck='+relative+'/native.json', '-ShibuyaRunId='+run_id, '-ShibuyaBenchmarkSeconds='+str(args.benchmark_seconds), '-ShibuyaPedestrians='+str(people), '-ShibuyaVehicles='+str(cars), '-log='+str(output/'engine.log')]
     if args.phase == 'inventory': command.append('-ShibuyaAssetInventoryOnly')
+    if args.phase in ('controls','performance'): command.append('-ShibuyaRuntimeCapture='+relative+'/runtime.png')
     if args.phase in ('negative-input','suppressed-source-failure'): command.append('-ShibuyaDisableProbeInput')
     if args.phase == 'report-write-negative': command.append('-ShibuyaFailReportWrite')
     oversized = None
@@ -501,11 +562,18 @@ def main() -> int:
     finally:
         try:
             if job is not None:cleaned = job.close();cleanup_complete=True
-            if process is not None:
-                try: process.wait(timeout=30)
-                finally: process.close()
         except BaseException as failure:
             error = (error or '') + ' Cleanup: ' + str(failure)
+        finally:
+            if process is not None:
+                try:
+                    process.wait(timeout=30)
+                except BaseException as failure:
+                    error = (error or '') + ' Process wait cleanup: ' + str(failure)
+                finally:
+                    try: process.close()
+                    except BaseException as failure:
+                        error = (error or '') + ' Process handle cleanup: ' + str(failure)
         if oversized is not None:
             try:
                 confined(root,oversized.relative_to(root).as_posix()).unlink(); confined(root,oversized.parent.relative_to(root).as_posix()).rmdir()
@@ -520,10 +588,9 @@ def main() -> int:
         after = {p.relative_to(root).as_posix():digest(confined(root,p.relative_to(root).as_posix())) for p in sources};after['@native_runner']=digest(Path(__file__))
         if before != after: raise ValueError('Native project implementation or compiled module changed during the gate.')
         if args.phase in ['inventory', 'controls', 'negative-input', 'performance']:
-            bindings = report['final_simulation']['actual_input_sha256']
-            if not isinstance(bindings,dict) or len(bindings)<5: raise ValueError('Native source binding did not run.')
-            if source_inputs and bindings != source_inputs: raise ValueError('Actual loaded source input bindings changed after native preparation.')
-            source_inputs = bindings
+            bindings, roles, manifest_path = source_binding_metadata(report['final_simulation'])
+            if source_inputs and (bindings != source_inputs or roles != source_roles or manifest_path != source_manifest_path): raise ValueError('Actual loaded source input bindings changed after native preparation.')
+            source_inputs, source_roles, source_manifest_path = bindings, roles, manifest_path
         content_after = content_assets(root)
         if content_before != content_after: raise ValueError('Project Content asset package bytes changed during the native arm.')
         if args.phase == 'inventory':
@@ -537,12 +604,12 @@ def main() -> int:
                     raise ValueError('Actual project-loaded asset was not bound before inventory preparation.')
         elif args.phase != 'report-write-negative':
             validate_assets(report, asset_before, args.phase in ('controls','negative-input','performance'),prepared_inventory)
-        for name,value in source_inputs.items():
-            if digest(confined(root,name),LIMIT)!=value: raise ValueError('Actual admitted source input changed during native arm: '+name)
+        verify_source_inputs(root, {'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles,
+                                    'source_manifest_path':source_manifest_path, 'source_manifest_sha256':source_inputs.get(source_manifest_path)})
         if hash_assets(root, asset_before) != asset_before: raise ValueError('Admitted actual asset bytes changed during the native arm.')
     except BaseException as failure:
         error = (error or '')+' Verdict: '+str(failure)
-    receipt = {'passed':error is None, 'phase':args.phase, 'run_id':run_id, 'owned_pid':process.pid if process else None, 'exit_code':code, 'duration_s':time.time()-started, 'error':error, 'command':command, 'source_sha256':before, 'asset_sha256':asset_before, 'project_content_sha256':content_before, 'asset_preparation':asset_preparation, 'actual_input_sha256':source_inputs, 'actual_loaded_assets':report.get('actual_assets_after') if report else None, 'native_report_sha256':digest(native_path) if native_path.exists() else None, 'timing':{'preflight_s':engine_started-whole_started, 'engine_and_cleanup_s':engine_and_cleanup_seconds, 'verdict_s':time.perf_counter()-verdict_started, 'total_through_verdict_s':time.perf_counter()-whole_started, 'bound':'main entry through native report digest; excludes receipt publication, interpreter startup and outer orchestration'}, 'cleanup':{'assigned_before_resume':process is not None and process.resumed,'kill_on_close_job':job is not None,'job_empty_verified':cleanup_complete,'terminated_owned_remaining_pids':cleaned}, 'bound':'Actual offscreen native Game through ordinary viewport keyboard/mouse events; arm-specific fresh run-id receipt and exit validation. Performance is accepted only in separately requested full-population phase.'}
+    receipt = {'passed':error is None, 'phase':args.phase, 'run_id':run_id, 'owned_pid':process.pid if process else None, 'exit_code':code, 'duration_s':time.time()-started, 'error':error, 'command':command, 'source_sha256':before, 'asset_sha256':asset_before, 'project_content_sha256':content_before, 'asset_preparation':asset_preparation, 'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles, 'source_manifest_path':source_manifest_path, 'actual_loaded_assets':report.get('actual_assets_after') if report else None, 'native_report_sha256':digest(native_path) if native_path.exists() else None, 'timing':{'preflight_s':engine_started-whole_started, 'engine_and_cleanup_s':engine_and_cleanup_seconds, 'verdict_s':time.perf_counter()-verdict_started, 'total_through_verdict_s':time.perf_counter()-whole_started, 'bound':'main entry through native report digest; excludes receipt publication, interpreter startup and outer orchestration'}, 'cleanup':{'assigned_before_resume':process is not None and process.resumed,'kill_on_close_job':job is not None,'job_empty_verified':cleanup_complete,'terminated_owned_remaining_pids':cleaned}, 'bound':'Actual offscreen native Game through ordinary viewport keyboard/mouse events; arm-specific fresh run-id receipt and exit validation. Performance is accepted only in separately requested full-population phase.'}
     confined(root,relative+'/report.json',False).write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'passed':receipt['passed'],'receipt':str(output/'report.json'),'error':error,'total_main_s':time.perf_counter()-whole_started}),flush=True)
     return 0 if receipt['passed'] else 1
