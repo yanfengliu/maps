@@ -31,6 +31,7 @@
 import path from "node:path";
 
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "../visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "../visual/shots.js";
 
@@ -64,6 +65,8 @@ const PREVIEW_PORT = SOFTWARE ? "4331" : "4330";
  */
 const SOFTWARE_ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--disable-lcd-text"];
 const HARDWARE_ARGS = ["--use-gl=angle", "--use-angle=d3d11", "--disable-lcd-text"];
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: HERE,

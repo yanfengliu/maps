@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 
@@ -23,6 +24,8 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
  * passing on a silent software fallback.
  */
 const PREVIEW_URL = "http://127.0.0.1:4319";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/visual",

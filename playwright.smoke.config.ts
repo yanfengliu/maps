@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 
@@ -26,6 +27,8 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
  * lane's, 4330 the post-chain lane's, 4335 the frame-budget lane's.
  */
 const PREVIEW_URL = "http://127.0.0.1:4336";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/visual",

@@ -50,6 +50,7 @@ import { LIFECYCLE_RECORD_DIR, LIFECYCLE_RUNS, type LifecycleRecord } from "./li
 import { decodePng } from "./png.ts";
 import { teardownRecordRefusal } from "../../src/harness/teardown.ts";
 import { assertPrimaryVisualCheckout } from "./checkout.ts";
+import { assertHeadlessEnvironment } from "./headless-environment.ts";
 
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
@@ -370,6 +371,7 @@ export async function beginVisualRun(
   gpu?: GpuIdentity | null,
 ): Promise<{ runId: string; scene: SceneDigest }> {
   await resetVisualRun(root);
+  assertHeadlessEnvironment();
   // Before the build bytes are read, so a machine whose GPU cannot be named fails
   // here — after the build and before any capture — rather than after 44 frames
   // that nothing can bind.
@@ -862,7 +864,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   // evidence, and must fail before npm's chain starts a build or browser.
   assertPrimaryVisualCheckout();
   const root = resolve(laneDir("verdict"));
-  if (phase === "reset") await resetVisualRun(root);
-  else if (phase === "begin") await beginVisualRun(root);
-  else await certifyVisualRun(root);
+  if (phase === "reset") {
+    // A refused full run still invalidates its old certificate before the build.
+    await resetVisualRun(root);
+    assertHeadlessEnvironment();
+  } else if (phase === "begin") {
+    await beginVisualRun(root);
+  } else {
+    assertHeadlessEnvironment();
+    await certifyVisualRun(root);
+  }
 }

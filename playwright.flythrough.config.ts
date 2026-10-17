@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { FLYTHROUGH_ITERATION_ENV } from "./tools/visual/lane.js";
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
@@ -49,6 +50,8 @@ Object.assign(process.env, FLYTHROUGH_ITERATION_ENV);
  * server or the run fails.
  */
 const PREVIEW_URL = "http://127.0.0.1:4323";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/flythrough",

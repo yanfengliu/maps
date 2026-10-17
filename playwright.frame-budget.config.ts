@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 /**
  * The frame-budget lane: what interval the delivered app actually holds at the
@@ -42,6 +43,8 @@ const PREVIEW_URL = "http://127.0.0.1:4335";
 // `tools/visual/orbit.ts` is skipped, and a software frame could be reported as a
 // hardware one.
 Object.assign(process.env, { MAPS_VISUAL_LANE: "frame-budget", MAPS_VISUAL_GPU: "hardware" });
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/frame-budget",

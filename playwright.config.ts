@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 
@@ -21,6 +22,8 @@ const PREVIEW_URL = "http://127.0.0.1:4319";
 // so a silent software fallback fails at the first frame with a message about the
 // renderer rather than producing 44 CPU frames that look like a capture.
 Object.assign(process.env, { MAPS_VISUAL_GPU: "hardware" });
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/visual",

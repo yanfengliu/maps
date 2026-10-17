@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { POPULATED_ITERATION_ENV } from "./tools/visual/lane.js";
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
@@ -47,6 +48,8 @@ Object.assign(process.env, POPULATED_ITERATION_ENV);
  * manifest instead of being silently inherited by a review.
  */
 const PREVIEW_URL = "http://127.0.0.1:4321";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/populated",

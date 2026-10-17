@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 
@@ -24,6 +25,8 @@ const PREVIEW_URL = "http://127.0.0.1:4322";
 // software fallback by renderer name, and a capture whose lens is one pixel
 // across is exactly where a software rasteriser would differ.
 Object.assign(process.env, { MAPS_VISUAL_GPU: "hardware" });
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/render-defects",

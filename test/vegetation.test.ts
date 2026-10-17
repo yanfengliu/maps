@@ -153,18 +153,23 @@ describe("authored mapped tree crowns", () => {
         expect(Array.from(mesh.geometry.getAttribute("normal").array).every(Number.isFinite)).toBe(true);
         expect(mesh.boundingSphere!.radius).toBeGreaterThan(0);
         if (!mesh.name.startsWith("vegetation:canopies:")) continue;
+        let minY = Infinity, maxY = -Infinity, maxRadius = 0, maxLeafWidth = 0;
         for (let index = 0; index < positions.count; index++) {
-          expect(positions.getY(index)).toBeGreaterThanOrEqual(-0.97399);
-          expect(positions.getY(index)).toBeLessThanOrEqual(1.100135);
-          expect(Math.hypot(positions.getX(index), positions.getZ(index))).toBeLessThanOrEqual(1.244998);
+          const y = positions.getY(index);
+          minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+          maxRadius = Math.max(maxRadius, Math.hypot(positions.getX(index), positions.getZ(index)));
         }
+        expect(minY).toBeGreaterThanOrEqual(-0.97399);
+        expect(maxY).toBeLessThanOrEqual(1.100135);
+        expect(maxRadius).toBeLessThanOrEqual(1.244998);
         // Each four-triangle leaf has two narrow side tips. This bounds the
         // plate width responsible for the coarse near-camera appearance.
         for (let index = 0; index < positions.count; index += 12) {
           const sideA = new Vector3().fromBufferAttribute(positions, index + 2);
           const sideB = new Vector3().fromBufferAttribute(positions, index + 8);
-          expect(sideA.distanceTo(sideB)).toBeLessThanOrEqual(0.072);
+          maxLeafWidth = Math.max(maxLeafWidth, sideA.distanceTo(sideB));
         }
+        expect(maxLeafWidth).toBeLessThanOrEqual(0.072);
       }
     } finally { vegetation.dispose(); }
   });

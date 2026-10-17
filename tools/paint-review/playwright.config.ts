@@ -38,6 +38,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "../visual/headless-environment.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = path.resolve(here, "..", "..");
@@ -53,6 +54,8 @@ const PREVIEW_URL = `http://127.0.0.1:${PAINT_REVIEW_PORT}`;
 // npm script so the renderer request and the check that enforces it cannot come
 // apart.
 process.env["MAPS_VISUAL_GPU"] = "hardware";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: here,

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "./tools/visual/headless-environment.js";
 
 import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 
@@ -30,6 +31,8 @@ import { CAPTURE_VIEWPORT } from "./tools/visual/shots.js";
 const PREVIEW_URL = "http://127.0.0.1:4323";
 
 Object.assign(process.env, { MAPS_VISUAL_GPU: "hardware" });
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: "./tools/render-defects",

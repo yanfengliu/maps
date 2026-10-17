@@ -59,6 +59,24 @@ describe("visual evidence stays in the primary checkout", () => {
     await expect(readFile(join(output, "run.json"))).rejects.toMatchObject({ code: "ENOENT" });
   });
 
+  for (const phase of ["reset", "begin"] as const) it(`invalidates the old certificate before refusing inspector debug at ${phase}`, async () => {
+    const output = join(primary, "artifacts", "visual");
+    await mkdir(output, { recursive: true });
+    await writeFile(join(output, "complete.json"), "previous certificate");
+    await writeFile(join(output, "run.json"), "previous run");
+    const environment = { ...process.env, MAPS_VISUAL_LANE: "verdict", PWDEBUG: "1" };
+    const before = { ...environment };
+    const result = spawnSync(process.execPath, [wrapper, `--${phase}`], {
+      cwd: primary, encoding: "utf8", windowsHide: true, timeout: 15_000, env: environment,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Headless capture refused: effective PWDEBUG="1"');
+    expect(result.stderr).toContain("Clear PWDEBUG, npm_config_pwdebug and npm_package_config_pwdebug");
+    expect(environment).toEqual(before);
+    await expect(readFile(join(output, "complete.json"))).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(readFile(join(output, "run.json"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
   it.runIf(process.platform === "win32")("admits the same primary with alternate Windows path casing", async () => {
     const alternate = primary.toLowerCase();
     expect(alternate).not.toBe(primary);

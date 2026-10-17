@@ -8,6 +8,7 @@
 import path from "node:path";
 
 import { defineConfig, devices } from "@playwright/test";
+import { assertHeadlessEnvironment } from "../visual/headless-environment.js";
 
 import { FLICKER_ITERATION_ENV } from "../visual/lane.js";
 import { CAPTURE_VIEWPORT } from "../visual/shots.js";
@@ -18,6 +19,8 @@ const REPO_ROOT = path.resolve(HERE, "..", "..");
 Object.assign(process.env, FLICKER_ITERATION_ENV);
 
 const PREVIEW_URL = "http://127.0.0.1:4324";
+
+assertHeadlessEnvironment();
 
 export default defineConfig({
   testDir: HERE,
