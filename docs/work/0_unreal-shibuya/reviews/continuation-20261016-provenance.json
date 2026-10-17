@@ -3896,5 +3896,269 @@
       "312 accepts one pair and rejects standalone cost repair.",
       "No Source, native pipeline, or Unreal criterion is accepted globally; no lesson retires."
     ]
+  },
+  "reviews_313_324": {
+    "checkpoint_cutoff": "Canonical frozen plan at 2026-10-16; later Native build results excluded. Review 315 is already tracked and is not recopied.",
+    "reviews": [
+      {
+        "number": 313,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-function-label-cohort-integrated-independent-review-313\\review313.md",
+          "bytes": 11380,
+          "sha256": "7800f53662a4e640eddbcad4e039c2b0455b548a1dcd87cb446d1fbcef38706b"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-function-label-cohort-integrated-independent-review-313\\seal.json",
+          "bytes": 1726,
+          "sha256": "9d233e0562a123e781b102a3c22c86f2326a3df646a3cef224957540a3289d59"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\313_review313.md",
+          "bytes": 11380,
+          "sha256": "7800f53662a4e640eddbcad4e039c2b0455b548a1dcd87cb446d1fbcef38706b"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 314,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-prototype-independent-review-314\\314_native_gil_prefix_batch_source_independent_review.md",
+          "bytes": 5839,
+          "sha256": "01cce57d2bc4e38587b2988d0b30662f29d10340ab363dcbddcefbb10f9116a7"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-prototype-independent-review-314\\seal.json",
+          "bytes": 1168,
+          "sha256": "3bf360d44cb64b79986275f328b6256556a447a5f7be0cb6a58f4e343f3681ab"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\314_314_native_gil_prefix_batch_source_independent_review.md",
+          "bytes": 5839,
+          "sha256": "01cce57d2bc4e38587b2988d0b30662f29d10340ab363dcbddcefbb10f9116a7"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 316,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-build-preparation-independent-review-316\\316_native_prefix_build_preparation_independent_review.md",
+          "bytes": 5705,
+          "sha256": "2c120f5bee83083393ef72baa077f8687d2b36a24aef6b6e1f7752b99f00e19f"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-build-preparation-independent-review-316\\seal.json",
+          "bytes": 1219,
+          "sha256": "676eb1ea20d72de4641c2aa08a2d905f3e8a25ec19f8fed439f3560873bc10f8"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\316_316_native_prefix_build_preparation_independent_review.md",
+          "bytes": 5705,
+          "sha256": "2c120f5bee83083393ef72baa077f8687d2b36a24aef6b6e1f7752b99f00e19f"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 317,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-label-diagnostic-applicability-integrated-review-317\\review317.md",
+          "bytes": 12592,
+          "sha256": "2d77a67ec66ac88c9558725e5560da4a98452638ecfe6b77b3af0bf5b6844c49"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-label-diagnostic-applicability-integrated-review-317\\seal.json",
+          "bytes": 1776,
+          "sha256": "108b0f33b893c8c02513de6e55bdc8b05caf58d0c906d27d68d11becdd6d5b67"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\317_review317.md",
+          "bytes": 12592,
+          "sha256": "2d77a67ec66ac88c9558725e5560da4a98452638ecfe6b77b3af0bf5b6844c49"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 318,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-318\\review.md",
+          "bytes": 12012,
+          "sha256": "5e01e7b0c5ab12c0ea4a9964f6d0214c5b2158886b75959c1c8407ceafbbbedb"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-318\\seal.json",
+          "bytes": 1111,
+          "sha256": "95699ddef6ff38ea3a8f7d9d35a91bd8e6df8ffb80b5e9958f33d317fc4a01be"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\318_review.md",
+          "bytes": 12012,
+          "sha256": "5e01e7b0c5ab12c0ea4a9964f6d0214c5b2158886b75959c1c8407ceafbbbedb"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 319,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-319\\review.md",
+          "bytes": 9026,
+          "sha256": "63eda12920d5e0dac6287086ddd93db928fc6115981c27f87c62dcd696a8c13b"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-319\\seal.json",
+          "bytes": 1102,
+          "sha256": "361baa7e9c5eb8b3a724d1663a1f8072d8f98c871ebd851fc02e987957502c9c"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\319_review.md",
+          "bytes": 9026,
+          "sha256": "63eda12920d5e0dac6287086ddd93db928fc6115981c27f87c62dcd696a8c13b"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 320,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-diagnostic-actual-and-RL03-proposal-independent-review-320\\review320.md",
+          "bytes": 15385,
+          "sha256": "47905edf79b5371b707804c79337f8b29ca56c96666659a25bb288c7572be987"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-diagnostic-actual-and-RL03-proposal-independent-review-320\\seal.json",
+          "bytes": 1820,
+          "sha256": "868d420ce2d1859a3036b1507f1ac1bdb5abe2c230cfc71c6b2f1cc2832b62b4"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\320_review320.md",
+          "bytes": 15385,
+          "sha256": "47905edf79b5371b707804c79337f8b29ca56c96666659a25bb288c7572be987"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 321,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-build-preparation-independent-review-321\\321_native_prefix_build_preparation_focused_review.md",
+          "bytes": 6132,
+          "sha256": "6ffd428d5c43e49b567847a3d030a7fee1f41ccaaa43a65dbccdfa7ce6e4af8e"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-build-preparation-independent-review-321\\seal.json",
+          "bytes": 1224,
+          "sha256": "850f5d733b5981517b17cee5ce707cbb322ea8c4036c63a27bf0f5ece63e5414"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\321_321_native_prefix_build_preparation_focused_review.md",
+          "bytes": 6132,
+          "sha256": "6ffd428d5c43e49b567847a3d030a7fee1f41ccaaa43a65dbccdfa7ce6e4af8e"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 322,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-322\\review.md",
+          "bytes": 7374,
+          "sha256": "827cfe52c23c51194afadb033f90a6219a954d64b3187f7c189e8aa6c7f67d2a"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-runtime-next\\worktree\\Artifacts\\runtime-surface-feasibility-independent-review-322\\seal.json",
+          "bytes": 1115,
+          "sha256": "98955c00df0e7991cb20cfae2601e250786a3eb275d1ba77b3a839828483fe36"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\322_review.md",
+          "bytes": 7374,
+          "sha256": "827cfe52c23c51194afadb033f90a6219a954d64b3187f7c189e8aa6c7f67d2a"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 323,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-RL03-normal-fixture-integrated-review-323\\review323.md",
+          "bytes": 11029,
+          "sha256": "be743b66cfa4df2d40757b8932d9dff112f48d66ad4a5dbc86be885c3820efd3"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-RL03-normal-fixture-integrated-review-323\\seal.json",
+          "bytes": 1733,
+          "sha256": "f6b165a010b79492e9a1e26eab55196900788a7e022924e42eaa23272a9ae502"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\323_review323.md",
+          "bytes": 11029,
+          "sha256": "be743b66cfa4df2d40757b8932d9dff112f48d66ad4a5dbc86be885c3820efd3"
+        },
+        "copy": "BYTE_EXACT"
+      },
+      {
+        "number": 324,
+        "source_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-setup-independent-actual-review-324\\324_native_prefix_setup_actual_independent_review.md",
+          "bytes": 5741,
+          "sha256": "6ea1de3f45e357c615ca3987f6fe4a2a9858c3a3902e20648f47e0f7ec5c6002"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-gil-prefix-batch-setup-independent-actual-review-324\\seal.json",
+          "bytes": 1205,
+          "sha256": "97be686837e7b968a7019a2336e168a2fb0382c5d835474547d785e1e69d7ea3"
+        },
+        "staged_report": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs313-324-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\324_324_native_prefix_setup_actual_independent_review.md",
+          "bytes": 5741,
+          "sha256": "6ea1de3f45e357c615ca3987f6fe4a2a9858c3a3902e20648f47e0f7ec5c6002"
+        },
+        "copy": "BYTE_EXACT"
+      }
+    ],
+    "bounded_decisions": [
+      "313: Source cohort code accepted for separate execution eligibility; later diagnostic applicability and actual failures preserved.",
+      "314: Native prefix-batch source/build feasibility accepted; unbuilt at that review.",
+      "316: V1 build preparation HOLD for partial setup ownership and split PE read; no compiler execution.",
+      "317: corrected Source diagnostic applicability accepted for focused GR10-only execution eligibility; no actual result in review.",
+      "318: Runtime REQUEST CHANGES for first-hit forbidden layers, returned-contact rounding, malformed inputs and preflight caps.",
+      "319: Runtime V2 static first-hit/contact/cap fixes accepted; residual malformed public constructor remains HOLD.",
+      "320: focused3 plus remaining31 small-check actuals accepted within literal bounds; normal closes RED at RL03 peer precondition after import/ownership/B01/B02/RL01 with11.308473800017964-second necessary prefix. Original peer details UNKNOWN; normal-only fixture proposal accepted for preparation.",
+      "321: V2 source fixes resolve316 findings and admit separate11-fact setup execution only; V1HOLD history remains, no compilation/loading/ordinary/cost result.",
+      "322: Runtime V3 construction repair accepted for separate25-method unit lease; review launches no process.",
+      "323: Source normal-only code accepted for separate one-normal24 lease; fresh actual UNRUN at checkpoint.",
+      "324: Native setup11 actual independently accepted with39wrapper checks; no build/PE acceptance in checkpoint.",
+      "Runtime25 actual Root accepted synthetic feasibility only. Native four-command authorization is not build evidence. Later build/fresh normal outside checkpoint. No Source2/fullNative/UE/city acceptance or lesson retirement."
+    ],
+    "latest_Source_normal_at_cutoff": {
+      "root_closed_RED": {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-diagnostic-applicability-root-normal21-closed-RED-acceptance.json",
+        "bytes": 3921,
+        "sha256": "66483163a06f95d283a107d07a9ff193fbc21267c4c138154377bd5431d4dac4"
+      },
+      "root_focused3": {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-diagnostic-applicability-root-gr10-focused-actual-acceptance.json",
+        "bytes": 2895,
+        "sha256": "f1c7e7a8bbccf5592a3f7d5c6a7b4ea744560fa3973c234a16cc0315c4b00cf7"
+      },
+      "root_remaining31": {
+        "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\source-diagnostic-applicability-root-remaining20-smalls-actual-acceptance.json",
+        "bytes": 2723,
+        "sha256": "578b1e48676b73e9f910fee3319d67be085367c7a4284d7563788c6f032be919"
+      },
+      "completed": [
+        "genuineNumPyimport",
+        "ownership",
+        "B01",
+        "B02",
+        "RL01"
+      ],
+      "failure": "RL03 distinct original selected function unavailable precondition before mutation",
+      "unknown": [
+        "original logspace peer type/object/identity",
+        "false compound conjunct"
+      ],
+      "unrun": [
+        "RL02..05",
+        "DL7",
+        "PO10"
+      ],
+      "START_to_B02_END_seconds": 11.308473800017964,
+      "timing_bound": "Necessary prefix only, not Source/fullproducer fit"
+    }
   }
 }
