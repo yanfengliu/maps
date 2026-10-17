@@ -35,10 +35,10 @@ Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. F
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Peripheral frontage depth | Root; QUEUED, not dispatched | Ready: ordinary-app visible site, one source-bound bay prototype with readable frame/recess/glazing. Expand the same frontage only after useful native result; reuse ownership/runner. |
+| Peripheral frontage depth | Root committing/pushing; gates GREEN, independent1431 PASS | Base `054bb4b`; frozen four-path integration, three bays/one supported entrance/preserved light. Final 14-original local run/44-frame canonical/three lifecycles pass within bounds; upper-context pair excluded. Main readback and fresh worker retirement remain. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
-No global blocker is established. Next product action: dispatch the east-first visible prototype, following review 1423. Full acceptance needs matching final evidence and independent integrated review on main; this milestone closes no final criterion.
+No global blocker is established. The next-outcome table is the sole current dispatch queue. Full acceptance needs matching final evidence and independent integrated review on main; local milestones close no final criterion.
 
 ## Acceptance criteria
 

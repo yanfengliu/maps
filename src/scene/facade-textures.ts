@@ -66,6 +66,7 @@ import { emissionSourceForUrl, prepareEmissionEligibility } from "./facade-emiss
 import { prepareCrossingCorner } from "./crossing-corner-material.js";
 import { addCrossingFrontage } from "./crossing-frontage.js";
 import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corner.js";
+import { addPeripheralFrontage, preparePeripheralFrontage } from "./peripheral-frontage.js";
 import { addPeripheralMountedLight, peripheralLightSourceForUrl, preparePeripheralMountedLight } from "./peripheral-mounted-light.js";
 
 /** Every material property that can hold a texture we care about. */
@@ -217,6 +218,7 @@ export class FacadeTexturePlugin {
       prepareCrossingCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       preparePeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      preparePeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -278,6 +280,7 @@ export class FacadeTexturePlugin {
       addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options);
       addPeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
+      addPeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
     }
   }
 
