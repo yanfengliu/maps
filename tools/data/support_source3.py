@@ -623,6 +623,65 @@ def uncovered_exact(polygon_cm, footprints_cm):
     return remaining
 
 
+def collision_plane(native_cm, label):
+    """UE GLTF swaps Y/Z; StaticMesh collision flips the preserved winding.
+
+    Thus support-facing normal is -cross in ENU, never an upward query flip.
+    Installed UE5.8.3 and all282 retained Source2 native traces calibrate this.
+    Actual future native normal matching remains independently required.
+    """
+    points = np.asarray(native_cm, dtype=float)
+    if points.shape != (3, 3) or not np.isfinite(points).all():
+        raise ValueError(f'Source3 {label} requires three finite consumed native vertices')
+    a, b, c = [[Fraction(float(v)) for v in row] for row in points]
+    u, v = [y-x for x, y in zip(a, b)], [y-x for x, y in zip(a, c)]
+    cross = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]]
+    if not cross[2]: raise ValueError(f'Source3 {label} has a degenerate support plane')
+    gx, gy = -cross[0]/cross[2], -cross[1]/cross[2]
+    normal = [-value for value in cross]
+    return (gx, gy, a[2]-gx*a[0]-gy*a[1]), normal
+
+
+def measure_source_overlap(upper_cm, ground_cm, identity):
+    """Exact complete intersection diagnostic, never support/contact acceptance."""
+    for points in (upper_cm, ground_cm):
+        points = np.asarray(points, dtype=float)
+        if points.shape != (3, 3) or not np.isfinite(points).all():
+            raise ValueError(f'Source3 overlap {identity} is missing finite consumed vertices')
+    polygon, footprint = rational_polygon(upper_cm), rational_polygon(ground_cm)
+    # Zero-area edge contacts do not qualify as positive-area overlaps and
+    # contribute no coverage. Degenerate support planes cannot be qualified.
+    upper, normal = collision_plane(upper_cm, 'upper overlap')
+    ground, _ = collision_plane(ground_cm, 'reference ground')
+    a, b, c = footprint
+    if (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]) < 0: footprint.reverse()
+    for a, b in zip(footprint, footprint[1:]+footprint[:1]): polygon = cut_polygon(polygon, a, b, True)
+    area = exact_polygon_area(polygon)
+    if not area: return None
+    delta = tuple(a-b for a, b in zip(upper, ground))
+    gaps = [delta[0]*p[0]+delta[1]*p[1]+delta[2] for p in polygon]
+    positive = polygon
+    gx, gy, offset = delta
+    if gx or gy:
+        if gy:
+            a, b = [Fraction(0), -offset/gy], [Fraction(1), (-offset-gx)/gy]
+            if gy < 0: a, b = b, a
+        else:
+            a, b = [-offset/gx, Fraction(0)], [-offset/gx, Fraction(1)]
+            if gx > 0: a, b = b, a
+        positive = cut_polygon(polygon, a, b, True)
+    elif offset <= 0: positive = []
+    norm_squared = sum(v*v for v in normal)
+    return {'identity': identity, 'scope': 'SOURCE_OVERLAP_DIAGNOSTIC_NOT_SUPPORT_ADMISSION',
+        'upper_native_cm': np.asarray(upper_cm).tolist(), 'ground_native_cm': np.asarray(ground_cm).tolist(),
+        'intersection_native_cm_q': [[str(v) for v in p] for p in polygon],
+        'intersection_area_cm2_q': str(area), 'minimum_gap_cm_q': str(min(gaps)), 'maximum_gap_cm_q': str(max(gaps)),
+        'positive_height_polygon_native_cm_q': [[str(v) for v in p] for p in positive],
+        'positive_height_area_cm2_q': str(exact_polygon_area(positive)),
+        'upper_plane_q': list(map(str, upper)), 'ground_plane_q': list(map(str, ground)),
+        'support_facing_normal_q': list(map(str, normal)), 'normal_squared_q': str(norm_squared)}
+
+
 def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads, retained, labels):
     """Actual changed-face coverage/anchors/occlusion, distinct from route/body acceptance."""
     raw_cache = dict(getattr(parent_surface.road, 'source_parts', {}))
@@ -745,53 +804,98 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
             if exact_remaining:
                 area_m2 = sum(map(exact_polygon_area, exact_remaining))/10000
                 raise ValueError(f'Source3 deletion {parent_id} leaves uncovered native XY area {float(area_m2)} m2')
-    changed_ground = inferred + [roads[i] for i, ref in enumerate(parent_surface._source3_new_road_refs) if ref['kind'] == 'derived-road']
-    for triangle in changed_ground:
-        for i in terrain_index.candidates(triangle[:, :2].min(axis=0), triangle[:, :2].max(axis=0)):
-            if i in inferred_ids: continue
-            terrain = terrain_index.triangles[i]
-            overlap = terrain[:, :2].tolist()
-            footprint = triangle[:, :2].tolist()
-            if np.linalg.det(np.stack((triangle[1, :2]-triangle[0, :2], triangle[2, :2]-triangle[0, :2]))) < 0: footprint.reverse()
-            for a, b in zip(footprint, footprint[1:]+footprint[:1]): overlap = cut_polygon(overlap, a, b, True)
-            if not polygon_area(overlap): continue
-            for xy in overlap:
-                gap = float(barycentric(terrain, xy)@terrain[:, 2]-barycentric(triangle, xy)@triangle[:, 2])
-                if gap > 0:
-                    raise ValueError(f'Source3 retained terrain {i} occludes declared road by {gap} m')
+    changed_ground_ids = set(range(len(roads), len(ground)))
+    for i, ref in enumerate(parent_surface._source3_new_road_refs):
+        if ref['kind'] != 'derived-road': continue
+        part = source_part(ref)
+        original = native_metres(part[2]['POSITION'][part[3][ref['original_triangle']]][:, [0, 2, 1]])
+        if sorted(map(tuple, original)) != sorted(map(tuple, roads[i])): changed_ground_ids.add(i)
+    changed_terrain_ids = {len(retained)+i for i, face in enumerate(labels) if face['kind'] != 'inferred-ground-road'}
+    declared_parents = {edit['parent_triangle'] for edit in ledger['terrain_edits']}
+    changed_terrain_ids.update(i for i, parent in enumerate(retained) if parent in declared_parents)
+    pairs = set()
+    for g in changed_ground_ids:
+        triangle = ground[g]
+        pairs.update((t, g) for t in terrain_index.candidates(triangle[:, :2].min(axis=0), triangle[:, :2].max(axis=0)) if t not in inferred_ids)
+    for t in changed_terrain_ids:
+        triangle = output_triangles[t]
+        pairs.update((t, g) for g in ground_index.candidates(triangle[:, :2].min(axis=0), triangle[:, :2].max(axis=0)))
+    overlap_records = []
+    zero_projected_pairs = 0
+    inferred_labels = [face for face in labels if face['kind'] == 'inferred-ground-road']
+    for t, g in sorted(pairs):
+        upper, lower = native_centimetres(output_triangles[t]), native_centimetres(ground[g])
+        # Exact-zero projected geometry has no positive-area overlap/support;
+        # original native endpoint exclusions are retained, never given credit.
+        if not exact_polygon_area(rational_polygon(upper)) or not exact_polygon_area(rational_polygon(lower)):
+            zero_projected_pairs += 1
+            continue
+        terrain_ref = ({'kind': 'terrain', 'parent_triangle': int(retained[t])} if t < len(retained) else labels[t-len(retained)])
+        ground_ref = parent_surface._source3_new_road_refs[g] if g < len(roads) else inferred_labels[g-len(roads)]
+        result = measure_source_overlap(upper, lower, {'terrain_triangle': t, 'ground_triangle': g, 'terrain_ref': terrain_ref, 'ground_ref': ground_ref})
+        if result is not None: overlap_records.append(result)
     return {'changed_face_coverage': True, 'inferred_faces': len(inferred), 'deleted_parent_faces': len(ledger['deleted_parent_triangles']),
-            'scope': 'Changed footprints covered by complete current terrain/roads. Exact native-cm coverage fallback on floating refusal; floating passes are not exact-certified. Raw anchors, inferred grade and retained-terrain occlusion checked separately. Route width/body, native collision and capacity remain separate acceptance.'}
+            'global_overlaps': {'scope': 'DIAGNOSTIC_NOT_SUPPORT_ADMISSION', 'pairs': overlap_records, 'candidate_pairs': len(pairs), 'zero_projected_area_pairs_no_support_credit': zero_projected_pairs},
+            'scope': 'Changed footprints covered by complete current terrain/roads. Exact native-cm coverage fallback on floating refusal; floating passes are not exact-certified. Raw anchors and inferred grade checked separately; global overlaps are measured diagnostics, not universal support admission. Route width/body, native collision and capacity remain separate acceptance.'}
 
 
 
-def changed_road_samples(roads, road_refs, native_roads, road_index, terrain_index):
-    """Regenerated exact replacement-face rays; ties remain explicit omissions."""
-    changed_road_witnesses = []
-    samples = []
+def changed_face_sample(sample_id, xy, reference_z, reference, road_refs, native_roads, road_index, terrain_index, terrain_record):
+    """First source blocker in ONE fixed face-reference ray; never choose support."""
+    start, end = reference_z+.8, reference_z-1
+    start_cm, end_cm = Fraction(float(start*100)), Fraction(float(end*100))
+    query_cm = [Fraction(float(float(value)*100)) for value in xy]
+    operands = []
+    for role, index in (('road', road_index), ('terrain_support', terrain_index)):
+        for hit in index.hits(*xy):
+            plane, _ = collision_plane(index.native_triangles_cm[hit['triangle']], 'correspondence source')
+            height_cm = plane[0]*query_cm[0]+plane[1]*query_cm[1]+plane[2]
+            if not end_cm <= height_cm <= start_cm: continue
+            height = float(height_cm/100)
+            if role == 'road':
+                ref = road_refs[hit['triangle']]; mapping = native_roads[ref['source']]
+                actor, path, triangle = mapping['actor_label'], mapping['source_path'], ref['source_triangle_index']
+            else:
+                if terrain_record is None: raise ValueError('Source3 changed-face correspondence requires the actual consumed terrain record')
+                ref = {'kind': 'terrain', 'triangle': hit['triangle']}
+                actor, path, triangle = 'City_069_terrain', terrain_record['path'], hit['triangle']
+            operands.append({'actor_label': actor, 'mesh_role': role, 'position_m': [*map(float, xy), height], 'height_native_cm_q': str(height_cm),
+                'normal_enu': hit['normal_enu'], 'source_path': path, 'source_triangle_index': triangle,
+                'barycentric': hit['barycentric'], 'layer_ref': ref})
+    sample = {'id': sample_id, 'start_m': [*map(float, xy), start], 'end_m': [*map(float, xy), end],
+        'expected_hit': bool(operands), 'interval_native_cm_q': [str(start_cm), str(end_cm)], 'reference': {'position_m': [*map(float, xy), reference_z], 'source_face': reference},
+        'scope': 'SOURCE_GEOMETRY_CORRESPONDENCE_NOT_SUPPORT_ELIGIBILITY'}
+    detail = {'sample_id': sample_id, 'reference': sample['reference'], 'start_m': sample['start_m'], 'end_m': sample['end_m'],
+        'interval_native_cm_q': sample['interval_native_cm_q'], 'source_operands': operands, 'native_correspondence': 'pending', 'support_eligibility': 'not-evaluated'}
+    if not operands:
+        return sample, {**detail, 'status': 'unavailable', 'reason': 'no-source-blocker-in-fixed-reference-ray'}
+    top_cm = max(Fraction(operand['height_native_cm_q']) for operand in operands)
+    first = [operand for operand in operands if Fraction(operand['height_native_cm_q']) == top_cm]
+    top = float(top_cm/100)
+    preferred = next((operand for operand in first if operand['mesh_role'] == reference['mesh_role'] and operand['source_triangle_index'] == reference['source_triangle_index'] and operand['source_path'] == reference['source_path']), None)
+    actual = first[0] if preferred is None else preferred
+    tied = sorted({operand['actor_label'] for operand in operands if abs(operand['position_m'][2]-top) <= .001})
+    if len(tied) > 1:
+        return None, {**detail, 'status': 'tied', 'actor_labels': tied, 'reason': 'existing-cross-actor-tie-within0.1cm'}
+    sample['expected'] = actual
+    visible = all(actual[key] == reference[key] for key in ('source_path', 'source_triangle_index', 'mesh_role'))
+    return sample, {**detail, 'status': 'visible' if visible else 'occluded', 'first_blocker': actual}
+
+
+def changed_road_samples(roads, road_refs, native_roads, road_index, terrain_index, terrain_record=None):
+    """Keep per-changed-face conservation separate from bounded correspondence."""
+    samples, witnesses = [], []
     for i, ref in enumerate(road_refs):
         if ref['kind'] != 'derived-road': continue
-        xy = roads[i, :, :2].mean(axis=0)
-        road_hits = road_index.hits(*xy)
-        hit = next((h for h in road_hits if h['triangle'] == i), None)
-        if hit is None: raise ValueError('Source3 changed road centroid does not query its consumed triangle')
-        mapping = native_roads[ref['source']]
-        hits = [(h['height'], native_roads[road_refs[h['triangle']]['source']]['actor_label']) for h in road_hits]
-        hits += [(h['height'], 'City_069_terrain') for h in terrain_index.hits(*xy)]
-        top = max(z for z, _ in hits)
-        tied = sorted({actor for z, actor in hits if abs(z-top) <= .001})
-        detail = {'road_index': ref['source'], 'mesh': ref['mesh'], 'primitive': ref['primitive'], 'triangle': ref['triangle'], 'source_triangle_index': ref['source_triangle_index']}
-        if top-hit['height'] > .001:
-            raise ValueError(f'Source3 changed road face is buried: {detail}')
-        if tied != [mapping['actor_label']]:
-            changed_road_witnesses.append({**detail, 'status': 'actor-tie-omitted', 'actor_labels': tied})
-            continue
-        sample_id = f'source3-road-{i}'
-        samples.append({'id': sample_id, 'start_m': [*xy.tolist(), hit['height']+.8], 'end_m': [*xy.tolist(), hit['height']-1],
-            'expected_hit': True, 'expected': {'actor_label': mapping['actor_label'], 'mesh_role': 'road',
-                'position_m': [*xy.tolist(), hit['height']], 'normal_enu': hit['normal_enu'], 'source_path': mapping['source_path'],
-                'source_triangle_index': ref['source_triangle_index'], 'barycentric': hit['barycentric'], 'layer_ref': ref}})
-        changed_road_witnesses.append({**detail, 'status': 'sampled', 'sample_id': sample_id})
-    return samples, changed_road_witnesses
+        xyz = roads[i].mean(axis=0); mapping = native_roads[ref['source']]
+        reference = {'mesh_role': 'road', 'source_path': mapping['source_path'], 'source_triangle_index': ref['source_triangle_index'], 'layer_ref': ref}
+        sample, detail = changed_face_sample(f'source3-road-{i}', xyz[:2], float(xyz[2]), reference,
+            road_refs, native_roads, road_index, terrain_index, terrain_record)
+        witnesses.append({'road_index': ref['source'], 'mesh': ref['mesh'], 'primitive': ref['primitive'],
+            'triangle': ref['triangle'], 'source_triangle_index': ref['source_triangle_index'], **detail})
+        if sample is not None: samples.append(sample)
+    return samples, witnesses
+
 
 def prepare(api, base, edit_path, *, total_seconds):
     """Normal source producer: parent reuse, explicit edits, readback, atomic switch."""
@@ -830,28 +934,19 @@ def prepare(api, base, edit_path, *, total_seconds):
         terrain_index = NativeTriangleIndex(triangles)
         rays = api.native_ray_samples(ray_road, road_index, terrain_index, native_roads, output, buildings, output_directory=stage)
         ray_data = json.loads(record(api, rays, 'native rays', 32_000_000))
-        changed_samples, changed_witnesses = changed_road_samples(roads, road_refs, native_roads, road_index, terrain_index)
+        changed_samples, changed_witnesses = changed_road_samples(roads, road_refs, native_roads, road_index, terrain_index, output)
         ray_data['samples'].extend(changed_samples)
         ray_data['source3_changed_road_witnesses'] = changed_witnesses
         for i, face in enumerate(labels):
             triangle_id = len(retained)+i
             triangle = triangles[triangle_id]
             xy = triangle[:, :2].mean(axis=0)
-            hits = terrain_index.hits(*xy)
-            actual = next((h for h in hits if h['triangle'] == triangle_id), None)
-            if actual is None: raise ValueError('Source3 changed face centroid does not query its consumed triangle')
-            all_hits = hits+road_index.hits(*xy)
-            if max(h['height'] for h in all_hits)-actual['height'] > .001:
-                # Retained fragments under an original road are not first-hit rays.
-                if face['kind'] == 'retained-parent-fragment': continue
-                raise ValueError('Source3 inferred changed-face native ray is buried')
-            if any(abs(h['height']-actual['height']) <= .001 for h in road_index.hits(*xy)):
-                continue  # Explicit actor tie: no ambiguous native actor oracle.
-            ray_data['samples'].append({'id': f'source3-patch-{i}', 'start_m': [*xy.tolist(), actual['height']+.8],
-                'end_m': [*xy.tolist(), actual['height']-1], 'expected_hit': True,
-                'expected': {'actor_label': 'City_069_terrain', 'mesh_role': 'terrain_support', 'position_m': [*xy.tolist(), actual['height']],
-                    'normal_enu': actual['normal_enu'], 'source_path': output['path'], 'source_triangle_index': triangle_id,
-                    'barycentric': actual['barycentric'], 'layer_ref': {'kind': face['kind'], 'triangle': triangle_id, 'region_id': face['region_id']}}})
+            reference = {'mesh_role': 'terrain_support', 'source_path': output['path'], 'source_triangle_index': triangle_id,
+                'layer_ref': {'kind': face['kind'], 'triangle': triangle_id, 'region_id': face['region_id']}}
+            sample, detail = changed_face_sample(f'source3-patch-{i}', xy, float(triangle[:, 2].mean()), reference,
+                road_refs, native_roads, road_index, terrain_index, output)
+            ray_data.setdefault('source3_changed_patch_witnesses', []).append({'patch_triangle': i, 'region_id': face['region_id'], **detail})
+            if sample is not None: ray_data['samples'].append(sample)
         api.guarded_write(stage/'support-native-rays.json', api.encoded(ray_data))
         rays = api.source_record(stage/'support-native-rays.json')
         api.guarded_write(stage/'surface-edits.json', edit_payload)

@@ -41,6 +41,98 @@ class Source3Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'zero-length'):
             source3.span_grade([0, 0, 0], [0, 0, .001], .2)
 
+    def overlap_planes(self, gap_cm=10):
+        lower=np.array([[0.,0.,0.],[0.,100.,0.],[100.,0.,0.]])
+        upper=lower.copy();upper[:,2]+=gap_cm
+        return upper,lower
+
+    def test_actual_source3_overlap_is_diagnostic_without_waiving_domain_or_routes(self):
+        upper, lower = self.overlap_planes(10)
+        ledger = {'regions': [{'id': 'r', 'native_xy_polygons_cm': [[[-100, -100], [-100, 500], [500, -100]]]}],
+            'terrain_edits': [], 'deleted_parent_triangles': []}
+        parent = types.SimpleNamespace(road=types.SimpleNamespace(sources=[{}], source_parts={0: [(0, 0, {'POSITION': lower[:, [0, 2, 1]]/100}, np.array([[0, 1, 2]]))]}),
+            _source3_new_road_refs=[{'kind': 'derived-road', 'source': 0, 'mesh': 0, 'primitive': 0, 'original_triangle': 0, 'triangle': 0}], terrain_index=types.SimpleNamespace(triangles=np.empty((0, 3, 3))))
+        labels = [{'kind': 'retained-parent-fragment', 'parent_triangle': 0, 'region_id': 'r'}]
+        def admit(terrain, labels): return source3.validate_local_geometry(api, ledger, parent, terrain/100, lower[None]/100, [], labels)
+        result = admit(upper[None], labels)
+        self.assertEqual(len(result['global_overlaps']['pairs']), 1)
+        self.assertEqual(result['global_overlaps']['pairs'][0]['maximum_gap_cm_q'], '10')
+        # A two-triangle current upper surface must expose BOTH full operands.
+        a = np.array([upper[0], upper[1], (upper[1]+upper[2])/2]); b = np.array([upper[0], (upper[1]+upper[2])/2, upper[2]])
+        result = admit(np.array([a, b]), labels*2)
+        self.assertEqual(len(result['global_overlaps']['pairs']), 2)
+        b[1, 2] = b[2, 2] = 21
+        result = admit(np.array([a, b]), labels*2)
+        self.assertTrue(any(Fraction(row['maximum_gap_cm_q']) > 20 for row in result['global_overlaps']['pairs']))
+        self.assertTrue(result['changed_face_coverage'])
+        self.assertEqual(result['global_overlaps']['scope'], 'DIAGNOSTIC_NOT_SUPPORT_ADMISSION')
+
+    def correspondence_fixture(self, heights):
+        triangle = np.array([[0.,0.,0.],[0.,1.,0.],[1.,0.,0.]])
+        roads = triangle[None].copy(); roads[:,:,2] = 0
+        terrain = np.repeat(triangle[None], len(heights), axis=0)
+        for i, z in enumerate(heights): terrain[i,:,2] = z
+        refs = [{'kind':'derived-road','source':0,'mesh':0,'primitive':0,'triangle':0,'source_triangle_index':0}]
+        mappings = [{'actor_label':'City_road','source_path':'data/road.glb'}]
+        return roads, terrain, refs, mappings
+
+    def test_changed_face_rays_use_fixed_reference_interval_and_keep_occlusion(self):
+        roads, terrain, refs, mappings = self.correspondence_fixture([.31, 2.])
+        samples, statuses = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), source3.NativeTriangleIndex(terrain), {'path':'data/terrain.glb'})
+        self.assertEqual(len(samples),1)
+        self.assertEqual(statuses[0]['status'],'occluded')
+        self.assertEqual(statuses[0]['support_eligibility'],'not-evaluated')
+        sample=samples[0]
+        self.assertEqual(sample['reference']['position_m'][2],0.)
+        self.assertEqual(sample['start_m'][2],.8); self.assertEqual(sample['end_m'][2],-1.)
+        self.assertEqual(sample['expected']['actor_label'],'City_069_terrain')
+        self.assertEqual(sample['expected']['source_triangle_index'],0)
+        self.assertAlmostEqual(sample['expected']['position_m'][2],.31)
+        self.assertEqual(len(statuses[0]['source_operands']),2) # road0 + terrain.31;2m deck excluded
+        # No pre-first-hit eligibility filter: upper geometry remains the oracle
+        # even though only the lower road was the motivating eligible reference.
+        self.assertEqual(sample['scope'],'SOURCE_GEOMETRY_CORRESPONDENCE_NOT_SUPPORT_ELIGIBILITY')
+        terrain[:1,:,2]=.9
+        samples,statuses=source3.changed_road_samples(roads,refs,mappings,source3.NativeTriangleIndex(roads),source3.NativeTriangleIndex(terrain),{'path':'data/terrain.glb'})
+        self.assertEqual(statuses[0]['status'],'visible')
+        self.assertEqual(samples[0]['expected']['actor_label'],'City_road')
+        # An ineligible bridge actor is still the correspondence first blocker;
+        # its mapped-way exclusion remains a separate required admission.
+        bridge = roads.copy(); bridge[:,:,2] = .31
+        refs2 = [refs[0], dict(refs[0], kind='road', source=1)]
+        mappings2 = mappings+[{'actor_label':'City_bridge','source_path':'data/bridge.glb'}]
+        samples,statuses=source3.changed_road_samples(np.concatenate((roads,bridge)),refs2,mappings2,
+            source3.NativeTriangleIndex(np.concatenate((roads,bridge))),source3.NativeTriangleIndex([]),{'path':'data/terrain.glb'})
+        self.assertEqual(samples[0]['expected']['actor_label'],'City_bridge')
+        self.assertEqual(statuses[0]['status'],'occluded')
+        self.assertEqual(statuses[0]['support_eligibility'],'not-evaluated')
+        self.assertFalse(api.allowed_way({'highway':'primary','bridge':'yes'},'vehicle')[0])
+
+    def test_changed_face_ray_bounds_ties_misses_and_both_sides_remain_explicit(self):
+        roads, terrain, refs, mappings = self.correspondence_fixture([0.])
+        reference={'mesh_role':'road','source_path':'data/road.glb','source_triangle_index':0}
+        sample,status=source3.changed_face_sample('tie',[.25,.25],0.,reference,refs,mappings,source3.NativeTriangleIndex(roads),source3.NativeTriangleIndex(terrain),{'path':'data/terrain.glb'})
+        self.assertIsNone(sample);self.assertEqual(status['status'],'tied');self.assertEqual(len(status['source_operands']),2)
+        empty=source3.NativeTriangleIndex([])
+        sample,status=source3.changed_face_sample('miss',[.25,.25],0.,reference,refs,mappings,empty,empty,{'path':'data/terrain.glb'})
+        self.assertFalse(sample['expected_hit']);self.assertEqual(status['status'],'unavailable')
+        # A true upper blocker is retained on BOTH sides of an internal facet
+        # split; each sample keeps its own unchanged reference/ray interval.
+        upper=np.array([[[0,0,.31],[0,1,.31],[1,0,.31]],[[1,0,.31],[0,1,.31],[1,1,.31]]])
+        lower=np.array([[[0,0,0],[0,1,0],[1,0,0]],[[1,0,0],[0,1,0],[1,1,0]]])
+        refs2=[refs[0],dict(refs[0],source_triangle_index=1)]
+        for xy in ([.4999,.5],[.5001,.5]):
+            sample,status=source3.changed_face_sample('side',xy,0.,reference,refs2,mappings,source3.NativeTriangleIndex(lower),source3.NativeTriangleIndex(upper),{'path':'data/terrain.glb'})
+            self.assertEqual(status['status'],'occluded')
+            self.assertEqual(sample['expected']['actor_label'],'City_069_terrain')
+            self.assertAlmostEqual(sample['expected']['position_m'][2],.31)
+        # Ordinary required support selection still rejects this stack; the
+        # correspondence diagnostic never turns that failure into eligibility.
+        surface=types.SimpleNamespace(building_bins=collections.defaultdict(list),buildings=[],dem_height=lambda p:0,
+            road_index=source3.NativeTriangleIndex(lower),terrain_index=source3.NativeTriangleIndex(upper),road=types.SimpleNamespace(layer_refs=refs2),
+            support_manifest={'schema_version':2},terrain_sources=[0,1])
+        with self.assertRaisesRegex(api.SupportRejection,'stacked-rendered-support-layer'):api.Surface.check(surface,[.25,.25],'pedestrian')
+
     def native_grade_fixture(self):
         # Frozen actual data68.glb face 3861, raw SHA 791592b5717f45fcc8d393a615ec22a4dccb2add467fd464d1ad738c2f3f0b36.
         native_cm = np.array([[14225.8115234375, 812.3246459960938, 141.88304138183594],
@@ -381,19 +473,20 @@ class Source3Tests(unittest.TestCase):
         refs = [{'kind': 'derived-road', 'source': 0, 'mesh': 1, 'primitive': 2, 'triangle': 3, 'source_triangle_index': 9}]
         mappings = [{'actor_label': 'City_road', 'source_path': 'data/prepared/new/data68.glb'}]
         terrain = source3.NativeTriangleIndex(np.array([[[0, 0, 0], [1, 0, 0], [0, 1, 0]]]))
-        samples, details = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), terrain)
+        samples, details = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), terrain, {'path': 'data/terrain.glb'})
         self.assertEqual(len(samples), 1)
         self.assertEqual(samples[0]['expected']['source_triangle_index'], 9)
         self.assertEqual(samples[0]['expected']['layer_ref']['triangle'], 3)
         self.assertEqual(samples[0]['expected']['source_path'], mappings[0]['source_path'])
-        self.assertEqual(details[0]['status'], 'sampled')
+        self.assertEqual(details[0]['status'], 'visible')
         tied = source3.NativeTriangleIndex(roads.copy())
-        samples, details = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), tied)
+        samples, details = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), tied, {'path': 'data/terrain.glb'})
         self.assertEqual(samples, [])
-        self.assertEqual(details[0]['status'], 'actor-tie-omitted')
+        self.assertEqual(details[0]['status'], 'tied')
         higher = roads.copy(); higher[:, :, 2] += .01
-        with self.assertRaisesRegex(ValueError, 'buried'):
-            source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), source3.NativeTriangleIndex(higher))
+        samples, details = source3.changed_road_samples(roads, refs, mappings, source3.NativeTriangleIndex(roads), source3.NativeTriangleIndex(higher), {'path': 'data/terrain.glb'})
+        self.assertEqual(details[0]['status'], 'occluded')
+        self.assertEqual(samples[0]['expected']['actor_label'], 'City_069_terrain')
 
     def test_road_replacement_preserves_import_basename_and_refuses_uv_corruption(self):
         attrs = {'POSITION': np.array([[0, 0, 0], [1, 0, 0], [0, 0, 1]], dtype=np.float32),
