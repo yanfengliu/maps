@@ -58,6 +58,7 @@ const VERTEX_MAIN = "void main() {";
 const VERTEX_PROJECT = "#include <project_vertex>";
 const FRAGMENT_MAIN = "void main() {";
 const FRAGMENT_ROUGHNESS = "#include <roughnessmap_fragment>";
+const FRAGMENT_NORMAL = "#include <normal_fragment_maps>";
 
 /**
  * The uniform each material declares, and the stage that declares it.
@@ -101,6 +102,22 @@ float mapsPavingCoverage(float x, float y, float widthX, float widthY) {
   float oddRows = mapsPavingInterval(y * 0.5, widthY * 0.5, 0.506, 0.994);
   return mapsPavingInterval(x, widthX, 0.012, 0.988) * evenRows
     + mapsPavingInterval(x + 0.5, widthX, 0.012, 0.988) * oddRows;
+}
+`;
+
+/** A six millimetre recessed joint with an eighteen millimetre rounded bevel.
+ * The slope retires once its footprint cannot resolve the bevel. Joint colour
+ * continues to use the area integral above, so distant paving keeps its mean.
+ * These are shading dimensions, never geometry or actor-contact heights.
+ */
+const PAVING_RELIEF_GLSL = /* glsl */ `
+float mapsPavingBevelSlope(float coordinate, float period, float footprint) {
+  float phase = fract(coordinate);
+  float edge = min(phase, 1.0 - phase) * period;
+  float t = clamp((edge - 0.006) / 0.018, 0.0, 1.0);
+  float slope = 0.006 * 6.0 * t * (1.0 - t) / 0.018;
+  float resolved = 1.0 - smoothstep(0.012, 0.10, footprint);
+  return (phase < 0.5 ? 1.0 : -1.0) * slope * resolved;
 }
 `;
 
@@ -160,7 +177,7 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
   shader.uniforms.mapsStructureSeeds = uniforms.structureSeeds ?? { value: null };
   shader.uniforms.mapsStructureStrength = uniforms.structureStrength ?? { value: 0 };
 
-  const declarations = Object.entries(UNIFORM_DECLARATIONS).filter(([key]) => !key.startsWith("structure")).map(([, declaration]) => declaration).join("\n") + STRUCTURE_GLSL + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL : "");
+  const declarations = Object.entries(UNIFORM_DECLARATIONS).filter(([key]) => !key.startsWith("structure")).map(([, declaration]) => declaration).join("\n") + STRUCTURE_GLSL + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL + PAVING_RELIEF_GLSL : "");
 
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
@@ -213,6 +230,12 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         // The side response is solid: no collapsed X/Z joints or painted halo.
         diffuseColor.rgb *= mix(0.97 / pavingTone, 1.0 + paverVariation, topFace);
         roughnessFactor = mix(0.9, 0.82 + paverVariation * 0.35, topFace);
+        vec2 mapsGroundSlope = vec2(
+          mapsPavingBevelSlope(paverCell.x, 0.6, aa.x * 0.6),
+          mapsPavingBevelSlope(cell.y, 0.4, aa.y * 0.4));
+        // Suppress the vertical-joint bevel where the stagger changes row.
+        float rowEdge = min(fract(cell.y), 1.0 - fract(cell.y)) * 0.4;
+        mapsGroundSlope.x *= smoothstep(0.006, 0.024, rowEdge);
         // Authored paving regions sit only on the semantic top surface.
         float pavingRegion = 1.0 + (region - 0.5) * 0.32 + panel.x * 0.10 - panel.y * 0.20;
         diffuseColor.rgb *= mix(1.0, pavingRegion, topFace * mapsStructureStrength);
@@ -234,8 +257,17 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         // Under the tile: the very low frequency band no 4 m tile can carry, so the
         // asphalt is not one patch repeated across the ward.
         float asphaltVariation = 0.5 + 0.5 * sin(metres.x * 0.18 + sin(metres.y * 0.25)) * sin(metres.y * 0.22);
+        // The existing 3.125 cm aggregate texels now alter light response as
+        // well as colour. Central differences share the albedo's mip footprint;
+        // opposing samples cancel once the grain is below a pixel.
+        vec2 aggregateUv = metres / mapsDetailMetres;
+        vec2 aggregateTexel = vec2(1.0 / 128.0, 0.0);
+        vec2 mapsGroundSlope = vec2(
+          texture2D(mapsDetailMap, aggregateUv + aggregateTexel.xy).r - texture2D(mapsDetailMap, aggregateUv - aggregateTexel.xy).r,
+          texture2D(mapsDetailMap, aggregateUv + aggregateTexel.yx).r - texture2D(mapsDetailMap, aggregateUv - aggregateTexel.yx).r
+        ) * (0.018 / (2.0 * mapsDetailMetres / 128.0));
         diffuseColor.rgb *= 0.94 + asphaltVariation * 0.07;
-        roughnessFactor = mix(0.92, 0.28 + 0.23 * asphaltVariation, mapsWetness) + (detail - 0.5) * 0.08;
+        roughnessFactor = mix(0.92, 0.28 + 0.23 * asphaltVariation, mapsWetness) + (detail - 0.5) * mix(0.08, 0.28, smoothstep(0.9, 1.0, mapsStructureStrength));
         // Disclosed resurfacing variation, not a claim of surveyed repair patches.
         float asphaltRegion = 1.0 + (region - 0.5) * 0.34 - panel.x * 0.18 - panel.y * 0.15;
         diffuseColor.rgb *= mix(1.0, asphaltRegion, mapsStructureStrength);
@@ -257,6 +289,19 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
       `,
     `${kind}'s fragment stage, surface colour`,
   );
+
+  if (kind !== "ground") {
+    fragment = replaceOnce(fragment, FRAGMENT_NORMAL, `${FRAGMENT_NORMAL}
+        // Apply only to Satellite top faces. Closure faces and Cartographic
+        // retain their existing response, as does unclassified terrain.
+        float mapsRelief = smoothstep(0.9, 1.0, mapsStructureStrength);
+        float mapsTopFace = smoothstep(0.65, 0.92, inverseTransformDirection(normal, viewMatrix).y);
+        vec3 mapsViewSlope = mat3(viewMatrix) * vec3(mapsGroundSlope.x, 0.0, mapsGroundSlope.y);
+        mapsViewSlope -= normal * dot(mapsViewSlope, normal);
+        mapsViewSlope /= max(1.0, length(mapsViewSlope) / 0.5);
+        normal = normalize(normal - mapsViewSlope * mapsRelief * mapsTopFace);
+      `, `${kind}'s fragment stage, surface relief`);
+  }
 
   const marker = markerFor(kind);
   // A varying is a global declaration, so it belongs *before* the entry point; the
@@ -308,7 +353,7 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     patchSurfaceShader(kind, uniforms, shader as unknown as PatchableShader);
   };
-  material.customProgramCacheKey = () => `maps-surface-${kind}-v6-regional-structure`;
+  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "ground" ? "v6-regional-structure" : "v7-joint-aggregate-relief"}`;
   const apply = (next: WorldStyle): void => {
     material.color.setHex(next.palette[kind === "ground" ? "ground" : kind]);
     material.envMapIntensity = kind === "road" ? 0.7 : 0.45;

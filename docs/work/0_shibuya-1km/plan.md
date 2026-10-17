@@ -31,14 +31,15 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Band1434 adopted/retired/resources closed. [Critic1436](reviews/1436_product-direction.md) COMPLETE. Ground1437 dispatched. Final criteria OPEN.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Ground1437 gates/review PASS, adoption pending; critic1439 COMPLETE. Final criteria OPEN.
 
-Profile COMPLETE; worker CPU attribution UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
+Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Shared ground material depth | Worker `ground1437_materials` DISPATCHED | Base `fc1c97a`; critic1436 recurring flat asphalt/paving. Preserve support/paint/source; visible world-scale relief/response across approaches. Prototype before final capture; five gates/review/main adoption required. |
-| Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
+| Shared ground material depth | Root adoption; gates/review1438 PASS | Two frozen PRIMARY paths; default10+12 native PASS; 132 files/1,172 tests/44 frames/three lifecycles GREEN. Main push/retirement pending. |
+| Road marking coverage | Root SELECTED; worker not dispatched | [1439](reviews/1439_product-direction.md):32 untreated objects, connected approaches/periphery. Strict source/layer/support; preserve legitimate unmarked roads. Five expressways separate. Source eligibility first. |
+| Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
