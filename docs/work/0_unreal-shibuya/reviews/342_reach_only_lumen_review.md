@@ -1,0 +1,23 @@
+# Independent reach-only candidate review — 2026-10-17
+
+**PASS for the exact three-file candidate as one bounded experiment. No material code finding.** Base canonical HEAD is `01322fc93a97c83c942f1de832ec63148473110c`; the three actual canonical donors match the supplied donor hashes. No canonical file, asset, Git state or native process was changed by this reviewer.
+
+| Canonical path | Reviewed candidate bytes | SHA-256 |
+| --- | ---: | --- |
+| `Content/Python/shibuya_tools.py` | 115686 | `9e1a75a058cbbd560b0c8736c055b07a935e377e6ee3ce213475690c993b2d8b` |
+| `tools/unreal/mcp_run.py` | 44618 | `f431803aed85c8584bffe709d02fa488536866eb9dc1ece36cb33ba0bec03483` |
+| `tools/unreal/test_coverage.py` | 17491 | `017cb283af15af211bc90d4583a8402f598dc7fbaa1968ef5b17b28241c25273` |
+
+These are the complete changed-byte scope, exported under `artifacts/unreal-lighting-physical-fix-v1/reach-only-candidate-v1/`. The third file is `test_coverage.py`; `test_visual_controls.py` is unchanged. Independently hashed handoff `8f3abf82210670f829d10f94f7f949a063d20289ec312651f4c53be88f41ee96`, pin manifest `b85a2d5f9ed01bc3bde914e9f76c1aad70b60be039e351b453ca4b5392f21582` and exact patch `f1a747cafe2e88921270705dbb738f043c5e95ac256f33846fbc6ab3887e2b0a` agree with the actual donor/candidate bytes.
+
+Actual diff/AST review: helper changes only `_apply_capture_coverage` and the `capture_view` argument description; the capture method's executable body is unchanged. The helper sets only SceneViewDistance240000 and its true override. The existing capture body still sets first GDF extent7500 and finish restores the observed prior extent, normally2500. `_restore_capture_coverage`, `_finish_capture`, `_capture_witness`, `_exposure`, native support rays and final source-installation validation are unchanged. Driver changes only `validate_coverage_policy` and CLI help. Text changes are helper4 added/6 removed, driver13/5 and test42/9; no other definition changes occur outside the reviewed coverage test cases/fixtures.
+
+Readiness admission requires actual SceneViewDistance240000 with override true. MaxTraceDistance20000, SceneDetail1, surface-cache resolution1 and lighting quality1 must each be finite, retain override false and equal the actual recorded pre-mutation field. The old combined trace240000/detail2 tuple cannot be relabelled as this candidate. Missing, wrong, overridden, boolean or nonfinite local observations are refused. The default `--full-crop-coverage` flag and existing action restrictions are unchanged; the new policy remains explicit opt-in. Native frame/capture witnesses, strict renderer checks, PNG/clipping/brightness/convergence predicates and input/shutdown finalization remain unchanged.
+
+The existing actual-helper extraction tests now check every protected local/physical fixture value, the rejected old tuple and pre/current false-override/default constraints. The restoration/start/export/path-failure tests remain, including normal2500, observed nondefault3125 and failed-restore actor cleanup. The selected source contains11 test methods. Read the actual two intended donor failures and candidate child11 PASS/1.661s output. The outer evidence wrapper exited1 because it expected12 after the successful child; that failure is preserved separately in `tests.json` and is not presented as a successful wrapper. No tests were rerun by this reviewer; no engine, GPU, compiler or heavy check ran.
+
+Final integrated binding: Root copied the exact three files above into canonical C. This reviewer independently rehashed each final canonical file and confirmed its size/hash equals the reviewed candidate. `integrated-pins.json`, SHA-256 `9190da14a7bf6f30419c7eb216b637f9cd7b2afdfec8d2b4c08c8ae553951215`, records that binding and the hash of Root's `Artifacts/documentation-milestone-20261015/reach-only-native-v1/integration.json`. No test rerun was needed merely for the exact copy. **Focused review PASS applies to these integrated three files.**
+
+This approves the code for a distinct scene-reach hypothesis, not the physical result or adoption. The prior combined policy remains numericPASS/visualREJECTED for the pavement artifact. Root owns the actual experiment with the original six poses/FOV60/F8 camera and unchanged gates. Actual current-view cards, all six restorations and individual native-size image review remain necessary. A new numeric pass cannot override another visual rejection. Saved/runtime coherence and original full-population performance remain separate acceptance work.
+
+Owned resources: no browser, GUI, server, engine or compiler launched. Only this retained authored review was created. No new framework, dependency or permission is introduced.

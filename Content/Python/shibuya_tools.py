@@ -333,6 +333,131 @@ def _support_collision(mesh, triangles, source, bindings):
     return {"asset": mesh.get_path_name(), "native_triangles": mesh.get_num_triangles(0), "collision_trace_flag": str(body.get_editor_property("collision_trace_flag")), "fallback_percent_triangles": mesh.get_editor_property("nanite_settings").fallback_percent_triangles, **comparison}
 
 
+def _city_collision_component(component):
+    return {"enabled": str(component.get_collision_enabled()), "profile": str(component.get_collision_profile_name()),
+            "object_type": str(component.get_collision_object_type()),
+            "responses": {str(channel): str(component.get_collision_response_to_channel(channel)) for channel in
+                          (unreal.CollisionChannel.ECC_VISIBILITY, unreal.CollisionChannel.ECC_PAWN)}}
+
+
+def _prepare_city_collision(state):
+    """Route existing City triangles to both query modes; preserve every original hull for rollback."""
+    editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    rows, seen, original_flags = [], set(), {}
+    state["city_collision_restore"] = []
+    excluded = {row["actor_label"] for row in state["manifest"]["native_roads"]} | {"City_069_terrain"}
+    actors = sorted((actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.StaticMeshActor)
+                     and actor.actor_has_tag("ShibuyaSource") and actor.get_actor_label() not in excluded), key=lambda actor: actor.get_actor_label())
+    if not actors:
+        raise RuntimeError("Cannot configure City collision: source building actors are missing.")
+    for actor in actors:
+        component = actor.static_mesh_component
+        mesh = component.static_mesh
+        path = mesh.get_path_name()
+        body = mesh.get_editor_property("body_setup")
+        triangles = mesh.get_num_triangles(0)
+        before = _city_collision_component(component)
+        if not path.startswith("/Game/City/") or body is None or mesh.get_editor_property("complex_collision_mesh") is not None or triangles <= 0 or not all(editor.is_section_collision_enabled(mesh, 0, index) for index in range(mesh.get_num_sections(0))):
+            raise RuntimeError(f"Cannot configure City collision: {actor.get_actor_label()} needs its own nonempty collision-enabled native triangle mesh.")
+        if path not in seen:
+            seen.add(path)
+            original_flag = body.get_editor_property("collision_trace_flag")
+            original_geometry = body.get_editor_property("agg_geom")
+            original_flags[path] = original_flag
+            state["city_collision_restore"].append((mesh, body, original_flag, original_geometry))
+            body.set_editor_property("collision_trace_flag", unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+            # BodySetup's AggGeom notification recreates live StaticMeshComponent physics.
+            # ALWAYS is essential: the original hull data intentionally remains identical.
+            body.set_editor_property("agg_geom", original_geometry, unreal.PropertyAccessChangeNotifyMode.ALWAYS)
+        if body.get_editor_property("collision_trace_flag") != unreal.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE or mesh.get_num_triangles(0) != triangles or _city_collision_component(component) != before:
+            raise RuntimeError(f"Cannot configure City collision: {actor.get_actor_label()} changed native geometry/filtering or retained coarse routing.")
+        rows.append({"actor": actor.get_actor_label(), "asset": path, "native_triangles": triangles,
+                     "original_collision_trace_flag": str(original_flags[path]), "collision_trace_flag": str(body.get_editor_property("collision_trace_flag")),
+                     "simple_primitives_retained": editor.get_simple_collision_count(mesh), "convex_hulls_retained": editor.get_convex_collision_count(mesh),
+                     "component_before": before, "component_after": _city_collision_component(component), "original_aggregate_geometry_retained": True})
+    state["city_collision_actors"] = actors
+    return {"building_actor_count": len(actors), "distinct_mesh_count": len(seen), "meshes": rows}
+
+
+def _city_collision_hit(trace):
+    if trace is None:
+        return None
+    hit = trace.to_dict()
+    actor, component = hit.get("hit_actor"), hit.get("hit_component")
+    mesh = component.static_mesh if isinstance(component, unreal.StaticMeshComponent) else None
+    return {"actor": actor.get_actor_label() if actor else None, "asset": mesh.get_path_name() if mesh else None,
+            "initial_overlap": hit["initial_overlap"], "time": hit["time"], "position_cm": _vector(hit["impact_point"]), "normal": _vector(hit["impact_normal"])}
+
+
+def _city_collision_world_points(actor, points):
+    return [_vector(actor.get_actor_transform().transform_location(point)) for point in points]
+
+
+def _city_collision_witnesses(state):
+    """Small fixed-selection facade/open-road checks using the ordinary explorer capsule dimensions."""
+    actors = state["city_collision_actors"]
+    if len(actors) < 3:
+        raise RuntimeError("Cannot validate City collision: require three distinct representative building actors.")
+    world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+    if world is None:
+        raise RuntimeError("Cannot validate City collision: editor world is unavailable.")
+    results = []
+    for actor in (actors[0], actors[len(actors) // 2], actors[-1]):
+        mesh = actor.static_mesh_component.static_mesh
+        bounds = mesh.get_bounds()
+        facade = None
+        for section in range(mesh.get_num_sections(0)):
+            vertices, indices, *_ = unreal.ProceduralMeshLibrary.get_section_from_static_mesh(mesh, 0, section)
+            for offset in range(0, len(indices), 3):
+                local = [vertices[index] for index in indices[offset:offset + 3]]
+                points = _city_collision_world_points(actor, local)
+                centre = [sum(point[axis] for point in points) / 3 for axis in range(3)]
+                a, b = [[points[index][axis] - points[0][axis] for axis in range(3)] for index in (1, 2)]
+                cross = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+                length = math.sqrt(sum(value * value for value in cross))
+                if length > 10000 and abs(cross[2]) / length < .05 and max(point[2] for point in points) - min(point[2] for point in points) > 250 and centre[2] > bounds.origin.z - bounds.box_extent.z + 120:
+                    # StaticMesh collision cooks with bFlipNormals=true.
+                    facade = (centre, [-value / length for value in cross])
+                    break
+            if facade:
+                break
+        if facade is None:
+            raise RuntimeError(f"Cannot validate City collision: {actor.get_actor_label()} has no qualifying native facade witness.")
+        centre, normal = facade
+        start = [value + direction * 100 for value, direction in zip(centre, normal)]
+        end = [value - direction * 100 for value, direction in zip(centre, normal)]
+        for complex_query in (False, True):
+            for shape in ("ray", "capsule"):
+                args = (world, unreal.Vector(*start), unreal.Vector(*end))
+                if shape == "capsule":
+                    args += (28.0, 88.0)
+                query = unreal.SystemLibrary.line_trace_single if shape == "ray" else unreal.SystemLibrary.capsule_trace_single_by_profile
+                hit = _city_collision_hit(query(*args, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1 if shape == "ray" else "Pawn", complex_query, [], unreal.DrawDebugTrace.NONE, True))
+                row = {"kind": "facade-" + shape, "expected_actor": actor.get_actor_label(), "expected_asset": mesh.get_path_name(), "start_cm": start, "end_cm": end, "facade_centre_cm": centre, "facade_outward_normal": normal, "trace_complex": complex_query, "actual": hit}
+                results.append(row)
+                if hit is None or hit["actor"] != row["expected_actor"] or hit["asset"] != row["expected_asset"] or hit["initial_overlap"] is not False or not math.isfinite(hit["time"]) or not 0 < hit["time"] < 1 or any(not math.isfinite(value) for key in ("position_cm", "normal") for value in hit[key]) or abs(sum((value - expected) * axis for value, expected, axis in zip(hit["position_cm"], centre, normal))) > .1 or sum(value * axis for value, axis in zip(hit["normal"], normal)) < .999:
+                    raise RuntimeError("Cannot validate City wall/capsule blockage before save: " + json.dumps(row, allow_nan=False))
+    roads = []
+    for sample in state["rays"]["samples"]:
+        if sample["expected_hit"] and sample["expected"]["mesh_role"] == "road" and sample["expected"]["actor_label"] not in {row["expected"]["actor_label"] for row in roads}:
+            roads.append(sample)
+        if len(roads) == 3:
+            break
+    if len(roads) != 3:
+        raise RuntimeError("Cannot validate City collision: require three admitted open-road capsule witnesses.")
+    for sample in roads:
+        start = [100 * value for value in sample["expected"]["position_m"]]
+        start[2] += 90
+        end = [start[0] + 10, start[1], start[2]]
+        for complex_query in (False, True):
+            hit = _city_collision_hit(unreal.SystemLibrary.capsule_trace_single_by_profile(world, unreal.Vector(*start), unreal.Vector(*end), 28.0, 88.0, "Pawn", complex_query, [], unreal.DrawDebugTrace.NONE, True))
+            row = {"kind": "open-road-capsule", "source_ray_id": sample["id"], "start_cm": start, "end_cm": end, "trace_complex": complex_query, "actual": hit}
+            results.append(row)
+            if hit is not None:
+                raise RuntimeError("Cannot validate open-road capsule clearance before save: " + json.dumps(row, allow_nan=False))
+    return {"passed": True, "query_count": len(results), "capsule_radius_cm": 28, "capsule_half_height_cm": 88, "capsule_profile": "Pawn", "queries": results}
+
+
 def _support_ray_collision_state(sample):
     """Read the expected collider and one ordered source/render face without changing physics."""
     expected = sample.get("expected", {})
@@ -443,7 +568,7 @@ def _support_native_rays(state):
     if failures:
         receipt = {"passed": False, "map_saved": False, "query_count": len(results), "failed_query_count": len(failures),
                    "queries": results, "failures": failures, "expected_colliders": colliders,
-                   "terrain_collision": state.get("collision"), "road_collision_receipts": state.get("road_collision_receipts", [])}
+                   "terrain_collision": state.get("collision"), "road_collision_receipts": state.get("road_collision_receipts", []), "city_collision": state.get("city_collision")}
         try:
             retained = _support_save_ray_failure(receipt)
         except Exception as error:
@@ -458,6 +583,13 @@ def _abort_support_update(reason):
         state = _support_update
         state["failure"] = str(reason)
         state["status"] = "failed-not-saved; imported packages are not rolled back"
+        for mesh, body, original_flag, original_geometry in reversed(state.get("city_collision_restore", [])):
+            try:
+                body.set_editor_property("collision_trace_flag", original_flag)
+                body.set_editor_property("agg_geom", original_geometry, unreal.PropertyAccessChangeNotifyMode.ALWAYS)
+            except Exception as error:
+                state.setdefault("live_restore_errors", []).append("City collision rollback " + mesh.get_path_name() + ": " + str(error))
+        state["city_collision_restore"] = []
         for restore in (lambda: state["terrain"].static_mesh_component.set_static_mesh(state["old_mesh"]), lambda: state["terrain"].set_actor_transform(state["transform"], False, False)):
             try:
                 restore()
@@ -639,15 +771,13 @@ def _lumen_capture_policy(settings):
 
 
 def _apply_capture_coverage(world, settings):
-    """Apply one source-supported software coverage experiment, leaving photos/exposure untouched."""
+    """Extend software scene reach, preserving the original local tracing and physical camera policy."""
     before = _lumen_capture_policy(settings)
     prior_extent = before["cvars"]["r.LumenScene.GlobalSDF.ClipmapExtent"]
     if not math.isfinite(prior_extent) or prior_extent <= 0:
         raise RuntimeError("Cannot apply full-crop coverage: the native first global-SDF clipmap extent is missing or invalid.")
-    for name, value in (("lumen_scene_view_distance", 240000.0), ("lumen_max_trace_distance", 240000.0),
-                        ("lumen_scene_detail", 2.0), ("lumen_surface_cache_resolution", 1.0)):
-        setattr(settings, "override_" + name, True)
-        setattr(settings, name, value)
+    settings.override_lumen_scene_view_distance = True
+    settings.lumen_scene_view_distance = 240000.0
     return {"before": before, "prior_extent_cm": prior_extent}
 
 
@@ -1413,7 +1543,14 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                     raise RuntimeError("Cannot apply photo roads: a building or terrain actor changed.")
                 if support_installation:
                     support_state["road_collision_receipts"] = [{"actor": row["actor"], "asset": row["asset"], "collision": row["collision"]} for row in changed]
+                if support_installation:
+                    support_state["city_collision"] = _prepare_city_collision(support_state)
                 support_validation = _validate_support_installation(support_state) if support_installation else None
+                if support_installation:
+                    support_validation["city_collision_witnesses"] = _city_collision_witnesses(support_state)
+                    for city_mesh, *_ in support_state["city_collision_restore"]:
+                        if not unreal.EditorAssetLibrary.save_loaded_asset(city_mesh, False):
+                            raise RuntimeError("Cannot save validated City collision: " + city_mesh.get_path_name() + "; earlier generated package saves are retained but unaccepted.")
                 if support_installation and not unreal.EditorAssetLibrary.save_loaded_asset(terrain.static_mesh_component.static_mesh, False):
                     raise RuntimeError("Cannot save support terrain material/collision after native validation.")
                 if not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level():
@@ -1430,7 +1567,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                 if support_installation:
                     _abort_support_update(error)
                 raise
-            return json.dumps({"road_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "roads": changed, "road_geometry_bytes_unchanged": True, "other_source_actor_count": len(unaffected), "other_source_actors_unchanged": True, "shared_atlas_assets": sorted(shared_textures), **({"support_manifest_sha256": support_state["manifest_sha256"], "support_status": "native-roads-rays-validated-map-saved", "native_support_validation": support_validation, "terrain_collision": support_state["collision"], "terrain_geometry_bytes_unchanged": False} if support_installation else {})})
+            return json.dumps({"road_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "roads": changed, "road_geometry_bytes_unchanged": True, "other_source_actor_count": len(unaffected), "other_source_actors_unchanged": True, "shared_atlas_assets": sorted(shared_textures), **({"support_manifest_sha256": support_state["manifest_sha256"], "support_status": "native-roads-rays-validated-map-saved", "native_support_validation": support_validation, "city_collision": support_state["city_collision"], "terrain_collision": support_state["collision"], "terrain_geometry_bytes_unchanged": False} if support_installation else {})})
         try:
             return apply()
         except Exception as error:
@@ -1452,7 +1589,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
             target_north_m: Look-at north coordinate in metres.
             target_height_m: Look-at up coordinate in metres.
             target_gamma: SDR display gamma;1.0 is retained only as a regression control.
-            full_crop_coverage: Opt-in2400m software Lumen coverage experiment; process-local clipmap is restored at finish.
+            full_crop_coverage: Opt-in2400m reach-only software Lumen scene; local tracing is retained and the process clipmap is restored at finish.
             photographic_tone: Opt-in bilateral local exposure; preserves the manual physical camera and source lighting.
             hardware_ray_tracing: Allow this view to use project-enabled ray tracing; global support and actual dispatch still require independent verification.
         """

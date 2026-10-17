@@ -19,7 +19,8 @@ def destroy_capture_actor(destroyed, actor):
 
 
 def component_settings():
-    settings = SimpleNamespace(camera_iso=100.0, auto_exposure_bias=0.0)
+    settings = SimpleNamespace(camera_iso=100.0, camera_shutter_speed=125.0, depth_of_field_fstop=8.0,
+                               auto_exposure_bias=0.0, auto_exposure_apply_physical_camera_exposure=True)
     for name, value in (("lumen_scene_view_distance", 20000.0), ("lumen_max_trace_distance", 20000.0),
                         ("lumen_scene_detail", 1.0), ("lumen_scene_lighting_quality", 1.0), ("lumen_surface_cache_resolution", 1.0)):
         setattr(settings, name, value)
@@ -33,10 +34,9 @@ def envelope(state):
                 "lumen_scene_detail": 1.0, "lumen_surface_cache_resolution": 1.0, "lumen_scene_lighting_quality": 1.0}
     state["lumen_policy_before"] = {"component_pp": {name: {"value": value, "override": False} for name, value in original.items()},
                                   "cvars": {"r.LumenScene.GlobalSDF.ClipmapExtent": 2500.0}}
-    state["lumen_capture_policy"] = {"component_pp": {name: {"value": value, "override": True} for name, value in (
-        ("lumen_scene_view_distance", 240000.0), ("lumen_max_trace_distance", 240000.0),
-        ("lumen_scene_detail", 2.0), ("lumen_surface_cache_resolution", 1.0))},
+    state["lumen_capture_policy"] = {"component_pp": {name: {"value": value, "override": False} for name, value in original.items()},
         "cvars": {"r.LumenScene.GlobalSDF.ClipmapExtent": 7500.0, "r.AOGlobalDistanceField.NumClipmaps": 4.0}}
+    state["lumen_capture_policy"]["component_pp"]["lumen_scene_view_distance"] = {"value": 240000.0, "override": True}
     state["coverage_restoration"] = {"changed": True, "restored": True, "prior_extent_cm": 2500.0, "observed_restored_extent_cm": 2500.0}
     return state
 
@@ -51,8 +51,8 @@ class PolicyAdmissionTests(unittest.TestCase):
                      ("clipmap", lambda value: value["lumen_capture_policy"]["cvars"].update({"r.LumenScene.GlobalSDF.ClipmapExtent": 2500})),
                      ("clipmap count", lambda value: value["lumen_capture_policy"]["cvars"].update({"r.AOGlobalDistanceField.NumClipmaps": 3})),
                      ("missing prior", lambda value: value["lumen_policy_before"]["cvars"].clear())]
-        for name in ("lumen_scene_view_distance", "lumen_max_trace_distance", "lumen_scene_detail", "lumen_surface_cache_resolution"):
-            mutations += [(name + " override", lambda value, name=name: value["lumen_capture_policy"]["component_pp"][name].update(override=False)),
+        for name in ("lumen_scene_view_distance", "lumen_max_trace_distance", "lumen_scene_detail", "lumen_surface_cache_resolution", "lumen_scene_lighting_quality"):
+            mutations += [(name + " override", lambda value, name=name: value["lumen_capture_policy"]["component_pp"][name].update(override=name != "lumen_scene_view_distance")),
                           (name + " wrong", lambda value, name=name: value["lumen_capture_policy"]["component_pp"][name].update(value=0)),
                           (name + " nonfinite", lambda value, name=name: value["lumen_capture_policy"]["component_pp"][name].update(value=float("nan")))]
         for name, mutation in mutations:
@@ -62,6 +62,30 @@ class PolicyAdmissionTests(unittest.TestCase):
                 mcp_run.validate_capture_state(invalid, (35, -45, 35), (0, 0, 15), 2.2, 1, True)
         with self.assertRaisesRegex(RuntimeError, "independently requested"):
             mcp_run.validate_capture_state(state, (35, -45, 35), (0, 0, 15), 2.2, 1)
+
+    def test_rejected_combined_policy_cannot_be_relabelled_as_reach_only(self):
+        state = envelope(capture_state())
+        policy = state["lumen_capture_policy"]["component_pp"]
+        policy["lumen_max_trace_distance"] = {"value": 240000.0, "override": True}
+        policy["lumen_scene_detail"] = {"value": 2.0, "override": True}
+        policy["lumen_surface_cache_resolution"] = {"value": 1.0, "override": True}
+        with self.assertRaisesRegex(RuntimeError, "local lumen_max_trace_distance"):
+            mcp_run.validate_coverage_policy(state)
+
+    def test_retained_local_policy_requires_finite_original_defaults_and_false_overrides(self):
+        for name in ("lumen_max_trace_distance", "lumen_scene_detail", "lumen_surface_cache_resolution", "lumen_scene_lighting_quality"):
+            for section in ("lumen_capture_policy", "lumen_policy_before"):
+                for bad in ({"value": float("nan"), "override": False}, {"value": True, "override": False},
+                            {"value": 2.0, "override": True}, {}):
+                    state = envelope(capture_state())
+                    state[section]["component_pp"][name] = bad
+                    with self.subTest(name=name, section=section, bad=bad), self.assertRaises(RuntimeError):
+                        mcp_run.validate_coverage_policy(state)
+            state = envelope(capture_state())
+            for section in ("lumen_capture_policy", "lumen_policy_before"):
+                state[section]["component_pp"][name]["override"] = True
+            with self.subTest(name=name, both_overridden=True), self.assertRaises(RuntimeError):
+                mcp_run.validate_coverage_policy(state)
 
     def test_scoring_refuses_missing_restoration_and_changed_original_policy(self):
         fixture = test_mcp_run.CaptureAdmissionTests()
@@ -77,7 +101,7 @@ class PolicyAdmissionTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "restoration was not observed"):
                     mcp_run.score_capture(*arguments)
             envelope(fixture.final)
-            fixture.warmup["lumen_policy_before"]["component_pp"]["lumen_scene_detail"]["value"] = 1.5
+            fixture.warmup["lumen_policy_before"]["component_pp"]["lumen_scene_view_distance"]["value"] = 19000.0
             with self.assertRaisesRegex(RuntimeError, "original observed"):
                 mcp_run.score_capture(*arguments)
         finally:
@@ -104,18 +128,27 @@ class HelperCoverageTests(unittest.TestCase):
     def test_policy_snapshots_actual_prior_and_leaves_physical_exposure_unchanged(self):
         namespace, cvars, _, _ = self.namespace()
         settings = component_settings()
+        protected = {name: value for name, value in vars(settings).items() if name not in ("lumen_scene_view_distance", "override_lumen_scene_view_distance")}
         before = namespace["_lumen_capture_policy"](settings)
         coverage = namespace["_apply_capture_coverage"](object(), settings)
         self.assertEqual(coverage["before"], before)
         self.assertEqual(coverage["prior_extent_cm"], 2500)
         self.assertEqual(cvars["r.LumenScene.GlobalSDF.ClipmapExtent"], 2500)  # Capture start owns actual mutation.
-        self.assertEqual((settings.camera_iso, settings.auto_exposure_bias), (100, 0))
-        self.assertEqual((settings.lumen_scene_view_distance, settings.lumen_max_trace_distance, settings.lumen_scene_detail, settings.lumen_surface_cache_resolution), (240000, 240000, 2, 1))
+        self.assertEqual({name: value for name, value in vars(settings).items() if name not in ("lumen_scene_view_distance", "override_lumen_scene_view_distance")}, protected)
+        self.assertTrue(settings.override_lumen_scene_view_distance)
+        self.assertEqual((settings.lumen_scene_view_distance, settings.lumen_max_trace_distance, settings.lumen_scene_detail, settings.lumen_surface_cache_resolution), (240000, 20000, 1, 1))
         self.assertEqual(before["component_pp"]["lumen_scene_view_distance"]["value"], 20000)
         settings.lumen_scene_view_distance = 20000
         current = namespace["_lumen_capture_policy"](settings)
         self.assertEqual(current["component_pp"]["lumen_scene_view_distance"]["value"], 20000)
         self.assertEqual(coverage["before"], before)
+        actor = object()
+        cvars["r.LumenScene.GlobalSDF.ClipmapExtent"] = 7500.0
+        namespace["_capture"] = {"actor": actor, "world": object(), "coverage": coverage}
+        restored = namespace["_finish_capture"]()
+        self.assertTrue(restored["restored"])
+        self.assertEqual(cvars["r.LumenScene.GlobalSDF.ClipmapExtent"], 2500.0)
+        self.assertEqual({name: value for name, value in vars(settings).items() if name not in ("lumen_scene_view_distance", "override_lumen_scene_view_distance")}, protected)
 
     def test_finish_restores_actual_prior_and_destroys_only_owned_capture(self):
         namespace, cvars, commands, destroyed = self.namespace()

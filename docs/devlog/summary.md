@@ -1,5 +1,7 @@
 # Devlog Summary
 
+2026-10-17 — Repaired coarse City convex collision without removing building blockage: actual Source2 terrain/25roads,282 ground rays and18 wall/capsule witnesses pass and the map saves. The reach-only f8 hardware trial passes allsix original views without the pavement-shadow artifact. All134 integrated helper tests pass; independent reviews342/343 cover the code. Final-source routes/controls, saved/runtime coverage, photorealism and3000/200performance remain open.
+
 2026-10-17 — Added the native Shibuya runtime module, ordinary control handling and animated pedestrian/vehicle rendering, with reviewed source bindings and owned native verification/capture entry points. Editor/Game builds from the same 19 authored inputs and 6,364 core assertions passed; cleanup and final-verdict fixes gained causal controls. The F8 near-view hardware trial passed four views. Full-city surface/support, executable routes and traffic, fixed-six photoreal appearance and 3,000/200 performance gates remain open.
 
 2026-10-16 — Repaired actual native verification: early missing-prerequisite refusal measured 95.6 percent faster, complete controls-source-map binding is enforced, and all 16 runner units pass. Independent audit removed experimental helper suites from the native observation critical path. Corrected UE5.8 cache selection and project-local shader working files; actual offscreen inventory passes with 506 source bindings and 552 loaded asset files at 1920 by 1080. Controls, support, appearance and performance remain open.

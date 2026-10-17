@@ -50,13 +50,14 @@ def verify_lumen_scene(log_text):
 
 
 def validate_coverage_policy(state):
-    """Check observed policy against the opt-in fixed experiment, without claiming traced coverage."""
+    """Check reach-only range and unchanged observed local policy, without claiming traced coverage."""
     policy = state.get("lumen_capture_policy")
     before = state.get("lumen_policy_before")
     if not isinstance(policy, dict) or not isinstance(before, dict):
         raise RuntimeError("Cannot score full-crop capture: current or pre-mutation native Lumen policy is missing.")
-    expected = {"lumen_scene_view_distance": 240000.0, "lumen_max_trace_distance": 240000.0,
-                "lumen_scene_detail": 2.0, "lumen_surface_cache_resolution": 1.0}
+    expected = {"lumen_scene_view_distance": 240000.0}
+    retained = {"lumen_max_trace_distance": 20000.0, "lumen_scene_detail": 1.0,
+                "lumen_surface_cache_resolution": 1.0, "lumen_scene_lighting_quality": 1.0}
     for name, value in expected.items():
         observed = policy.get("component_pp", {}).get(name, {})
         actual = observed.get("value")
@@ -66,11 +67,18 @@ def validate_coverage_policy(state):
         actual = policy.get("cvars", {}).get(name)
         if type(actual) not in (int, float) or not math.isfinite(actual) or abs(actual - value) > .001:
             raise RuntimeError(f"Cannot score full-crop capture: actual native {name} differs from planned{value}.")
-    for name in (*expected, "lumen_scene_lighting_quality"):
+    for name in (*expected, *retained):
         observed = before.get("component_pp", {}).get(name, {})
         actual = observed.get("value")
         if type(observed.get("override")) is not bool or type(actual) not in (int, float) or not math.isfinite(actual):
             raise RuntimeError(f"Cannot score full-crop capture: pre-mutation native {name} was not observed.")
+    for name, value in retained.items():
+        observed = policy.get("component_pp", {}).get(name, {})
+        actual = observed.get("value")
+        if (observed.get("override") is not False or type(actual) not in (int, float)
+                or not math.isfinite(actual) or abs(actual - value) > .001
+                or observed != before["component_pp"][name]):
+            raise RuntimeError(f"Cannot score full-crop capture: local {name} must remain at original{value} with override=false for reach-only coverage.")
     prior = before.get("cvars", {}).get("r.LumenScene.GlobalSDF.ClipmapExtent")
     if type(prior) not in (int, float) or not math.isfinite(prior) or prior <= 0:
         raise RuntimeError("Cannot score full-crop capture: prior native clipmap extent was missing or invalid.")
@@ -464,7 +472,7 @@ def main():
     parser.add_argument("--startup-timeout", type=int, default=240)
     parser.add_argument("--target-gamma", type=float, default=2.2, choices=[1.0, 2.2])
     parser.add_argument("--explore", action="store_true", help="Include held-out street and upward-sky diagnostics")
-    parser.add_argument("--full-crop-coverage", action="store_true", help="Opt-in2400m software Lumen coverage experiment; preserves source/physical lighting and restores process-local cvar")
+    parser.add_argument("--full-crop-coverage", action="store_true", help="Opt-in2400m reach-only software Lumen scene; retains local tracing/physical lighting and restores process-local cvar")
     parser.add_argument("--surface-only", action="store_true", help="Apply admitted support terrain/roads/rays and checked map save; leave appearance did-not-run")
     parser.add_argument("--surface-manifest", help="Admitted project-relative GSI photo terrain manifest")
     parser.add_argument("--road-manifest", help="Admitted project-relative shared-atlas photo road manifest")
