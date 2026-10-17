@@ -1,0 +1,8 @@
+# Proposed 1443 benchmark clarification — not yet accepted
+Preserve benchmark.md, disqualifiers.md, both negative reports and original baseline bytes unchanged. No candidate has been scored or adopted.
+Owner outcome remains a believable approximately1km Shibuya world; this next milestone needs a coherent visible architectural improvement across at least three representative fronts, useful close/block/ordinary views, noon/dusk preservation and an untuned held-out approach.
+Three fronts need visible coverage collectively across the declared views; every face need not point toward every camera. Select useful ordinary views through real controls and seal baseline poses/bytes before construction. Retain original canonical views for regression; no post-result camera rescue.
+Source photos/geometry/floor metadata must bind finite feature boundaries and preserve signs/openings/source margins. Authored approximate depths and material profiles are permitted when disclosed and photographically plausible; surveyed depth or LOD3 opening semantics are not prerequisites for this non-survey deliverable.
+Reuse of existing physical-window/frontage constructors across a new coherent representative set is permitted. Counts, another isolated front, only deeper existing boxes or a tiny crop do not establish success.
+All source/support/layer/ownership/style/texture-cap contracts, five code gates and independent integrated review stay required. No direct harness writes, source-pin loosening, new framework, general union or global requirement reduction.
+Independent review must accept or reject this clarification before any new candidate is scored. Read-only source/view selection may proceed; actual construction awaits that review and root source acceptance.

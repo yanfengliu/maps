@@ -21,23 +21,23 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `ce107fc619e93c85d98616ea0134abb387668df4` adds shared Satellite asphalt light response and rounded paving joints. [1437](reviews/1437_shared-ground-material-implementation.md) and independent [1438 PASS](reviews/1438_shared-ground-material-integrated-review.md) bind the actual production path. No new geometry, draws, textures or lights; four extra existing-texture reads per road fragment. Terrain, source paint, support/contact and GTAO normals stay geometric. Isolated shader cost is unmeasured. Earlier window/frontage/light/tactile/corner work remains preserved. No final criterion closes.
+Adopted `ce107fc619e93c85d98616ea0134abb387668df4`: Satellite asphalt light response and rounded paving joints. [1437](reviews/1437_shared-ground-material-implementation.md), independent [1438 PASS](reviews/1438_shared-ground-material-integrated-review.md). Added geometry/draws/textures/lights:zero; four extra road texture reads/fragment. Terrain, paint, support/contact and GTAO normals remain geometric. Isolated shader cost unmeasured; earlier window/frontage/light/tactile/corner work preserved. No final criterion closes.
 
-Five final PRIMARY gates pass: build/types, 132 files/1,172 tests in 75.20 s, audit (two existing moderate advisories), visual `4eb529d3e8b3e8d6`:44 frames/three lifecycles in 311.782 s, RTX 4090/616.64. Review inspected all 10 local stills/12 adjacent motion copies, 22 canonical Satellite and two returns. Four runtime files match; debug maps differ. Motion spans 180.7 ms between first/last before-observations, not continuous stability/population/FPS. Wrong-seed capture excluded; default 5970698 rerun passes. Early whitespace preflight passes.
+PRIMARY five gates PASS: build/types, 132 files/1,172 tests in 75.20 s, audit (two existing moderate advisories), visual `4eb529d3e8b3e8d6`:44 frames/three lifecycles in 311.782 s, RTX 4090/616.64. Native review:10 stills/12 adjacent motion copies, 22 canonical Satellite/two returns. Four runtime files match; debug maps differ. Motion:180.7 ms first/last before-observations only, not continuous stability/population/FPS. Wrong seed excluded; default5970698 rerun/early whitespace PASS.
 
 Main/origin-main read back exact; remote CI has zero checks/statuses/workflows, no remote pass claimed. Checkout/registration/metadata retired normally after preservation. Fresh closeout:81 owned identities absent; task markers/three ports/seven TEMP paths clear. Needed evidence/cache retained; historical trees and unrelated ancient tail untouched; original HOLD/reconciliation preserved.
 
-Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
+Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `test/facade-emission.test.ts`, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). [Road1440](reviews/1440_road-marking-source-eligibility.md) is source-incomplete and retired. [Critic1441](reviews/1441_product-direction.md) COMPLETE; corridor1442 selected, not dispatched. Final criteria OPEN.
+[Road1440](reviews/1440_road-marking-source-eligibility.md) source-incomplete; [1442](reviews/1442_dusk-corridor-fixed-trial.md) NO ADOPTION: hidden sources/oval pools. Both retired/resources closed; failed source preserved. Search1443A/B bounded negative, retired. [1444 ACCEPT](reviews/1444_benchmark-clarification-review.md) is prospective only; no rescoring. Frontage1445 source preparation RUNNING. Final criteria OPEN.
 
 Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Powered dusk corridor | Root SELECTED; worker not dispatched | 1441:two candidate corridors, then one visible 80–120 m group over three fronts. At most eight mounted lights, supported receivers; street/block/held-out views. Stop if hidden, tiny or glaring. |
+| Three-front facade treatment | frontage1445 RUNNING | Candidates data518/26,63,62; finite feature/exclusion/source bindings pending. Seal baseline and obtain root source acceptance, then one early matched prototype. No general proof phase. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
