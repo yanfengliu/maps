@@ -21,25 +21,24 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). Source-bound radiance0.65; no added geometry/textures/lights, photo/glazing/roof preserved. No final criterion closes.
+Adopted `59fbb1ce7fedaaa9e43d6747fb35994790d093b5`: lifetime-only GPU-eviction/logical-release fix; no intended appearance change. [1463](reviews/1463_lifetime-primary-gates.md)/[1460 PASS](reviews/1460_lifetime-integrated-review.md). Prior Coca-Cola gain remains1449/1450.
 
-PRIMARY five gates PASS: build/types,133 files/1,173 tests71.479s, audit(two existing moderate), visual `82fa77ecdca2b44c`:44frames/three lifecycles288.179s, RTX4090/616.64. Independent1450 reviewed22Satellite/two actual style-control frames. No motion/continuity/population/FPS acceptance. Remote CI unavailable:zero checks/statuses/workflows. Pre-start refusals retained; scoped completions passed.
+PRIMARY five PASS: build4.813s/types11.104s/unit134files,1174tests95.36s(outer96.465)/audit3.774s(two moderate)/visual370.279s;run5addbb3d1eb59de0,44frames/3hardware lifecycles,RTX4090/616.64. Failed inside-checkout TEMP attempt/correction retained in1463. Root24/reviewer7 native originals PASS; no GPU-return rendering/allocation,motion,population/FPS acceptance. Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows; artifacts/lifetime1463/remote-gates.json.
 
 Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older157-file certificates do not transfer. Preserve user-owned facade-emission.test.ts, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
-Stopped1445/1452/[1455](reviews/1455_hachiko-stone-transition-stop.md) trials stay failed; frozen evidence preserved and checkouts retired. [1456](reviews/1456_stone-edge-stop-review.md) confirms1455. [1454](reviews/1454_tsutaya-source-quality.md): local TSUTAYA chart128x512; other imagery UNKNOWN.
+Stopped1445/1452/1455 remain failed; evidence preserved/checkouts retired, confirmed1456.1454: TSUTAYA chart128x512; other imagery UNKNOWN.
 
-[1457](reviews/1457_next-visible-milestone.md) [benchmark](1457_visual-benchmark.md)/[disqualifiers](1457_visual-disqualifiers.md) remain.1458 photo-recess STOP:1461 rejects framed-photo appearance in two native noon pairs. Frozen source/build/captures preserved; no tuning/full gates. Separable inherited commercial/frontage-normal logical-release repair proceeds, geometry/finish unchanged.
+1457 benchmark/disqualifiers remain.1458 window STOP/rejected1461;[1464](reviews/1464_finite-advertisement-source-stop.md) NO QUALIFIED SET, no signscape prototype; bounded failures, not impossibility.1458 worktree/registration retired;12 outputs preserved,no owned process. Receipt: artifacts/windows1458/closeout.json.
 
-Profile COMPLETE/worker CPU UNAVAILABLE; follow-up PARKED. `artifacts/orchestration-context-20261017/profile/profile-summary.json`. Historical65 worktrees: inventory COMPLETE/removal PARKED; preserve first, product priority. `artifacts/retained1421-inventory/summary.json`.
+Profile COMPLETE/CPU UNAVAILABLE; follow-up PARKED. Historical65 worktrees: inventory COMPLETE/removal PARKED; preservation precedes cleanup.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| GPU cleanup repair | GREEN;root adoption NEXT | PRIMARY five PASS; integrated1460 PASS; commit/push pending. |
-| Next visible milestone | population1465 COMPLETE;probe PREPARED | 1464 NO QUALIFIED SET; existing agents=1 needs native8-frame discriminator. No default change authorized. |
-| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | Ignored `artifacts/visual-gallery/index.html`;15min updates plus milestones. Never Git. |
+| Population discriminator | windows1458 DISPATCHED;1465 source COMPLETE | Native agents=1/eight frames; review1466 AWAITS sealed outputs. No default change or full-population acceptance. |
+| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 15 native originals,header59fbb1c;ignored artifacts/visual-gallery/index.html;15min. Never Git. |
 
 No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
