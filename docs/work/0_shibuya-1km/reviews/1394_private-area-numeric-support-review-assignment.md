@@ -1,0 +1,7 @@
+# 1394 — Numeric fixtures and runtime support source review
+
+Root dispatches existing independent reviewer1372, requested canonical Astra/xhigh with actual telemetry unavailable, in ORIGINAL. Own1394 raw/report/handoff only. Review exact1111/data/commercial-work/1391/final-plan/numeric-helper-subset.json2165/6d5a516d90a6090ff2f396e4bddfcfa61ecdfe3e524da8585f9dd6f65751e88c, joining frozen runtime-support.mjs8851/76512220ff5f6ed138f46f51f0295f0b93afb76f07384f9110c4c17a234f0c96 and ordinary-fixtures.mjs4704/e4aaee4783f2208cf88d31e00dda22b583cf663dcc0198f2bf5158ff96b40f20. Exclude changing suite, entry, launcher and closure.
+
+Check fixed scalar expressions and finite/axis/growth/budget fixtures against selected1390, genuine point/axis references and exact restoration, opaque-child-safe descriptor observations, first subject errors/references/work/witness/stack versus later assertions, and append-only event journal exact IO/fsync/bounded readback/error/finalization. Retain all40574 declared unit events; reducing physical files must not weaken durability or retain a quadratic reread. Inspect [1393 property interface](1393_private-area-exposure-property-source-review.md) integration at source boundaries only.
+
+Report actionable findings early and seal bounded source verdict with exact raw pins. No parser/JS/import/runtime/native/Git or source/protected/cache mutation. Complete final driver, binding validator, actual observation assertions, argv/environment/authority/bounds/whole closure, fresh syntax and root sole native lease remain later acceptance.

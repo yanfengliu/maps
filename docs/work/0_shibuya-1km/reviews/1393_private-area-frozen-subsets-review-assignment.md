@@ -1,0 +1,11 @@
+# 1393 — Frozen exposure and property source review
+
+Root dispatches existing reviewer1372, canonical requested Astra/xhigh with actual telemetry unavailable, for independent source review in ORIGINAL. Own1393 raw/report/handoff only. The [1392 bounded review](1392_private-area-preparation-source-review.md) is accepted; it does not transfer final-source or runtime admission. Main owner1391 continues distinct driver files in1111; exclude every changing file.
+
+First exact target is1111/data/commercial-work/1391/final-plan/exposure-binding.json4426/32132e8bd120772b73fb9f0999a667b387bf5e44e60dac877dd43b0fba26c4c7. Verify complete original prefixes, exact selected1390 direct-export suffixes and inverse, actual1325 namespace refs including dot, exact successor-parent resolver URLs, native builtins and ordinary headless Node import bound. Root preservation recovery/preparation1391-final-exposures/root-preservation.json3625/efa25a5225adcbc2213fde0b3948fb9956a3b8e105e44b8560b78f4ec41cb5b7 is raw preservation only.
+
+The frozen property source extends this review: final-plan/property-fixtures.mjs15727/7dea8cbef804a591c827bab94c36696725b006c9bf37beb3ac43173063d2acb2. Obtain exact metadata descriptors from its owner, avoiding inferred paths. Check all109 recipes against the fixed1390 plan, API, exact graph/reference/descriptor restoration, opaque Proxy/backing-target observation, sentinels and getter/read order including the independent A/B counter. Builder supplies fixtures, not subject calls or a PASS oracle. Main owner1391 remains integration owner.
+
+Root1391-C1 directive recovery/preparation1391/plan-interpretation-C1.json1303/6a8ae4f0310eb95575f24ebdd50f9d5fd5d4da7e8ac7daf59a0cb1a0b3a94a00 preserves fixed order/counts: last-group binding negatives reject invalid bytes without enabling their import, acknowledging prior approved imports and recording zero per-unit import/area deltas. No global pre-import claim. Keep this distinct from actual final-driver verification.
+
+Report actionable findings early. No parser/JS/import/runtime/native/Git or protected/source/cache mutation. Final complete driver, resolver/closure integration, argv/environment/authority/bounds, actual syntax and sole native lease remain separate acceptance.
