@@ -21,23 +21,23 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted `ce107fc619e93c85d98616ea0134abb387668df4`: Satellite asphalt light response and rounded paving joints. [1437](reviews/1437_shared-ground-material-implementation.md), independent [1438 PASS](reviews/1438_shared-ground-material-integrated-review.md). Added geometry/draws/textures/lights:zero; four extra road texture reads/fragment. Terrain, paint, support/contact and GTAO normals remain geometric. Isolated shader cost unmeasured; earlier window/frontage/light/tactile/corner work preserved. No final criterion closes.
+Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). One source-bound quad/radiance0.65; narrow non-letter border unlit, glazing/roof excluded. Noon visually normal with existing0.05 floor. Zero added geometry/textures/lights; one shader branch, isolated cost unmeasured. Earlier ground/windows/frontage work preserved; no final criterion closes.
 
-PRIMARY five gates PASS: build/types, 132 files/1,172 tests in 75.20 s, audit (two existing moderate advisories), visual `4eb529d3e8b3e8d6`:44 frames/three lifecycles in 311.782 s, RTX 4090/616.64. Native review:10 stills/12 adjacent motion copies, 22 canonical Satellite/two returns. Four runtime files match; debug maps differ. Motion:180.7 ms first/last before-observations only, not continuous stability/population/FPS. Wrong seed excluded; default5970698 rerun/early whitespace PASS.
+PRIMARY five gates PASS: build/types,133 files/1,173 tests in71.479s, audit(two existing moderate advisories), visual `82fa77ecdca2b44c`:44frames/three lifecycles in288.179s, RTX4090/616.64. Native review:matched noon/dusk block pair,22canonical Satellite/two current Satellite-to-Cartographic control frames. Four runtime files match worker build; maps excluded. Default5970698 actual actor started locally; no motion/actor-continuity/FPS claim. Pre-start permission refusals retained; scoped completions passed.
 
-Main/origin-main read back exact; remote CI has zero checks/statuses/workflows, no remote pass claimed. Checkout/registration/metadata retired normally after preservation. Fresh closeout:81 owned identities absent; task markers/three ports/seven TEMP paths clear. Needed evidence/cache retained; historical trees and unrelated ancient tail untouched; original HOLD/reconciliation preserved.
+Main/origin-main read back exact. Fresh remote APIs:zero checks/statuses/workflows; CI unavailable, no pass claimed. Checkout/registration retired normally after preservation. 1449closeout18:54UTC:51owned identities absent, task markers/4319/TEMP clear. Evidence/cache retained; historical trees and unrelated ancient tail untouched.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `test/facade-emission.test.ts`, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
-[1445 stop](reviews/1445_three-front-prototype2-stop.md): photo-overlay grid family stopped, sources preserved/checkout retired. [1448](reviews/1448_next-visible-milestone.md) redirects to original Coca-Cola dusk emission. Sign1449 native noon/dusk block comparison accepted by root: retained script, narrow unlit border, glass/roof excluded; zero new geometry/textures/lights. [1449 handoff](reviews/1449_coca-cola-source-emission.md); freeze copied; gates/review/integration OPEN. Final criteria OPEN.
+[1445 stop](reviews/1445_three-front-prototype2-stop.md): photo-overlay grid family stopped. [1451](reviews/1451_next-visible-milestone.md) redirects toward one substantial TSUTAYA glazing region reflecting the actual nearby city. Root accepts one bounded material prototype, preserving original photos/signs and using existing tools. Full-map quality/population/performance and all final criteria remain OPEN.
 
 Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Integrate original Coca-Cola emission | docs1446 RUNNING; sign1449 frozen | Copy exact two-path freeze to PRIMARY; one five-gate bundle and independent integrated review. Then commit/push, confirm remote bounds and retire worker checkout. No adoption while required checks/findings remain. |
+| TSUTAYA reflective glazing prototype | glazing1452 DISPATCHED; root acceptance | One source-bound region/local city reflection, no per-frame recapture. Matched block/lateral orbit/dusk native review before full gates. Stop for tint-only gain, mirror/seams/washed-out photos, or new general selection machinery. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
