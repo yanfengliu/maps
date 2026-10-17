@@ -68,6 +68,7 @@ import { addCrossingFrontage } from "./crossing-frontage.js";
 import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corner.js";
 import { addPeripheralFrontage, preparePeripheralFrontage } from "./peripheral-frontage.js";
 import { addUpperWindows, prepareUpperWindows, upperWindowSourceForUrl } from "./upper-windows.js";
+import { addRailFacades, prepareRailFacades, railFacadeSourceForUrl } from "./rail-facades.js";
 import { addPeripheralMountedLight, peripheralLightSourceForUrl, preparePeripheralMountedLight } from "./peripheral-mounted-light.js";
 
 /** Every material property that can hold a texture we care about. */
@@ -177,7 +178,7 @@ export class FacadeTexturePlugin {
 
   /** Reuse the normal tile request; retain verified digests, never tile buffers. */
   fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
-    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url) ?? upperWindowSourceForUrl(url);
+    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url) ?? upperWindowSourceForUrl(url) ?? railFacadeSourceForUrl(url);
     if (!source) return null;
     return (async () => {
       const response = await fetch(url, options);
@@ -221,6 +222,7 @@ export class FacadeTexturePlugin {
       preparePeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       preparePeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      prepareRailFacades(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -284,6 +286,7 @@ export class FacadeTexturePlugin {
       addPeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addPeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
+      addRailFacades(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
     }
   }
 

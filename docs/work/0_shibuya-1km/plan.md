@@ -31,16 +31,17 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). 1432 is adopted and retired. The broader office-facade band from 1433/root native block views is PREPARED, not dispatched. All final criteria remain OPEN.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Band1434 gates/review PASS; adoption pending. [Critic1436](reviews/1436_product-direction.md) COMPLETE. Final criteria OPEN.
 
-Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. Follow-up PARKED; no optimization selected. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
+Profile COMPLETE; worker CPU attribution UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Rail-side office-facade band | Root; PREPARED/no worker | 1433/canonical block-az120 show flat blurred neighbors. Source-admit one coherent band of several offices; depth must read at block and close front/oblique noon/dusk, preserving floor rhythm/signs/roofs. Final gates, review/main adoption required. |
+| Rail-side facade band | Root integration; worker COMPLETE; review1435 PASS | Freeze `f444b49`; 96 openings/three fronts; eight photo rows differ from GML storeys. Five PRIMARY gates GREEN: 1,170 tests/44 frames/three lifecycles. Native local/canonical accepted; main adoption/retirement pending. |
+| Shared ground material depth | Root SELECTED; worker not dispatched | Critic1436: recurring flat asphalt/paving. Preserve support/paint/source; visible world-scale relief/response across approaches. Base after1434 adoption. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
-No global blocker is established. The next-outcome table is the sole current dispatch queue. Full acceptance needs matching final evidence and independent integrated review on main; local milestones close no final criterion.
+No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
 ## Acceptance criteria
 

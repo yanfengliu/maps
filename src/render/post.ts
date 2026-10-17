@@ -68,6 +68,7 @@ import { installAgentNormals } from "./normal-pass.js";
 import { getCrossingFrontageNormalMaterial } from "../scene/crossing-frontage.js";
 import { getPeripheralFrontageNormalMaterial } from "../scene/peripheral-frontage.js";
 import { getUpperWindowNormalMaterial } from "../scene/upper-windows.js";
+import { getRailFacadeNormalMaterial } from "../scene/rail-facades.js";
 import { getCommercialCornerNormalMaterial } from "../scene/commercial-corner.js";
 
 /**
@@ -193,7 +194,7 @@ export function createPostChain(options: PostOptions): PostChain {
 
     gtao = new GTAOPass(scene, camera, options.width, options.height);
     partialDisposers.push(() => gtao.dispose());
-    installAgentNormals(gtao, mesh => getAgentNormalMaterial(mesh) ?? getUpperWindowNormalMaterial(mesh) ?? getPeripheralFrontageNormalMaterial(mesh) ?? getCommercialCornerNormalMaterial(mesh) ?? getCrossingFrontageNormalMaterial(mesh));
+    installAgentNormals(gtao, mesh => getAgentNormalMaterial(mesh) ?? getRailFacadeNormalMaterial(mesh) ?? getUpperWindowNormalMaterial(mesh) ?? getPeripheralFrontageNormalMaterial(mesh) ?? getCommercialCornerNormalMaterial(mesh) ?? getCrossingFrontageNormalMaterial(mesh));
     gtao.output = GTAOPass.OUTPUT.Default;
     gtao.blendIntensity = AO_BLEND;
     gtao.updateGtaoMaterial({
