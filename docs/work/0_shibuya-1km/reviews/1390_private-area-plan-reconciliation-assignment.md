@@ -1,0 +1,9 @@
+# 1390 — Reconcile actual-private qualification plans
+
+Root assigns the existing independent reviewer a read-only reconciliation of frozen1387 handoff4275/97d8226e…, proposed-private-qualification.json39511/b7c8ba73…, and independent1389 oracle-plan.json68920/0db4f47e…/symbolic-oracles.md9256/b3b7e1d2…. Exact descriptors are retained in their root preservation records. First-source [1388](1388_eligible-area-source-review.md) remains separately admitted; no new code or runtime is authorized.
+
+Recommend one fixed P case vector with complete coverage mapping, exact independent fixtures/fractions, read/error/reference/restoration expectations and counts by kind. Keep all9642 golden rows and291 legacy cases. Separate primitive invocations, area calls, budget-arm units and validH attempts; retain both first-point numerator and second-point denominator bit-bound fixtures. Do not use unknown native-message literals as PASS predicates.
+
+Fix meaningful restoration for mutable and irreversible positive fixtures, nontrapping Proxy/backing-target snapshots, delayed-fallback/wrong-body/literal-X/calibration falsifiers and genuine first-error preservation. Bind actual lexical functions through reviewed full-module prefix/exposure suffixes and genuine dependencies, not hand-written/literal X. The next increment is standalone P qualification before any whole291 production rebase; later production bindings, legacy291 and full cold proof remain required.
+
+Own ORIGINAL data/commercial-work/1390 and authored review1390 only. Retain canonical reviewer pin/telemetry honesty; raw/hash/JSON/own arithmetic only. No parser/import/JS/control/constructor/profile/native/Git/source change. Return report, exact proposed plan and sealed handoff; root selects IDs/calls and every future source/runtime lease.
