@@ -3708,5 +3708,193 @@
       "source_cost": "OLD7.71s / NEW18.91s, slower and not adopted; full Native remains open"
     },
     "historical_verdict": "Authored report preserved exactly; Root acceptance context does not rewrite its scope."
+  },
+  "reviews_304_312": {
+    "cutoff": "Canonical5 current active frontier; no reviews/results 313 or 314 included.",
+    "reviews": [
+      {
+        "number": 304,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-grouped-actual-independent-review-304\\review304.md",
+          "bytes": 10312,
+          "sha256": "6e089d72d85396f67ddb37a7a2860a4c19fd906d06bfefbcf46987d7623d69f1"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-grouped-actual-independent-review-304\\seal.json",
+          "bytes": 1342,
+          "sha256": "ec6503fe742fd888f39047d860fe10f361f7c9ba7a4990ce407782540bd45442"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\304_source_grouped_actual_independent_review.md",
+          "bytes": 10312,
+          "sha256": "6e089d72d85396f67ddb37a7a2860a4c19fd906d06bfefbcf46987d7623d69f1"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 305,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-materializer-admission-rolling8-independent-review-v1\\305_native_materializer_admission_rolling8_independent_review_v1.md",
+          "bytes": 5767,
+          "sha256": "02ff9af7ddc3944eb3204aae129c06eceadadc46f0c9a8318e232e358f384f9b"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-materializer-admission-rolling8-independent-review-v1\\seal.json",
+          "bytes": 1109,
+          "sha256": "08df86901287184f4f1797722fce573495c8619268322c6775d4663489ac44ec"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\305_native_materializer_admission_rolling8_independent_review_v1.md",
+          "bytes": 5767,
+          "sha256": "02ff9af7ddc3944eb3204aae129c06eceadadc46f0c9a8318e232e358f384f9b"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 306,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-materializer-admission-rolling8-focused-independent-review-v2\\306_native_materializer_admission_rolling8_focused_independent_review_v2.md",
+          "bytes": 4062,
+          "sha256": "fef601eab3be5e8bb99a26fe78f6e856c1802031c2e00a7bc12e594a3581c9ed"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-materializer-admission-rolling8-focused-independent-review-v2\\seal.json",
+          "bytes": 1165,
+          "sha256": "4facb0a8e39ab82058a59a979f5121f10b417983efea5f55bbc015c97264b6fd"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\306_native_materializer_admission_rolling8_focused_independent_review_v2.md",
+          "bytes": 4062,
+          "sha256": "fef601eab3be5e8bb99a26fe78f6e856c1802031c2e00a7bc12e594a3581c9ed"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 307,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-immutable-code-integrated-independent-review-307\\review307.md",
+          "bytes": 11702,
+          "sha256": "873f8cdc1482a8b13f1df9e3beecdf9de25ab4f3eedca83e0f96d3b11c2f6a67"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-immutable-code-integrated-independent-review-307\\seal.json",
+          "bytes": 1408,
+          "sha256": "4bba35fe5369e194e5a97a03969c803843e3ff4478d2b4f14a50329722b5d8e5"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\307_source_relabel_immutable_code_integrated_independent_review.md",
+          "bytes": 11702,
+          "sha256": "873f8cdc1482a8b13f1df9e3beecdf9de25ab4f3eedca83e0f96d3b11c2f6a67"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 308,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-immutable-code-focused-independent-review-308\\review308.md",
+          "bytes": 5871,
+          "sha256": "8cd69122d36bcf69bb5c5c65b1f0a40891a6308fc7ad14388b5b123c4539fbb8"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-immutable-code-focused-independent-review-308\\seal.json",
+          "bytes": 1721,
+          "sha256": "a1889353828df2bca7097a47575ae661c2dbeafdc3f08ef7d0c359f370aa641a"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\308_source_relabel_immutable_code_focused_independent_review.md",
+          "bytes": 5871,
+          "sha256": "8cd69122d36bcf69bb5c5c65b1f0a40891a6308fc7ad14388b5b123c4539fbb8"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 309,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-v2-ordinary-actual-independent-review-v1\\309_native32_v2_ordinary_actual_independent_review_v1.md",
+          "bytes": 3908,
+          "sha256": "ca5fb2abd944b692c1af289798d6da2e023052bfcdb303f2ed5ee44256044fc8"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-v2-ordinary-actual-independent-review-v1\\seal.json",
+          "bytes": 1215,
+          "sha256": "5c5b8039fd8161f842c4bc7a7f439bdc421bdc80d9cc08c45910c78abef66153"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\309_native32_v2_ordinary_actual_independent_review_v1.md",
+          "bytes": 3908,
+          "sha256": "ca5fb2abd944b692c1af289798d6da2e023052bfcdb303f2ed5ee44256044fc8"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 310,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-admission-discriminator-independent-review-v1\\310_native32_admission_discriminator_independent_review_v1.md",
+          "bytes": 4563,
+          "sha256": "29d51a3eb08b801f61a397e54fe1bceeb81f7acd892f611ac28f3716370aeece"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-admission-discriminator-independent-review-v1\\seal.json",
+          "bytes": 1184,
+          "sha256": "5f7da375178a99e24165fe2454f4dffe1ad435f98c46356b48b4f82b01899a63"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\310_native32_admission_discriminator_independent_review_v1.md",
+          "bytes": 4563,
+          "sha256": "29d51a3eb08b801f61a397e54fe1bceeb81f7acd892f611ac28f3716370aeece"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 311,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-cache-v2-grouped-actual-independent-review-311\\review311.md",
+          "bytes": 8620,
+          "sha256": "b247bde78cf24cfe92f2f075fd8e382bdda49efe70f81bd30edc1c73ecb15511"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\source-relabel-cache-v2-grouped-actual-independent-review-311\\seal.json",
+          "bytes": 1440,
+          "sha256": "22787754a3f7f7dac25b3d389a63e9b611a20bd8178f93b5ec68b633c7898849"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\311_source_relabel_cache_v2_grouped_actual_independent_review.md",
+          "bytes": 8620,
+          "sha256": "b247bde78cf24cfe92f2f075fd8e382bdda49efe70f81bd30edc1c73ecb15511"
+        },
+        "verbatim": true
+      },
+      {
+        "number": 312,
+        "source_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-admission-pair-actual-independent-review-312\\312_native32_admission_pair_actual_independent_review.md",
+          "bytes": 4221,
+          "sha256": "eab1c4304856e11198905013a5275954ceb47dd38487d5f5ed8894b7b7be1804"
+        },
+        "source_seal": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native32-admission-pair-actual-independent-review-312\\seal.json",
+          "bytes": 1154,
+          "sha256": "ae49d37eb0e18a3b1c37c9507e67159f8f4e66672c4abcebacc286a60cc611d6"
+        },
+        "staged_review": {
+          "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs304-312-preparation-v1\\staged\\docs\\work\\0_unreal-shibuya\\reviews\\312_native32_admission_pair_actual_independent_review.md",
+          "bytes": 4221,
+          "sha256": "eab1c4304856e11198905013a5275954ceb47dd38487d5f5ed8894b7b7be1804"
+        },
+        "verbatim": true
+      }
+    ],
+    "decisions": [
+      "304 accepts bounded Source actual characterization only; GR12 remains RED and the failed tuple component is UNKNOWN.",
+      "305 remains HOLD at stated test bounds; v1 did not run.",
+      "306 accepts test repair only.",
+      "307 remains HOLD on shared PO ledger 15 versus 10; v1 did not run.",
+      "308 accepts caller-local PO ledger repair.",
+      "309 accepts three methods/four facts for actual pool cleanup only.",
+      "310 accepts preparation only.",
+      "311 accepts bounded actuals with GR12 RED.",
+      "312 accepts one pair and rejects standalone cost repair.",
+      "No Source, native pipeline, or Unreal criterion is accepted globally; no lesson retires."
+    ]
   }
 }
