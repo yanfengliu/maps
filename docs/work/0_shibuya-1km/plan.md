@@ -31,13 +31,13 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Ground1437 adopted/retired/resources closed; critic1439 COMPLETE. Road1440 selected, not dispatched. Final criteria OPEN.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). [Road1440](reviews/1440_road-marking-source-eligibility.md) is source-incomplete and retired. [Critic1441](reviews/1441_product-direction.md) COMPLETE; corridor1442 selected, not dispatched. Final criteria OPEN.
 
 Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Road marking coverage | Root SELECTED; worker not dispatched | [1439](reviews/1439_product-direction.md):32 untreated objects, connected approaches/periphery. Strict source/layer/support; preserve legitimate unmarked roads. Five expressways separate. Source eligibility first. |
+| Powered dusk corridor | Root SELECTED; worker not dispatched | 1441:two candidate corridors, then one visible 80–120 m group over three fronts. At most eight mounted lights, supported receivers; street/block/held-out views. Stop if hidden, tiny or glaring. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
@@ -107,7 +107,7 @@ These are the 35 stable identities across phases 0–10; never renumber. Item 35
 
 Whole-AOI quality remains open: close/block/aerial views, peripheral blocks, noon/dusk, fixed and held-out seeded exploration. Record seeds, poses, inspected-byte digests and temporal sampling gaps. Inspect Satellite originals natively and check basic style continuity. Final traversal/building clearance remains open; [445](reviews/445_camera-only-native.md)'s 857 m ascent is a route-coverage bound, not a clearance height.
 
-Facades still need convincing depth/glazing, floor rhythm, de-light and variation across representative buildings. Every road remains in scope, including 32 untreated objects and five omitted urban-expressway carriageways. Source/layer/LOD binding, lane semantics and nine-stratum/held-out native coverage remain open; repeated paint keys do not prove duplicate paint. Distributed mounted dusk lighting needs source selection, supported occupancy, density/sightlines and a same-run refusal histogram. Wet/ground/tree/base contact and crossed-paint authenticity remain open. Unadopted 413/420 and rejected facade/tree/ground/lighting branches are parked; exact source exceptions remain in the historical progress record.
+Facades still need convincing depth/glazing, floor rhythm, de-light and variation across representative buildings. Every road remains in scope. The historical 32-object remainder is seven carriageways (five expressways), three intersections and 22 semantically unknown LOD1 objects, not 32 proven paint omissions. No published paint overlaps the 27 non-expressway objects; expressways need separate layer work. Source/layer/LOD binding, lane semantics and nine-stratum/held-out native coverage remain open. Distributed mounted dusk lighting needs source selection, supported occupancy, density/sightlines and a same-run refusal histogram. Wet/ground/tree/base contact and crossed-paint authenticity remain open. Unadopted 413/420 and rejected facade/tree/ground/lighting branches are parked; exact source exceptions remain in the historical progress record.
 
 Default rail acceptance is narrow: exterior gaps/bearings/returns, actors under spans, temporal coverage and a recognizable supported train passage remain open. Vehicles need joined wheel/body contact, bus/portal/class coverage, spacing and visible governed signal behavior; the old fixture has no governed entry. One ordinary walker is accepted, not a full crowd. Supported full-source eligibility, animated soles, avoidance, no sliding/interpenetration and broader default flow remain open. The 150-pedestrian/20-vehicle seed 5970698, 600 s contract remains red/unqualified before untuned seed 42/native event evidence. Motion/contact experiments stay parked.
 
