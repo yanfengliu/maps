@@ -22,6 +22,8 @@ Observed during the normal full unit gate:125 files/1147 tests produced three500
 
 Verification changes: bound normal maxWorkers to max(1,min(8,availableParallelism−1)) and replace the crown test’s per-value matcher allocation with extrema over every identical vertex/leaf pair. Preserve full finite checks and the original−0.97399/1.100135/1.244998/0.072 bounds, geometry/resource/disposal checks and5000ms deadlines. The optimized five-case vegetation file passes; its affected case takes36.3614ms. Actual config import reads8; scoped types pass. The cap is one candidate, pending root’s full normal gate rather than an accepted optimum. [1415](../work/0_shibuya-1km/reviews/1415_verification-contention-and-crown-check.md) records the exact inputs, baseline/optimized results and remaining full-suite acceptance.
 
+Verification closeout at `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: the final PRIMARY normal unit gate passed 133 files/1,173 tests in 71.479 s, alongside the other four required gates. Independent [1450](../work/0_shibuya-1km/reviews/1450_coca-cola-integrated-review.md) reviewed the integrated source and evidence. This closes the earlier pending full-suite check; it does not prove eight workers optimal or isolate a speedup from other changes.
+
 ## 2026-10-17 — inherited inspector settings bypassed headless capture defaults
 
 Found while addressing the owner’s request to fix verification inefficiency: all twelve public Playwright configs admitted inherited inspector settings. The installed Playwright 1.63.0 option validator changes even explicit headless:true to false for effective PWDEBUG, npm_config_pwdebug or npm_package_config_pwdebug inspector input. No visible browser was launched to reproduce this defect.
