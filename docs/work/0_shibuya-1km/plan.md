@@ -31,14 +31,17 @@ Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa529032
 
 Stopped1445/1452/1455 remain failed; evidence preserved/checkouts retired, confirmed1456.1454: TSUTAYA chart128x512; other imagery UNKNOWN.
 
-1457 benchmark/disqualifiers remain.1458 window STOP/rejected1461;[1464](reviews/1464_finite-advertisement-source-stop.md) NO QUALIFIED SET, no signscape prototype; bounded failures, not impossibility.1458 worktree/registration retired;12 outputs preserved,no owned process. Receipt: artifacts/windows1458/closeout.json.
+1457 limits remain.1458 window STOP/rejected1461;1464 NO QUALIFIED SET/no signscape prototype: bounded failures,not impossibility.1458 retired;12 outputs preserved,no owned process; artifacts/windows1458/closeout.json.
 
 Profile COMPLETE/CPU UNAVAILABLE; follow-up PARKED. Historical65 worktrees: inventory COMPLETE/removal PARKED; preservation precedes cleanup.
 
+[1466](reviews/1466_population-native-discriminator.md) peripheral DONE:8frames/106.758s,RTX4090; configured3000/200,active/rendered pedestrians1146–1469/vehicles74–79. Dozens visible pedestrians,no confident vehicle. Root3/reviewer8 originals;[1467 HOLD](reviews/1467_population-native-review.md):blue-woman head02–04 strongly tilted,cause UNKNOWN;clones/rows.55–65tick brackets: no continuous/contact/central/default/FPS acceptance. Source/build unchanged;12PIDs/TEMP/4321 gone.
+
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Population discriminator | windows1458 DISPATCHED;1465 source COMPLETE | Native agents=1/eight frames; review1466 AWAITS sealed outputs. No default change or full-population acceptance. |
-| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 15 native originals,header59fbb1c;ignored artifacts/visual-gallery/index.html;15min. Never Git. |
+| Head appearance discriminator | windows1458 DISPATCHED;[1468 UNKNOWN](reviews/1468_head-pose-source-diagnosis.md) | Existing hardware preview,7 native LOD/step views; no source/default changes. |
+| Central probe | PARKED;prepared only | Pending1468/new useful question;early empty crossing does not prove routes unusable. |
+| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 23native/17,402,408B;probe UNQUALIFIED;ignored visual-gallery,Never Git;15min. |
 
 No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
