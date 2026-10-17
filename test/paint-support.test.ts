@@ -149,7 +149,7 @@ it("censuses all actual zebra and continuous tactile triangles without upper-lay
             const rise = Math.abs(p.getY(v) - p.getY(w)), run = Math.hypot(p.getX(v) - p.getX(w), p.getZ(v) - p.getZ(w));
             maximumRiseRun = Math.max(maximumRiseRun, rise / run);
             const t = Math.max(0, Math.min(1, ((p.getX(v) - a.x) * (b.x - a.x) + (p.getZ(v) - a.z) * (b.z - a.z)) / length2));
-            maximumSourceDeviationM = Math.max(maximumSourceDeviationM, Math.abs(p.getY(v) - (crossing ? .06 : .07) - (a.y + (b.y - a.y) * t)));
+            maximumSourceDeviationM = Math.max(maximumSourceDeviationM, Math.abs(p.getY(v) - (crossing ? .06 : .02) - (a.y + (b.y - a.y) * t)));
           }
         }
       }

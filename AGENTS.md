@@ -137,3 +137,7 @@ The fleet canon above, the documents it asks for, and `docs/policies/local-rules
 ### Cached source for mapped-tree regression checks
 
 test/vegetation.test.ts checks crown variety against the reviewed cached data/scene/decorations.json (80,890 bytes; SHA-256 f16d044aeefc16704f6bcd10c1e3d03039927d6226b68322631ea3edff1ac918). Restore that reviewed scene cache before the source-dependent unit gate. Missing or changed bytes fail with the restoration/review requirement; the test never downloads or skips source. Fresh decoration data needs source review before changing this pin.
+
+### Retained pedestrian test packets
+
+Before a full unit run in a fresh worktree, check these nine retained fixture files: `artifacts/pedestrian-native253-20260928/packet/{context,rig-near,rig-medium,rig-far}.json` and `artifacts/pedestrian-corner331-20260928/packet/{manifest,context,rig-near,rig-medium,rig-far}.json`. Restore literal reviewed copies separately from the scene runtime cache; missing packets are a setup failure, and tests must not fetch or skip them. [1422](docs/work/0_shibuya-1km/reviews/1422_tactile-paving-implementation.md) records the actual restoration and its source/copy hash receipt. This presence check avoids starting the full suite with known missing inputs; it does not replace the tests' content checks.

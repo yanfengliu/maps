@@ -8,6 +8,7 @@ import type { NetworkData, WorldPoint } from "../world/network-data.js";
 import type { WorldStyle } from "../world/styles.js";
 import type { ControlHardwarePlacement } from "../world/control-hardware.js";
 import { PAINT_SUPPORT_BOUNDS, type PaintSupport } from "./paint-support.js";
+import { createTactileFinish, TACTILE_FINISH } from "./tactile-paving.js";
 
 export interface PaintPlacement {
   sourceId: string;
@@ -48,12 +49,13 @@ export function pointAlong(points: readonly WorldPoint[], distance: number): { p
 
 class SurfaceBuilder {
   vertices: number[] = [];
+  private readonly uvs: number[] = [];
   constructor(private readonly heightAt?: PaintSupport) {}
   /** Finite support check: <=0.25m grid, triangle vertices, edge midpoints and
    * centroids. A passing stripe does not establish support at every interior XY.
    * No partial stripe is emitted when one sampled point or edge is unsuitable.
    */
-  rectangle(a: WorldPoint, b: WorldPoint, width: number, lift: number): string | null {
+  rectangle(a: WorldPoint, b: WorldPoint, width: number, lift: number, pathDistanceM?: number): string | null {
     const length = Math.hypot(b.x - a.x, b.z - a.z);
     if (length < 0.0001) return "degenerate source segment";
     if (!this.heightAt) return "no road/pavement support query supplied";
@@ -92,11 +94,17 @@ class SurfaceBuilder {
       }
     }
     this.vertices.push(...pending);
+    if (pathDistanceM !== undefined) for (let i = 0; i < pending.length; i += 3) {
+      const dx = pending[i]! - a.x, dz = pending[i + 2]! - a.z;
+      this.uvs.push((dx * nx + dz * nz) / width + .5,
+        (pathDistanceM + (dx * (b.x - a.x) + dz * (b.z - a.z)) / length) / (TACTILE_FINISH.tileM * TACTILE_FINISH.variants));
+    }
     return null;
   }
   geometry(): BufferGeometry {
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new Float32BufferAttribute(this.vertices, 3));
+    if (this.uvs.length) geometry.setAttribute("uv", new Float32BufferAttribute(this.uvs, 2));
     geometry.computeVertexNormals(); geometry.computeBoundingSphere();
     return geometry;
   }
@@ -107,8 +115,8 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
   const paint = new SurfaceBuilder(heightAt); const tactile = new SurfaceBuilder(heightAt);
   let stripes = 0; let crossings = 0;
   const paintPlacements: PaintPlacement[] = [];
-  const placePaint = (builder: SurfaceBuilder, sourceId: string, kind: PaintPlacement["kind"], pathIndex: number, partIndex: number, start: WorldPoint, end: WorldPoint, width: number, lift: number): boolean => {
-    const vertexStart = builder.vertices.length / 3, failure = builder.rectangle(start, end, width, lift);
+  const placePaint = (builder: SurfaceBuilder, sourceId: string, kind: PaintPlacement["kind"], pathIndex: number, partIndex: number, start: WorldPoint, end: WorldPoint, width: number, lift: number, pathDistanceM?: number): boolean => {
+    const vertexStart = builder.vertices.length / 3, failure = builder.rectangle(start, end, width, lift, pathDistanceM);
     paintPlacements.push({ sourceId, kind, pathIndex, partIndex, start: { ...start }, end: { ...end }, status: failure ? "unplaced" : "placed", reason: failure ?? "Bounded source-level support at vertices, edge midpoints and centroids; finite sampling only.", vertexStart, vertexCount: builder.vertices.length / 3 - vertexStart });
     return failure === null;
   };
@@ -158,7 +166,14 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
   }
   for (const path of network.physical.tactilePaths) {
     if (path.extent !== "path") continue;
-    for (const [pathIndex, points] of path.paths.entries()) for (let index = 1; index < points.length; index++) placePaint(tactile, path.id, "tactile", pathIndex, index - 1, points[index - 1]!, points[index]!, 0.3, 0.07);
+    for (const [pathIndex, points] of path.paths.entries()) {
+      let distanceM = 0;
+      for (let index = 1; index < points.length; index++) {
+        const a = points[index - 1]!, b = points[index]!;
+        placePaint(tactile, path.id, "tactile", pathIndex, index - 1, a, b, .3, TACTILE_FINISH.liftM, distanceM);
+        distanceM += Math.hypot(b.x - a.x, b.z - a.z);
+      }
+    }
   }
   const lanes = new Map(network.lanes.map((edge) => [edge.id, edge]));
   const placements = new Map(hardware.map(record => [record.sourceId, record]));
@@ -182,10 +197,10 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
   }
 
   const paintMaterial = new MeshStandardMaterial({ color: new Color(style.palette.sidewalk).lerp(new Color(0xffffff), 0.88), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
-  const tactileMaterial = new MeshStandardMaterial({ color: 0xcabd75, roughness: 0.9 });
+  const tactileFinish = createTactileFinish(style);
   const metal = new MeshStandardMaterial({ color: 0x636c69, roughness: 0.53, metalness: 0.35 });
   const headMaterial = new MeshStandardMaterial({ color: 0x343b3e, roughness: 0.72 });
-  for (const [builder, material, name] of [[paint, paintMaterial, "paint"], [tactile, tactileMaterial, "tactile-paving"]] as const) {
+  for (const [builder, material, name] of [[paint, paintMaterial, "paint"], [tactile, tactileFinish.material, "tactile-paving"]] as const) {
     const mesh = new Mesh(builder.geometry(), material); mesh.name = `streets:${name}`; mesh.receiveShadow = true; root.add(mesh);
   }
   const instances = (geometry: BufferGeometry, material: MeshStandardMaterial | MeshBasicMaterial, matrices: Matrix4[], name: string): InstancedMesh => {
@@ -232,10 +247,11 @@ export function createStreetDetails(network: NetworkData, style: WorldStyle, hei
   // used to report `guardrailPosts: 0` as a literal, which read like a measurement
   // of this scene and was a count of nothing; it is gone rather than kept.
   return { root, paintPlacements, counts: { crossings, stripes, unplacedStripes: paintPlacements.filter(p => p.kind === "crossing" && p.status === "unplaced").length, unplacedPaintFeatures: new Set(paintPlacements.filter(p => p.status === "unplaced").map(p => p.sourceId)).size, signalHeads: headMatrices.length, placedControls: hardware.filter(r => r.status === "placed").length, unplacedControls: hardware.filter(r => r.status === "unplaced").length }, updateSignals,
-    setStyle(next): void { paintMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); },
+    setStyle(next): void { paintMaterial.color.setHex(next.palette.sidewalk).lerp(new Color(0xffffff), 0.88); tactileFinish.apply(next); },
     dispose(): void {
       const materials = new Set<MeshStandardMaterial | MeshBasicMaterial>();
       root.traverse((object) => { if (object instanceof Mesh) { object.geometry.dispose(); const list = Array.isArray(object.material) ? object.material : [object.material]; list.forEach((m) => materials.add(m)); } });
+      materials.delete(tactileFinish.material); tactileFinish.dispose();
       materials.forEach((material) => material.dispose()); root.clear();
       stopTexture?.dispose();
     },

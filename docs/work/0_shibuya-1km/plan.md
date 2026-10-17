@@ -17,7 +17,7 @@ Non-goals: map viewer, navigation/routing, survey-grade reconstruction, second l
 
 ## Approach
 
-Root owns priorities, contracts, this single current record, acceptance and integration. Delegate bounded diagnosis, implementation and local checks; workers own detail and return evidence/bounds/findings. Read this plan at turn start and before delegation. Keep at most three next outcomes and park dependencies separately. Land meaningful verified increments on main before expanding them. Apply the inherited two-failure reassessment before releasing another attempt.
+Root owns priorities, contracts, this sole status record, acceptance and integration. Workers own bounded diagnosis, implementation and checks. Read it at turn start and before delegation; keep at most three next outcomes, park dependencies, reassess after two failures for one reason and land verified increments on main.
 
 ### Current adoption and evidence
 
@@ -29,14 +29,15 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-This docs-only increment completes the context repair: `orchestration_context` implemented it; independent [1419](reviews/1419_orchestration-context-review.md) reconstructs the goal, scope, queue and open requirements. Root owns acceptance/integration; no product criterion closes.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md); worktree removed. Fresh critique 1420: 24 originals, 20 usable/four occluded; controls/style/cleanup passed. Priorities: tactile construction, mounted dusk light, facade depth. No final criterion closes.
 
-Profile diagnostic COMPLETED (`integration1412_path`): unchanged test PASS 59.181 s (owned 60.290 s), but only Vitest parent frames were emitted: CPU attribution UNAVAILABLE. All seven input pins are unchanged; owned process/TEMP closed, CPU lease released. No second attempt. Worker-inspector follow-up is parked; no optimization/new launcher selected. Evidence is in primary `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
+Profile diagnostic COMPLETE; unchanged test passed, parent-only capture leaves worker CPU attribution UNAVAILABLE. Inputs unchanged, resources closed. Follow-up PARKED; no optimization selected. Evidence: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Select next visible milestone | Root accountable; critique QUEUED, no critic dispatched | After this context repair, use the ordinary default app through real controls, fixed and seeded noon/dusk views across the square. Done: fresh critique ranks recurring defects/surprises and root selects one bounded visual outcome and acceptance contract. No implementation is preselected. |
-| Retire retained historical worktrees safely | Root accountable; QUEUED, no worker dispatched | Fresh preserve-first ownership/ignored-data/link checks before exact cleanup; retain needed history and rollback inputs. Done: authorized owned removals and remaining resources are explicit. Do not delay visual priority automatically. |
+| Readable tactile paving, milestone 1422 | Root; INTEGRATED, uncommitted; five gates and [1423](reviews/1423_tactile-integrated-review.md) PASS | Base `c42c526`; final 127 files/1,152 tests, run `59b500b75a1abf60` (44 frames/three lifecycles). Setup failures retained; source frozen to 1422 hashes. Remaining: commit/push and fresh worktree cleanup. |
+| Mounted dusk lighting proposal | Root; `lighting1424_selection` COMPLETE, preparation only | Report 1424 proposes three source faces and an east-first visible prototype. Mounting/receivers/appearance unaccepted; no implementation dispatched. Follow after 1422. |
+| Retire retained historical worktrees safely | Root accountable; inventory COMPLETE; removal PARKED | 67 registrations, including active critique; no safe batch. Three original commercial trees retain distinct docs/private packets. Bounded evidence: `artifacts/retained1421-inventory/summary.json`. Preserve before removing; do not delay the visual lane. |
 
 No global blocker is established. Next product decision: fresh critique selects the visual milestone. Full acceptance needs matching final evidence and independent integrated review on main; this docs repair closes no product criterion.
 
@@ -115,6 +116,6 @@ Private union 1324 remains UNMET. Its 387/63-part proof chain constrains that ex
 
 ## Outcome
 
-Active; full deliverable incomplete. Bounded frontage adopted; this docs-only increment delivers the reviewed context repair.
+Active; full deliverable incomplete. Tactile finish passes all five primary gates and independent source/native review within its static/lifecycle bounds. Commit/push and fresh worktree cleanup remain. Bounded frontage and context repair stay adopted.
 
 Exact old `plan.md` and `progress.md` remain in [Git at e483cd5](https://github.com/yanfengliu/maps/tree/e483cd5dfa58ee89876fba268c55c619daca9d5f/docs/work/0_shibuya-1km). Recover with `git show <commit>:<path>`; exact sizes/digests are in [1418](reviews/1418_orchestration-context-implementation.md). Authored reviews are unchanged; history is not a current queue.
