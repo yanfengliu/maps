@@ -1,0 +1,15 @@
+# 1400 — focused producer and controller correction
+
+Root accepts the completed independent1399 Node semantic finding list: F1 and F2 require changes. The frozen batch3 sources and its six byte inverses remain preserved. This assignment authorizes one distinct source-only successor batch4, alongside the disjoint controller F3 correction. All selected syntax, import, execution and native authority remain closed.
+
+`search1385_computation` owns distinct same-directory1399 source successors and their exact static closures/commands. Populate the branded escaping failure's legacy source channel from the actual first registered source occurrence, including undefined and zero. Preserve actual companion operation and restoration failures separately before private imports; a cleanup error cannot replace the earlier producer, and neither is recorded twice. Successfully returned companion HOLD rows retain their separate inline evidence and do not become an unrelated entry source failure.
+
+`search1397_producer_evidence` owns the separate controller F3 successor. Guard one disposal attempt, retain operation and later disposal ErrorRecords, and project both typed facts chronologically through the actual row/controller receipt. A wrapper or live registry alone does not satisfy the durable projection requirement. Keep the original controller draft and every authored round.
+
+The independent reader and matrix are frozen under1399-calibration. Fifteen entry/reader pairs remain separate reporting controls; two descriptor checks and seven semantic mutations add no child processes. Normal P remains11groups/20287units/20271area calls/54validH attempts/40574unit plus22group events; C2 remains four families across three phases. Numerical bodies, direct-export suffixes, fixtures, oracles and budgets remain exact.
+
+Root binds an acyclic static closure before future source/syntax receipts, then late source-binding manifests, child releases, runtime manifest and controller release. Conservative source restoration compares the child closure's entire `conservativeSourceModules` population; changed output roots or mode metadata do not change executable source equality. Independent exact review covers the final reader, controller, Node successors and integration metadata before any separately owned runtime lease.
+
+Handoffs include full forward/inverse byte deltas, current inputs, exact per-case templates, source-only checks, authored reports and unavailable evidence. The standing owner instruction continues this work autonomously; no private source correction establishes arithmetic, full union/proof, product, appearance, public-gate or main product acceptance.
+
+The [explicit collision-kind contract v3](../../../../artifacts/commercial-corner-20261014/recovery/selection1399/C3-seam-contract-v3.json) resolves1399-F4: completion collisions use the actual selected owned ordinary-file bytes; journal collisions remain directories. The independent reader owner preserves its first version and prepares a distinct correction after consolidated review. This clarifies a missing shared binding and changes no control ID or denominator.
