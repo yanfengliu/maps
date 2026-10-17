@@ -21,25 +21,26 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). One source-bound quad/radiance0.65; narrow non-letter border unlit, glazing/roof excluded. Noon visually normal with existing0.05 floor. Zero added geometry/textures/lights; one shader branch, isolated cost unmeasured. Earlier ground/windows/frontage work preserved; no final criterion closes.
+Adopted `9e4508ee3f7ca4e75ed853ae73e71a82112ce7be`: original Coca-Cola artwork above TSUTAYA receives authored dusk emission. [1449](reviews/1449_coca-cola-source-emission.md), independent [1450 PASS](reviews/1450_coca-cola-integrated-review.md). Source-bound quad/radiance0.65; non-letter border unlit, photo/glazing/roof preserved. Existing0.05 noon floor visually normal. No added geometry/textures/lights; isolated cost unmeasured. Earlier work preserved; no final criterion closes.
 
 PRIMARY five gates PASS: build/types,133 files/1,173 tests in71.479s, audit(two existing moderate advisories), visual `82fa77ecdca2b44c`:44frames/three lifecycles in288.179s, RTX4090/616.64. Native review:matched noon/dusk block pair,22canonical Satellite/two current Satellite-to-Cartographic control frames. Four runtime files match worker build; maps excluded. Default5970698 actual actor started locally; no motion/actor-continuity/FPS claim. Pre-start permission refusals retained; scoped completions passed.
 
-Main/origin-main read back exact. Fresh remote APIs:zero checks/statuses/workflows; CI unavailable, no pass claimed. Checkout/registration retired normally after preservation. 1449closeout18:54UTC:51owned identities absent, task markers/4319/TEMP clear. Evidence/cache retained; historical trees and unrelated ancient tail untouched.
+9e4508 remote APIs:zero checks/statuses/workflows; CI unavailable.1449 checkout retired after preservation;51 owned identities/markers/4319/TEMP clear at18:54UTC. Historical trees/unrelated tail untouched.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `test/facade-emission.test.ts`, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
-[1455](reviews/1455_hachiko-stone-transition-stop.md) STOP confirmed by [1456](reviews/1456_stone-edge-stop-review.md); retired normally with frozen evidence.19:38UTC:12 owned identities/TEMP clear.1445/1452 failures stay stopped; no tuning/full gates. [1454](reviews/1454_tsutaya-source-quality.md): local TSUTAYA chart128x512; other imagery UNKNOWN.
+Stopped1445/1452/[1455](reviews/1455_hachiko-stone-transition-stop.md) trials stay failed; frozen evidence preserved and checkouts retired. [1456](reviews/1456_stone-edge-stop-review.md) confirms1455. [1454](reviews/1454_tsutaya-source-quality.md): local TSUTAYA chart128x512; other imagery UNKNOWN.
 
-[1457](reviews/1457_next-visible-milestone.md) accepts the [future benchmark](1457_visual-benchmark.md)/[disqualifiers](1457_visual-disqualifiers.md), no old rescore. Next: photo-backed recesses across batch26's20-window field. Windows1458 source/views sealed; phase2 DISPATCHED.
+[1457](reviews/1457_next-visible-milestone.md) accepts the [future benchmark](1457_visual-benchmark.md)/[disqualifiers](1457_visual-disqualifiers.md), no old rescore. Source/views sealed; one photo-recess trial. Actual518 GPU unload reveals inherited commercial cleanup fault. A separable logical-release repair is approved; finish/shape unchanged by repair.
 
 Profile COMPLETE/worker CPU UNAVAILABLE; follow-up PARKED. `artifacts/orchestration-context-20261017/profile/profile-summary.json`. Historical65 worktrees: inventory COMPLETE/removal PARKED; preserve first, product priority. `artifacts/retained1421-inventory/summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Recessed photo-window field | windows1458 phase2 DISPATCHED | 20 bays/0.32m,<=240tri/32KiB; source/board/lifetime fixed. Baseline sealed, one prototype/no tuning; `artifacts/windows1458/phase1-freeze.json`. |
+| Recessed photo windows | windows1458 CAPTURING;review1460 source RUNNING | Frozen `artifacts/windows1458/code-freeze.json`:20 bays/0.32m/224tri/23,424B. Types/build/20 checks PASS; lifetime RED/GREEN. Native quality pending; no tuning. |
+| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | Ignored `artifacts/visual-gallery/index.html`;15min updates plus milestones. Never Git. |
 
 No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
