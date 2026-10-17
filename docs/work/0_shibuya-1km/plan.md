@@ -29,21 +29,20 @@ Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa529032
 
 ### Current operation and next outcomes
 
-Stopped1445/1452/1455 remain failed; evidence preserved/checkouts retired, confirmed1456.1454: TSUTAYA chart128x512; other imagery UNKNOWN.
+Stops1445/1452/1455 confirmed1456;retired/evidence preserved.1454:TSUTAYA128x512;other imagery UNKNOWN.
 
-1457 limits remain.1458 window STOP/rejected1461;1464 NO QUALIFIED SET/no signscape prototype: bounded failures,not impossibility.1458 retired;12 outputs preserved,no owned process; artifacts/windows1458/closeout.json.
+1457 limits remain;1458 window STOP/rejected1461;1464 NO QUALIFIED SET:bounded stops,not impossibility.1458 retired; artifacts/windows1458/closeout.json.
 
-Profile COMPLETE/CPU UNAVAILABLE; follow-up PARKED. Historical65 worktrees: inventory COMPLETE/removal PARKED; preservation precedes cleanup.
+Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:inventory COMPLETE/removal PARKED;preserve first.
 
-[1466](reviews/1466_population-native-discriminator.md) peripheral DONE:8frames/106.758s,RTX4090; configured3000/200,active/rendered pedestrians1146–1469/vehicles74–79. Dozens visible pedestrians,no confident vehicle. Root3/reviewer8 originals;[1467 HOLD](reviews/1467_population-native-review.md):blue-woman head02–04 strongly tilted,cause UNKNOWN;clones/rows.55–65tick brackets: no continuous/contact/central/default/FPS acceptance. Source/build unchanged;12PIDs/TEMP/4321 gone.
+1466 boot is not population acceptance;1467 HOLD/cause UNKNOWN persists. [1469](reviews/1469_native-head-fixture-discriminator.md)/[1470](reviews/1470_native-agent-fixture-review.md):gross Near rotation not reproduced. Failed selector arm preserved;cleanup closed;source/assets/global dist unchanged.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Head appearance discriminator | windows1458 DISPATCHED;[1468 UNKNOWN](reviews/1468_head-pose-source-diagnosis.md) | Existing hardware preview,7 native LOD/step views; no source/default changes. |
-| Central probe | PARKED;prepared only | Pending1468/new useful question;early empty crossing does not prove routes unusable. |
-| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 23native/17,402,408B;probe UNQUALIFIED;ignored visual-gallery,Never Git;15min. |
+| Western road segment | road1472 ELIGIBILITY DISPATCHED;21:21:13–21:41:13UTC | [1471](reviews/1471_western-approach-direction.md):two parents/134pieces;paint intent,source/display layer,paint exclusions,≥80m supported useful margin/side. One owner through ONE whole prototype if eligible;negative STOP,no short fallback/full gates. Positive before five gates;no code/capture yet. |
+| Private visuals | gallery1459 COMPLETE;heartbeat ACTIVE | 30 originals/18,082,656B;7 diagnostic/static only,prior23 immutable. Ignored,Never Git;15min. |
 
-No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
+Head captures/telemetry/baker fixes/default activation STOP/PARKED;central probe PARKED. No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
 ## Acceptance criteria
 
