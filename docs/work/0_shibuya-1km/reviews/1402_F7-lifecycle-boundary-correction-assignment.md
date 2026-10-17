@@ -1,0 +1,11 @@
+# 1402 F7 — lifecycle success-stream boundary correction
+
+Actual1402 parsed both PowerShell targets without errors and produced two genuine invalid-literal errors. Root's raw reconciliation then refused the returned1203 success stream: two empty serialized objects followed by its genuine final lifecycle dictionary. Node syntax and reporting did not run. The first source admission is superseded at this newly observed boundary; the unused Node lease is withdrawn.
+
+Both recorded native process identities are absent in the fresh successful census, with zero exact marker matches and zero kills. A separate finite Task/MemoryStream control on the pinned PowerShell7.6.5/.NET10 runtime emits System.Threading.Tasks.VoidTaskResult from GetAwaiter().GetResult(). Historical live types were not retained and remain unknown. The private preservation is recovery/assembly1402/F7-preservation.json,4531 bytes /25b61640a4a4f94f8c9f616452b7572b4d3cfedd3eb3b7da5081500125c6e13e.
+
+Producer owns a distinct controller-v4 that normalizes only the two genuine1203 call results. Scan the whole returned vector, retain ordered live type/assembly facts, serialized bytes and every original lifecycle candidate with its failures. Accept only zero to two exact CoreLib VoidTaskResult value types preceding one original final lifecycle dictionary. Unknown/null/duplicate/missing/reordered values keep HOLD. The existing lifecycle, Node sources, final writers, reader, immutable templates and15 entry/reader pairs remain unchanged.
+
+Consumer owns the distinct integrated static assembly and syntax derivative, new PowerShell plan targeting v4, and a small root dispatcher that uses the same existing lifecycle. Dynamic future lease descriptors avoid a static admission cycle. All old sealed files remain provenance. Independent focused and integrated exact-source review precede new source admission and separately owned syntax releases.
+
+The unchanged syntax guard may also return nested success-stream vectors. Actual reconciliation must retain those vectors, select one exact id/argv dictionary, validate all lifecycle/stream/error predicates, and match its per-step receipt byte interpretation. It may not invent historical live types. Source normalization, parser success and native cleanup do not establish reporting, arithmetic, proof or product acceptance.
