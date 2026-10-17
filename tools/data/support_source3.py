@@ -832,7 +832,7 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
             continue
         terrain_ref = ({'kind': 'terrain', 'parent_triangle': int(retained[t])} if t < len(retained) else labels[t-len(retained)])
         ground_ref = parent_surface._source3_new_road_refs[g] if g < len(roads) else inferred_labels[g-len(roads)]
-        result = measure_source_overlap(upper, lower, {'terrain_triangle': t, 'ground_triangle': g, 'terrain_ref': terrain_ref, 'ground_ref': ground_ref})
+        result = measure_source_overlap(upper, lower, {'terrain_triangle': int(t), 'ground_triangle': int(g), 'terrain_ref': terrain_ref, 'ground_ref': ground_ref})
         if result is not None: overlap_records.append(result)
     return {'changed_face_coverage': True, 'inferred_faces': len(inferred), 'deleted_parent_faces': len(ledger['deleted_parent_triangles']),
             'global_overlaps': {'scope': 'DIAGNOSTIC_NOT_SUPPORT_ADMISSION', 'pairs': overlap_records, 'candidate_pairs': len(pairs), 'zero_projected_area_pairs_no_support_credit': zero_projected_pairs},

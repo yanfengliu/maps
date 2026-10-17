@@ -67,6 +67,43 @@ class Source3Tests(unittest.TestCase):
         self.assertTrue(result['changed_face_coverage'])
         self.assertEqual(result['global_overlaps']['scope'], 'DIAGNOSTIC_NOT_SUPPORT_ADMISSION')
 
+    def numpy_wire_evidence_fixture(self):
+        upper, lower = self.overlap_planes(10)
+        other = lower.copy(); other[:, 0] += 200
+        roads = np.array([lower, other])/100
+        outputs = roads.copy(); outputs[:, :, 2] += .1
+        original = roads.copy(); original[0, :, 2] -= .0005
+        parts = [(0, 0, {'POSITION': original[:, :, [0, 2, 1]].reshape(-1, 3)}, np.array([[0, 1, 2], [3, 4, 5]]))]
+        refs = [{'kind':'derived-road','source':0,'mesh':0,'primitive':0,'original_triangle':i,'triangle':i} for i in range(2)]
+        parent = types.SimpleNamespace(road=types.SimpleNamespace(sources=[{}],source_parts={0:parts}),
+            _source3_new_road_refs=refs,terrain_index=types.SimpleNamespace(triangles=np.empty((0,3,3))))
+        ledger = {'regions':[{'id':'r','native_xy_polygons_cm':[[[-100,-100],[-100,500],[500,-100]]]}],
+            'terrain_edits':[],'deleted_parent_triangles':[]}
+        labels = [{'kind':'retained-parent-fragment','parent_triangle':i,'region_id':'r'} for i in range(2)]
+        # Actual spatial candidates are NumPy integers, unlike enumerate/range.
+        candidates = api.support_geometry.TriangleIndex(outputs).candidates(np.array([0,0]),np.array([1,1]))
+        self.assertIsInstance(candidates[0],np.integer)
+        return source3.validate_local_geometry(api,ledger,parent,outputs,roads,[],labels)
+
+    def test_actual_numpy_overlap_evidence_encodes_and_roundtrips_without_coercion(self):
+        evidence = self.numpy_wire_evidence_fixture()
+        # The ordinary manifest encoder must succeed with its strict default;
+        # no generic NumPy encoder/default hook may conceal a wire type error.
+        decoded = json.loads(api.encoded({'schema_version':3,'evidence':evidence}))
+        self.assertEqual(decoded['evidence'],evidence)
+        for raw in evidence['global_overlaps']['pairs']:
+            self.assertIs(type(raw['identity']['terrain_triangle']),int)
+            self.assertIs(type(raw['identity']['ground_triangle']),int)
+        pairs = decoded['evidence']['global_overlaps']['pairs']
+        self.assertEqual([(row['identity']['terrain_triangle'],row['identity']['ground_triangle']) for row in pairs],[(0,0),(1,1)])
+        for row in pairs:
+            self.assertIs(type(row['identity']['terrain_triangle']),int)
+            self.assertIs(type(row['identity']['ground_triangle']),int)
+            self.assertEqual(row['scope'],'SOURCE_OVERLAP_DIAGNOSTIC_NOT_SUPPORT_ADMISSION')
+            self.assertEqual(Fraction(row['minimum_gap_cm_q']),10)
+            self.assertEqual(Fraction(row['maximum_gap_cm_q']),10)
+        self.assertTrue(decoded['evidence']['changed_face_coverage'])
+
     def correspondence_fixture(self, heights):
         triangle = np.array([[0.,0.,0.],[0.,1.,0.],[1.,0.,0.]])
         roads = triangle[None].copy(); roads[:,:,2] = 0

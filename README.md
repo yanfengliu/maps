@@ -1,6 +1,6 @@
 # Shibuya in Unreal Engine 5.8
 
-The Source3 publication instrument passes133 Source tests17.920seconds and independent review367. Overlaps remain diagnostic; fixed-reference native rays expect the first modeled blocker. The normal literal48 producer stops19.689seconds on a real original-domain coverage refusal at parent520045 and leaves the active Source2 scene unchanged. A literal-parent closure repair is preparing; no Source3 geometry or final native acceptance is claimed.
+The normal Source3 support producer succeeds in83.593seconds within default150/110second budgets and publishes schema3 surface9ef164ef from independently reviewed literal-parent closure370. The identity-only serializer fix371 passes134 Source tests21.865seconds (22.715wall). Source publication is now complete; replacement route capacity/crossing coverage372, native fullbody contacts, final rendered appearance373 and3000/200performance remain open.
 
 Shared Source2/3 support queries now match actual native coordinate packing and signed normals; all130 Source tests pass17.267seconds. The readiness-calibrated native probe confirms the corrected road hit and independently reproduces the remaining shoe/car failures. [Reviews360-365](docs/work/0_unreal-shibuya/reviews/361_native_source_query_contract.md) separate exact source conservation, lawful route capacity and real posed contacts. Final support, appearance coherence and3000/200 performance remain open.
 
