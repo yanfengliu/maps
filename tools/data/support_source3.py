@@ -100,28 +100,14 @@ def span_grade(previous, current, maximum, *, surface=None, previous_record=None
 
 
 class NativeTriangleIndex(geometry.TriangleIndex):
-    """Native-coordinate triangles without historical near-edge extrapolation."""
+    """Use already-bound integration precision code; retain existing edge traversal."""
+    def __init__(self, triangles, cell_m=12):
+        from surface_network import native_query_initialize
+        native_query_initialize(self, triangles, cell_m)
+
     def hits(self, east, north):
-        ids = self.candidates(np.array([east, north]), np.array([east, north]))
-        if not len(ids): return []
-        triangles = self.triangles[ids]
-        a, b, c = triangles[:, 0], triangles[:, 1], triangles[:, 2]
-        u, v = b[:, :2]-a[:, :2], c[:, :2]-a[:, :2]
-        d = np.asarray([east, north])-a[:, :2]
-        determinant = u[:, 0]*v[:, 1]-u[:, 1]*v[:, 0]
-        nonzero = determinant != 0
-        s = np.divide(d[:, 0]*v[:, 1]-d[:, 1]*v[:, 0], determinant, out=np.full(len(ids), np.nan), where=nonzero)
-        t = np.divide(u[:, 0]*d[:, 1]-u[:, 1]*d[:, 0], determinant, out=np.full(len(ids), np.nan), where=nonzero)
-        good = nonzero & (s >= 0) & (t >= 0) & (s+t <= 1)
-        normals = np.cross(b-a, c-a)
-        result = []
-        for i in np.flatnonzero(good):
-            weights = np.array([1-s[i]-t[i], s[i], t[i]])
-            normal = normals[i]
-            unit = normal/np.linalg.norm(normal)*(1 if normal[2] > 0 else -1)
-            result.append({'height': float(weights@triangles[i, :, 2]), 'triangle': int(ids[i]), 'barycentric': weights.tolist(),
-                'gradient_enu': (-normal[:2]/normal[2]).tolist(), 'normal_enu': unit.tolist(), 'normal_up_z': float(unit[2])})
-        return result
+        from surface_network import native_query_hits
+        return native_query_hits(self, east, north)
 
     def segment_breakpoints(self, start, end):
         start, end = np.asarray(start), np.asarray(end)

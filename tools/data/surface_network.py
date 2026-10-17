@@ -26,6 +26,7 @@ import time
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from fractions import Fraction
 import support_topology
 
 ROOT = pathlib.Path(__file__).absolute().parents[2]
@@ -155,6 +156,90 @@ def encoded(value):
 def source_record(path,root=None):
     payload = guarded_read(path,root)
     return {"path": path.relative_to(ROOT).as_posix(), "bytes": len(payload), "sha256": sha(payload)}
+
+
+def _exact_orientation(a, b, c):
+    ax, ay = map(lambda x: Fraction(float(x)), a)
+    bx, by = map(lambda x: Fraction(float(x)), b)
+    cx, cy = map(lambda x: Fraction(float(x)), c)
+    return (bx-ax)*(cy-ay)-(by-ay)*(cx-ax)
+
+
+def _orientation(a, b, c):
+    # All inputs are literal binary64 values. Outward rounding after EVERY
+    # difference/product/subtraction bounds the exact determinant. Unlike a
+    # geometric epsilon this interval can only trigger exact arithmetic.
+    ux, uy = b[:, 0]-a[:, 0], b[:, 1]-a[:, 1]
+    vx, vy = c[:, 0]-a[:, 0], c[:, 1]-a[:, 1]
+    def product_bounds(x, y):
+        xl, xh = np.nextafter(x, -np.inf), np.nextafter(x, np.inf)
+        yl, yh = np.nextafter(y, -np.inf), np.nextafter(y, np.inf)
+        products = np.stack((xl*yl, xl*yh, xh*yl, xh*yh))
+        return np.nextafter(products.min(axis=0), -np.inf), np.nextafter(products.max(axis=0), np.inf)
+    pl, ph = product_bounds(ux, vy)
+    ql, qh = product_bounds(uy, vx)
+    lo, hi = np.nextafter(pl-qh, -np.inf), np.nextafter(ph-ql, np.inf)
+    signs = np.where(lo > 0, 1, np.where(hi < 0, -1, 0))
+    determinants = ux*vy-uy*vx
+    exact = {}
+    for i in np.flatnonzero(signs == 0):
+        value = _exact_orientation(a[i], b[i], c[i])
+        exact[int(i)] = value
+        signs[i] = (value > 0)-(value < 0)
+        determinants[i] = float(value)
+    return signs, determinants, exact
+
+
+def native_query_initialize(index, triangles, cell_m=12):
+    original = np.asarray(triangles, dtype=np.float64).reshape(-1, 3, 3)
+    if not np.isfinite(original).all(): raise ValueError('Native triangle query requires finite consumed vertices')
+    with np.errstate(over='ignore'):
+        index.native_triangles_cm = (original*100).astype(np.float32)
+    if not np.isfinite(index.native_triangles_cm).all(): raise ValueError('Native triangle vertices exceed float32 centimetres')
+    support_geometry.TriangleIndex.__init__(index, index.native_triangles_cm.astype(np.float64)/100, cell_m)
+
+def native_query_hits(index, east, north):
+    query_cm = np.asarray([float(east)*100, float(north)*100], dtype=np.float64)
+    if not np.isfinite(query_cm).all(): raise ValueError('Native triangle query requires finite binary64 centimetre coordinates')
+    query_m = query_cm/100
+    ids = index.candidates(query_m, query_m)
+    if not len(ids): return []
+    triangles = index.native_triangles_cm[ids].astype(np.float64)
+    a, b, c = triangles[:, 0, :2], triangles[:, 1, :2], triangles[:, 2, :2]
+    q = np.broadcast_to(query_cm, a.shape)
+    orientation, determinant, exact_d = _orientation(a, b, c)
+    signs, values, exact_values = [], [], []
+    for u, v in ((b, c), (c, a), (a, b)):
+        sign, value, exact = _orientation(u, v, q)
+        signs.append(sign); values.append(value); exact_values.append(exact)
+    good = (orientation != 0)
+    for sign in signs: good &= (sign == 0) | (sign == orientation)
+    results = []
+    for i in np.flatnonzero(good):
+        triangle = triangles[i]
+        normal = -np.cross(triangle[1]-triangle[0], triangle[2]-triangle[0])
+        if i in exact_d or any(i in values for values in exact_values):
+            denominator = _exact_orientation(a[i], b[i], c[i])
+            weights_q = [_exact_orientation(u[i], v[i], q[i])/denominator for u, v in ((b,c),(c,a),(a,b))]
+            weights = [float(w) for w in weights_q]
+            height = float(sum(w*Fraction(float(z)) for w, z in zip(weights_q, triangle[:, 2]))/100)
+            if i in exact_d:
+                x, y, z = [[Fraction(float(v)) for v in p] for p in triangle]
+                u, v = [b-a for a,b in zip(x,y)], [b-a for a,b in zip(x,z)]
+                normal = -np.asarray([float(u[1]*v[2]-u[2]*v[1]),float(u[2]*v[0]-u[0]*v[2]),float(u[0]*v[1]-u[1]*v[0])])
+        else:
+            weights = [value[i]/determinant[i] for value in values]
+            height = float(np.asarray(weights)@triangle[:, 2]/100)
+        unit = normal/np.linalg.norm(normal)
+        results.append({'height':height,'triangle':int(ids[i]),'barycentric':weights,
+            'gradient_enu':(-normal[:2]/normal[2]).tolist(),'normal_enu':unit.tolist(),'normal_up_z':float(unit[2]),
+            'query_coordinate_model':'binary64-cm-query-on-float32-cm-vertices-v1'})
+    return results
+
+class NativeTriangleIndex(support_geometry.TriangleIndex):
+    """Actual packed-native all-hits index; eligibility/posed interval are separate."""
+    def __init__(self, triangles, cell_m=12): native_query_initialize(self, triangles, cell_m)
+    def hits(self, east, north): return native_query_hits(self, east, north)
 
 
 def generation_code_record(name):
@@ -1003,8 +1088,8 @@ class Surface:
         primitive=doc["meshes"][0]["primitives"][0]
         points=accessor(doc,binary,primitive["attributes"]["POSITION"])[:,[0,2,1]]
         indices=accessor(doc,binary,primitive["indices"]).reshape(-1,3)
-        self.terrain_index=support_geometry.TriangleIndex(points[indices])
-        self.road_index=support_geometry.TriangleIndex(self.road.triangles)
+        self.terrain_index=NativeTriangleIndex(points[indices])
+        self.road_index=NativeTriangleIndex(self.road.triangles)
         self.terrain_sources=manifest["terrain_source_triangle_indices"]
         if len(self.terrain_sources)!=len(indices):
             raise ValueError("Derived support source triangle map must cover every output triangle")

@@ -2,6 +2,7 @@
 import copy
 import collections
 import contextlib
+import importlib
 import json
 import sys
 import tempfile
@@ -443,11 +444,10 @@ class Source3Tests(unittest.TestCase):
         source3.admit_new_face_winding(positive, 'positive bank fill', inferred=True)
         source3.admit_new_face_winding(positive, 'retained fragment', parent=positive)
         reversed_indices = positive[[0, 2, 1]]
-        # Reproduce the original false-positive instrument: either winding
-        # receives a positive normal_up_z from the support query.
-        for rows in (positive, reversed_indices):
+        # Actual collision-facing query normals now retain winding sign.
+        for rows, expected_z in ((positive, 1), (reversed_indices, -1)):
             hit = source3.NativeTriangleIndex(rows[None, :, :3]).hits(.25, .25)[0]
-            self.assertEqual(hit['normal_up_z'], 1)
+            self.assertEqual(hit['normal_up_z'], expected_z)
         with self.assertRaisesRegex(ValueError, 'winding disagrees with NORMAL'):
             source3.admit_new_face_winding(reversed_indices, 'reversed actual indices', inferred=True)
 
@@ -676,6 +676,92 @@ class Source3Tests(unittest.TestCase):
                 self.assertEqual(actual['source_triangle_index'], 1)
                 self.assertEqual(actual['layer_ref']['triangle'], 0)
                 self.assertEqual(actual['layer_ref']['primitive'], 1)
+
+
+import support_surface as geometry
+
+
+class NativeQueryTests(unittest.TestCase):
+    def test_actual810530_tolerant_source_hit_is_not_a_native_hit(self):
+        # Literal terrain1a420a5d face810530/original61571; auditd534d133.
+        triangle = np.array([[427.7392578125,265.91363525390625,11.605290412902832],
+            [428.2914733886719,265.72216796875,11.65822982788086],
+            [426.63482666015625,266.2959899902344,11.499415397644043]])
+        xy = [427.47194895559466,266.006031244335]
+        tolerant = geometry.TriangleIndex(triangle[None]).hits(*xy)
+        self.assertEqual(len(tolerant),1)
+        self.assertLess(min(tolerant[0]['barycentric']),0)
+        for constructor in (api.NativeTriangleIndex,source3.NativeTriangleIndex):
+            with self.subTest(constructor=constructor):
+                index=constructor(triangle[None]);self.assertEqual(index.hits(*xy),[])
+                # Synthetic adjacent face sharing the actual packed B-C edge.
+                packed=index.native_triangles_cm[0].astype(float)
+                adjacent=np.array([packed[1]+packed[2]-packed[0],packed[2],packed[1]])/100
+                both=constructor(np.array([triangle,adjacent]))
+                hits=both.hits(*xy)
+                self.assertEqual([h['triangle'] for h in hits],[1])
+                for face in range(2):
+                    centre=both.native_triangles_cm[face].astype(float).mean(axis=0)/100
+                    self.assertIn(face,[h['triangle'] for h in both.hits(*centre[:2])])
+        # Adjacent fixture is synthetic; no unlisted city neighbor is certified.
+
+    def test_native_edges_are_exact_without_forcing_rationals_for_clear_interiors(self):
+        triangle=np.array([[0,0,0],[0,1,0],[1,0,0]],float)
+        for constructor in (api.NativeTriangleIndex,source3.NativeTriangleIndex):
+            index=constructor(triangle[None])
+            # Source3's late import owns a different module during discovery
+            # and when the production CLI is loaded as __main__.
+            query_api = api if constructor is api.NativeTriangleIndex else importlib.import_module('surface_network')
+            with mock.patch.object(query_api,'_exact_orientation',side_effect=AssertionError('clear interior must use certified fast path')):
+                hit=index.hits(.25,.25)[0]
+                self.assertEqual(hit['normal_enu'],[0,0,1])
+            with mock.patch.object(query_api,'_exact_orientation',wraps=query_api._exact_orientation) as exact:
+                self.assertEqual(len(index.hits(0,.25)),1)
+                self.assertGreater(exact.call_count,0)
+            self.assertEqual(index.hits(-1e-12,.25),[])
+            self.assertEqual(len(index.hits(1e-12,.25)),1)
+            self.assertEqual(index.hits(.75,.75),[])
+            with self.assertRaisesRegex(ValueError,'finite'):index.hits(float('nan'),.25)
+
+    def test_query_matches_rounded_double_centimetre_multiply_not_exact_unrealised_scale(self):
+        triangle=np.array([[1,0,0],[1,1,0],[2,0,0]],float)
+        index=api.NativeTriangleIndex(triangle[None]);hit=index.hits(1.1,0)[0]
+        actual=float((Fraction(float(1.1*100))-100)/100)
+        invented=float((Fraction(1.1)*100-100)/100)
+        self.assertNotEqual(actual,invented)
+        self.assertEqual(hit['barycentric'][2],actual)
+
+    def surface(self, road, terrain):
+        return types.SimpleNamespace(building_bins=collections.defaultdict(list),buildings=[],dem_height=lambda point:0,
+            road_index=api.NativeTriangleIndex(road),terrain_index=api.NativeTriangleIndex(terrain),
+            road=types.SimpleNamespace(layer_refs=[{'kind':'road','source':0,'triangle':0}]),
+            terrain_sources=[0],support_manifest={'schema_version':2},vehicle_source=None)
+
+    def test_containment_fix_does_not_select_highest_or_bypass_ineligible_layers(self):
+        lower=np.array([[[0,0,0],[0,1,0],[1,0,0]]],float)
+        upper=lower.copy();upper[:,:,2]=.31
+        surface=self.surface(lower,upper)
+        self.assertEqual(len(surface.road_index.hits(.2,.2)),1)
+        self.assertEqual(len(surface.terrain_index.hits(.2,.2)),1)
+        with self.assertRaisesRegex(api.SupportRejection,'stacked-rendered-support-layer'):
+            api.Surface.check(surface,[.2,.2],'pedestrian')
+        surface.buildings=[{'polygon':[[0,0],[0,1],[1,0]]}];surface.building_bins[0,0]=[0]
+        with self.assertRaisesRegex(ValueError,'building-interior'):api.Surface.check(surface,[.2,.2],'pedestrian')
+        self.assertFalse(api.allowed_way({'highway':'primary','bridge':'yes'},'vehicle')[0])
+        surface=self.surface(np.empty((0,3,3)),lower)
+        with self.assertRaisesRegex(ValueError,'no-admitted-road-support'):api.Surface.check(surface,[.2,.2],'vehicle')
+
+    def test_signed_physical_facing_and_real_grade_limits_are_preserved(self):
+        triangle=np.array([[[0,0,0],[1,0,0],[0,1,0]]],float)
+        self.assertEqual(geometry.TriangleIndex(triangle).hits(.2,.2)[0]['normal_up_z'],1)
+        self.assertEqual(api.NativeTriangleIndex(triangle).hits(.2,.2)[0]['normal_up_z'],-1)
+        surface=self.surface(triangle,np.empty((0,3,3)))
+        with self.assertRaisesRegex(ValueError,'source-support-normal-below-native-limit'):
+            api.Surface.check(surface,[.2,.2],'pedestrian')
+        for maximum in (.2,.6):
+            self.assertEqual(source3.span_grade([0,0,0],[1,0,maximum],maximum),maximum)
+            with self.assertRaisesRegex(ValueError,'exceeds'):source3.span_grade([0,0,0],[1,0,np.nextafter(maximum,np.inf)],maximum)
+        with self.assertRaisesRegex(ValueError,'exceeds'):source3.span_grade([0,0,0],[.001,0,.01],.2)
 
 
 if __name__ == '__main__': unittest.main()
