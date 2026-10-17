@@ -21,23 +21,22 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `fc1c97a16069afbd938efc7d466af7ac993d112f` adds 96 physical windows across three rail-side fronts: 80 lodging windows and two groups of eight office strips. [1434](reviews/1434_rail-side-facade-band-implementation.md) and independent [1435 PASS](reviews/1435_rail-side-facade-band-integrated-review.md) bind finite source, recesses/backed rooms and logical lifetime. Eight photo rows differ from GML storeys. Added cost: eight draws/8,544 triangles/1,025,280 geometry bytes, no textures/lights. Earlier twelve windows `a53dd02`, frontage `4203496`, lighting `0aeb006`, tactile `8ff08fe` and corner `e483cd5` remain preserved. No final criterion closes.
+Adopted product revision `ce107fc619e93c85d98616ea0134abb387668df4` adds shared Satellite asphalt light response and rounded paving joints. [1437](reviews/1437_shared-ground-material-implementation.md) and independent [1438 PASS](reviews/1438_shared-ground-material-integrated-review.md) bind the actual production path. No new geometry, draws, textures or lights; four extra existing-texture reads per road fragment. Terrain, source paint, support/contact and GTAO normals stay geometric. Isolated shader cost is unmeasured. Earlier window/frontage/light/tactile/corner work remains preserved. No final criterion closes.
 
-Five final PRIMARY gates pass: build/types, 131 files/1,170 tests in 84.81 s, audit (two existing moderate advisories), visual run `dec17d5d577ae981`: 44 frames/three lifecycles in 320.265 s, RTX 4090/driver 616.64. Review inspected all 22 fresh local originals, 22 canonical Satellite and two returns. Four runtime files match; two debug maps differ. [1435a](reviews/1435a_source-evidence-finding.md)'s LF/CRLF receipt error is closed by raw-file readback without source/capture rerun. Early whitespace preflight passes. Static/lifecycle evidence does not qualify continuous motion/population/FPS.
+Five final PRIMARY gates pass: build/types, 132 files/1,172 tests in 75.20 s, audit (two existing moderate advisories), visual `4eb529d3e8b3e8d6`:44 frames/three lifecycles in 311.782 s, RTX 4090/616.64. Review inspected all 10 local stills/12 adjacent motion copies, 22 canonical Satellite and two returns. Four runtime files match; debug maps differ. Motion spans 180.7 ms between first/last before-observations, not continuous stability/population/FPS. Wrong-seed capture excluded; default 5970698 rerun passes. Early whitespace preflight passes.
 
-Main and origin/main read back exact; remote CI has zero checks/statuses/workflows, no remote pass claimed. Worker checkout/registration/metadata removed normally after preservation. Fresh closeout: 74 unique owned identities absent, task markers/three ports/six TEMP paths clear. Needed evidence/build/cache retained; historical worktrees untouched.
+Main/origin-main read back exact; remote CI has zero checks/statuses/workflows, no remote pass claimed. Checkout/registration/metadata retired normally after preservation. Fresh closeout:81 owned identities absent; task markers/three ports/seven TEMP paths clear. Needed evidence/cache retained; historical trees and unrelated ancient tail untouched; original HOLD/reconciliation preserved.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Ground1437 gates/review PASS, adoption pending; critic1439 COMPLETE. Final criteria OPEN.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Ground1437 adopted/retired/resources closed; critic1439 COMPLETE. Road1440 selected, not dispatched. Final criteria OPEN.
 
 Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Shared ground material depth | Root adoption; gates/review1438 PASS | Two frozen PRIMARY paths; default10+12 native PASS; 132 files/1,172 tests/44 frames/three lifecycles GREEN. Main push/retirement pending. |
 | Road marking coverage | Root SELECTED; worker not dispatched | [1439](reviews/1439_product-direction.md):32 untreated objects, connected approaches/periphery. Strict source/layer/support; preserve legitimate unmarked roads. Five expressways separate. Source eligibility first. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
