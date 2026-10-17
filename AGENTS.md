@@ -141,3 +141,7 @@ test/vegetation.test.ts checks crown variety against the reviewed cached data/sc
 ### Retained pedestrian test packets
 
 Before a full unit run in a fresh worktree, check these nine retained fixture files: `artifacts/pedestrian-native253-20260928/packet/{context,rig-near,rig-medium,rig-far}.json` and `artifacts/pedestrian-corner331-20260928/packet/{manifest,context,rig-near,rig-medium,rig-far}.json`. Restore literal reviewed copies separately from the scene runtime cache; missing packets are a setup failure, and tests must not fetch or skip them. [1422](docs/work/0_shibuya-1km/reviews/1422_tactile-paving-implementation.md) records the actual restoration and its source/copy hash receipt. This presence check avoids starting the full suite with known missing inputs; it does not replace the tests' content checks.
+
+### Cached source for the east mounted-light check
+
+`test/peripheral-mounted-light.test.ts` needs reviewed `data/scene/buildings/data/data498.b3dm` (SHA-256 `979ab194aa165391e058e1b3b0b3b37ea5c3d64dfc5f5353e61922f9c97ead55`) and `data/scene/pavements.mesh` (`841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6`). Restore these from the reviewed scene cache before the source-dependent unit gate; fresh preparation uses `npm run data:fetch` and `npm run data:scene`. Missing or changed bytes fail, never download or skip. Review changed source before updating pins. [1426](docs/work/0_shibuya-1km/reviews/1426_peripheral-mounted-light-implementation.md) records the finite source, receiver and installed-loader bounds.

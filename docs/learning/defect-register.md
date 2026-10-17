@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-10-17 — mounted light treated GPU eviction as permanent tile disposal
+
+Observed symptom: canonical visual run `d99c403d3c01bf82` failed its Satellite sweep with `Cannot read properties of undefined (reading 'traverse')`; no certificate was issued. Earlier focused lifetime tests and native stills passed, so they did not cover the complete tile lifecycle. The candidate remained uncommitted.
+
+Investigation and cause: the retained trace reaches the installed `UnloadTilesPlugin.unloadTileFromGPU`, which disposes materials during `scene.traverse` while retaining the CPU model for later GPU upload. The new fixture's material-dispose listener synchronously removed its group/light/target, invalidating child iteration and incorrectly deleting a fixture that should return with the cached tile. Independent review 1428 and implementation both traced this call path.
+
+How it is checked: `test/peripheral-mounted-light.test.ts` exercises two actual installed GPU unload/visibility-return cycles before true tile release. Restoring the old detach reproduced the exact traversal error; corrected ownership passes all six focused cases, including cancellation, rejection, transfer and replacement. Cleanup now uses the existing transaction's logical release rather than material disposal. Fresh primary build/types, 128 files/1,158 tests, audit and visual run `1e16ff12e503f2d2` pass with 44 frames/three completed hardware lifecycles; independent [1429 review](../work/0_shibuya-1km/reviews/1429_mounted-light-final-review.md) passes, with main adoption pending. This bounds the tested tile path, not arbitrary GPU drivers or whole-map quality.
+
 ## 2026-10-17 — orchestration lost current context in historical detail
 
 Owner-reported symptom: root lost long-term outcome context/todos and did bounded repair detail instead of delegating it. The 321,995-byte plan and 253,239-byte progress record carried competing dated queues and a stale blocked-goal claim while the goal was active and main had adopted the occupied frontage. Investigation: current status was split between two growing history records; private experiment proof architecture displaced the product outcome.

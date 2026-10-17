@@ -23,7 +23,7 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 Adopted product revision `8ff08fe54089294149d9b2448afddb5f673c6121` adds path-aligned tactile tile joints, directional relief and roughness variation across the 16 mapped features near the crossing/approaches. All 267 segments retain their routes/support decisions (260 placed, seven refused). [1422](reviews/1422_tactile-paving-implementation.md) and independent [1423 PASS](reviews/1423_tactile-integrated-review.md) bind source, static appearance and lifetime acceptance. The occupied corner `e483cd5` remains preserved; [1417](reviews/1417_commercial-ground-combined-review.md) retains its bounded construction review.
 
-All five final primary gates pass: build/types, 127 files/1,152 unit tests in 84.05 s, unchanged audit threshold (two moderate advisories), and run `59b500b75a1abf60`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1423 inspected 45 native originals, including 22 Satellite frames/four Cartographic heroes; occlusion and temporal limits remain explicit. Fixture/sandbox setup failures are resolved and retained. Remote CI had zero check runs/statuses/workflows, not a remote pass. Fresh cleanup closes 45 identities, 4319 and TEMP; both task worktrees are removed.
+All five primary gates pass: build/types, 127 files/1,152 tests in 84.05 s, audit (two moderate advisories), and visual run `59b500b75a1abf60`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1423 inspected 45 native originals; occlusion and temporal limits remain. Fixture/sandbox setup failures are resolved. Remote CI had zero check runs/statuses/workflows. Cleanup confirms 63 owned identities absent, ports/TEMP clear and both fresh worktrees removed.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
@@ -31,12 +31,13 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Fresh critique 1420 selected tactile construction; fresh-context review 1423 recommends the east-first mounted-light prototype next, then facade depth. No final criterion closes.
 
-Profile diagnostic COMPLETE; unchanged test passed, parent-only capture leaves worker CPU attribution UNAVAILABLE. Inputs unchanged, resources closed. Follow-up PARKED; no optimization selected. Evidence: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
+Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. Follow-up PARKED; no optimization selected. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| East-side mounted-light prototype | Root accountable; QUEUED, no worker dispatched | Source proposal [1424](reviews/1424_dusk-frontage-source-selection.md) is prepared. Done: real-control matched noon/dusk and oblique views show an actual supported mount and bounded receiver response. Inspect source UVs/placement first; expand west/south only if the east pilot is visibly useful. No lighting is accepted yet. |
-| Retire retained historical worktrees safely | Root accountable; inventory COMPLETE; removal PARKED | 65 historical checkouts retain distinct/unclassified data; no safe batch. Three original commercial trees retain distinct docs/private packets. Bounded evidence: `artifacts/retained1421-inventory/summary.json`. Preserve before removing; do not delay visual work. |
+| East-side mounted-light pilot | Root; all-five PASS; [1429 PASS](reviews/1429_mounted-light-final-review.md) | Base `b1e4dcf`. [1428 HOLD](reviews/1428_mounted-light-integrated-hold-review.md) fixed through true-release ownership; installed-path old RED/repaired6 GREEN. Fresh run `1e16ff12e503f2d2`:44frames/3lifecycles; 128files/1158tests. All44 natives independently inspected; push/cleanup pending. West/south deferred; no adoption. |
+| Peripheral frontage depth | Root; QUEUED, not dispatched | After pilot adoption: ordinary-app visible site, one source-bound bay prototype with readable frame/recess/glazing. Expand the same frontage only after useful native result; reuse ownership/runner. |
+| Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker is established. Next product action: dispatch the east-first visible prototype, following review 1423. Full acceptance needs matching final evidence and independent integrated review on main; this milestone closes no final criterion.
 

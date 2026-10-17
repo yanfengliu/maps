@@ -11,6 +11,8 @@ class ParsedResources implements FacadeTextureLifetime {
   readonly materials = new Set<Material>();
   readonly textures = new Set<Texture>();
   private readonly released = new Set<object>();
+  private readonly cleanups = new Set<() => void>();
+  onRelease(cleanup: () => void): void { this.cleanups.add(cleanup); }
   capture(root: Object3D): void {
     root.traverse(object => {
       if (!(object instanceof Mesh)) return;
@@ -39,6 +41,7 @@ class ParsedResources implements FacadeTextureLifetime {
     texture.dispose();
   }
   release(): void {
+    for (const cleanup of this.cleanups) { this.cleanups.delete(cleanup); cleanup(); }
     for (const texture of this.textures) this.disposeTexture(texture);
     for (const resource of [...this.geometries, ...this.materials]) if (!this.released.has(resource)) {
       this.released.add(resource); resource.dispose();

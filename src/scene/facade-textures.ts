@@ -66,6 +66,7 @@ import { emissionSourceForUrl, prepareEmissionEligibility } from "./facade-emiss
 import { prepareCrossingCorner } from "./crossing-corner-material.js";
 import { addCrossingFrontage } from "./crossing-frontage.js";
 import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corner.js";
+import { addPeripheralMountedLight, peripheralLightSourceForUrl, preparePeripheralMountedLight } from "./peripheral-mounted-light.js";
 
 /** Every material property that can hold a texture we care about. */
 const TEXTURE_SLOTS = ["map", "emissiveMap"] as const;
@@ -92,6 +93,8 @@ export interface FacadeTextureOptions {
 export interface FacadeTextureLifetime {
   trackTexture(texture: Texture): void;
   releaseTexture(texture: Texture): void;
+  /** Logical parse/tile release, distinct from retained-model GPU disposal. */
+  onRelease?(cleanup: () => void): void;
 }
 
 export const DEFAULT_FACADE_OPTIONS: Omit<FacadeTextureOptions, "signageIntensity" | "style"> = Object.freeze({
@@ -172,7 +175,7 @@ export class FacadeTexturePlugin {
 
   /** Reuse the normal tile request; retain only two digests, never tile buffers. */
   fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
-    const source = emissionSourceForUrl(url);
+    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url);
     if (!source) return null;
     return (async () => {
       const response = await fetch(url, options);
@@ -213,6 +216,7 @@ export class FacadeTexturePlugin {
       prepareEmissionEligibility(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareCrossingCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      preparePeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -273,6 +277,7 @@ export class FacadeTexturePlugin {
       const tileUri = sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown";
       addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options);
+      addPeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
     }
   }
 
