@@ -43,13 +43,32 @@ class SourceRepairs(unittest.TestCase):
                     action.assert_not_called()
 
     def test_cli_default_and_single_modes_perform_only_requested_work(self):
-        for flags,expected in (([],[1,0,1]),(["--photo-only"],[1,0,0]),(["--network-only"],[0,0,1]),(["--roads-only"],[0,1,0])):
-            with self.subTest(flags=flags),mock.patch.object(surface,"verify_base",return_value={}),mock.patch.object(surface,"guarded_write"),contextlib.redirect_stdout(io.StringIO()),contextlib.ExitStack() as stack:
-                photo=stack.enter_context(mock.patch.object(surface,"photo_ground",return_value={"terrain_photo":{},"image":{},"imagery_tiles":[]}))
-                roads=stack.enter_context(mock.patch.object(surface,"road_photos",return_value={"totals":{}}))
-                movement=stack.enter_context(mock.patch.object(surface,"movement_network",return_value={"totals":{}}))
+        base={}
+        photo=mock.call.photo(base,ROOT/"data/prepared/terrain.glb")
+        support=mock.call.support(base,construction_seconds=110.,total_seconds=150.)
+        cases=(([],[photo,support,mock.call.movement(base)]),
+               (["--photo-only"],[photo]),
+               (["--network-only"],[mock.call.movement(base)]),
+               (["--roads-only"],[mock.call.roads(base)]),
+               (["--support-only"],[support]),
+               (["--support-only","--support-edits","data/source/fixture-edits.json"],
+                [mock.call.edits(surface,base,pathlib.Path("data/source/fixture-edits.json"),total_seconds=150.)]),
+               (["--reprofile-frozen"],[mock.call.reprofile(base)]),
+               (["--vehicle-graph-only"],[mock.call.movement(base,vehicle_graph_only=True)]))
+        for flags,expected in cases:
+            with self.subTest(flags=flags),mock.patch.object(surface,"verify_base",return_value=base),mock.patch.object(surface,"guarded_write"),contextlib.redirect_stdout(io.StringIO()),contextlib.ExitStack() as stack:
+                actions=mock.Mock()
+                for attribute,name,result in (("photo_ground","photo",{"terrain_photo":{},"image":{},"imagery_tiles":[]}),
+                                              ("road_photos","roads",{"totals":{}}),
+                                              ("prepare_support_surface","support",{"evidence":{}}),
+                                              ("movement_network","movement",{"totals":{}}),
+                                              ("reprofile_frozen_network","reprofile",{"totals":{}})):
+                    action=stack.enter_context(mock.patch.object(surface,attribute,return_value=result))
+                    actions.attach_mock(action,name)
+                edits=stack.enter_context(mock.patch.object(surface.support_source3,"prepare",return_value={"evidence":{}}))
+                actions.attach_mock(edits,"edits")
                 surface.main(flags)
-                self.assertEqual([photo.call_count,roads.call_count,movement.call_count],expected)
+                self.assertEqual(actions.mock_calls,expected)
 
     def test_actual_review_no_and_only_turn_witnesses_are_blocked(self):
         policy=surface.TurnRestrictions(surface.osm_tree())

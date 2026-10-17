@@ -7,7 +7,7 @@
     "bytes": 8187120,
     "sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
     "license": "https://www.openstreetmap.org/copyright",
-    "attribution": "© OpenStreetMap contributors. ODbL. Cropped and converted for this simulation."
+    "attribution": "\u00a9 OpenStreetMap contributors. ODbL. Cropped and converted for this simulation."
   },
   "gsi": {
     "url_template": "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",
@@ -15,6 +15,52 @@
     "license": "https://www.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
     "specification": "https://maps.gsi.go.jp/development/siyou.html",
     "attribution": "Source: Geospatial Information Authority of Japan, seamless aerial photographs. Cropped and converted for this simulation."
+  },
+  "support_surface": {
+    "policy": "Remove only original terrain-above-road conflicts inside the unchanged road union; restore original terrain within250micrometres of its exterior, excluding internal triangulation seams; one shared original-terrain-edge registry packs/promotes splits on both sides; exclude exactly zero packed projectedXY faces, retain every nonzero projected face. Terrain beneath elevated decks remains at its original height; road bytes, axes and datum are unchanged.",
+    "original_terrain_photo": {
+      "path": "data/prepared/surface/terrain-photo.glb",
+      "bytes": 13151308,
+      "sha256": "670d932a69d6c8ce0f5547933fd23310a74c89cc00c88b5d12409c00de876e53"
+    },
+    "atlas": {
+      "path": "data/prepared/surface/terrain-aerial.png",
+      "bytes": 10896930,
+      "sha256": "b3ae2bdccd106b22f3a3ab0624a6f1a1c80410289c55429724f99029d8477e58"
+    },
+    "frozen_network": {
+      "path": "data/source/movement/frozen-network.json",
+      "bytes": 1683767,
+      "sha256": "0575c220ad42b889600cb47840d3d04300a454b884c4e2428dc84f664304cbfc"
+    },
+    "frozen_movement_manifest": {
+      "path": "data/source/movement/frozen-movement-manifest.json",
+      "bytes": 136706,
+      "sha256": "7c24389ecf95278d0e9ae521a0a0d01285d64adf764b23b66ef4cf3eff5c49ea"
+    },
+    "frozen_source_manifest": {
+      "path": "data/source/movement/frozen-source-manifest.json",
+      "bytes": 4294,
+      "sha256": "c33926aa35a3a6d08b764cac8bd935a060dfbd0830a94f7d7c6ad854f7c82ee8"
+    },
+    "native_ray_inputs": [
+      {
+        "path": "data/source/movement/native-controls.json",
+        "bytes": 13018821,
+        "sha256": "b827b7a3062d8fb5caa23e1cac639108a7222c62927ae43959a386d5056ef259"
+      },
+      {
+        "path": "data/source/movement/native-inventory.json",
+        "bytes": 3445526,
+        "sha256": "474e359f990e05399d685dc678c9af8729df89901b6b6fc5704037b9be6e3005"
+      }
+    ],
+    "native_material": "/Game/Surface/TerrainPhoto/terrain-photo/Materials/Official_GSI_aerial_photograph.Official_GSI_aerial_photograph",
+    "native_texture": "/Game/Surface/TerrainPhoto/terrain-photo/Textures/terrain-photo_texture_0.terrain-photo_texture_0",
+    "native_collision_source_tolerance_cm": 0.1,
+    "contact_gap_m": 0.2,
+    "contact_ray_up_m": 0.8,
+    "minimum_support_normal_z": 0.7
   },
   "simulation": {
     "seed": 581310,

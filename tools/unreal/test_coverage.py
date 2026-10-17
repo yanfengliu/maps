@@ -2,6 +2,7 @@
 import copy
 import json
 import math
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -109,6 +110,42 @@ class PolicyAdmissionTests(unittest.TestCase):
 
 
 class HelperCoverageTests(unittest.TestCase):
+    def test_saved_world_reach_and_inspection_preserve_local_and_physical_policy(self):
+        class Volume:
+            def __init__(self): self.values = {}
+            def get_actor_label(self): return "Shibuya_Exposure"
+            def set_editor_property(self, name, value): self.values[name] = value
+            def get_editor_property(self, name): return self.values[name]
+        volume = Volume(); saved = []
+        subsystem = SimpleNamespace(get_editor_world=lambda: object(), save_current_level=lambda: saved.append(True) or True)
+        stub = SimpleNamespace(PostProcessVolume=Volume, PostProcessSettings=component_settings,
+            DirectionalLight=type("Sun", (), {}), SkyLight=type("Sky", (), {}), SkyAtmosphere=type("Atmosphere", (), {}),
+            AutoExposureMethod=SimpleNamespace(AEM_MANUAL="manual"), DynamicGlobalIlluminationMethod=SimpleNamespace(LUMEN="lumen"),
+            ReflectionMethod=SimpleNamespace(LUMEN="lumen"), UnrealEditorSubsystem=object(), LevelEditorSubsystem=object(),
+            get_editor_subsystem=lambda _: subsystem, Vector=lambda *xyz: xyz,
+            SystemLibrary=SimpleNamespace(execute_console_command=lambda *_: None, get_console_variable_int_value=lambda _: 1,
+                get_console_variable_float_value=lambda name: 7500 if name == "r.LumenScene.GlobalSDF.ClipmapExtent" else 4,
+                line_trace_single=lambda *_: None), TraceTypeQuery=SimpleNamespace(TRACE_TYPE_QUERY1=1), DrawDebugTrace=SimpleNamespace(NONE=0),
+            EditorAssetLibrary=SimpleNamespace(list_assets=lambda *_, **__: []),
+            ShibuyaRendererLibrary=SimpleNamespace(inspect_world_resources=lambda _: "{}"))
+        namespace = {"unreal": stub, "json": json, "_actors": lambda: SimpleNamespace(get_all_level_actors=lambda: [volume]),
+                     "_require_complete_support": lambda: None, "_snapshot": lambda: {"saved": len(saved)}}
+        for name in ("_exposure", "_daylight", "configure_daylight", "_lumen_capture_policy", "inspect_render_setup"):
+            helper_function(name, namespace)
+        self.assertEqual(json.loads(namespace["configure_daylight"]()), {"saved": 1})
+        settings = volume.values["settings"]
+        self.assertTrue(volume.values["unbound"])
+        self.assertEqual((settings.override_lumen_scene_view_distance, settings.lumen_scene_view_distance), (True, 240000))
+        self.assertEqual((settings.camera_iso, settings.camera_shutter_speed, settings.depth_of_field_fstop, settings.auto_exposure_bias), (100, 125, 8, 0))
+        for name, value in (("lumen_max_trace_distance", 20000), ("lumen_scene_detail", 1), ("lumen_scene_lighting_quality", 1), ("lumen_surface_cache_resolution", 1)):
+            self.assertEqual((getattr(settings, "override_" + name), getattr(settings, name)), (False, value))
+        observed = json.loads(namespace["inspect_render_setup"]())["post_process_volumes"]
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0]["lumen_policy"]["component_pp"]["lumen_scene_view_distance"], {"value": 240000, "override": True})
+        self.assertEqual(observed[0]["lumen_policy"]["cvars"]["r.LumenScene.GlobalSDF.ClipmapExtent"], 7500)
+        config = Path(os.environ.get("SHIBUYA_ENGINE_CONFIG", Path(__file__).parents[2] / "Config/DefaultEngine.ini")).read_text(encoding="utf-8")
+        self.assertIn("[SystemSettings]\nr.LumenScene.GlobalSDF.ClipmapExtent=7500", config)
+
     def namespace(self):
         cvars = {"r.LumenScene.GlobalSDF.ClipmapExtent": 2500.0, "r.AOGlobalDistanceField.NumClipmaps": 4.0,
                  "r.LumenScene.SurfaceCache.CardMinResolution": 4.0, "r.LumenScene.SurfaceCache.CardTexelDensityScale": 100.0}
@@ -151,16 +188,18 @@ class HelperCoverageTests(unittest.TestCase):
         self.assertEqual({name: value for name, value in vars(settings).items() if name not in ("lumen_scene_view_distance", "override_lumen_scene_view_distance")}, protected)
 
     def test_finish_restores_actual_prior_and_destroys_only_owned_capture(self):
-        namespace, cvars, commands, destroyed = self.namespace()
-        actor = object()
-        namespace["_capture"] = {"actor": actor, "world": object(), "coverage": {"prior_extent_cm": 3125.0}}
-        cvars["r.LumenScene.GlobalSDF.ClipmapExtent"] = 7500
-        restored = namespace["_finish_capture"]()
-        self.assertTrue(restored["restored"])
-        self.assertEqual(cvars["r.LumenScene.GlobalSDF.ClipmapExtent"], 3125)
-        self.assertEqual(destroyed, [actor])
-        self.assertIsNone(namespace["_capture"])
-        self.assertEqual(commands, ["r.LumenScene.GlobalSDF.ClipmapExtent 3125"])
+        for prior in (3125.0, 7500.0):
+            with self.subTest(prior=prior):
+                namespace, cvars, commands, destroyed = self.namespace()
+                actor = object()
+                namespace["_capture"] = {"actor": actor, "world": object(), "coverage": {"prior_extent_cm": prior}}
+                cvars["r.LumenScene.GlobalSDF.ClipmapExtent"] = 7500
+                restored = namespace["_finish_capture"]()
+                self.assertTrue(restored["restored"])
+                self.assertEqual(cvars["r.LumenScene.GlobalSDF.ClipmapExtent"], prior)
+                self.assertEqual(destroyed, [actor])
+                self.assertIsNone(namespace["_capture"])
+                self.assertEqual(commands, [f"r.LumenScene.GlobalSDF.ClipmapExtent {prior:.9g}"])
 
     def test_failed_restore_is_not_success_and_still_releases_actor_state(self):
         namespace, cvars, _, destroyed = self.namespace()

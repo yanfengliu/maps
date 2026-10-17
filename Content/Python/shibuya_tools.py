@@ -73,8 +73,8 @@ def _support_geometry_digest(triangles):
     return digest.hexdigest()
 
 
-def _support_glb(payload, native_geometry=False):
-    """Observe actual packed source positions/counts; no topology reconstruction."""
+def _support_glb(payload, native_geometry=False, road=False):
+    """Observe packed geometry; roads enumerate mesh/primitive/local faces in document order."""
     if len(payload) < 28 or struct.unpack_from("<4sII", payload) != (b"glTF", 2, len(payload)):
         raise RuntimeError("Cannot admit support surface: invalid complete GLB header.")
     count, kind = struct.unpack_from("<II", payload, 12)
@@ -83,53 +83,66 @@ def _support_glb(payload, native_geometry=False):
     doc = json.loads(payload[20:20 + count])
     length, kind = struct.unpack_from("<II", payload, 20 + count)
     binary = memoryview(payload)[28 + count:]
-    if kind != 0x004E4942 or length != len(binary) or len(doc["meshes"]) != 1 or len(doc["meshes"][0]["primitives"]) != 1:
+    if kind != 0x004E4942 or length != len(binary) or not doc["meshes"]:
+        raise RuntimeError("Cannot admit support surface: expected a complete binary mesh.")
+    if not road and (len(doc["meshes"]) != 1 or len(doc["meshes"][0]["primitives"]) != 1):
         raise RuntimeError("Cannot admit support surface: expected one complete terrain primitive.")
-    primitive = doc["meshes"][0]["primitives"][0]
-    position = doc["accessors"][primitive["attributes"]["POSITION"]]
-    indices = doc["accessors"][primitive["indices"]]
-    if position["componentType"] != 5126 or position["type"] != "VEC3" or indices["type"] != "SCALAR" or indices["componentType"] not in (5123, 5125):
-        raise RuntimeError("Cannot admit support surface: unsupported terrain positions/indices.")
-    vertices = _support_integer(position["count"], "terrain vertices", 6_000_000)
-    elements = _support_integer(indices["count"], "terrain indices", 6_000_000)
-    if elements % 3:
-        raise RuntimeError("Cannot admit support surface: terrain indices are not complete triangles.")
-    view = doc["bufferViews"][position["bufferView"]]
-    start = view.get("byteOffset", 0) + position.get("byteOffset", 0)
-    stride = view.get("byteStride", 12)
-    if stride < 12 or start < 0 or start + (vertices - 1) * stride + 12 > len(binary):
-        raise RuntimeError("Cannot admit support surface: terrain position accessor is outside the binary chunk.")
+    nodes = doc.get("nodes", [])
+    if native_geometry or road:
+        if len(nodes) != len(doc["meshes"]) or sorted(node.get("mesh", -1) for node in nodes) != list(range(len(doc["meshes"]))) or any(any(key in node for key in ("matrix", "translation", "rotation", "scale", "children")) for node in nodes):
+            raise RuntimeError("Cannot compare native support geometry: require each admitted triangle mesh node once, without transforms or instances.")
     low, high = [math.inf] * 3, [-math.inf] * 3
-    points = []
-    for index in range(vertices):
-        point = struct.unpack_from("<3f", binary, start + index * stride)
-        if not all(math.isfinite(value) for value in point):
-            raise RuntimeError("Cannot admit support surface: nonfinite actual terrain position.")
-        for axis, value in enumerate(point):
-            low[axis] = min(low[axis], value)
-            high[axis] = max(high[axis], value)
-        if native_geometry:
-            points.append(_support_point_key((100 * point[0], 100 * point[2], 100 * point[1])))
-    source = {"vertices": vertices, "triangles": elements // 3, "bounds_glb_m": [low, high]}
+    points, face_ids, excluded, retained = [], [], [], Counter()
+    total_vertices = total_triangles = 0
+    for mesh_index, mesh in enumerate(doc["meshes"]):
+        if not mesh["primitives"]:
+            raise RuntimeError("Cannot admit support surface: mesh has no consumed primitives.")
+        for primitive_index, primitive in enumerate(mesh["primitives"]):
+            position = doc["accessors"][primitive["attributes"]["POSITION"]]
+            indices = doc["accessors"][primitive["indices"]]
+            if position["componentType"] != 5126 or position["type"] != "VEC3" or indices["type"] != "SCALAR" or indices["componentType"] not in (5123, 5125) or ((native_geometry or road) and primitive.get("mode", 4) != 4):
+                raise RuntimeError("Cannot admit support surface: unsupported triangle positions/indices.")
+            vertices = _support_integer(position["count"], "primitive vertices", 6_000_000)
+            elements = _support_integer(indices["count"], "primitive indices", 6_000_000)
+            if elements % 3 or total_vertices + vertices > 6_000_000 or total_triangles + elements // 3 > 2_000_000:
+                raise RuntimeError("Cannot admit support surface: consumed primitive population exceeds complete bounded triangles.")
+            view = doc["bufferViews"][position["bufferView"]]
+            start = view.get("byteOffset", 0) + position.get("byteOffset", 0)
+            stride = view.get("byteStride", 12)
+            if stride < 12 or start < 0 or start + (vertices - 1) * stride + 12 > len(binary):
+                raise RuntimeError("Cannot admit support surface: position accessor is outside the binary chunk.")
+            for index in range(vertices):
+                point = struct.unpack_from("<3f", binary, start + index * stride)
+                if not all(math.isfinite(value) for value in point):
+                    raise RuntimeError("Cannot admit support surface: nonfinite actual position.")
+                for axis, value in enumerate(point):
+                    low[axis] = min(low[axis], value); high[axis] = max(high[axis], value)
+                if native_geometry:
+                    points.append(_support_point_key((100 * point[0], 100 * point[2], 100 * point[1])))
+            if road:
+                face_ids.extend((mesh_index, primitive_index, face) for face in range(elements // 3))
+            if native_geometry or road:
+                view = doc["bufferViews"][indices["bufferView"]]
+                start = view.get("byteOffset", 0) + indices.get("byteOffset", 0)
+                width = 2 if indices["componentType"] == 5123 else 4
+                if view.get("byteStride", width) != width or start < 0 or start + elements * width > len(binary):
+                    raise RuntimeError("Cannot compare native support geometry: source indices exceed their packed binary chunk.")
+                for local_face, triangle in enumerate(struct.iter_unpack("<3H" if width == 2 else "<3I", binary[start:start + elements * width])):
+                    if max(triangle) >= vertices:
+                        raise RuntimeError("Cannot compare native support geometry: primitive face references an absent vertex.")
+                    if native_geometry:
+                        triangle = tuple(total_vertices + index for index in triangle)
+                        a, b, c = (points[index] for index in triangle)
+                        if a == b or a == c or b == c:
+                            excluded.append((total_triangles + local_face, triangle))
+                        else:
+                            retained[b"".join(sorted((a, b, c)))] += 1
+            total_vertices += vertices; total_triangles += elements // 3
+    source = {"vertices": total_vertices, "triangles": total_triangles, "bounds_glb_m": [low, high]}
+    if road:
+        source["face_ids"] = face_ids
     if not native_geometry:
         return source
-    nodes = doc.get("nodes", [])
-    if primitive.get("mode", 4) != 4 or len(nodes) != 1 or nodes[0].get("mesh") != 0 or any(key in nodes[0] for key in ("matrix", "translation", "rotation", "scale", "children")):
-        raise RuntimeError("Cannot compare native support geometry: require the admitted untransformed single triangle mesh node.")
-    view = doc["bufferViews"][indices["bufferView"]]
-    start = view.get("byteOffset", 0) + indices.get("byteOffset", 0)
-    width = 2 if indices["componentType"] == 5123 else 4
-    if view.get("byteStride", width) != width or start < 0 or start + elements * width > len(binary):
-        raise RuntimeError("Cannot compare native support geometry: source indices exceed their packed binary chunk.")
-    retained, excluded = Counter(), []
-    for face, triangle in enumerate(struct.iter_unpack("<3H" if width == 2 else "<3I", binary[start:start + elements * width])):
-        if max(triangle) >= vertices:
-            raise RuntimeError(f"Cannot compare native support geometry: source face {face} references an absent vertex.")
-        a, b, c = (points[index] for index in triangle)
-        if a == b or a == c or b == c:
-            excluded.append((face, triangle))
-        else:
-            retained[b"".join(sorted((a, b, c)))] += 1
     return {"source": source, "points": points, "retained": retained, "excluded": excluded}
 
 
@@ -170,6 +183,183 @@ def _support_compare_native_geometry(mesh, geometry):
     return {"raw_source_triangles": source["triangles"], "exact_coincident_endpoint_exclusions": len(excluded), "expected_retained_triangles": sum(retained.values()), "native_render_triangles": sum(native.values()), "excluded_native_source_faces_verified": len(excluded), "excluded_source_face_ids_sha256": hashlib.sha256(b"".join(struct.pack("<I", face) for face, _ in excluded)).hexdigest(), "complete_rendered_geometry_multiset_equal": True, "geometry_multiset_sha256": _support_geometry_digest(native)}
 
 
+def _support3_record(record, maximum=32 * 1024 * 1024):
+    """Validate historical data identity without allocating or reading producer-only geometry."""
+    name = record.get("path") if isinstance(record, dict) else None
+    if not isinstance(name, str) or not name.startswith("data/") or any(part in ("", ".", "..") or re.search(r'[\\:<>"|?*\x00-\x1f]', part) or part.endswith((" ", ".")) or re.fullmatch(r"(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])", part.split(".")[0], re.I) for part in name.split("/")):
+        raise RuntimeError("Cannot admit Source3: historical record needs a confined data path.")
+    size = _support_integer(record.get("bytes", record.get("size")), name + " bytes", maximum)
+    if "bytes" in record and "size" in record and record["bytes"] != record["size"]:
+        raise RuntimeError("Cannot admit Source3: historical record has conflicting byte counts.")
+    if not isinstance(record.get("sha256"), str) or not re.fullmatch("[0-9a-f]{64}", record["sha256"]):
+        raise RuntimeError("Cannot admit Source3: historical record needs SHA-256.")
+    return {"path": name, "bytes": size, "sha256": record["sha256"]}
+
+
+def _admit_support_surface3(manifest, bindings, relative):
+    """Bind published Source3 closure; source reconstruction and patch GLBs remain producer-only."""
+    model = "native-float32-centimetres-v1"
+    if manifest.get("coordinate_model") != model or any(key in manifest for key in ("topology_provenance", "terrain_source_triangle_indices", "construction_policy")):
+        raise RuntimeError("Cannot admit Source3: require native float32 centimetres and explicit ledger ancestry, without relabeled Source2 topology.")
+    parent = json.loads(_support_read(manifest["parent_support_surface"], bindings, 16 * 1024 * 1024))
+    if type(parent.get("schema_version")) is not int or parent["schema_version"] != 2 or manifest["parent_support_surface"]["path"] in (relative, "data/prepared/surface/support-surface-manifest.json"):
+        raise RuntimeError("Cannot admit Source3: parent must be a separate immutable schema2 manifest.")
+    for key in ("frame", "origin", "vertical_reference", "inputs", "atlas", "attribution", "native_assignment"):
+        if manifest.get(key) != parent.get(key):
+            raise RuntimeError("Cannot admit Source3: parent " + key + " changed.")
+    inputs = manifest["inputs"]
+    if inputs["base_manifest"]["path"] != "data/prepared/manifest.json":
+        raise RuntimeError("Cannot admit Source3: wrong base-manifest role.")
+    base = json.loads(_support_read(inputs["base_manifest"], bindings))
+    if manifest["origin"] != base["origin"] or manifest["vertical_reference"] != base["vertical_reference"] or manifest["origin"].get("latitude") != 35.6595 or manifest["origin"].get("longitude") != 139.7005:
+        raise RuntimeError("Cannot admit Source3: wrong source origin or vertical reference.")
+    ledger = json.loads(_support_read(manifest["surface_edits"], bindings, 16 * 1024 * 1024))
+    if type(ledger.get("schema_version")) is not int or ledger["schema_version"] != 1 or ledger.get("coordinate_model") != model or ledger.get("output_order") != "parent-triangles-minus-deletions-then-patch-faces" or ledger.get("parent_support_surface") != manifest["parent_support_surface"] or ledger.get("parent_derived_terrain") != parent["derived_terrain"]:
+        raise RuntimeError("Cannot admit Source3: edit ledger differs from its exact parent, coordinate or output-order contract.")
+    if manifest["derived_terrain"]["path"] == parent["derived_terrain"]["path"]:
+        raise RuntimeError("Cannot admit Source3: current terrain cannot reuse its producer-only parent geometry role.")
+    producer_records = [ledger["parent_derived_terrain"], ledger["terrain_patch"], *[row["replacement"] for row in ledger.get("road_overrides", [])], ledger["recipe"]["algorithm"], *ledger["recipe"]["source_inputs"], *ledger["recipe"]["candidate_inputs"]]
+    producer = {}
+    for record in producer_records:
+        identity = _support3_record(record, 64 * 1024 * 1024 if record.get("path") == ledger["parent_derived_terrain"]["path"] else 32 * 1024 * 1024)
+        if identity["path"] in producer and producer[identity["path"]] != identity:
+            raise RuntimeError("Cannot admit Source3: conflicting producer-only record identity.")
+        producer[identity["path"]] = identity
+    algorithm, configuration = manifest["algorithm"], manifest["configuration_inputs"]
+    roles = (("geometry", "tools/data/support_surface.py", algorithm), ("integration", "tools/data/surface_network.py", algorithm["integration"]),
+             ("topology", "tools/data/support_topology.py", algorithm["topology"]), ("build_city", "tools/data/build_city.py", algorithm["build_city"]),
+             ("surface_configuration", "sources/surface_network.json", configuration["surface_network"]), ("city_configuration", "sources/shibuya.json", configuration["city"]))
+    expected_bindings, executions = [], {}
+    for role, execution, record in (*roles, ("source3_writer", "tools/data/support_source3.py", algorithm["edits"])):
+        identity = _support3_record(record, 100_000 if execution.startswith("sources/") else 2 * 1024 * 1024)
+        if not identity["path"].startswith("data/source/provenance/") or identity["sha256"] not in identity["path"]:
+            raise RuntimeError("Cannot admit Source3: code/config snapshots must be content-addressed historical data.")
+        payload = _support_read(record, bindings, 100_000 if execution.startswith("sources/") else 2 * 1024 * 1024)
+        executions[execution] = identity
+        if role != "source3_writer":
+            expected_bindings.append({"role": role, "execution_path": execution, "snapshot": identity})
+        if execution == "sources/surface_network.json":
+            config = json.loads(payload)
+    support = config["support_surface"]
+    if config["base_manifest_sha256"] != inputs["base_manifest"]["sha256"] or support["original_terrain_photo"] != inputs["original_terrain_photo"] or support["atlas"] != manifest["atlas"]:
+        raise RuntimeError("Cannot admit Source3: source/configuration/atlas identity changed.")
+    preservation = json.loads(_support_read(manifest["source_preservation"], bindings))
+    before = preservation.get("inputs_before")
+    if preservation.get("schema_version") != 1 or preservation.get("unchanged") is not True or not isinstance(before, list) or not before or before != preservation.get("inputs_after") or preservation.get("data_bindings") != expected_bindings or preservation.get("source3_writer") != algorithm["edits"]:
+        raise RuntimeError("Cannot admit Source3: missing exact unchanged producer inventory and snapshot bindings.")
+    inventory = {}
+    for record in before:
+        name = record.get("path")
+        if name in inventory:
+            raise RuntimeError("Cannot admit Source3: duplicate producer inventory path.")
+        if name in executions:
+            if any(record.get(key) != executions[name][key] for key in ("bytes", "sha256")):
+                raise RuntimeError("Cannot admit Source3: historical execution differs from its data snapshot.")
+            inventory[name] = record
+        else:
+            inventory[name] = _support3_record(record, 64 * 1024 * 1024 if name == ledger["parent_derived_terrain"]["path"] else 32 * 1024 * 1024)
+    if not set(executions).issubset(inventory) or any(inventory.get(name) != identity for name, identity in producer.items()):
+        raise RuntimeError("Cannot admit Source3: producer inventory omits declared code or edit dependencies.")
+    source_roads = [row for row in base["outputs"] if row["kind"] == "roads"]
+    if len(source_roads) != 25 or inputs["roads"] != [_support_identity(row) for row in source_roads]:
+        raise RuntimeError("Cannot admit Source3: original all25 road provenance changed.")
+    photos = json.loads(_support_read(inputs["road_photo_manifest"], bindings))
+    if photos["base_manifest_sha256"] != inputs["base_manifest"]["sha256"] or photos["shared_atlas"] != manifest["atlas"] or len(photos["outputs"]) != 25:
+        raise RuntimeError("Cannot admit Source3: wrong parent road-photo manifest or shared atlas.")
+    _support_read(manifest["atlas"], bindings)
+    native_roads, derived = manifest["native_roads"], manifest["derived_roads"]
+    if len(native_roads) != 25 or not isinstance(derived, list):
+        raise RuntimeError("Cannot admit Source3: require the same25 actual road actor roles.")
+    replacements = {}
+    for row in derived:
+        number = row.get("source")
+        if type(number) is not int or not 0 <= number < 25 or number in replacements:
+            raise RuntimeError("Cannot admit Source3: duplicate/unknown derived road role.")
+        replacements[number] = row
+    road_geometry = {}
+    for number, (original, native, previous) in enumerate(zip(source_roads, native_roads, parent["native_roads"])):
+        index = next(i for i, row in enumerate(base["outputs"]) if row["path"] == original["path"])
+        stem = Path(original["path"]).stem
+        if any(native.get(key) != previous.get(key) for key in ("source_index", "road_index", "original_source", "actor_label", "native_mesh_path")) or native["source_index"] != index or native["road_index"] != number or native["original_source"] != _support_identity(original) or native["actor_label"] != f"City_{index:03}_{stem}" or native["native_mesh_path"] != f"/Game/Surface/Roads/Tile_{index:03}/{stem}/StaticMeshes/{stem}.{stem}":
+            raise RuntimeError("Cannot admit Source3: road actor/raw-source/native asset identity changed.")
+        replacement = replacements.get(number)
+        selected = replacement["record"] if replacement else previous["source"]
+        if native["source"] != selected or native["source_path"] != selected["path"] or Path(selected["path"]).stem != stem:
+            raise RuntimeError("Cannot admit Source3: native road does not select its declared full replacement with the original import name.")
+        geometry = _support_glb(_support_read(selected, bindings), road=True)
+        if native["triangles"] != geometry["triangles"]:
+            raise RuntimeError("Cannot admit Source3: actual road triangle count differs from its consumed GLB.")
+        if replacement:
+            faces = replacement["face_map"]
+            if len(faces) != geometry["triangles"] or any(any(type(face.get(key)) is not int for key in ("source", "mesh", "primitive", "triangle", "source_triangle_index", "original_triangle")) or face.get("source") != number or (face["mesh"], face["primitive"], face["triangle"]) != geometry["face_ids"][i] or face["source_triangle_index"] != i or face.get("kind") not in ("road", "derived-road") or not 0 <= face["original_triangle"] < previous["triangles"] or (face["kind"] == "derived-road" and (type(face.get("patch_triangle")) is not int or face["patch_triangle"] < 0 or not isinstance(face.get("region_id"), str) or not face["region_id"])) for i, face in enumerate(faces)):
+                raise RuntimeError("Cannot admit Source3: derived road output face map is incomplete or changes its lineage role.")
+        road_geometry[native["actor_label"]] = geometry
+    geometry = _support_glb(_support_read(manifest["derived_terrain"], bindings, 64 * 1024 * 1024))
+    if any(manifest["derived_terrain"][key] != value for key, value in geometry.items()):
+        raise RuntimeError("Cannot admit Source3: terrain counts/bounds differ from actual consumed GLB.")
+    deleted, patch = ledger["deleted_parent_triangles"], ledger["patch_faces"]
+    count = _support_integer(parent["derived_terrain"]["triangles"], "parent triangles", 2_000_000)
+    if not isinstance(deleted, list) or deleted != sorted(set(deleted)) or any(type(i) is not int or not 0 <= i < count for i in deleted) or len(patch) != geometry["triangles"] - count + len(deleted) or any(type(row.get("patch_triangle")) is not int or row["patch_triangle"] != i or row.get("kind") not in ("retained-parent-fragment", "inferred-ground-road") for i, row in enumerate(patch)):
+        raise RuntimeError("Cannot admit Source3: terrain deletion/patch population differs from its actual output.")
+    region_ids = [row["id"] for row in ledger["regions"]]
+    if any(not isinstance(value, str) or not value for value in region_ids) or len(set(region_ids)) != len(region_ids) or sorted(row["parent_triangle"] for row in ledger["terrain_edits"]) != deleted:
+        raise RuntimeError("Cannot admit Source3: removals/regions do not bind the complete edit population.")
+    for face in patch:
+        if face.get("region_id") not in region_ids:
+            raise RuntimeError("Cannot admit Source3: patch names an undeclared edit region.")
+        if face["kind"] == "retained-parent-fragment":
+            index = face.get("parent_triangle")
+            if type(index) is not int or index not in deleted or face.get("original_terrain_parent") != parent["terrain_source_triangle_indices"][index]:
+                raise RuntimeError("Cannot admit Source3: fragment relabels original terrain lineage.")
+        elif "parent_triangle" in face or "original_terrain_parent" in face or not isinstance(face.get("anchors"), list) or not face["anchors"]:
+            raise RuntimeError("Cannot admit Source3: inferred geometry needs explicit road anchors and cannot claim original GSI lineage.")
+    assignment = manifest["native_assignment"]
+    expected_assignment = {"material_path": support["native_material"], "texture_path": support["native_texture"], "original_actor_label": "City_069_terrain", "original_mesh_path": "/Game/Surface/TerrainPhoto/terrain-photo/StaticMeshes/terrain-photo.terrain-photo", "replacement_mesh_path": "/Game/Surface/TerrainSupport/terrain-support/StaticMeshes/terrain-support.terrain-support", "replace_original_terrain_actor_only": True, "preserve_material_packages": True, "collision_source_tolerance_cm": .1}
+    if any(assignment.get(key) != value for key, value in expected_assignment.items()):
+        raise RuntimeError("Cannot admit Source3: original native actor/material/collision assignment changed.")
+    rays = json.loads(_support_read(manifest["native_ray_samples"], bindings))
+    labels = {road["actor_label"] for road in native_roads}
+    if rays.get("schema_version") != 1 or rays.get("frame") != "metres-Xeast-Ynorth-Zup" or rays.get("position_tolerance_cm") != .1 or rays.get("normal_dot_min") != .999 or rays.get("inputs") != support["native_ray_inputs"] or rays["road_coverage"]["source_roads"] != 25 or rays["road_coverage"]["covered_actor_labels"] != sorted(labels) or rays["road_coverage"]["uncovered_roads"]:
+        raise RuntimeError("Cannot admit Source3: ray source/frame/tolerance or complete road coverage changed.")
+    samples, covered = rays["samples"], set()
+    if not samples or len(samples) > 10_000 or len({row["id"] for row in samples}) != len(samples):
+        raise RuntimeError("Cannot admit Source3: missing/oversized/duplicate rays.")
+    for row in samples:
+        if type(row.get("expected_hit")) is not bool or any(not isinstance(row[key], list) or len(row[key]) != 3 or any(type(value) not in (int, float) or not math.isfinite(value) for value in row[key]) for key in ("start_m", "end_m")):
+            raise RuntimeError("Cannot admit Source3: malformed finite native ray.")
+        if row["expected_hit"]:
+            expected = row["expected"]
+            road = next((r for r in native_roads if r["actor_label"] == expected["actor_label"]), None)
+            actual = manifest["derived_terrain"] if expected["actor_label"] == "City_069_terrain" and expected["mesh_role"] == "terrain_support" else road["source"] if road and expected["mesh_role"] == "road" else None
+            limit = geometry["triangles"] if road is None else road["triangles"]
+            if actual is None or expected["source_path"] != actual["path"] or type(expected.get("source_triangle_index")) is not int or not 0 <= expected["source_triangle_index"] < limit or any(not isinstance(expected[key], list) or len(expected[key]) != 3 or any(type(value) not in (int, float) or not math.isfinite(value) for value in expected[key]) for key in ("position_m", "normal_enu")) or abs(sum(value * value for value in expected["normal_enu"]) - 1) > .00001:
+                raise RuntimeError("Cannot admit Source3: ray does not bind actual consumed actor/triangle/plane.")
+            if road:
+                ref = expected.get("layer_ref", {})
+                face = expected["source_triangle_index"]
+                if any(type(ref.get(key)) is not int for key in ("source", "mesh", "primitive", "triangle", "source_triangle_index")) or ref["source"] != road["road_index"] or ref["source_triangle_index"] != face or (ref["mesh"], ref["primitive"], ref["triangle"]) != road_geometry[road["actor_label"]]["face_ids"][face] or (road["road_index"] in replacements and ref != replacements[road["road_index"]]["face_map"][face]) or (road["road_index"] not in replacements and (ref.get("kind") != "road" or ref.get("original_triangle") != ref["triangle"])):
+                    raise RuntimeError("Cannot admit Source3: road ray flattened output differs from its primitive-local face and ancestry.")
+                covered.add(road["actor_label"])
+    if covered != labels:
+        raise RuntimeError("Cannot admit Source3: rays omit an admitted road actor.")
+    return {"manifest": manifest, "manifest_path": relative, "manifest_sha256": bindings[relative]["sha256"], "bindings": bindings, "rays": rays, "road_geometry": road_geometry}
+
+
+def _support_selected_road(entry, state, label):
+    if state and state["manifest"].get("schema_version") == 3:
+        native = next(row for row in state["manifest"]["native_roads"] if row["actor_label"] == label)
+        _support_read(native["source"], state["bindings"])
+        return native["source"]
+    return entry["generated"]
+
+
+def _support_road_bounds(actor, bounds):
+    points = [_vector(actor.get_actor_transform().transform_location(unreal.Vector(x * 100, z * 100, y * 100))) for x in (bounds[0][0], bounds[1][0]) for y in (bounds[0][1], bounds[1][1]) for z in (bounds[0][2], bounds[1][2])]
+    low, high = [[operation(point[axis] for point in points) for axis in range(3)] for operation in (min, max)]
+    centre, extent = actor.get_actor_bounds(False)
+    return all(abs(value - wanted) <= .1 for values, expected in (([a - b for a, b in zip(_vector(centre), _vector(extent))], low), ([a + b for a, b in zip(_vector(centre), _vector(extent))], high)) for value, wanted in zip(values, expected))
+
+
 def _admit_support_surface(manifest_path):
     """Bind an already producer-admitted schema2 generation to actual import bytes."""
     bindings = {}
@@ -184,6 +374,10 @@ def _admit_support_surface(manifest_path):
         raise RuntimeError("Cannot admit support surface: manifest changed length during its bounded read.")
     bindings[relative] = {"path": relative, "bytes": size, "sha256": hashlib.sha256(raw).hexdigest()}
     manifest = json.loads(raw)
+    if type(manifest.get("schema_version")) is int and manifest["schema_version"] == 3:
+        if manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ynorth-Zup"}:
+            raise RuntimeError("Cannot admit Source3: require the exact GLB/runtime/Unreal frames.")
+        return _admit_support_surface3(manifest, bindings, relative)
     if type(manifest.get("schema_version")) is not int or manifest["schema_version"] != 2 or manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ynorth-Zup"}:
         raise RuntimeError("Cannot admit support surface: require schema2 with the exact GLB/runtime/Unreal frames.")
     inputs = manifest["inputs"]
@@ -301,12 +495,12 @@ def _support_check_hit(sample, actual):
         raise RuntimeError(f"Support ray {sample['id']} differs from the actual source plane by more than0.1cm or its normal.")
 
 
-def _support_collision(mesh, triangles, source, bindings):
+def _support_collision(mesh, triangles, source, bindings, road=False):
     editor = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
     body = mesh.get_editor_property("body_setup")
     if body is None or mesh.get_editor_property("complex_collision_mesh") is not None:
         raise RuntimeError(f"Cannot configure faithful support collision: {mesh.get_path_name()} has no own body or uses another mesh.")
-    geometry = _support_glb(_support_read(source, bindings, 64 * 1024 * 1024), native_geometry=True)
+    geometry = _support_glb(_support_read(source, bindings, (32 if road else 64) * 1024 * 1024), native_geometry=True, road=road)
     if geometry["source"]["triangles"] != triangles:
         raise RuntimeError(f"Cannot configure faithful support collision: {source['path']} differs from its declared raw source triangle count {triangles}.")
     if not editor.remove_collisions_with_notification(mesh, False):
@@ -960,7 +1154,10 @@ def _daylight():
         volume = _actors().spawn_actor_from_class(unreal.PostProcessVolume, unreal.Vector(0, 0, 0))
         volume.set_actor_label("Shibuya_Exposure")
     volume.set_editor_property("unbound", True)
-    volume.set_editor_property("settings", _exposure())
+    settings = _exposure()
+    settings.override_lumen_scene_view_distance = True
+    settings.lumen_scene_view_distance = 240000.0
+    volume.set_editor_property("settings", settings)
 
 
 def _snapshot():
@@ -1311,7 +1508,10 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         cvars = {name: unreal.SystemLibrary.get_console_variable_int_value(name) for name in ["r.SkyAtmosphere", "r.SupportSkyAtmosphere", "r.SkyLight.RealTimeReflectionCapture", "r.Lumen.DiffuseIndirect.Allow", "r.Lumen.Reflections.Allow"]}
         world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
         resources = json.loads(unreal.ShibuyaRendererLibrary.inspect_world_resources(world))
-        return json.dumps({"lights": lights, "native_skylights": resources.get("skylights", []), "atmosphere": atmosphere, "render_cvars": cvars, "photo_materials": photos, "fixed_camera_witnesses": cameras, "instrument": "native staged SceneCapture2D; persistent view state; explicit Lumen PP override; manual physical EV13"})
+        volumes = [{"actor": actor.get_actor_label(), "unbound": actor.get_editor_property("unbound"),
+                    "lumen_policy": _lumen_capture_policy(actor.get_editor_property("settings"))}
+                   for actor in actors if isinstance(actor, unreal.PostProcessVolume) and actor.get_actor_label() == "Shibuya_Exposure"]
+        return json.dumps({"lights": lights, "native_skylights": resources.get("skylights", []), "atmosphere": atmosphere, "render_cvars": cvars, "post_process_volumes": volumes, "photo_materials": photos, "fixed_camera_witnesses": cameras, "instrument": "native staged SceneCapture2D; persistent view state; explicit Lumen PP override; manual physical EV13"})
 
     @toolset_registry.tool_call
     @staticmethod
@@ -1423,7 +1623,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         if len(payload) != size:
             raise RuntimeError("Cannot dispatch surface manifest: input changed length during its bounded read.")
         document = json.loads(payload)
-        if document.get("schema_version") == 2:
+        if type(document.get("schema_version")) is int and document["schema_version"] in (2, 3):
             return json.dumps(_prepare_support_terrain(manifest_path))
         metadata = document["photo_ground"]
         base_path = _local_file("data/prepared/manifest.json")
@@ -1494,14 +1694,15 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
             prepared = []
             for entry in metadata["outputs"]:
                 original = _local_file(entry["original"]["path"])
-                generated = _local_file(entry["generated"]["path"])
-                for path, expected in [(original, entry["original"]["sha256"]), (generated, entry["generated"]["sha256"])]:
-                    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-                        raise RuntimeError(f"Cannot apply photo roads: {path} changed from the admitted road manifest.")
-                if _glb_geometry(original) != _glb_geometry(generated):
-                    raise RuntimeError(f"Cannot apply photo roads: {generated.name} changed source geometry or placement.")
                 index = source_indices[original]
                 label = f"City_{index:03}_{original.stem}"
+                selected = _support_selected_road(entry, support_state, label) if support_installation and support_state["manifest"]["schema_version"] == 3 else entry["generated"]
+                generated = _local_file(selected["path"])
+                for path, expected in [(original, entry["original"]["sha256"]), (generated, selected["sha256"])]:
+                    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                        raise RuntimeError(f"Cannot apply photo roads: {path} changed from the admitted road manifest.")
+                if not (support_installation and support_state["manifest"]["schema_version"] == 3) and _glb_geometry(original) != _glb_geometry(generated):
+                    raise RuntimeError(f"Cannot apply photo roads: {generated.name} changed source geometry or placement.")
                 actor = next((actor for actor in _actors().get_all_level_actors() if actor.get_actor_label() == label and isinstance(actor, unreal.StaticMeshActor) and actor.actor_has_tag("ShibuyaSource")), None)
                 if not actor:
                     raise RuntimeError(f"Cannot apply photo roads: expected original source actor {label}.")
@@ -1527,13 +1728,16 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                         native = next(row for row in support_state["manifest"]["native_roads"] if row["actor_label"] == actor.get_actor_label())
                         if mesh.get_path_name() != native["native_mesh_path"]:
                             raise RuntimeError("Cannot apply support road: importer returned a different native source mesh path.")
-                        collision = _support_collision(mesh, native["triangles"], native["source"], support_state["bindings"])
+                        collision = _support_collision(mesh, native["triangles"], native["source"], support_state["bindings"], road=support_state["manifest"]["schema_version"] == 3)
                     if not unreal.EditorAssetLibrary.save_loaded_asset(mesh):
                         raise RuntimeError(f"Cannot apply photo road {generated.name}: editor did not save shared-atlas material bindings in {mesh.get_path_name()}. Make that native asset package writable and retry the admitted road import.")
                     rollback.append((actor, old_mesh))
                     actor.static_mesh_component.set_static_mesh(mesh)
                     new_bounds = actor.get_actor_bounds(False)
-                    if any(abs(a - b) > .01 for previous, current in zip(old_bounds, new_bounds) for a, b in zip(_vector(previous), _vector(current))):
+                    if support_installation and support_state["manifest"]["schema_version"] == 3:
+                        if not _support_road_bounds(actor, support_state["road_geometry"][actor.get_actor_label()]["bounds_glb_m"]):
+                            raise RuntimeError(f"Cannot apply Source3 road {generated.name}: native bounds differ from its exact declared full replacement.")
+                    elif any(abs(a - b) > .01 for previous, current in zip(old_bounds, new_bounds) for a, b in zip(_vector(previous), _vector(current))):
                         raise RuntimeError(f"Cannot apply photo road {generated.name}: native geometry bounds changed.")
                     bindings = _material_bindings(mesh)
                     if any(set(binding["textures"]) != shared_textures for binding in bindings):
@@ -1567,7 +1771,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                 if support_installation:
                     _abort_support_update(error)
                 raise
-            return json.dumps({"road_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "roads": changed, "road_geometry_bytes_unchanged": True, "other_source_actor_count": len(unaffected), "other_source_actors_unchanged": True, "shared_atlas_assets": sorted(shared_textures), **({"support_manifest_sha256": support_state["manifest_sha256"], "support_status": "native-roads-rays-validated-map-saved", "native_support_validation": support_validation, "city_collision": support_state["city_collision"], "terrain_collision": support_state["collision"], "terrain_geometry_bytes_unchanged": False} if support_installation else {})})
+            return json.dumps({"road_manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(), "roads": changed, "road_geometry_bytes_unchanged": not (support_installation and support_state["manifest"]["schema_version"] == 3), "other_source_actor_count": len(unaffected), "other_source_actors_unchanged": True, "shared_atlas_assets": sorted(shared_textures), **({"support_manifest_sha256": support_state["manifest_sha256"], "support_status": "native-roads-rays-validated-map-saved", "native_support_validation": support_validation, "city_collision": support_state["city_collision"], "terrain_collision": support_state["collision"], "terrain_geometry_bytes_unchanged": False} if support_installation else {})})
         try:
             return apply()
         except Exception as error:

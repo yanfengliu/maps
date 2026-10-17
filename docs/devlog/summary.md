@@ -1,5 +1,7 @@
 # Devlog Summary
 
+2026-10-17 — Added reviewed Source3 producer/reader and native-consumer admission with exact road-face identities, bounded original-point stitches and persistent reach-only lighting configuration. Both native targets compile;148 helper,115 source and21 runner tests pass. The prior6364 core result retains identical inputs. Full discovery caught and corrected module-registry and CLI-fixture errors. Independent review348 binds22 integrated files. Corridor geometry, actual Source3 import/controls and3000/200performance remain open.
+
 2026-10-17 — Repaired coarse City convex collision without removing building blockage: actual Source2 terrain/25roads,282 ground rays and18 wall/capsule witnesses pass and the map saves. The reach-only f8 hardware trial passes allsix original views without the pavement-shadow artifact. All134 integrated helper tests pass; independent reviews342/343 cover the code. Final-source routes/controls, saved/runtime coverage, photorealism and3000/200performance remain open.
 
 2026-10-17 — Added the native Shibuya runtime module, ordinary control handling and animated pedestrian/vehicle rendering, with reviewed source bindings and owned native verification/capture entry points. Editor/Game builds from the same 19 authored inputs and 6,364 core assertions passed; cleanup and final-verdict fixes gained causal controls. The F8 near-view hardware trial passed four views. Full-city surface/support, executable routes and traffic, fixed-six photoreal appearance and 3,000/200 performance gates remain open.

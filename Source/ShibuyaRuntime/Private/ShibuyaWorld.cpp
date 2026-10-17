@@ -122,6 +122,7 @@ AShibuyaWorld* FindCity(UWorld* World)
     return nullptr;
 }
 #include "BoundaryAdmission.h"
+#include "SupportSource3Admission.h"
 }
 
 AShibuyaWorld::AShibuyaWorld()
@@ -176,6 +177,7 @@ bool AShibuyaWorld::LoadNetwork()
             throw std::runtime_error("Runtime network source manifest differs from its actual movement receipt.");
         SourceManifestPath=Text(SourceRecord,TEXT("path"));
         const auto Source=ObjectValue(ParseJSON(AdmitRecord(SourceRecord)));
+        FSource3Metadata Source3;int32 SupportSchema=0;
         const bool HasSupport=Source->HasField(TEXT("support_surface")),HasDerived=Source->HasField(TEXT("derived_terrain"));
         if(HasSupport!=HasDerived)throw std::runtime_error("Runtime Source2 manifest needs both support_surface and derived_terrain records; regenerate the complete source pair.");
         if(HasSupport)
@@ -183,13 +185,14 @@ bool AShibuyaWorld::LoadNetwork()
             // Admit the published closure, not the offline 80,000-parent proof again.
             const auto Support=ObjectValue(ParseJSON(AdmitRecord(ObjectField(Source,TEXT("support_surface")),Shibuya::RuntimeInputRole::SupportManifest)));
             const auto Schema=Support->TryGetField(TEXT("schema_version"));
-            if(!Schema.IsValid() || Schema->Type!=EJson::Number || Schema->AsNumber()!=2)
-                throw std::runtime_error("Runtime Source2 support_surface needs published schema2; rebuild support before importing this source.");
+            if(!Schema.IsValid() || Schema->Type!=EJson::Number || (Schema->AsNumber()!=2&&Schema->AsNumber()!=3))
+                throw std::runtime_error("Runtime support_surface needs published schema2 or schema3; rebuild support before importing this source.");
+            SupportSchema=static_cast<int32>(Schema->AsNumber());
             const auto Derived=ObjectField(Source,TEXT("derived_terrain"));
             if(!FJsonValue::CompareEqual(FJsonValueObject(Derived),FJsonValueObject(ObjectField(Support,TEXT("derived_terrain")))))
                 throw std::runtime_error("Runtime Source2 derived_terrain differs from the support manifest record; restore the admitted source pair.");
             AdmitRecord(Derived,Shibuya::RuntimeInputRole::DerivedTerrain);
-            AdmitRecord(ObjectField(ObjectField(Support,TEXT("topology_provenance")),TEXT("record")));
+            if(SupportSchema==2)AdmitRecord(ObjectField(ObjectField(Support,TEXT("topology_provenance")),TEXT("record")));
             AdmitRecord(ObjectField(Support,TEXT("native_ray_samples")));
             const auto Preservation=ObjectValue(ParseJSON(AdmitRecord(ObjectField(Support,TEXT("source_preservation")))));
             const auto& Before=Array(Preservation,TEXT("inputs_before"));const auto& After=Array(Preservation,TEXT("inputs_after"));
@@ -224,13 +227,19 @@ bool AShibuyaWorld::LoadNetwork()
                     throw std::runtime_error("Runtime Source2 snapshot binding differs from its published role, execution identity or exact snapshot record.");
                 HistoricalExecution.Add(InputRole.Execution,Record);
             }
+            if(SupportSchema==3)Source3=AdmitSource3Closure(Support,Source,Movement,Preservation,HistoricalExecution,AdmitRecord);
             TSet<FString> Seen;
             for(const auto& Value:Before)
             {
                 const auto Record=ObjectValue(Value);const FString Path=Text(Record,TEXT("path"));
                 if(Seen.Contains(Path))throw std::runtime_error("Runtime Source2 preservation repeats an input path; restore its complete unique inventory.");
                 Seen.Add(Path);
-                if(Path.StartsWith(TEXT("data/")))AdmitRecord(Record);
+                if(Path.StartsWith(TEXT("data/")))
+                {
+                    if(SupportSchema==2)AdmitRecord(Record);
+                    // Source3 producer-only identities were validated as ledger metadata;
+                    // only the explicit current consumed closure is allocated/read.
+                }
                 else
                 {
                     // These name historical producer inputs. Never execute or
@@ -297,6 +306,8 @@ bool AShibuyaWorld::LoadNetwork()
             Route.closed=Boolean(Record,TEXT("closed"));Route.speed=Number(Record,TEXT("speed_m_s"));Route.width=Number(Record,TEXT("width_m"));
             const TSharedPtr<FJsonObject> Support=ObjectField(Record,TEXT("support"));
             const double Samples=Number(Support,TEXT("sample_count"));
+            if(SupportSchema==3&&Text(Support,TEXT("support_surface_sha256"))!=Text(ObjectField(Source,TEXT("support_surface")),TEXT("sha256")))
+                throw std::runtime_error("Runtime Source3 route profile belongs to a different published support generation.");
             if(!Boolean(Support,TEXT("verified")) || Samples<2 || Samples>1000000 || Samples!=FMath::FloorToDouble(Samples) || !Digest(Text(Support,TEXT("samples_sha256"))))
                 throw std::runtime_error("Runtime route has no verified finite source-support sampling receipt.");
             Text(Support,TEXT("source"));SupportSampleCount+=static_cast<int32>(Samples);
@@ -324,7 +335,8 @@ bool AShibuyaWorld::LoadNetwork()
                     if(std::abs(Offset-Expected)>1e-6 || std::hypot(Point.x-Centre.x+Tangent.y/Flat*Offset,Point.y-Centre.y-Tangent.x/Flat*Offset)>1e-4)
                         throw std::runtime_error("Support cross-section orientation or declared corridor width differs from the measured route segment.");
                     const FString Provider=Text(Edge,TEXT("source"));
-                    if(Provider!=TEXT("PLATEAU-road") && Provider!=TEXT("GSI-DEM5A"))throw std::runtime_error("Support profile has an unknown admitted surface provider.");
+                    if(SupportSchema==3)AdmitSource3Profile(Edge,Source3,Route,Text(Source,TEXT("osm")));
+                    else if(Provider!=TEXT("PLATEAU-road") && Provider!=TEXT("GSI-DEM5A"))throw std::runtime_error("Support profile has an unknown admitted surface provider.");
                     if(c==0)Profile.rightZ=Point.z;else if(c==1)Profile.centreZ=Point.z;else Profile.leftZ=Point.z;
                 }
                 Route.profiles.push_back(Profile);

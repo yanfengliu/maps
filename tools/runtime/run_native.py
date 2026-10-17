@@ -129,8 +129,81 @@ def source_binding_metadata(state: dict) -> tuple[dict, dict, str]:
     return bindings, roles, source_path
 
 
+def source3_binding_closure(root, state, source, support, record):
+    """Verify actual Source3 consumed roles; producer geometry is only hash-bound ledger metadata."""
+    bindings, roles, _ = source_binding_metadata(state)
+    def metadata(value, maximum=16 * 1024 * 1024):
+        name = record('source', value)
+        if value['bytes'] > maximum:
+            raise ValueError('Source3 metadata exceeds its fixed role before allocation: ' + name)
+        raw = read_bytes(confined(root, name), maximum)
+        if hashlib.sha256(raw).hexdigest() != value['sha256']:
+            raise ValueError('Source3 actual metadata differs from its record: ' + name)
+        return json.loads(raw)
+    same = lambda a, b: json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    identity = lambda value: {key: value[key] for key in ('path', 'bytes', 'sha256')}
+    if support.get('coordinate_model') != 'native-float32-centimetres-v1':
+        raise ValueError('Source3 requires its exact native coordinate model.')
+    networks = [name for name, sha in bindings.items() if sha == state.get('network_sha256') and roles[name] == 'source']
+    if len(networks) != 1:
+        raise ValueError('Source3 closure needs its unique actual network binding.')
+    movement_name = str(Path(networks[0]).parent / 'movement-manifest.json').replace('\\', '/')
+    if roles.get(movement_name) != 'source' or bindings.get(movement_name) != state.get('movement_manifest_sha256'):
+        raise ValueError('Source3 closure lacks its paired actual movement manifest binding.')
+    movement_raw = read_bytes(confined(root, movement_name))
+    if hashlib.sha256(movement_raw).hexdigest() != bindings[movement_name]:
+        raise ValueError('Source3 actual movement manifest changed.')
+    movement = json.loads(movement_raw)['movement']
+    if not same(movement.get('support_surface'), source['support_surface']) or not same(movement.get('derived_terrain'), source['derived_terrain']) or movement.get('network', {}).get('path') != networks[0] or movement['network'].get('sha256') != state['network_sha256'] or movement.get('source_manifest', {}).get('sha256') != state['source_manifest_sha256']:
+        raise ValueError('Source3 movement/profile/source records belong to different derived generations.')
+    parent = metadata(support['parent_support_surface'])
+    ledger = metadata(support['surface_edits'])
+    if type(parent.get('schema_version')) is not int or parent['schema_version'] != 2 or ledger.get('schema_version') != 1 or ledger.get('coordinate_model') != support['coordinate_model'] or not same(ledger.get('parent_support_surface'), support['parent_support_surface']) or not same(ledger.get('parent_derived_terrain'), parent.get('derived_terrain')):
+        raise ValueError('Source3 ledger/parent records or schema differ from the published pair.')
+    if support['derived_terrain']['path'] == parent['derived_terrain']['path']:
+        raise ValueError('Source3 current terrain cannot reuse its producer-only parent geometry role.')
+    native = support.get('native_roads')
+    if not isinstance(native, list) or len(native) != 25 or not same(source.get('roads'), [identity(row['source']) for row in native]) or not same(source.get('raw_roads'), support['inputs']['roads']):
+        raise ValueError('Source3 source manifest needs all25 actual consumed roads and unchanged raw-road provenance.')
+    for row in native:
+        record('source', row['source'])
+    selected = support.get('derived_roads')
+    if not isinstance(selected, list) or any(type(row.get('source')) is not int or not 0 <= row['source'] < 25 or not same(row.get('record'), native[row['source']]['source']) for row in selected) or len({row['source'] for row in selected}) != len(selected):
+        raise ValueError('Source3 derived road role differs from the selected full replacement.')
+    preservation = metadata(support['source_preservation'], LIMIT)
+    if preservation.get('schema_version') != 1 or preservation.get('unchanged') is not True or not preservation.get('inputs_before') or not same(preservation.get('inputs_before'), preservation.get('inputs_after')) or not same(preservation.get('source3_writer'), support['algorithm']['edits']):
+        raise ValueError('Source3 producer preservation metadata is incomplete or relabels its writer.')
+    inventory = {}
+    for value in preservation['inputs_before']:
+        name, size, sha = value.get('path'), value.get('bytes'), value.get('sha256')
+        if not isinstance(name, str) or name in inventory or type(size) is not int or not 1 <= size <= (64 * 1024 * 1024 if name == ledger['parent_derived_terrain']['path'] else LIMIT) or not isinstance(sha, str) or not re.fullmatch('[0-9a-f]{64}', sha):
+            raise ValueError('Source3 historical inventory needs unique bounded path/bytes/SHA-256 identities.')
+        safe_parts(name.split('/')); inventory[name] = identity(value)
+    writer = support['algorithm']['edits']
+    record('code_snapshot', writer)
+    actual_paths = {source['support_surface']['path'], source['derived_terrain']['path'], support['parent_support_surface']['path'], support['surface_edits']['path'], support['source_preservation']['path'], support['native_ray_samples']['path'], support['inputs']['base_manifest']['path'], writer['path']}
+    for value in (support['algorithm'], *[support['algorithm'][key] for key in ('integration', 'topology', 'build_city')]):
+        actual_paths.add(record('code_snapshot', value))
+    for value in support['configuration_inputs'].values():
+        actual_paths.add(record('configuration_snapshot', value))
+    actual_paths.update(row['source']['path'] for row in native)
+    actual_paths.update(row['path'] for row in source.get('dem', {}).values())
+    actual_paths.update(name for name, sha in bindings.items() if sha == source.get('osm') and roles[name] == 'source')
+    record('source', support['native_ray_samples'])
+    producer = [ledger['parent_derived_terrain'], ledger['terrain_patch'], *[row['replacement'] for row in ledger.get('road_overrides', [])], ledger['recipe']['algorithm'], *ledger['recipe']['source_inputs'], *ledger['recipe']['candidate_inputs']]
+    for value in producer:
+        name, size, sha = value.get('path'), value.get('bytes'), value.get('sha256')
+        if not isinstance(name, str) or not name.startswith('data/') or type(size) is not int or not 1 <= size <= (64 * 1024 * 1024 if name == ledger['parent_derived_terrain']['path'] else LIMIT) or not isinstance(sha, str) or not re.fullmatch('[0-9a-f]{64}', sha):
+            raise ValueError('Source3 producer-only metadata has an invalid fixed identity.')
+        safe_parts(name.split('/'))
+        if inventory.get(name) != identity(value):
+            raise ValueError('Source3 historical inventory omits its exact declared producer dependency: ' + name)
+        if name in bindings and name not in actual_paths:
+            raise ValueError('Source3 producer-only geometry/intermediate was incorrectly allocated as a runtime input: ' + name)
+
+
 def source_digest_limits(root: Path, state: dict) -> dict:
-    """Only a hash-bound Source2 pair can grant the fixed derived-terrain cap."""
+    """Only a hash-bound published support pair can grant the fixed derived-terrain cap."""
     bindings, roles, source_path = source_binding_metadata(state)
     raw = read_bytes(confined(root, source_path), LIMIT)
     if hashlib.sha256(raw).hexdigest() != bindings[source_path]:
@@ -153,10 +226,12 @@ def source_digest_limits(root: Path, state: dict) -> dict:
         if hashlib.sha256(support_raw).hexdigest() != bindings[support_path]:
             raise ValueError('Actual Source2 support manifest SHA-256 changed: ' + support_path)
         support = json.loads(support_raw)
-        if not isinstance(support, dict) or type(support.get('schema_version')) is not int or support['schema_version'] != 2 or json.dumps(support.get('derived_terrain'),sort_keys=True) != json.dumps(source['derived_terrain'],sort_keys=True):
-            raise ValueError('Source2 needs schema2 and exactly the same derived terrain record in both admitted manifests.')
+        if not isinstance(support, dict) or type(support.get('schema_version')) is not int or support['schema_version'] not in (2, 3) or json.dumps(support.get('derived_terrain'),sort_keys=True) != json.dumps(source['derived_terrain'],sort_keys=True):
+            raise ValueError('Published support needs schema2 or schema3 and exactly the same derived terrain record in both admitted manifests.')
         if derived_paths != {record('derived_terrain', source['derived_terrain'])}:
             raise ValueError('Only the Source2 pair derived terrain may use the64 MiB role.')
+        if support['schema_version'] == 3:
+            source3_binding_closure(root, state, source, support, record)
     elif derived_paths:
         raise ValueError('Ordinary source inputs cannot claim the64 MiB derived-terrain role without a Source2 pair.')
     return {name: INPUT_ROLE_LIMITS[role] for name, role in roles.items()}
