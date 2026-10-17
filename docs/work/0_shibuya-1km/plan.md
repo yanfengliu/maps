@@ -31,13 +31,13 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Review 1431 recommends a representative upper-floor window group next: source-verified frame depth and floor rhythm. This is selected, not dispatched; no final criterion closes.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). `upper1432_implementation` is dispatched from `6552a75` for the upper-floor group recommended by 1431. No final criterion closes.
 
 Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. Follow-up PARKED; no optimization selected. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Upper-floor window depth | Root; selected, NOT DISPATCHED | Start from adopted main. Choose a representative source through the ordinary app, then a bounded upper-floor group with source-verified frame depth/floor rhythm. Native close/block noon/dusk, required gates, independent review and main adoption; preserve prior work. |
+| Upper-floor window depth | Root; five gates GREEN; independent1433 PASS | Base `6552a75`; frozen 12-window group/fresh20 and certified22Satellite+2returns native PASS. 130 files/1,166 tests; 44 frames/three lifecycles. Shared-source error fix preserves pins/order. 92 owned identities absent/TEMP clear. Main adoption/WT retirement open. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker is established. The next-outcome table is the sole current dispatch queue. Full acceptance needs matching final evidence and independent integrated review on main; local milestones close no final criterion.

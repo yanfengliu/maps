@@ -67,6 +67,7 @@ import { prepareCrossingCorner } from "./crossing-corner-material.js";
 import { addCrossingFrontage } from "./crossing-frontage.js";
 import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corner.js";
 import { addPeripheralFrontage, preparePeripheralFrontage } from "./peripheral-frontage.js";
+import { addUpperWindows, prepareUpperWindows, upperWindowSourceForUrl } from "./upper-windows.js";
 import { addPeripheralMountedLight, peripheralLightSourceForUrl, preparePeripheralMountedLight } from "./peripheral-mounted-light.js";
 
 /** Every material property that can hold a texture we care about. */
@@ -174,16 +175,16 @@ export class FacadeTexturePlugin {
     private readonly ownerClosed: () => boolean = () => false,
   ) {}
 
-  /** Reuse the normal tile request; retain only two digests, never tile buffers. */
+  /** Reuse the normal tile request; retain verified digests, never tile buffers. */
   fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
-    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url);
+    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url) ?? upperWindowSourceForUrl(url);
     if (!source) return null;
     return (async () => {
       const response = await fetch(url, options);
-      if (!response.ok) throw new Error(`Facade sign source ${source.tileUri} could not load (HTTP ${response.status}). Run npm run data:scene and recheck the served tile.`);
+      if (!response.ok) throw new Error(`Facade source ${source.tileUri} could not load (HTTP ${response.status}). Run npm run data:scene and recheck the served tile.`);
       const bytes = await response.arrayBuffer();
       const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
-      if (digest !== source.tileSha256) throw new Error(`Facade sign source ${source.tileUri} has SHA-256 ${digest}; expected ${source.tileSha256}. Re-audit the source GML/UV emission regions for this tile before enabling them.`);
+      if (digest !== source.tileSha256) throw new Error(`Facade source ${source.tileUri} returned different bytes: SHA-256 ${digest}; expected ${source.tileSha256}. Re-audit this tile's source GML/UV regions and mounted facade details before enabling its signage, lights or openings.`);
       this.verifiedEmissionTiles.set(source.tileUri, digest);
       return bytes;
     })().catch(cause => { this.error = String(cause); throw cause; });
@@ -219,6 +220,7 @@ export class FacadeTexturePlugin {
       prepareCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       preparePeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       preparePeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      prepareUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -281,6 +283,7 @@ export class FacadeTexturePlugin {
       addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options);
       addPeripheralMountedLight(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addPeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
+      addUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
     }
   }
 
