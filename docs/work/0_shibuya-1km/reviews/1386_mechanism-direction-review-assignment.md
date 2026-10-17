@@ -1,0 +1,7 @@
+# 1386 — Independent mechanism direction review
+
+Root assigns the existing independent reviewer a read-only comparison of frozen [1384 geometry analysis](1384_exact-geometry-search.md)9914/438cf326… and [1385 arithmetic analysis](1385_computation-search.md)11132/314af307…, under the unchanged [full-source contract](1384_fixed-full-source-search.md). Review actual selected source and raw artifacts, separating public/custom input semantics from the actual private lexical arithmetic/producer boundary. The unfinished1384 design addendum is excluded until explicitly frozen.
+
+Identify whether either mechanism exposes a bounded semantically valid source increment, its minimum changed files and exact falsifiers. Compare complexity, risk and actual evidence; no route is preselected. Reject unsafe facet reuse, omitted property/refusal obligations, ignored denominator growth, relocated proof difficulty and unsupported CPU/timing claims. Full correct proof plus both durable endpoints<=10000ms remains the only score.
+
+Base main2a98a99e24ef1c898ce1a9f9efc811739a624488; selected worktree sources remain0ab58a1a83e19db312bb18a2ffa8a90742029835. Own ORIGINAL data/commercial-work/1386 and authored review1386 only. Retain canonical reviewer pin and distinguish unavailable runtime telemetry. No parser/import/control/constructor/profile/native query, browser/server, Git or source write. Return a permanent report and sealed handoff; root owns selection, admission and every runtime lease.
