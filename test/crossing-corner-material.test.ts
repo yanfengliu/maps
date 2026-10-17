@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { BackSide, DoubleSide, BufferAttribute, BufferGeometry, Group, Matrix3, Material, Mesh, MeshNormalMaterial, MeshStandardMaterial, Scene, ShaderLib, Texture, Vector3 } from "three";
+import { BackSide, DoubleSide, BufferAttribute, BufferGeometry, Group, Matrix3, Matrix4, Material, Mesh, MeshNormalMaterial, MeshStandardMaterial, Scene, ShaderLib, SRGBColorSpace, Texture, Vector3 } from "three";
 import { parseB3dm, parseGlb, readBatchColumn } from "../tools/tiles/b3dm.js";
 import { decodePrimitive } from "../tools/tiles/draco.js";
 import { CROSSING_CORNER, CROSSING_CORNER_GLSL, prepareCrossingCorner } from "../src/scene/crossing-corner-material.js";
@@ -26,16 +26,20 @@ geometry.setAttribute("uv", new BufferAttribute(decoded.surface!.uv!, 2));
 geometry.setAttribute("_batchid", new BufferAttribute(decoded.batchIds!, 1));
 geometry.setIndex(new BufferAttribute(decoded.surface!.indices, 1));
 afterAll(() => geometry.dispose());
-function fixture(identity = true) {
+function fixture(identity = true, parserPlacement = false) {
   const scene = new Group() as Group & { batchTable: { getDataFromId(id: number): Record<string, unknown> } };
   scene.batchTable = { getDataFromId: id => ({ gml_id: identity ? gml[id] : "bldg_wrong" }) };
-  const texture = new Texture({ width: 1, height: 1 } as never); texture.flipY = false;
+  const texture = new Texture({ width: parserPlacement ? 4096 : 1, height: parserPlacement ? 4096 : 1 } as never); texture.flipY = false; texture.colorSpace = SRGBColorSpace;
   const material = new MeshStandardMaterial({ map: texture });
   const mesh = new Mesh(geometry.clone(), material);
   const plainGeometry = new BufferGeometry(); plainGeometry.setAttribute("position", new BufferAttribute(untextured.positions, 3)); plainGeometry.setAttribute("normal", new BufferAttribute(untextured.surface!.normals, 3)); plainGeometry.setAttribute("_batchid", new BufferAttribute(untextured.batchIds!, 1)); plainGeometry.setIndex(new BufferAttribute(untextured.surface!.indices, 1));
   const plainMaterial = new MeshStandardMaterial(), plain = new Mesh(plainGeometry, plainMaterial); scene.add(plain);
-  scene.matrix.fromArray(glb.json.nodes![1]!.matrix!); scene.matrixAutoUpdate = false; scene.add(mesh); scene.updateMatrixWorld(true);
-  return { scene, mesh, plain, material, texture, dispose() { const owned = new Set<{ dispose(): void }>(); scene.getObjectByName("crossing-frontage-surround")?.traverse(object => { if (object instanceof Mesh) { owned.add(object.geometry); owned.add(object.material as MeshStandardMaterial); if(object.customDepthMaterial)owned.add(object.customDepthMaterial);if(object.customDistanceMaterial)owned.add(object.customDistanceMaterial); } }); for (const resource of owned) resource.dispose(); plainGeometry.dispose(); plainMaterial.dispose(); mesh.geometry.dispose(); material.map?.dispose(); if (material.map !== texture) texture.dispose(); material.dispose(); } };
+  // Legacy scalar/facing tests retain their original raw-affine bound. The
+  // complete plugin cases also admit the commercial model and use loader TRS.
+  if (parserPlacement) scene.applyMatrix4(new Matrix4().fromArray(glb.json.nodes![1]!.matrix!));
+  else { scene.matrix.fromArray(glb.json.nodes![1]!.matrix!); scene.matrixAutoUpdate = false; }
+  scene.add(mesh); scene.updateMatrixWorld(true);
+  return { scene, mesh, plain, material, texture, dispose() { const owned = new Set<{ dispose(): void }>(); for (const name of ["crossing-frontage-surround", "crossing-commercial-corner"]) scene.getObjectByName(name)?.traverse(object => { if (object instanceof Mesh) { owned.add(object.geometry); owned.add(object.material as MeshStandardMaterial); if(object.customDepthMaterial)owned.add(object.customDepthMaterial);if(object.customDistanceMaterial)owned.add(object.customDistanceMaterial); } }); for (const pass of [mesh.customDepthMaterial,mesh.customDistanceMaterial]) if (pass) owned.add(pass); for (const resource of owned) resource.dispose(); plainGeometry.dispose(); plainMaterial.dispose(); mesh.geometry.dispose(); material.map?.dispose(); if (material.map !== texture) texture.dispose(); material.dispose(); } };
 }
 function sample(mesh: Mesh, face: number, weights: number[]) {
   const p = new Vector3(), n = new Vector3(), uv = [0, 0];
@@ -70,16 +74,19 @@ describe("source-bound lower crossing frontage", () => {
     } finally { f.dispose(); }
   });
   it.each(["good", "wrong-bytes", "wrong-gml", "wrong-uv", "other-lod"])("checks %s through actual tile fetch/plugin, retaining source arrays", async mode => {
-    const f = fixture(mode !== "wrong-gml"); const oldArrays = ["position","normal","uv","_batchid"].map(n => sha(new Uint8Array(f.mesh.geometry.getAttribute(n).array.buffer))); const indices = sha(new Uint8Array(f.mesh.geometry.index!.array.buffer));
+    const f = fixture(mode !== "wrong-gml", true); const oldArrays = ["position","normal","uv","_batchid"].map(n => sha(new Uint8Array(f.mesh.geometry.getAttribute(n).array.buffer))); const indices = sha(new Uint8Array(f.mesh.geometry.index!.array.buffer));
     const plugin = new FacadeTexturePlugin({ ...DEFAULT_FACADE_OPTIONS, signageIntensity: { value: 1 }, style: createFacadeStyle(worldStyle("satellite")) }, cpuDelighter);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(mode === "wrong-bytes" ? new Uint8Array([1,2,3]) : Uint8Array.from(bytes))));
-    vi.stubGlobal("OffscreenCanvas", class { getContext() { return { drawImage() {}, getImageData() { return { data: new Uint8ClampedArray([150,150,150,255]) }; } }; } });
+    const nativeFixture = readFileSync(new URL("fixtures/commercial-lettering-source.json", import.meta.url));
+    expect(sha(nativeFixture)).toBe("d73cb9aa2614af342e3d958eade237e89916b032563795e977faa31224afcd60");
+    const nativeLeaf = JSON.parse(nativeFixture.toString()).nativeLeaf;
+    vi.stubGlobal("OffscreenCanvas", class { constructor(readonly width: number, readonly height: number) {} getContext() { return { drawImage() {}, getImageData: () => ({ data: new Uint8ClampedArray(this.width * this.height * 4).fill(150) }) }; } });
     try {
       if (mode === "wrong-bytes") { await expect(plugin.fetchData("/scene/buildings/data/data518.b3dm", {})).rejects.toThrow(/SHA-256/); return; }
       if (mode === "other-lod") { prepareCrossingCorner(f.scene,"data/data517.b3dm",undefined); expect(f.mesh.geometry.getAttribute("mapsCornerEligible")).toBeUndefined(); return; }
       await plugin.fetchData("/scene/buildings/data/data518.b3dm", {});
-      if (mode === "wrong-uv") { f.texture.offset.set(.1,.2); await expect(plugin.processTileModel(f.scene,{ content: { uri: CROSSING_CORNER.tileUri } })).rejects.toThrow(/UV0-orientation/); expect(f.material.map).toBe(f.texture); return; }
-      await plugin.processTileModel(f.scene,{ content: { uri: CROSSING_CORNER.tileUri } });
+      if (mode === "wrong-uv") { f.texture.offset.set(.1,.2); await expect(plugin.processTileModel(f.scene,nativeLeaf)).rejects.toThrow(/UV0-orientation/); expect(f.material.map).toBe(f.texture); return; }
+      await plugin.processTileModel(f.scene,nativeLeaf);
       const sections = buildingSections(f.scene,CROSSING_CORNER.tileUri); for (const section of sections) section.geometry.dispose();
       expect(f.plain.geometry.getAttribute("mapsCornerEligible")).toBeUndefined();
       const attribute = f.mesh.geometry.getAttribute("mapsCornerEligible");

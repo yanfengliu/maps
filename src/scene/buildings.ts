@@ -386,9 +386,11 @@ export function createBuildings(
     cutout.loaded((event as unknown as { tile: Tile }).tile);
     const scene = (event as unknown as { scene: { traverse(cb: (o: unknown) => void): void } }).scene;
     scene.traverse((object) => {
-      const mesh = object as { isMesh?: boolean; castShadow?: boolean; receiveShadow?: boolean };
+      const mesh = object as Mesh;
       if (mesh.isMesh === true) {
-        mesh.castShadow = true;
+        // Source meshes use the ordinary default. Authored frontages already
+        // chose their shadow policy, including glass and luminous fittings.
+        if (mesh.userData.authoredFrontage?.source !== false) mesh.castShadow = true;
         mesh.receiveShadow = true;
       }
     });

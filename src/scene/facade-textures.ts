@@ -65,6 +65,7 @@ import { prepareProceduralFacades } from "./procedural-facades.js";
 import { emissionSourceForUrl, prepareEmissionEligibility } from "./facade-emission.js";
 import { prepareCrossingCorner } from "./crossing-corner-material.js";
 import { addCrossingFrontage } from "./crossing-frontage.js";
+import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corner.js";
 
 /** Every material property that can hold a texture we care about. */
 const TEXTURE_SLOTS = ["map", "emissiveMap"] as const;
@@ -211,6 +212,7 @@ export class FacadeTexturePlugin {
       const tileUri = sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown";
       prepareEmissionEligibility(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareCrossingCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      prepareCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -270,6 +272,7 @@ export class FacadeTexturePlugin {
       const sourceTile = tile as { content?: { uri?: string; url?: string } };
       const tileUri = sourceTile.content?.uri ?? sourceTile.content?.url ?? "unknown";
       addCrossingFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      addCommercialCorner(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options);
     }
   }
 

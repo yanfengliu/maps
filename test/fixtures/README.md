@@ -1,8 +1,22 @@
 # Test fixtures
 
-Three files, all real bytes from a public source, all cut down so a gate can run without a network and without a 1.4 GiB checkout. `npm run data:fetch` regenerates the full originals under `data/`, which is gitignored.
+These are real bytes from public sources, cut down so checks can run without a network or a 1.4 GiB checkout. `npm run data:fetch` regenerates the full originals under `data/`, which is gitignored.
 
-These are promoted task output, not downloaded data: they are the pinned inputs `test/elevation.test.ts` and `test/sentinel.test.ts` measure against, and the canon allows exactly that promotion. All three are well under the 256 KiB blob ceiling.
+These are promoted test inputs; their checks and provenance are named below. Each is below the256KiB promotion threshold.
+
+## `commercial-lettering-source.json` —13,667 bytes, SHA-256 `d73cb9aa2614af342e3d958eade237e89916b032563795e977faa31224afcd60`
+
+Two unaltered decoded RGB rectangles from image0 of the PLATEAU data518 building tile, outside the browser bundle. Tile4,973,844B SHA-256 `5e611688344a50142147c0c60442c893dd8f3a45b10ee264067b0275bb4fa96b`; embedded4096×4096 WebP atlas2,966,552B SHA-256 `eed564fded549988afc20edc49a5bc67c19590c4ea53b4324eaee34ac76179fb`. Boxes use top-left source pixels and exclusive right/bottom: STARBUCKS COFFEE `[280,3483,365,3502]` (85×19), TSUTAYA `[345,3512,394,3537]` (49×25). Each base64 field is row-major top-to-bottom interleaved RGB uint8, sRGB encoded, with its own raw-RGB hash. No background removal, mask, resampling or invented font is in these raw fields.
+
+Reproduce with `python test/fixtures/extract-commercial-lettering.py` after restoring the pinned tile and tileset. The extractor independently parses the embedded GLB image and verifies its input hashes before Pillow RGB decoding. It also retains the exact final-detail leaf metadata from the67,872-byte scene tileset, SHA-256 `71b1716f6fafd028e1f6bad46fb8f7848c36f941c30d428be21828e9902b4483`; `--tileset <path>` can select a separately retained exact input. This corrects the old complete-plugin fixture's absent geographic metadata/1×1 image shortcut without weakening its scalar/source guards.
+
+`test/crossing-corner-material.test.ts` uses the retained nativeLeaf metadata and image dimensions to exercise the complete facade plugin with the installed loader’s TRS placement. The raw RGB rectangles retain source provenance. The ground replacement preserves these photographic fields above its cut. This fixture supplies input identity and geographic metadata, not rendered readability or appearance acceptance.
+
+出典：国土交通省 PLATEAUウェブサイト（https://www.mlit.go.jp/plateau/）
+
+「3D都市モデル（Project PLATEAU）渋谷区（2025年度）」（国土交通省）（https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025）を加工して作成
+
+MLIT Japan, PDL1.0 with CC BY4.0 permitted. Modified: MLIT's3D Tiles atlas decoded and cut to two test-only RGB rectangles.
 
 ## `gsi-dem5a-15-29099-12905.png` — 68,080 bytes, SHA-256 `ac68fdd3092a8ca01035eb22c08197f4e043940cfbff64b5f27ffd19a479eb9b`
 
@@ -71,6 +85,8 @@ Thirteen semantic pavement rings from the four Shibuya FY2025 PLATEAU `tran` Cit
 
 MLIT Japan, PDL 1.0 with CC BY 4.0 permitted. Modified: selected raw rings and source identities are represented in JSON; projected comparison coordinates are also recorded. The raw sources and rejected generated meshes remain outside Git.
 # Source-visible emission coordinates
+
+`commercial-ground-source.json` preserves the independent1101/1143 whole protected-field and five source-cut observations (15,786 bytes, SHA-256 `90f89f21228dc6a495ae5f5d25cca9a899f70e7e2be356b73f511a1c501c57a0`). PLATEAU / MLIT Japan and Shibuya-ku FY2025, PDL1.0 with CC BY4.0 permitted; processed by local-frame projection, field selection and mapped polygon extraction. The PLATEAU source and processing credits above apply. Its historical absolute path is provenance only. It records the inherited12.493133544921875px² source limitation and does not contain photographic pixels or certify rendered appearance.
 
 `facade-emission.json` contains nine small observations and three authored sign-region coordinate records derived from the already attributed PLATEAU building source. It binds the selected GML buildings, placed tile bytes, normalized glTF UV0, observed planes and native frame digests. Raw photographs stay ignored. PDL 1.0 / CC BY 4.0; coordinates were reprojected and sign interiors manually selected. Full provenance, omitted regions and the corrected provisional fixture label are in `docs/reference/facade-emission.md`.
 
