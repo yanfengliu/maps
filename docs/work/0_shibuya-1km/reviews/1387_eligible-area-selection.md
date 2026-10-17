@@ -1,0 +1,7 @@
+# 1387 — Root selects bounded private-area source preparation
+
+After admitting independent [1386 direction review](1386_mechanism-direction-review.md), root dispatches the [prepared1387 assignment](1387_eligible-area-implementation-assignment.md) to owner search1385_computation in1111. The immutable assignment's prepared wording records its earlier state; this selection and recovery/implementation1387-release.json1363/f99b2ca3… record actual dispatch. Direction admission recovery/review1386/root-admission.json3379/3e4990da… is source-preparation only.
+
+Choose guard-first arithmetic in the existing private lexical area, an existing divisible denominator and exact incumbent fallback. Decline unrestricted LCM; defer facet-retention/capability refactoring.1386-F1 remains an adoption blocker for the old illustrative wrappers and must be resolved by the new concrete guard and real private-arithmetic qualification. Retain1386-Q1 eligible intermediate growth; no uniform cost or10s claim. No candidate source, parser/import/control/constructor or product permission is transferred from old1374 admissions.
+
+Independent owner1384 prepares [1389 fixed arithmetic/property oracles](1389_private-area-qualification-oracle-assignment.md) without reading the candidate WIP. Root will reconcile exact case IDs/calls, independent expectations and the additional actual-private qualification before preparing a source-bound executable graph. All legacy291 cases and fixed1324 full proof/both-durable-readback duties remain. All native/expensive leases are closed.
