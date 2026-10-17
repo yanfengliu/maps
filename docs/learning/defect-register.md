@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-10-17 — orchestration lost current context in historical detail
+
+Owner-reported symptom: root lost long-term outcome context/todos and did bounded repair detail instead of delegating it. The 321,995-byte plan and 253,239-byte progress record carried competing dated queues and a stale blocked-goal claim while the goal was active and main had adopted the occupied frontage. Investigation: current status was split between two growing history records; private experiment proof architecture displaced the product outcome.
+
+Repair: plan.md is the sole current record (≤12 KiB), progress.md points to it, all 35 item identities and 14 acceptance requirements remain, and exact old bytes are recoverable at e483cd5. Root owns priorities/contracts/acceptance/integration; workers own bounded detail. Profiling/cleanup cannot automatically displace the visual priority.
+
+Class check: compare the entry plan to the 12 KiB bound, require each stable item 1–35 and criterion A1–A14 exactly once, and inspect the sole-entry pointer, actual queue ownership/status/dependencies/done conditions, open requirements and history pins. The old 321,995-byte plan fails the size bound; the repaired plan passes the content check. This is a bounded docs regression check, not automation of root judgment. Independent [1419](../work/0_shibuya-1km/reviews/1419_orchestration-context-review.md) reconstructs the current context and checks requirement preservation; root adopts this repair with the docs increment. [1418](../work/0_shibuya-1km/reviews/1418_orchestration-context-implementation.md) retains the initial implementation checks.
+
 ## 2026-10-17 — unit verification exhausted deadlines under CPU contention
 
 Observed during the normal full unit gate:125 files/1147 tests produced three5000ms timeouts (crown envelope,3000-pedestrian180-tick entry,2100-tick vehicle final tail), with1144 passes and no semantic assertion failure. The same18 cases across those three files pass sequentially with unchanged workloads/deadlines; the affected cases take1753.9773ms,956.2199ms and1219.2665ms. Installed Vitest defaults to31 fork workers on this32-logical-CPU host.
