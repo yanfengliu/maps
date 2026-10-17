@@ -21,21 +21,23 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `0aeb006963d3130f1809a0c52cd811c5c63809ec` adds one supported east wall fitting, zero noon power and a small bounded dusk sidewalk response. [1426](reviews/1426_peripheral-mounted-light-implementation.md) and independent [1429 PASS](reviews/1429_mounted-light-final-review.md) bind its finite source/appearance/lifetime acceptance. Initial [1428 HOLD](reviews/1428_mounted-light-integrated-hold-review.md) caught GPU eviction being mistaken for logical release; the installed-path regression reproduces old RED/repaired GREEN. Main and origin/main read back exact. Tactile `8ff08fe` (16 features, 260 placed/seven refused segments) and occupied corner `e483cd5` remain preserved. This is not distributed lighting or full-map acceptance.
+Adopted product revision `4203496dc5b180853cba7381932e7131cb259f33` adds three east lower-frontage bays over 14.4 m: physical frames/recessed glazing/backed rooms, one supported entrance and preserved wall light. [1430](reviews/1430_peripheral-frontage-depth-implementation.md) and independent [1431 PASS](reviews/1431_peripheral-frontage-integrated-review.md) bind finite source/support/appearance/lifetime acceptance. Cost: four draws/594 triangles/71,280 geometry bytes, no new textures/lights. Lighting `0aeb006`, tactile `8ff08fe` and occupied corner `e483cd5` remain preserved. No full-map criterion closes.
 
-All five final primary gates pass: build/types, 128 files/1,158 tests in 82.31 s, audit (two moderate advisories), and visual run `1e16ff12e503f2d2`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1429 inspected all 44 canonical originals/two style returns and retains 17 local originals; occlusion/temporal limits remain. Remote CI has zero check runs/statuses/workflows, so no remote pass is claimed. Fresh worker checkout/registration/metadata removed; needed evidence/cache retained. Final targeted process/port/TEMP census is clear.
+All five final primary gates pass: build/types, 129 files/1,160 tests in 81.44 s, audit (two existing moderate advisories), and visual run `b459545888f6b421`: 44 frames/three lifecycles in 293.156 s, RTX 4090/driver 616.64. Review 1431 inspected 43 native originals: 14 local, five baseline, 22 certified Satellite and two basic style returns. The two upper-context local shots are occluded/unaccepted. Four runtime build files match local capture; two debug maps differ. Static/lifecycle evidence does not qualify continuous motion/population/FPS.
+
+Main and origin/main read back exact. Remote CI has zero checks/statuses/workflows, so no remote pass is claimed. Fresh worker checkout/registration/metadata removed normally after preservation. Final census freshly checked 69 unique owned identities, exact task markers, ports and TEMP; all clear. Needed evidence/cache retained; historical worktrees untouched.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Review 1429 recommends peripheral frontage depth next: source-bound frame/recess/glazing should read as physical surfaces. No final criterion closes.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Review 1431 recommends a representative upper-floor window group next: source-verified frame depth and floor rhythm. This is selected, not dispatched; no final criterion closes.
 
 Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. Follow-up PARKED; no optimization selected. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Peripheral frontage depth | Root committing/pushing; gates GREEN, independent1431 PASS | Base `054bb4b`; frozen four-path integration, three bays/one supported entrance/preserved light. Final 14-original local run/44-frame canonical/three lifecycles pass within bounds; upper-context pair excluded. Main readback and fresh worker retirement remain. |
+| Upper-floor window depth | Root; selected, NOT DISPATCHED | Start from adopted main. Choose a representative source through the ordinary app, then a bounded upper-floor group with source-verified frame depth/floor rhythm. Native close/block noon/dusk, required gates, independent review and main adoption; preserve prior work. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker is established. The next-outcome table is the sole current dispatch queue. Full acceptance needs matching final evidence and independent integrated review on main; local milestones close no final criterion.
