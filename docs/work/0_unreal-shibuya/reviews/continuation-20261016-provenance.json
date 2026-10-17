@@ -3298,5 +3298,190 @@
       "subsequent_commit_push": "ROOT_OWNED_NOT_RUN_BY_PREPARER",
       "main_merge": "EXCLUDED"
     }
-  }
+  },
+  "reviews_284_291": [
+    {
+        "number": 284,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/284_source_generic_seed_candidate_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-Generic-seed-candidate-independent-review-v1\\review.md",
+            "bytes": 14668,
+            "sha256": "5113e22c2bdb7b87f8f9061d843a67ea88c216a693b9e111bc62349a1607dc6e"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-Generic-seed-candidate-independent-review-v1\\seal.json",
+            "bytes": 1710,
+            "sha256": "9789abf32faa6bf343ec32c696bb064bb521d52c9cf5b35c8929ac9119f1c133",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 285,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/285_native_stream_fusion_integrated_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-stream-fusion-integrated-independent-review-v1\\review.md",
+            "bytes": 4543,
+            "sha256": "33aa94e93a0d5fdba0233c4bb8a5bbe742de3894e613eb4d846da320062922cf"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-stream-fusion-integrated-independent-review-v1\\seal.json",
+            "bytes": 1678,
+            "sha256": "80bd1b894884b21b5c0adc3d3c58e420c4a7373e6fa9f30202a49d97920405ff",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 286,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/286_source_generic_gr12_actual_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-Generic-GR12-actual-independent-review-v1\\review.md",
+            "bytes": 4648,
+            "sha256": "f0cdde1a6cdbfa1404ac6061df213c1307e13d384cba4b3f58caa800cf7c9339"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-Generic-GR12-actual-independent-review-v1\\seal.json",
+            "bytes": 1351,
+            "sha256": "62fa198d35492832e98d5a93c9ef82796ed68054c8688af8676de9fc0af4ec80",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 287,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/287_native_stream_fusion_v2_focused_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-stream-fusion-v2-focused-independent-review-v1\\review.md",
+            "bytes": 4397,
+            "sha256": "e3b830fc28aedc6bd59c1e99a4c27d160c7eec0cd2fb450d16fdadb560bccbc3"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-stream-fusion-v2-focused-independent-review-v1\\seal.json",
+            "bytes": 1382,
+            "sha256": "e0e21d8c953b730a4af96531a4b9584b79d5416f1536eb9509f6793a8a671798",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 288,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/288_source_printoptions_cost_before_code_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-printoptions-cost-before-code-independent-review-v1\\review.md",
+            "bytes": 6880,
+            "sha256": "dada5888b59e4cbfc381f99f0f302ea0205f8ca3d36f98ba2809c957a277ea4e"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-printoptions-cost-before-code-independent-review-v1\\seal.json",
+            "bytes": 1712,
+            "sha256": "efe9c4ff5a12f3cc68125c6a3220fc0fdcfbb845d53e9476851b55a93bac9be2",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 289,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/289_native_fusion_capture_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-fusion-capture-independent-review-v1\\review.md",
+            "bytes": 6034,
+            "sha256": "6f9f6a1150878d4dd7b3dab76da0b9b5b5a9b2db6dd0281ac49b0d78f036928b"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-fusion-capture-independent-review-v1\\seal.json",
+            "bytes": 1034,
+            "sha256": "4a8c282507a67e642b64616be3343da514394544792f6ee44770fe39f1457d38",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 290,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/290_native_fusion_v3_tested_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-fusion-v3-tested-independent-review-v1\\review.md",
+            "bytes": 5178,
+            "sha256": "19af5111e689252ca59349143225b443831e0eb4b0b8f5d106e1a46aeb3b4f3b"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-fusion-v3-tested-independent-review-v1\\seal.json",
+            "bytes": 1297,
+            "sha256": "af0090483740739d1ac753b8347b1edb4ffe398a0c62fab588ea4ecdbf8fb2e8",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    },
+    {
+        "number": 291,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/291_source_printoptions_id_v2_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-printoptions-id-v2-independent-review-v1\\review.md",
+            "bytes": 6524,
+            "sha256": "db7738c493217f72c7125091a9ab0db04d0e5a12d7b012a29dd53e42b6d25653"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-source-next\\worktree\\Artifacts\\source-printoptions-id-v2-independent-review-v1\\seal.json",
+            "bytes": 1305,
+            "sha256": "a2209415eba9cf60493766b3fdc6410a9d0fbf081e60147aa958bb2990fbbdc2",
+            "member_name": "review.md",
+            "member_verified": true
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION"
+    }
+],
+  "reviews_292_293": [
+    {
+        "number": 292,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/292_docs284_291_integrated_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs284-291-integrated-independent-review-v1\\review.md",
+            "bytes": 11084,
+            "sha256": "a2a1f2c81bd2f984127800967824a8c707fbd5dd9a0ca33e15b758837d90e674"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-game-camera\\worktree\\Artifacts\\docs284-291-integrated-independent-review-v1\\seal.json",
+            "bytes": 923,
+            "sha256": "2e08bc4b01b90c0abbd6b8c3e8d10f6fb4f9ee9e24d45c2736ed096def6a7bfd"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION",
+        "integrated_scope": "INTEGRATED_REVIEW_OF_REPORTS_284_291_ONLY",
+        "verdict": "ACCEPT_NO_MATERIAL_FINDING",
+        "inherited_whitespace_warning": {
+            "report": "284_source_generic_seed_candidate_independent_review_v1.md",
+            "line": 55,
+            "status": "INHERITED_BYTE_EXACT_AUTHORED_REPORT_RETAINED",
+            "action": "NO_NORMALIZATION"
+        }
+    },
+    {
+        "number": 293,
+        "promoted_path": "docs/work/0_unreal-shibuya/reviews/293_native_ancestor_attributes_before_code_independent_review_v1.md",
+        "source": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-ancestor-attributes-before-code-independent-review-v1\\review.md",
+            "bytes": 14087,
+            "sha256": "335429c7ffec5feace88e44d8d8dc993b5c76da89ba2618aea0e050a78283d10"
+        },
+        "authored_seal": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\unreal-support-v2\\worktree\\Artifacts\\native-ancestor-attributes-before-code-independent-review-v1\\seal.json",
+            "bytes": 1798,
+            "sha256": "05d1e567c113443bce38700571a49721dd837f4edc315a559bec6f8e9254839d"
+        },
+        "copy": "BYTE_EXACT_AUTHORED_REPORT_NO_NORMALIZATION",
+        "review_scope": "NATIVE_ANCESTOR_ATTRIBUTES_BEFORE_CODE_SOURCE_REPORT_ONLY",
+        "source_state": "SOURCE_REPORT_REVIEWED_NOT_YET_INTEGRATED",
+        "adoption": {
+            "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Artifacts\\documentation-milestone-20261015\\native-ancestor-attributes-root-implementation-adoption.json",
+            "bytes": 3117,
+            "sha256": "b81318c322ef02e1f19c95e5b0ac1c1238a596a22abc2151689d46358b4c2601"
+        }
+    }
+]
 }
