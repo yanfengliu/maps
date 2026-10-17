@@ -21,22 +21,21 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `8ff08fe54089294149d9b2448afddb5f673c6121` adds path-aligned tactile tile joints, directional relief and roughness variation across the 16 mapped features near the crossing/approaches. All 267 segments retain their routes/support decisions (260 placed, seven refused). [1422](reviews/1422_tactile-paving-implementation.md) and independent [1423 PASS](reviews/1423_tactile-integrated-review.md) bind source, static appearance and lifetime acceptance. The occupied corner `e483cd5` remains preserved; [1417](reviews/1417_commercial-ground-combined-review.md) retains its bounded construction review.
+Adopted product revision `0aeb006963d3130f1809a0c52cd811c5c63809ec` adds one supported east wall fitting, zero noon power and a small bounded dusk sidewalk response. [1426](reviews/1426_peripheral-mounted-light-implementation.md) and independent [1429 PASS](reviews/1429_mounted-light-final-review.md) bind its finite source/appearance/lifetime acceptance. Initial [1428 HOLD](reviews/1428_mounted-light-integrated-hold-review.md) caught GPU eviction being mistaken for logical release; the installed-path regression reproduces old RED/repaired GREEN. Main and origin/main read back exact. Tactile `8ff08fe` (16 features, 260 placed/seven refused segments) and occupied corner `e483cd5` remain preserved. This is not distributed lighting or full-map acceptance.
 
-All five primary gates pass: build/types, 127 files/1,152 tests in 84.05 s, audit (two moderate advisories), and visual run `59b500b75a1abf60`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1423 inspected 45 native originals; occlusion and temporal limits remain. Fixture/sandbox setup failures are resolved. Remote CI had zero check runs/statuses/workflows. Cleanup confirms 63 owned identities absent, ports/TEMP clear and both fresh worktrees removed.
+All five final primary gates pass: build/types, 128 files/1,158 tests in 82.31 s, audit (two moderate advisories), and visual run `1e16ff12e503f2d2`: 44 frames/three lifecycles, RTX 4090/driver 616.64. Review 1429 inspected all 44 canonical originals/two style returns and retains 17 local originals; occlusion/temporal limits remain. Remote CI has zero check runs/statuses/workflows, so no remote pass is claimed. Fresh worker checkout/registration/metadata removed; needed evidence/cache retained. Final targeted process/port/TEMP census is clear.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Fresh critique 1420 selected tactile construction; fresh-context review 1423 recommends the east-first mounted-light prototype next, then facade depth. No final criterion closes.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Review 1429 recommends peripheral frontage depth next: source-bound frame/recess/glazing should read as physical surfaces. No final criterion closes.
 
 Profile COMPLETE; worker CPU attribution UNAVAILABLE from parent-only capture. Follow-up PARKED; no optimization selected. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| East-side mounted-light pilot | Root; all-five PASS; [1429 PASS](reviews/1429_mounted-light-final-review.md) | Base `b1e4dcf`. [1428 HOLD](reviews/1428_mounted-light-integrated-hold-review.md) fixed through true-release ownership; installed-path old RED/repaired6 GREEN. Fresh run `1e16ff12e503f2d2`:44frames/3lifecycles; 128files/1158tests. All44 natives independently inspected; push/cleanup pending. West/south deferred; no adoption. |
-| Peripheral frontage depth | Root; QUEUED, not dispatched | After pilot adoption: ordinary-app visible site, one source-bound bay prototype with readable frame/recess/glazing. Expand the same frontage only after useful native result; reuse ownership/runner. |
+| Peripheral frontage depth | Root; QUEUED, not dispatched | Ready: ordinary-app visible site, one source-bound bay prototype with readable frame/recess/glazing. Expand the same frontage only after useful native result; reuse ownership/runner. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker is established. Next product action: dispatch the east-first visible prototype, following review 1423. Full acceptance needs matching final evidence and independent integrated review on main; this milestone closes no final criterion.
@@ -116,6 +115,6 @@ Private union 1324 remains UNMET. Its 387/63-part proof chain constrains that ex
 
 ## Outcome
 
-Active; full deliverable incomplete. Tactile finish is reviewed, committed and pushed at `8ff08fe`; both fresh worktrees are removed and needed evidence retained. The next visible pilot is queued, while full-map, temporal and population/FPS acceptance remain open.
+Active; full deliverable incomplete. The adoption/evidence and next-outcome sections above hold current status. Full-map, temporal and population/FPS acceptance remain open.
 
 Exact old `plan.md` and `progress.md` remain in [Git at e483cd5](https://github.com/yanfengliu/maps/tree/e483cd5dfa58ee89876fba268c55c619daca9d5f/docs/work/0_shibuya-1km). Recover with `git show <commit>:<path>`; exact sizes/digests are in [1418](reviews/1418_orchestration-context-implementation.md). Authored reviews are unchanged; history is not a current queue.
