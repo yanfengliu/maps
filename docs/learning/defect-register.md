@@ -1,5 +1,9 @@
 # Defect register
 
+## Verification delayed actual Unreal progress - 2026-10-16
+
+Owner symptom: two days of validation without demonstrated city progress. Investigation found private helper qualification treated as a universal native prerequisite, plus missing-receipt requests hashing Content before rejecting known-invalid arguments. The actual runner has no dependency on those experimental suites. Branch policy now keeps them off native observation's critical path. Runner regression checks reproduce the old early-admission and incomplete-controls-map defects, then all 16 pass on the integrated repair. Actual missing-receipt wall fell 3.3521333 to 0.1469964 seconds with 351 to 0 hash calls; one ordered pair is the measurement bound. Actual cache-selection failure and a second external shader-transfer failure were corrected with the UE5.8 project-local cache graph and guarded ShaderWorkingDir argument. Direct inventory now passes with 506 source bindings and 552 loaded asset files at 1920 by 1080; it supplies no gameplay/support/appearance/performance acceptance. [Independent code review](../work/0_unreal-shibuya/reviews/333_verification_efficiency.md) and [requirements audit](../work/0_unreal-shibuya/reviews/334_verification_requirements.md) retain the causal checks and unchanged product obligations.
+
 ## Continuation status — reports 274–282, 2026-10-16
 
 The owner's dark crossing and missing working controls/agents remain unresolved native product defects. This documentation checkpoint adds no rendered, input, collision, population or performance acceptance. The active plan and earlier defect history remain intact.

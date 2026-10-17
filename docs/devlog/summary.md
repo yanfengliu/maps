@@ -1,5 +1,7 @@
 # Devlog Summary
 
+2026-10-16 — Repaired actual native verification: early missing-prerequisite refusal measured 95.6 percent faster, complete controls-source-map binding is enforced, and all 16 runner units pass. Independent audit removed experimental helper suites from the native observation critical path. Corrected UE5.8 cache selection and project-local shader working files; actual offscreen inventory passes with 506 source bindings and 552 loaded asset files at 1920 by 1080. Controls, support, appearance and performance remain open.
+
 2026-10-16 — Continued the branch-only Shibuya work after `68914a9`, preserving nine exact independent reviews (274–282). Source's accepted live failure capture leaves its106.782-second normal import RED; concept R and corrected v4 are adopted for fresh implementation only, with13 scenarios/26 slots/22 methods unrun at the cutoff. Native lexical ordinary6/39+5/63 passes, but its sole materialization is consumed RED at child60 with pair return, fresh proof and first Root cleanup boundary unavailable. Runtime N8 remains instrument-only. No Unreal appearance, controls, agents, performance or main integration is accepted; no lesson retires.
 
 
