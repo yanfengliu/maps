@@ -21,24 +21,23 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted product revision `a53dd02e8ee3a726e78f27d634d8f7e925b41669` adds twelve physical windows on floors 3–8 of one nine-floor Jinnan office. [1432](reviews/1432_upper-floor-window-implementation.md) and independent [1433 PASS](reviews/1433_upper-floor-window-integrated-review.md) bind finite data503/batch16 source, recess/glazing/backed rooms and logical lifetime. Cost: four draws/1,512 triangles/181,440 geometry bytes, no new textures/lights. Frontage `4203496`, lighting `0aeb006`, tactile `8ff08fe` and corner `e483cd5` remain preserved. No final criterion closes.
+Adopted product revision `fc1c97a16069afbd938efc7d466af7ac993d112f` adds 96 physical windows across three rail-side fronts: 80 lodging windows and two groups of eight office strips. [1434](reviews/1434_rail-side-facade-band-implementation.md) and independent [1435 PASS](reviews/1435_rail-side-facade-band-integrated-review.md) bind finite source, recesses/backed rooms and logical lifetime. Eight photo rows differ from GML storeys. Added cost: eight draws/8,544 triangles/1,025,280 geometry bytes, no textures/lights. Earlier twelve windows `a53dd02`, frontage `4203496`, lighting `0aeb006`, tactile `8ff08fe` and corner `e483cd5` remain preserved. No final criterion closes.
 
-All five final primary gates pass: build/types, 130 files/1,166 tests in 81.41 s, audit (two existing moderate advisories), visual run `c340ed23de338cce`: 44 frames/three lifecycles in 301.835 s, RTX 4090/driver 616.64. Review inspected all 20 fresh local originals, 22 certified Satellite and two basic returns. Four runtime files match local capture; two debug maps differ. Two harmless EOF warnings remain on exact frozen V2 ([1433a](reviews/1433a_eof-format-disposition.md)); no normalization/evidence transfer. Static/lifecycle evidence does not qualify continuous motion/population/FPS.
+Five final PRIMARY gates pass: build/types, 131 files/1,170 tests in 84.81 s, audit (two existing moderate advisories), visual run `dec17d5d577ae981`: 44 frames/three lifecycles in 320.265 s, RTX 4090/driver 616.64. Review inspected all 22 fresh local originals, 22 canonical Satellite and two returns. Four runtime files match; two debug maps differ. [1435a](reviews/1435a_source-evidence-finding.md)'s LF/CRLF receipt error is closed by raw-file readback without source/capture rerun. Early whitespace preflight passes. Static/lifecycle evidence does not qualify continuous motion/population/FPS.
 
-Main and origin/main read back exact. Remote CI has zero checks/statuses/workflows; no remote pass claimed. Worker checkout/registration/metadata removed normally after preservation. Final closeout checked 92 unique owned identities, exact task markers, ports and TEMP; all clear, eight empty TEMP directories removed. Needed evidence/build/cache retained; historical worktrees untouched.
+Main and origin/main read back exact; remote CI has zero checks/statuses/workflows, no remote pass claimed. Worker checkout/registration/metadata removed normally after preservation. Fresh closeout: 74 unique owned identities absent, task markers/three ports/six TEMP paths clear. Needed evidence/build/cache retained; historical worktrees untouched.
 
 Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve the user-owned primary `test/facade-emission.test.ts` edit.
 
 ### Current operation and next outcomes
 
-Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Band1434 gates/review PASS; adoption pending. [Critic1436](reviews/1436_product-direction.md) COMPLETE. Final criteria OPEN.
+Context repair `c42c526` passed [1419](reviews/1419_orchestration-context-review.md). Band1434 adopted/retired/resources closed. [Critic1436](reviews/1436_product-direction.md) COMPLETE. Ground1437 dispatched. Final criteria OPEN.
 
 Profile COMPLETE; worker CPU attribution UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed: `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Rail-side facade band | Root integration; worker COMPLETE; review1435 PASS | Freeze `f444b49`; 96 openings/three fronts; eight photo rows differ from GML storeys. Five PRIMARY gates GREEN: 1,170 tests/44 frames/three lifecycles. Native local/canonical accepted; main adoption/retirement pending. |
-| Shared ground material depth | Root SELECTED; worker not dispatched | Critic1436: recurring flat asphalt/paving. Preserve support/paint/source; visible world-scale relief/response across approaches. Base after1434 adoption. |
+| Shared ground material depth | Worker `ground1437_materials` DISPATCHED | Base `fc1c97a`; critic1436 recurring flat asphalt/paving. Preserve support/paint/source; visible world-scale relief/response across approaches. Prototype before final capture; five gates/review/main adoption required. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 checkouts retain distinct/unclassified data; no safe batch. Preserve first; do not delay product work. Evidence: `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
