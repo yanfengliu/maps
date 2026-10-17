@@ -31,13 +31,13 @@ Runtime cache: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa529
 
 ### Current operation and next outcomes
 
-[1444 ACCEPT](reviews/1444_benchmark-clarification-review.md) remains prospective. Frontage1445: [selection](reviews/1445_three-front-source-selection.md), [P1 prototype](reviews/1445_three-front-prototype.md), [independent 1447 review](reviews/1447_three-front-prototype-appearance-review.md). P1 rejected: board omissions break facade continuity. P2 changes omissions to actual board footprints; sources/views/depth/materials stay fixed. Stop if it reads as applied lines. Final criteria OPEN.
+[1445 stop](reviews/1445_three-front-prototype2-stop.md): photo-overlay grid family stopped, sources preserved/checkout retired. [1448](reviews/1448_next-visible-milestone.md) redirects to original Coca-Cola dusk emission. Sign1449 native noon/dusk block comparison accepted by root: retained script, narrow unlit border, glass/roof excluded; zero new geometry/textures/lights. [1449 handoff](reviews/1449_coca-cola-source-emission.md); freeze copied; gates/review/integration OPEN. Final criteria OPEN.
 
 Profile COMPLETE; worker CPU UNAVAILABLE; follow-up PARKED. Inputs unchanged/resources closed. `artifacts/orchestration-context-20261017/profile/profile-summary.json`.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Three-front facade treatment | frontage1445 P2 DISPATCHED; root acceptance | Preserve failed P1. One finite-footprint correction, four matched native views, independent appearance verdict before gates. Restore coherent bays/reveals, not merely more lines. Disposal defect OPEN; no adoption. |
+| Integrate original Coca-Cola emission | docs1446 RUNNING; sign1449 frozen | Copy exact two-path freeze to PRIMARY; one five-gate bundle and independent integrated review. Then commit/push, confirm remote bounds and retire worker checkout. No adoption while required checks/findings remain. |
 | Retained historical worktrees | Root; inventory COMPLETE/removal PARKED | 65 distinct/unclassified checkouts; preserve first, no safe batch; product takes priority. `artifacts/retained1421-inventory/summary.json`. |
 
 No global blocker established. The table is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.

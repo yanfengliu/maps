@@ -1,5 +1,5 @@
-/** Authored illumination only. Three sign interiors read from Candidate 6 at
- * 1280x720, bound to source tile bytes, GML IDs and normalized glTF UV0.
+/** Authored illumination only. Source sign interiors are bound to verified
+ * tile bytes, GML IDs and normalized glTF UV0.
  * UV origin is the source image top-left (DataTexture flipY=false).
  * No neighbouring wall, roof, other atlas or LOD inherits this selection.
  * Provenance and omitted regions: docs/reference/facade-emission.md.
@@ -139,5 +139,20 @@ export const FACADE_EMISSION_REGIONS = [
       96
     ],
     "sourceFrameSha256": "7bbded054028fc9881487727d0d7fab86b226cb2ccacd1d7741e8110407f108b"
+  },
+  {
+    // Original Coca-Cola artwork on TSUTAYA's photographed front, faces494/495.
+    // One inset quad retains the script; its narrow non-letter border stays unlit.
+    "id": "coca-cola-source-panel",
+    "group": 4,
+    "tileUri": "data/data518.b3dm",
+    "tileSha256": "5e611688344a50142147c0c60442c893dd8f3a45b10ee264067b0275bb4fa96b",
+    "gmlId": "bldg_5f7ff4f3-a620-4fd0-a380-3ec46435cd27",
+    "uv": [[0.06494140625, 0.751220703125], [0.084228515625, 0.755615234375], [0.088134765625, 0.773193359375], [0.06494140625, 0.768310546875]],
+    "origin": [1.3588832411018075, 15.099723530461581, -30.313774060238522],
+    "normal": [0.1179914707026081, 0.000022176976186617485, 0.9930146083263918],
+    "planeHalfThicknessM": 0.03,
+    "normalMinimumDot": 0.995,
+    "radiance": 0.65
   }
 ] as const;
