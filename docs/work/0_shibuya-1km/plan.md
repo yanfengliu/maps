@@ -17,7 +17,7 @@ Non-goals: map viewer, navigation/routing, survey reconstruction, second locatio
 
 ## Approach
 
-Root owns priorities/contracts/status/integration; workers implement and check. Read before delegation; ≤3 outcomes and two-failure reassessment.
+Root owns priorities/contracts/status/integration; workers implement/check. Read before delegation; ≤3 outcomes; reassess after two failures.
 
 ### Current adoption and evidence
 
@@ -27,15 +27,17 @@ PRIMARY five gates PASS in 719.898 s: 137 files/1,191 tests, 44 frames/3 GPU lif
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
-Docs [1577](reviews/1577_documentation-cleanup-review.md) integrated; structure recovery remains OPEN.
+Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Native AA | 1609 prepared; baseline readiness GO; no lease | S0/S1 preserve detail ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)). [1598](reviews/1598_integration.md): held-out baseline first, candidate gated. A unadopted at `artifacts/taa1582a/worktree`. |
-| Documentation recovery | Cleanup pushed; census1612 independently accepted | [1599](reviews/1599_integration.md): source/size PASS, protected991 refused; refresh before apply. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189 tests; audits PASS. Collision/CLI/relocation approvals pending; no adoption. |
-| Scene history | 1610: prepared; readiness GO; no lease | [1597](reviews/1597_integration.md): reuse1591 observer on real-controls app frames to distinguish previous-frame blending from current-only. Post flags/stills are insufficient. |
+| Frozen A benefit | Root; 1624 redirect accepted; 1625 clips READY | Four lossless native S0/S1 clips for human inspection only; timed playback DID_NOT_RUN, perceived benefit NOT_ESTABLISHED. [1604](reviews/1604_integration.md): park A; no automatic oracle/capture. |
+| Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
+| Scene history | Root; 1622/1623 finished BLOCKED | [1603](reviews/1603_design.md): stop numerical-oracle expansion; live contribution unresolved. A frozen/unadopted/parked at `artifacts/taa1582a/worktree`, no lease. |
+
+Held-out baseline: all96 originals reviewed PASS; right-facade visibility bound retained ([1602](reviews/1602_implementation.md)). Candidate held-out NOT_RUN. S0/S1 still-detail preservation remains accepted ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)).
 
 A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) remains fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects1560 for softening. Ordinary-scene contribution, perceived crawl, held-out, cost/five gates remain owed. Tighten two centre assertions before component-fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
@@ -116,13 +118,13 @@ Traffic1499 PARK: [1527](reviews/1527_fixed-history-native-review.md); `artifact
 
 A2 OPEN: 1543/1544 uphill setup obscured road/bases; stopped before waiting, no retry. 1545 data468 source floor is 16.17–16.67 m above terrain; two leaves lack support; intent/native UNKNOWN, no safe edit. 1546: bounded source questions then ordinary journey, no expanded census.
 
-Whole-AOI quality remains open across close/block/aerial views, peripheral blocks, noon/dusk and held-out seeded exploration. Retain seeds, actual poses, native-byte digests and sampling gaps. Inspect Satellite natively and basic style continuity. Flythrough/building clearance remains OPEN; 445 proves route coverage only.
+Whole-AOI close/block/aerial, peripheral, noon/dusk and held-out quality remain OPEN. Retain seeds/poses/native digests/sampling gaps; inspect Satellite and basic style continuity. Flythrough/building clearance OPEN;445 proves route coverage only.
 
 Facades still need depth, glazing, floor rhythm, de-light and variation. Every road remains in scope. The 32-object remainder is 7 carriageways(5 expressways), 3 intersections and22 unknown LOD1; paint omissions are unproven. No published paint overlaps the 27 non-expressway objects. Source/layer/semantics, expressways, nine-stratum/held-out coverage and paint authenticity remain OPEN. Mounted dusk lights need supported occupancy, density/sightlines and same-run refusals. Wet/ground/tree/base contact remain OPEN; rejected413/420 and other facade/tree/ground/lighting branches stay parked.
 
 Rail 1491/1493 accepts the four-car passage narrowly; gaps, bearings, returns and actors under spans remain OPEN. Vehicles need wheel/body contact, bus/portal/class coverage, spacing and visible governed behavior. One walker is accepted; full-source eligibility, animated soles, avoidance and no sliding/interpenetration remain OPEN. The 150 pedestrian/20 vehicle seed 5970698/600 s contract is red; untuned 42/native evidence remains owed. Motion/contact experiments stay parked.
 
-Continuous populated/camera/time stability and target FPS remain unqualified. Historical 12 fps/59 of 200 are bounded failures, not current measurements. 398 startup gain does not establish population FPS. Machine-cold startup, port5319/loading/decoder/CPU causes remain unknown. Simulation deferral preserves A7–A10.
+Continuous populated/camera/time stability and target FPS remain unqualified. Historical12fps/59 of200 are bounded failures, not current measurements;398 startup gain is not population FPS. Machine-cold startup/port5319/loading/decoder/CPU causes UNKNOWN. Simulation deferral preserves A7–A10.
 
 Private union1324 UNMET; its 387/63-part proof constrains that experiment only. Preserve evidence/obligations; no automatic resumption, helper-pass transfer, new framework or weaker gate.
 
