@@ -41,13 +41,13 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Governed traffic verification | 1516 DISPATCHED;1517 review | 1515 NO QUALIFIED→explicit preserved-candidate resumption;historical THIRD native arm. Qualify nested waits<=5min;ONE750s arm then five gates/review/main by02:51UTC else PARK. No production change. |
+| Aged scene/observer pace | 1521 DISPATCHED;1522 review | 1519young:no far-observer penalty;oldfarwait degrades. One600s B/C pair:180s wall age+20s measure each;observer absent/present throughout. By03:00UTC;no code/fourth flow arm. |
 
-Traffic1499 PARK: [1511](reviews/1511_traffic-integration.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate3. Source/CPU600 PASS;20/24,bus refusals/queues. Native18+0 FAILED;five gates NOT RUN;unmerged/UNADOPTED. PRIMARY restored exactly. No third arm in that closed milestone.
+Traffic1499 PARK: [1511](reviews/1511_traffic-integration.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate3. Source/CPU600 PASS;20/24,bus refusals/queues. Native18+0+6:third arm proves stop/turn,zero exits;1516/1517 PARK. Five gates NOT RUN;unmerged/UNADOPTED. PRIMARY restored exactly;no fourth flow arm.
 
 Train cleanup COMPLETE:direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;reports/traffic1499 preserved.1495 retains denial/preflight/receipt.
 
-Gallery COMPLETE/heartbeat ACTIVE:171images/156,626,904B;168 app/diagnostic+3references,46accepted/18failed-verification.Prior165 immutable;ignored,Never Git;15min support.
+Gallery COMPLETE/heartbeat ACTIVE:183images/167,471,639B;180 app/diagnostic+3references,46accepted/24candidate/6pace.Prior177 immutable;ignored,Never Git;15min support.
 
 One429.011s bundle;FXAA/SMAA targeted110.56/132.784s. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
 
