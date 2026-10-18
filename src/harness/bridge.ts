@@ -14,6 +14,7 @@
  * testing the input path and starts testing itself.
  */
 
+import type { TrainStatus } from "../scene/rail-trains.js";
 import type { LocalWalkStatus } from "../agents/local-walk-prototype.js";
 import type { PerspectiveCamera, WebGLRenderer } from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -111,6 +112,7 @@ export interface LightingStatus extends LightingState {
  * cannot advance a phase, hold a clearance or admit an actor.
  */
 export interface HarnessBridge {
+  trains?(): TrainStatus | null;
   localWalk?(): LocalWalkStatus | null;
   cameraClearance?(): RailCameraClearance;
   railStillState?(): RailStillState;
@@ -139,6 +141,7 @@ declare global {
 }
 
 export interface BridgeSources {
+  trains?: (() => TrainStatus | null) | undefined;
   localWalk?: (() => LocalWalkStatus | null) | undefined;
   cameraClearance?: (() => RailCameraClearance) | undefined;
   railStillState?: (() => RailStillState) | undefined;
@@ -176,6 +179,7 @@ export interface BridgeSources {
  */
 export function installBridge(sources: BridgeSources): HarnessBridge {
   const bridge: HarnessBridge = {
+    ...(sources.trains ? { trains: () => structuredClone(sources.trains!()) } : {}),
     ...(sources.localWalk ? { localWalk: () => structuredClone(sources.localWalk!()) } : {}),
     ...(sources.cameraClearance ? { cameraClearance: sources.cameraClearance } : {}),
     ...(sources.railStillState && sources.railStillSnapshot ? { railStillState: sources.railStillState, railStillSnapshot: sources.railStillSnapshot } : {}),

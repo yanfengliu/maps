@@ -3,6 +3,9 @@ import { BufferAttribute, BufferGeometry, Group, Matrix3, Matrix4, Mesh, MeshSta
 import type { GLTFLoaderPlugin, GLTFParser } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { decodeMesh, type MeshData } from "../world/mesh.js";
 import { RAIL_DATA_PREPARATION, RAIL_TRIAL_BINDING, trialAssets, validateRailTrial, type RailAssetPin, type RailReplacement, type RailReplacementTriangle, type RailSourceFace, type RailTrialManifest } from "../world/rail-trial.js";
+import type { RenderLoop } from "../render/loop.js";
+import { createRailTrains, type RailTrains } from "./rail-trains.js";
+import type { TrainSource } from "./train-path.js";
 import type { WorldStyle } from "../world/styles.js";
 import { CITY_CLIP_PLANES, clipCityRoot } from "./aoi-cutout.js";
 import { toGeometry } from "./mesh-loader.js";
@@ -15,6 +18,7 @@ export interface RailTrialData {
   replacements: RailReplacement[];
   layers: { pin: RailTrialManifest["layers"][number]; mesh: MeshData }[];
   finishes: Finishes;
+  trainSource?: TrainSource;
 }
 export async function verifyRailBytes(pin: Pick<RailAssetPin, "file" | "sha256"> & { bytes?: number }, bytes: ArrayBuffer): Promise<void> {
   const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), n => n.toString(16).padStart(2, "0")).join("");
@@ -36,7 +40,7 @@ export async function loadRailTrial(binding = RAIL_TRIAL_BINDING): Promise<RailT
     if (data.id !== pin.id || !data.sourceIdentity.length || data.sourceIdentity.some(s => s.uri !== pin.uri || s.gmlId !== pin.id)) throw Error(`Rail trial ${pin.file} does not match its source batch binding.`);
     return data;
   });
-  return { manifest, digest: binding.sha256, replacements, layers: manifest.layers.map(pin => ({ pin, mesh: decodeMesh(new Uint8Array(bytes.get(pin.file)!)) })), finishes: json<Finishes>(manifest.materials.file) };
+  return { manifest, digest: binding.sha256, replacements, layers: manifest.layers.map(pin => ({ pin, mesh: decodeMesh(new Uint8Array(bytes.get(pin.file)!)) })), finishes: json<Finishes>(manifest.materials.file), trainSource: { chains: json<Pick<TrainSource, "chains">>(manifest.provenance.file).chains, recipe: json<TrainSource["recipe"]>(manifest.recipe.file) } };
 }
 
 /** The GLTF parser supplies node/primitive/material identity, never a mesh-name guess. */
@@ -194,13 +198,15 @@ export function railSectionGroups(mesh: MeshData): Map<number, number[]> {
   }
   return groups;
 }
-export interface RailTrialScene { root: Group; setStyle(style: WorldStyle): void; dispose(): void }
-export function createRailTrialScene(data: RailTrialData, style: WorldStyle): RailTrialScene {
+export interface RailTrialScene { root: Group; trains?: RailTrains; setStyle(style: WorldStyle): void; dispose(): void }
+export function createRailTrialScene(data: RailTrialData, style: WorldStyle, train?: { loop: RenderLoop; ready: () => boolean }): RailTrialScene {
   const root = new Group(); root.name = "rail-trial";
   const finishSet = createRailFinishSet();
   const resources: { geometry: BufferGeometry; material: MeshStandardMaterial; kind: string }[] = [];
+  let trains: RailTrains | undefined;
   let disposed = false;
   const setStyle = (next: WorldStyle): void => {
+    trains?.setStyle(next);
     for (const r of resources) {
       const finish = data.finishes[next.id]?.[r.kind];
       if (!finish || finish.length !== 3 || finish.some(x => !Number.isFinite(x))) throw Error(`Rail trial has no valid ${next.id}/${r.kind} finish; restore authored-materials.json.`);
@@ -208,7 +214,7 @@ export function createRailTrialScene(data: RailTrialData, style: WorldStyle): Ra
       applyRailFinishStyle(r.material, next.id === "satellite");
     }
   };
-  const dispose = (): void => { if (disposed) return; disposed = true; root.removeFromParent(); for (const r of resources) { r.geometry.dispose(); r.material.dispose(); } for (const texture of finishSet.textures) texture.dispose(); root.clear(); };
+  const dispose = (): void => { if (disposed) return; disposed = true; trains?.dispose(); root.removeFromParent(); for (const r of resources) { r.geometry.dispose(); r.material.dispose(); } for (const texture of finishSet.textures) texture.dispose(); root.clear(); };
   try {
     for (const { pin, mesh } of data.layers) {
       for (const [side, indices] of railSectionGroups(mesh)) {
@@ -221,6 +227,11 @@ export function createRailTrialScene(data: RailTrialData, style: WorldStyle): Ra
         object.castShadow = true; object.receiveShadow = true; root.add(object);
       }
     }
-    setStyle(style); clipCityRoot(root); return { root, setStyle, dispose };
+    if (train) {
+      const rails = data.layers.find(layer => layer.pin.kind === "rails");
+      if (!rails || !data.trainSource) throw Error("Train needs the admitted source-centrelines, authored recipe and rails.mesh from the rail packet.");
+      trains = createRailTrains(data.trainSource, rails.mesh, train.loop, style, train.ready); root.add(trains.root);
+    }
+    setStyle(style); clipCityRoot(root); return { root, ...(trains ? { trains } : {}), setStyle, dispose };
   } catch (cause) { dispose(); throw cause; }
 }

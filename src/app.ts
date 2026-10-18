@@ -43,7 +43,7 @@ import { RenderLoop } from "./render/loop.js";
 import { createPostChain, type PostChain } from "./render/post.js";
 import { createRenderer, rendererFailure, resizeRendererToDisplay } from "./render/renderer.js";
 import { createBuildings, type Buildings } from "./scene/buildings.js";
-import { createRailTrialScene, loadRailTrial } from "./scene/rail-trial.js";
+import { createRailTrialScene, loadRailTrial, type RailTrialScene } from "./scene/rail-trial.js";
 import { RAIL_TRIAL_BINDING } from "./world/rail-trial.js";
 import { createRailStillObserver } from "./harness/rail-still-snapshot.js";
 import { createRailCameraObserver } from "./harness/rail-camera-clearance.js";
@@ -203,6 +203,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   // renderer is mounted, below. Without a population there is nothing to hold,
   // so a `?agents=`-free run is untouched.
   let localWalker: LocalWalker | null = null;
+  let railScene: RailTrialScene | null = null;
   const populationWanted = (options.population?.pedestrians ?? 0) + (options.population?.vehicles ?? 0) > 0;
   if (options.localWalk && populationWanted) throw Error("The local one-actor prototype cannot share the generic population.");
   if (populationWanted) loop.holdFixedSteps(true);
@@ -240,7 +241,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     // A populated scene is never still: thousands of pedestrians walking means the
     // picture changes every frame, so temporal accumulation stays off in populated
     // lanes by construction. A population-free run keeps the original predicate.
-    post.setStill(cameraStill && tilesStill && (agents.root.children.length === 0 || !agents.moving()) && !localWalker?.moving());
+    post.setStill(cameraStill && tilesStill && (agents.root.children.length === 0 || !agents.moving()) && !localWalker?.moving() && !railScene?.trains?.moving());
   });
 
   let sceneLoaded = false;
@@ -285,7 +286,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
       loadOwned(createRoads(style)),
       loadNetwork(),
       loadOwned(createVegetation(style)),
-      railData ? loadOwned(railData.then(data => { if (!data) throw Error("Rail trial binding disappeared during loading."); return createRailTrialScene(data, style); })) : Promise.resolve(null),
+      railData ? loadOwned(railData.then(data => { if (!data) throw Error("Rail trial binding disappeared during loading."); return createRailTrialScene(data, style, { loop, ready: () => !disposed && sceneLoaded && city.visible && buildings.displayReady() }); })) : Promise.resolve(null),
       buildings.ready,
     ]);
     if (disposed) return;
@@ -330,7 +331,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     if (disposed) return;
     hardwareObservation = hardware.records;
     city.add(terrain.root);
-    if (rail) { city.add(rail.root); rail.setStyle(style); styleConsumers.push(rail.setStyle); }
+    if (rail) { railScene = rail; city.add(rail.root); rail.setStyle(style); styleConsumers.push(rail.setStyle); }
     clipCityRoot(roads.root); city.add(roads.root);
     const streets = createStreetDetails(network, style, roads.paintHeightAt, hardware.records);
     paintObservation = streets.paintPlacements;
@@ -382,6 +383,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
 
   installBridge({
     ...(options.localWalk ? { localWalk: () => localWalker?.status() ?? null } : {}),
+    ...(RAIL_TRIAL_BINDING ? { trains: () => railScene?.trains?.status() ?? null } : {}),
     ...(RAIL_TRIAL_BINDING ? createRailStillObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) : {}),
     ...(RAIL_TRIAL_BINDING ? { cameraClearance: createRailCameraObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) } : {}),
     renderer,
