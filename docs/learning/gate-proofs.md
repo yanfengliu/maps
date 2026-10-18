@@ -1,5 +1,7 @@
 # Gate proofs
 
+Dated failing-control evidence, bounded to each recorded input and revision. Current commands and prerequisites are in [AGENTS.md](../../AGENTS.md#gates); current acceptance is in [the plan](../work/0_shibuya-1km/plan.md). Some original task/worktree links are unavailable locally; [the documentation audit](../work/0_shibuya-1km/reviews/1575_documentation-cleanup.md#link-validation) names the retained link exceptions without inventing replacement evidence.
+
 ## 2026-09-19 — finite shoe contact accounts for changed band membership
 
 Gate: `test/finite-shoe-contact.test.ts` includes seven F34 regression cases beside eight original cases. The finite supplied-triangle checks cover the assumed-error and measured Float32 false passes, both signed normal-band edges, empty inner regions, possible support beyond an edge, bank uncertainty, point/segment possible hulls and the strict unchanged contact threshold. The query load is exact; packing error bounds shoe vertices only.

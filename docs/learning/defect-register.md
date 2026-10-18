@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-10-17 — historical documentation looked like current instructions
+
+Observed symptom: the owner reported redundant, outdated and incorrectly organized docs. README lacked an entry route to the current plan and runtime prerequisites; dated handoffs/registers still presented pause, priority or prototype instructions as current; one handoff used a removed plan anchor, and a later devlog entry appeared after the oldest entries.
+
+Investigation and cause: current guidance, implementation references and retained historical assignments shared no clear entry hierarchy. Later append-only reference updates left three-sign wording above a fourth sign and an old pavement reproduction presented as a current cache pin. Removing historical reports would destroy provenance rather than fix those boundaries.
+
+How it is checked: the [documentation audit](../work/0_shibuya-1km/reviews/1575_documentation-cleanup.md) inventories every authored Markdown file, scans full text, validates local Markdown paths/headings and checks devlog chronology, scope, unchanged reviews/snapshots and source/config bytes. Current navigation is repaired and historical records explicitly point to the canonical plan. Missing historical worktree/artifact links remain named exceptions; this docs-only check does not re-prove their old measurements, restore absent evidence or provide a permanent runtime regression gate.
+
 ## 2026-10-17 — mounted light treated GPU eviction as permanent tile disposal
 
 Observed symptom: canonical visual run `d99c403d3c01bf82` failed its Satellite sweep with `Cannot read properties of undefined (reading 'traverse')`; no certificate was issued. Earlier focused lifetime tests and native stills passed, so they did not cover the complete tile lifecycle. The candidate remained uncommitted.

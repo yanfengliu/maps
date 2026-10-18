@@ -1,6 +1,6 @@
 # Bounded photographic facade emission
 
-Three visible sign interiors receive authored illumination in the first source-bound candidate. This does not reconstruct surveyed emissive materials or complete Shibuya's nighttime signage. Every other photographic surface has zero added emission; brightness and saturation only modulate colour inside an admitted region. Existing separately authored boards remain unchanged.
+Four source-bound sign interiors receive authored illumination: the original three-region candidate documented below and the later [photographed Coca-Cola panel](#photographed-coca-cola-panel). This does not reconstruct surveyed emissive materials or complete Shibuya's nighttime signage. Every other photographic surface has zero added emission; brightness and saturation only modulate colour inside an admitted region. Existing separately authored boards remain unchanged.
 
 | Region | Source building GML ID | Placed source tile | Native crossing pixel bounds (left, right, top, bottom) |
 | --- | --- | --- | --- |
@@ -21,6 +21,8 @@ The frozen source geometry report is `artifacts/recovery-realism-20260908/candid
 The fixture contains four positive observations of the three panels and five negative blank-wall, fascia and roof samples, SHA-256 `94e6c266515f8174b85217e0dd62cc6191f1fe4f2d1df22e57d8461a6db44e2a`. Approach pixel `(619,227)` was initially labelled a blank surface; its source UV and world plane instead identify the same Hisamitsu sign. The wrong fixture is preserved at `candidate6-probe/provisional-emission-fixture-wrong-label.json`, SHA-256 `789ebe369064d2ce84e90421d987defb54ae18e222442d601bcbe64995752b01`. It is now a second-view positive, while approach `(432,224)`, `(460,241)`, `(309,349)`, `(532,481)` and `(439,402)` remain negative. The two final samples have upward normals and explicitly cover roofs.
 
 These small PLATEAU-derived fixture coordinates are promoted as reproducible regression inputs under PDL 1.0 / CC BY 4.0, with editing and reprojection disclosed. Raw atlas images remain ignored under `candidate6-probe/source-atlases/`; the source atlas extraction manifest is SHA-256 `41ee69eff37018f409e0e934e2bcb00dfb5babefd025bbefe21af4ef1892fc8d`. No fetched image is committed.
+
+## Photographed Coca-Cola panel
 
 The fourth panel is the original photographed Coca-Cola artwork above TSUTAYA, bound to `data/data518.b3dm` SHA-256 `5e611688344a50142147c0c60442c893dd8f3a45b10ee264067b0275bb4fa96b`, GML `bldg_5f7ff4f3-a620-4fd0-a380-3ec46435cd27` and original front triangles 494/495. Its source atlas crop is `(266,3072)-(394,3584)` in the original 4096 px atlas. One convex UV quad follows crop-local `(0,5),(79,23),(95,95),(0,75)`; the exact normalized coordinates, plane and normal are in the existing registry. The photograph has a bowed outer boundary, so this conservative inset preserves the recognizable red field and complete readable white script while leaving a narrow non-letter border unlit. It does not illuminate every outer red pixel; adjacent glazing and roof remain visibly outside the response.
 

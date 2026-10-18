@@ -1,8 +1,8 @@
 # Agent asset recipe and evidence
 
-Status: prototype in progress
-Owner: asset worker, accepted by root orchestrator
-Updated: 2026-09-08
+This reference preserves the 2026-09-08 asset recipe and subsequent review repairs. Its dated prototype states and source-render measurements are historical; [the Shibuya plan](../work/0_shibuya-1km/plan.md) owns current delivery and acceptance. [Cached local-walker preparation](../../README.md#cached-local-walker) describes ordinary startup; runtime manifest and pose authorities remain the source files named below.
+
+Original owner: asset worker, accepted by root orchestrator. Original record date: 2026-09-08.
 
 ## Chosen human source
 

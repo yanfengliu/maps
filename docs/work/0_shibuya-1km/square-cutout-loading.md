@@ -1,6 +1,6 @@
 # Cutout loading and final-detail presentation
 
-Root approved this policy on 2026-09-27. Runtime measurements and visual acceptance remain required.
+Root approved this policy on 2026-09-27. This dated design retains its original implementation and measurement obligations; [the current plan](plan.md) owns delivery status and [local rules](../../policies/local-rules.md#geographic-texture-limits) own the current final-detail/cache policy.
 
 Proposal: completely prepare the finite selected Shibuya tileset before showing its city. The 67 source tiles remain the source hierarchy. Its 44 final leaves supply the displayed building geometry and 150 cut sections; the 34 incomplete coarse sections are superseded by their descendants, never declared closed. The independently reviewed connector joins unchanged tips only in the single eligible open component with exactly two tips at distance at most 1 mm. Closed contours and the degree-4 touching contact in data510 batch 29 remain untouched.
 

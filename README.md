@@ -1,5 +1,24 @@
 # maps
-Turn 3d maps into simulated worlds.
+
+Turn real-world 3D map data into a simulated Shibuya scene with Vite, three.js and TypeScript.
+
+[The Shibuya plan](docs/work/0_shibuya-1km/plan.md) owns the current outcome, acceptance criteria, progress and next work. The deliverable is incomplete; dated searches, handoffs, reviews, snapshots and devlogs preserve their original evidence and instructions, not a second current queue.
+
+## Run locally
+
+Use Node 24 from `.nvmrc`. Run `npm ci`, restore the reviewed runtime data, then run `npm run dev` at `http://127.0.0.1:5319`. `npm run build` builds the application; `npm run preview` serves it at `http://127.0.0.1:4319`.
+
+The runtime cache is separate from the bundle. Follow [scene preparation](docs/policies/local-rules.md#scene-preparation-and-presentation-bounds), including the external rail packet, before viewing the scene. Fresh `data:setup` output does not inherit reviewed cache identity and does not recreate the rail packet. See [AGENTS.md](AGENTS.md#gates) for verification prerequisites and the five code gates.
+
+## Documentation
+
+- [Local rules](docs/policies/local-rules.md) — current repository requirements; [AGENTS.md](AGENTS.md) owns fleet workflow and world invariants.
+- [Data and coordinate provenance](docs/work/0_shibuya-1km/design.md) — source decisions and dated measurements.
+- [Reference contracts](docs/reference/network-contract.md), [pavement recipe](docs/reference/pavement-recipe.md), [facade emission](docs/reference/facade-emission.md) and [agent assets](docs/reference/agent-assets.md) — bounded implementation details and their history.
+- [Defect register](docs/learning/defect-register.md), [queued lessons](docs/learning/lessons.md) and [gate proofs](docs/learning/gate-proofs.md) — symptoms, unresolved regression checks and observed failing controls.
+- [Devlog](docs/devlog/summary.md) — dated product history, newest first; authored review rounds remain beside [the plan](docs/work/0_shibuya-1km/plan.md).
+
+## Cached local walker
 
 Ordinary startup includes one held walker with the default seed 5970698. Use the real **Start walking** button after the scene is visible. `?agents=0` keeps the appearance lane free of actors; explicit generic population requests and other seeds remain separate. This singleton does not establish the 3,000-pedestrian/200-vehicle performance target.
 

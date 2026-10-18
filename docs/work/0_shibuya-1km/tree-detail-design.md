@@ -1,5 +1,7 @@
 # D1 authored street-tree crowns
 
+Historical D1 implementation record. Original `shibuya-quality` worktree links below are unavailable locally; [source repair](reviews/105_tree-repair.md), [paired review](reviews/113_tree-pair.md) and [integration review](reviews/114_tree-integration.md) retain the authored conclusions. Current source-dependent cache prerequisites are in [AGENTS.md](../../../AGENTS.md#cached-source-for-mapped-tree-regression-checks); [the plan](plan.md) owns later status.
+
 This records the implementation and bounded post-S1 comparison prepared against accepted S1 main 3707c2ecc4e57343531c3af7604bde249fc76491. The [plan](plan.md) owns final review, integration and delivery status. Only src/scene/vegetation.ts and test/vegetation.test.ts are offered for integration, with exact bytes in [source-handoff.json](C:/Users/38909/.codex/worktrees/shibuya-quality/maps/artifacts/street-detail/capture-prep/inspection-d1-pair-s1-02/source-handoff.json).
 
 The approved subject is finer authored crown geometry for the existing mapped street trees: balanced, upright and spreading forms, three main forks, small twigs and narrower folded leaves. These are visual forms, not surveyed botanical species. Geometry remains instanced under vegetation:osm, where the accepted S1 clipping applies. Green-area and barrier geometry, geographic/source attribution, simulation authority and source files on disk are unchanged. The vegetation owner disposes tree instances, geometries and shared materials.
