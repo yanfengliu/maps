@@ -33,8 +33,8 @@ Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Dogen road presentation | Root; diagnosis selected | [1618](reviews/1618_implementation.md):1651 road/bases visible; A2 OPEN. Diagnose mapped-road markings/support before one road increment. NOT_DISPATCHED; no capture/retune. |
-| A11 rebuild | Root; raw inputs missing | [1618](reviews/1618_implementation.md): exact OSM/decorations/reference not recovered. Rebuild/render NOT_RUN; fresh source needs review. |
+| Dogen road presentation | Root; bounded source STOP | [1620](reviews/1620_implementation.md): paint absent; no qualified907042282 interval. A2/A5 OPEN; no prototype/retune. |
+| A11 rebuild | Root; scene stage observed | [1620](reviews/1620_implementation.md):75/77 outputs byte-equal; published-only paint differs. Network/authored-paint/decor sources and render comparison OPEN. |
 | Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
