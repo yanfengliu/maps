@@ -1,13 +1,35 @@
-# Local rules refresh
+# Local rules refresh — historical entry
 
-Historical worker438 assignment from 2026-09-30; its worker permissions and preparation instructions are retained as history. [The Shibuya plan](../0_shibuya-1km/plan.md) owns current work and [local rules](../../policies/local-rules.md) own current requirements. Records: [implementation provenance](review.md), [independent review](independent-review.md), [cleanup461](cleanup-461.md) and [review462](review-462.md). This existing folder is absent from the allocation registry; the documentation audit records that structural gap without inventing a replacement identity.
+Status: legacy
+Owner: root orchestrator (wrapper); original authors remain named in the records
+Created: Unknown (historical record; allocation date was not recorded)
+Updated: 2026-10-18
 
-Owner: worker438 (reused415). Root coordinates integration and independent review. Assignment: refine `docs/policies/local-rules.md` by removing redundancy and superseded operational/history content, without changing live owner directives or product behavior. Base supplied by root: documentation HEAD `e060d30`; no Git operation is authorized here.
+## Problem and outcome
 
-Scope: edit only local-rules and this folder's plan/review; preserve an exact CreateNew backup and ignored evidence under `artifacts/rules438/`. Preserve the live file's CRLF/no-BOM format. No runtime, import, build, tests, Git, browser, server or GPU run.
+Preserve the authored 2026-09-30 rules refresh and 2026-10-01 cleanup records. Their worker permissions, measurements and acceptance statements describe those historical targets. Current requirements live in [local rules](../../policies/local-rules.md); current Shibuya status lives in [its plan](../0_shibuya-1km/plan.md).
 
-Acceptance: preserve current Shibuya orchestration/todos/autonomy, frequent meaningful verified main increments, vibrant believable facades, Satellite focus/basic Cartographic regression, real controls, fixed/seeded/native/sparse visual exploration, fresh critics, source/licensing/world/AOI/data/texture/harness/gate/resource constraints. Consolidate duplicate fleet and commit policy; move no history into new prose. Retain live numeric bounds through current code references. Distinguish planned acceptance from implemented behavior.
+## Scope
 
-Method: read instructions/lessons/current rules; inspect only affected canonical code and permanent records; draft a compact rule set; compare every original section against retained rules or existing history; check referenced paths, key contracts, exact hashes, scope and line endings. Root independently reviews the actual result and owns the docs-only main commit. This worker reports uncertainties instead of inventing a new policy.
+- [Original worker plan](historical-plan.md)
+- [Authored cleanup report](review.md)
+- [Independent review and follow-ups](independent-review.md)
+- [Cleanup461 and focused verification](cleanup-461.md)
+- [Independent review462](review-462.md)
 
-Before: 67,742 bytes, 288 CRLF lines, SHA-256 `f965258914a6d2e910df21c622eac35968cc909d9f35a4481fb41ee8958307d3`; exact backup `artifacts/rules438/local-rules.before.md` has the same hash.
+## Approach
+
+Retain the four reports at their original paths. Preserve the original plan byte-for-byte beside this wrapper, so its relative links retain their meaning. Its recoverable source is `docs/work/1_local-rules-refresh/plan.md` at main revision `33ef6812bc1b66df5d6e80557b023f0376ce6542`. Original dates, labels, authors and follow-ups remain authoritative; no total file chronology or additional review round is inferred.
+
+## Acceptance criteria
+
+- Preserve all five original records and recoverable source provenance.
+- Keep their existing links and distinguish historical outcomes from current requirements and status.
+
+## Implementation steps
+
+The original implementation and verification are recorded in the linked sources. This wrapper indexes that history; allocation recovery is a separate operation and grants no new product acceptance.
+
+## Outcome
+
+Historical entry prepared on 2026-10-18. Original acceptance, checks and integration claims remain as recorded in the five sources.

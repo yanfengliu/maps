@@ -32,7 +32,11 @@ The population/performance target in [AGENTS.md](../../AGENTS.md#invariants--bou
 
 Held WASD pans along the ground relative to the view. Middle-button drag rotates; preserve left-button rotation, right-button pan and wheel zoom. Suppress movement while a UI control or editor has focus.
 
-Compare fixed baselines across azimuth, elevation and zoom, then explore seeded randomized poses. Record each seed and actual pose, report surprises and state sampling/coverage bounds. Inspect original images at native resolution. Before a long event wait, prequalify every planned event camera with a native-size pose image that visibly contains its intended road or subject area. An advancing counter or opaque image cannot substitute for subject visibility.
+Before implementation, freeze the ordinary-app framing, fixed block/dusk regressions, source/runtime/build inputs, actual controls and sampled frame times. Require a coherent, substantial visible improvement in the full native view while preserving believable close/block/aerial context and noon/dusk surroundings. Compare fixed baselines across azimuth, elevation and zoom, then explore seeded randomized poses. Record each seed and actual pose, report surprises and state sampling/coverage bounds. Inspect original images at native resolution.
+
+Reject gains supported only by a crop, thumbnail, arbitrary zoom, decorative outline, tint, exposure, added noise or passing tests. Hidden source/geometry/UV/texture-cap changes, unsupported placement, lost photography/artwork/paint, fewer actors or suppressed errors cannot make a comparison qualify. Stale or unpaired evidence and bypassed controls cannot establish production behavior. Sparse images do not prove continuous motion, contact, population or FPS; a local improvement does not close unrelated criteria. Preserve failed results, and require a new discriminating question before another attempt; a blocked route does not establish that its mechanism is impossible.
+
+Before a long event wait, prequalify every planned event camera with a native-size pose image that visibly contains its intended road or subject area. An advancing counter or opaque image cannot substitute for subject visibility.
 
 Default review clips to 30 fps when sufficient; use 60 fps only for a targeted motion question. Inspect sparse keyframes and short event-specific sequences. State actual sampled frame/time gaps and keep uninspected footage outside appearance claims. Preserve required static coverage and the fixed 60 Hz simulation step.
 
