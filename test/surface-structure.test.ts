@@ -2,10 +2,14 @@
  * These CPU cases cannot establish linked GPU output or useful visual richness.
  * The native peripheral views own those appearance and motion obligations.
  */
-import { describe, expect, it } from "vitest";
-import { ClampToEdgeWrapping, NearestFilter, ShaderLib } from "three";
+import { describe, expect, it, vi } from "vitest";
+import { ClampToEdgeWrapping, NearestFilter, ShaderLib, Mesh, type MeshStandardMaterial } from "three";
 import { createStructureSeedTexture, structureSeedBytes, STRUCTURE_GLSL } from "../src/scene/surface-structure.js";
 import { createSurfaceMaterial } from "../src/scene/surface-materials.js";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { createRoads } from "../src/scene/roads.js";
+import { decodeMesh } from "../src/world/mesh.js";
 import { worldStyle } from "../src/world/styles.js";
 
 describe("finite regional material parameters", () => {
@@ -70,7 +74,13 @@ it.each(["road", "sidewalk", "ground"] as const)("binds and releases %s's region
     expect(shader.uniforms.mapsStructureStrength!.value).toBe(1);
     expect(shader.fragmentShader).toContain("uniform sampler2D mapsStructureSeeds;");
     expect(shader.fragmentShader).toContain("length(fwidth(metres))");
-    expect(shader.fragmentShader).toContain("min(1.0, 0.12 / aa)");
+    if (kind !== "road") expect(shader.fragmentShader).toContain("min(1.0, 0.12 / aa)");
+    else {
+      expect(shader.fragmentShader).toContain("float roadState = mapsRoadState(metres);");
+      expect(shader.fragmentShader).not.toContain("mapsStructurePanel");
+      expect(shader.fragmentShader).toContain("mapsRoadRoughness(roadState, mapsWetness)");
+      expect(shader.fragmentShader).toContain("mix(denseSlope, coarseSlope, roadState) * mapsRoadAggregateHeight(roadState)");
+    }
     expect(shader.fragmentShader).toContain("float region = mapsStructureRegion(metres);");
     if (kind === "ground") {
       expect(shader.fragmentShader).not.toContain("float asphaltRegion");
@@ -85,4 +95,46 @@ it.each(["road", "sidewalk", "ground"] as const)("binds and releases %s's region
     expect(shader.uniforms.mapsStructureStrength!.value).toBe(1);
   } finally { treatment.dispose(); }
   expect(disposed).toBe(1);
+});
+
+// Actual road constructor, real decoded source and actual material hook. The
+// literal mesh pins and component arrays define the preservation bound; no GPU
+// appearance or continuous support claim follows from this CPU comparison.
+it("installs continuous asphalt without changing the road, pavement or source paint buffers", async () => {
+  const names = ["roads", "pavements", "markings"] as const;
+  const bytes = await Promise.all(names.map(name => readFile(`data/scene/${name}.mesh`)));
+  const hash = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
+  expect(bytes.slice(0, 2).map(hash)).toEqual([
+    "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
+    "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6",
+  ]);
+  vi.stubGlobal("fetch", async (url: string) => {
+    const index = names.findIndex(name => url === `/scene/${name}.mesh`);
+    if (index < 0) throw Error(`Unexpected road fixture request: ${url}`);
+    return new Response(new Uint8Array(bytes[index]!).buffer);
+  });
+  let roads: Awaited<ReturnType<typeof createRoads>> | undefined;
+  try {
+    roads = await createRoads(worldStyle("satellite"));
+    expect(roads.inputDigests).toEqual({ roads: hash(bytes[0]!), pavements: hash(bytes[1]!) });
+    for (const [i, name] of ["roads:plateau-tran", "roads:plateau-semantic-pavement", "roads:plateau-source-markings"].entries()) {
+      const source = decodeMesh(bytes[i]!);
+      const mesh = roads.root.getObjectByName(name) as Mesh;
+      const digest = (array: ArrayBufferView) => hash(new Uint8Array(array.buffer, array.byteOffset, array.byteLength));
+      expect(digest(mesh.geometry.getAttribute("position").array)).toBe(digest(source.positions));
+      expect(digest(mesh.geometry.getAttribute("normal").array)).toBe(digest(source.normals));
+      expect(digest(mesh.geometry.index!.array)).toBe(digest(source.indices));
+    }
+    const road = roads.root.getObjectByName("roads:plateau-tran") as Mesh;
+    const material = road.material as MeshStandardMaterial;
+    const shader = { vertexShader: ShaderLib.standard.vertexShader, fragmentShader: ShaderLib.standard.fragmentShader, uniforms: {} };
+    material.onBeforeCompile(shader as never, {} as never);
+    expect(shader.fragmentShader).toContain("mapsRoadState(metres)");
+    const stamp = (source: string) => /mapsStructurePanel|signedEdge|mat2\(cos\(angle\)/.test(source);
+    expect(stamp(shader.fragmentShader)).toBe(false);
+    expect(stamp(STRUCTURE_GLSL)).toBe(true); // Existing rotated stamp is the negative.
+    expect(material.customProgramCacheKey()).toBe("maps-surface-road-v8-continuous-wearing-course");
+    roads.setStyle(worldStyle("cartographic")); roads.setStyle(worldStyle("satellite"));
+    expect((shader.uniforms as Record<string, {value: number}>).mapsStructureStrength!.value).toBe(1);
+  } finally { roads?.dispose(); vi.unstubAllGlobals(); }
 });

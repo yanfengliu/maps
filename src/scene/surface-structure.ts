@@ -24,7 +24,7 @@ export function createStructureSeedTexture(kind: "road" | "sidewalk" | "ground")
   texture.needsUpdate = true;
   return texture;
 }
-export const STRUCTURE_GLSL = /* glsl */ `
+const STRUCTURE_REGION_GLSL = /* glsl */ `
 uniform sampler2D mapsStructureSeeds;
 uniform float mapsStructureStrength;
 vec4 mapsStructureSeed(vec2 cell) {
@@ -37,7 +37,9 @@ float mapsStructureRegion(vec2 metres) {
   return mix(mix(mapsStructureSeed(cell).r, mapsStructureSeed(cell + vec2(1.0, 0.0)).r, phase.x),
     mix(mapsStructureSeed(cell + vec2(0.0, 1.0)).r, mapsStructureSeed(cell + vec2(1.0, 1.0)).r, phase.x), phase.y);
 }
-// A sparse nonperiodic resurfacing/paving region inside each 24 m cell.
+`;
+export const STRUCTURE_GLSL = STRUCTURE_REGION_GLSL + /* glsl */ `
+// A sparse nonperiodic paving region inside each 24 m cell.
 // Its size, location, turn and presence are seeded independently in each cell.
 vec2 mapsStructurePanel(vec2 metres) {
   vec2 cell = floor(metres / 24.0);
@@ -54,5 +56,36 @@ vec2 mapsStructurePanel(vec2 metres) {
   float seam = (1.0 - smoothstep(max(0.0, 0.12 - aa), 0.12 + aa, abs(signedEdge)))
     * min(1.0, 0.12 / aa) * present;
   return vec2(panelCoverage, seam);
+}
+`;
+
+/** Authored continuous wearing course, never surveyed repair locations. The road
+ * shares one age state across aggregate, relief and wet/dry light response.
+ * Its bounded noise domain covers the AOI without a repeated repair stamp. */
+export const ROAD_STRUCTURE_GLSL = STRUCTURE_REGION_GLSL + /* glsl */ `
+float mapsRoadNoise(vec2 p) {
+  vec2 cell = floor(p);
+  vec2 phase = fract(p); phase = phase * phase * (3.0 - 2.0 * phase);
+  return mix(mix(mapsStructureSeed(cell).g, mapsStructureSeed(cell + vec2(1.0, 0.0)).g, phase.x),
+    mix(mapsStructureSeed(cell + vec2(0.0, 1.0)).g, mapsStructureSeed(cell + vec2(1.0, 1.0)).g, phase.x), phase.y);
+}
+float mapsRoadState(vec2 metres) {
+  vec2 warp = vec2(mapsStructureRegion(metres + vec2(83.0, -61.0)), mapsStructureRegion(metres + vec2(-47.0, 91.0))) - 0.5;
+  vec2 p = metres + warp * 11.0;
+  // Irregular metre-scale transitions within connected tens-of-metres regions.
+  p += vec2(sin(metres.y * 1.7 + sin(metres.x * 0.73)), sin(metres.x * 1.3 + sin(metres.y * 0.61))) * 0.42;
+  float age = 0.68 * mapsRoadNoise(p / 32.0) + 0.32 * mapsRoadNoise(p / 18.0);
+  return smoothstep(0.28, 0.72, age);
+}
+float mapsRoadTransitionHeight(float state, float footprint) {
+  // A maximum 3mm wearing-course step, never a drawn dark seam or contact height.
+  float resolved = 1.0 - smoothstep(0.08, 0.65, footprint);
+  return 0.003 * smoothstep(0.38, 0.62, state) * resolved;
+}
+float mapsRoadAggregateHeight(float state) {
+  return mix(0.006, 0.018, state);
+}
+float mapsRoadRoughness(float state, float wetness) {
+  return mix(mix(0.81, 0.96, state), mix(0.24, 0.52, state), wetness);
 }
 `;

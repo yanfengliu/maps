@@ -18,7 +18,7 @@
  */
 import { MeshStandardMaterial, type WebGLProgramParametersWithUniforms } from "three";
 import type { WorldStyle } from "../world/styles.js";
-import { createStructureSeedTexture, STRUCTURE_GLSL } from "./surface-structure.js";
+import { createStructureSeedTexture, STRUCTURE_GLSL, ROAD_STRUCTURE_GLSL } from "./surface-structure.js";
 import {
   createSurfaceDetailTexture,
   SURFACE_DETAIL_METRES,
@@ -177,7 +177,7 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
   shader.uniforms.mapsStructureSeeds = uniforms.structureSeeds ?? { value: null };
   shader.uniforms.mapsStructureStrength = uniforms.structureStrength ?? { value: 0 };
 
-  const declarations = Object.entries(UNIFORM_DECLARATIONS).filter(([key]) => !key.startsWith("structure")).map(([, declaration]) => declaration).join("\n") + STRUCTURE_GLSL + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL + PAVING_RELIEF_GLSL : "");
+  const declarations = Object.entries(UNIFORM_DECLARATIONS).filter(([key]) => !key.startsWith("structure")).map(([, declaration]) => declaration).join("\n") + (kind === "road" ? ROAD_STRUCTURE_GLSL : STRUCTURE_GLSL) + (kind === "sidewalk" ? PAVING_COVERAGE_GLSL + PAVING_RELIEF_GLSL : "");
 
   shader.vertexShader = replaceOnce(
     shader.vertexShader,
@@ -205,7 +205,7 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         ${FRAGMENT_ROUGHNESS}
         vec2 metres = mapsSurfacePosition.xz;
         float region = mapsStructureRegion(metres);
-        vec2 panel = mapsStructurePanel(metres);
+        ${kind === "road" ? "float roadState = mapsRoadState(metres);" : "vec2 panel = mapsStructurePanel(metres);"}
         ${
           kind === "sidewalk"
             ? `
@@ -249,29 +249,49 @@ export function patchSurfaceShader(kind: SurfaceMaterialKind, uniforms: SurfaceS
         // and far frames look at them. Minification now averages the finest octave away
         // first and leaves the coarse ones, so the surface keeps structure at every
         // distance the gate photographs.
-        float detail = texture2D(mapsDetailMap, metres / mapsDetailMetres).r;
+        ${kind === "road" ? `
+        // Dense/new and coarse/aged aggregate retain fixed metre coordinates, so
+        // state changes cannot stretch the texture derivatives at a boundary.
+        vec2 denseUv = metres / 2.8;
+        vec2 coarseUv = metres / 5.2;
+        float detail = mix(texture2D(mapsDetailMap, denseUv).r, texture2D(mapsDetailMap, coarseUv).r, roadState);
+        ` : "float detail = texture2D(mapsDetailMap, metres / mapsDetailMetres).r;"}
         diffuseColor.rgb *= 1.0 + (detail - 0.5) * mapsDetailStrength;
         ${
           kind === "road"
             ? `
-        // Under the tile: the very low frequency band no 4 m tile can carry, so the
-        // asphalt is not one patch repeated across the ward.
-        float asphaltVariation = 0.5 + 0.5 * sin(metres.x * 0.18 + sin(metres.y * 0.25)) * sin(metres.y * 0.22);
-        // The existing 3.125 cm aggregate texels now alter light response as
-        // well as colour. Central differences share the albedo's mip footprint;
-        // opposing samples cancel once the grain is below a pixel.
-        vec2 aggregateUv = metres / mapsDetailMetres;
+        // One continuous material state controls colour and light response.
+        // Relief reuses the existing mip-filtered aggregate rather than adding
+        // an unrelated noise normal over the old repair rectangles.
         vec2 aggregateTexel = vec2(1.0 / 128.0, 0.0);
-        vec2 mapsGroundSlope = vec2(
-          texture2D(mapsDetailMap, aggregateUv + aggregateTexel.xy).r - texture2D(mapsDetailMap, aggregateUv - aggregateTexel.xy).r,
-          texture2D(mapsDetailMap, aggregateUv + aggregateTexel.yx).r - texture2D(mapsDetailMap, aggregateUv - aggregateTexel.yx).r
-        ) * (0.018 / (2.0 * mapsDetailMetres / 128.0));
-        diffuseColor.rgb *= 0.94 + asphaltVariation * 0.07;
-        roughnessFactor = mix(0.92, 0.28 + 0.23 * asphaltVariation, mapsWetness) + (detail - 0.5) * mix(0.08, 0.28, smoothstep(0.9, 1.0, mapsStructureStrength));
-        // Disclosed resurfacing variation, not a claim of surveyed repair patches.
-        float asphaltRegion = 1.0 + (region - 0.5) * 0.34 - panel.x * 0.18 - panel.y * 0.15;
+        vec2 denseSlope = vec2(
+          texture2D(mapsDetailMap, denseUv + aggregateTexel.xy).r - texture2D(mapsDetailMap, denseUv - aggregateTexel.xy).r,
+          texture2D(mapsDetailMap, denseUv + aggregateTexel.yx).r - texture2D(mapsDetailMap, denseUv - aggregateTexel.yx).r
+        ) / (2.0 * 2.8 / 128.0);
+        vec2 coarseSlope = vec2(
+          texture2D(mapsDetailMap, coarseUv + aggregateTexel.xy).r - texture2D(mapsDetailMap, coarseUv - aggregateTexel.xy).r,
+          texture2D(mapsDetailMap, coarseUv + aggregateTexel.yx).r - texture2D(mapsDetailMap, coarseUv - aggregateTexel.yx).r
+        ) / (2.0 * 5.2 / 128.0);
+        float roadFootprint = max(length(fwidth(metres)), 0.001);
+        float aggregateResolved = 1.0 - smoothstep(0.04, 0.32, roadFootprint);
+        vec2 mapsGroundSlope = mix(denseSlope, coarseSlope, roadState) * mapsRoadAggregateHeight(roadState) * aggregateResolved;
+        float transitionHeight = mapsRoadTransitionHeight(roadState, roadFootprint);
+        // Differentiate the continuous height once, using the pixel's world
+        // footprint. No extra region sampling or unfiltered edge normal.
+        vec2 roadDx = dFdx(metres), roadDy = dFdy(metres);
+        float roadDet = roadDx.x * roadDy.y - roadDx.y * roadDy.x;
+        vec2 transitionSlope = vec2(
+          roadDy.y * dFdx(transitionHeight) - roadDx.y * dFdy(transitionHeight),
+          roadDx.x * dFdy(transitionHeight) - roadDy.x * dFdx(transitionHeight)
+        ) * sign(roadDet) / max(abs(roadDet), 0.00000001);
+        transitionSlope /= max(1.0, length(transitionSlope) / 0.02);
+        mapsGroundSlope += transitionSlope;
+        // Dense binder is darker and smoother; exposed aged aggregate is lighter
+        // and rougher under the same illumination and existing wetness control.
+        float asphaltRegion = mix(0.91, 1.08, roadState);
         diffuseColor.rgb *= mix(1.0, asphaltRegion, mapsStructureStrength);
-        roughnessFactor = clamp(roughnessFactor + mapsStructureStrength * (0.07 * panel.x + (region - 0.5) * 0.10), 0.25, 1.0);
+        roughnessFactor = mix(0.92, mapsRoadRoughness(roadState, mapsWetness), mapsStructureStrength);
+        roughnessFactor = clamp(roughnessFactor + (detail - 0.5) * mix(0.08, 0.20, roadState), 0.25, 1.0);
         `
             : `
         // And the same band on the ground, whose period is about 20 m: relief the 8 m
@@ -353,7 +373,7 @@ export function createSurfaceMaterial(kind: SurfaceMaterialKind, style: WorldSty
   material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     patchSurfaceShader(kind, uniforms, shader as unknown as PatchableShader);
   };
-  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "ground" ? "v6-regional-structure" : "v7-joint-aggregate-relief"}`;
+  material.customProgramCacheKey = () => `maps-surface-${kind}-${kind === "road" ? "v8-continuous-wearing-course" : kind === "ground" ? "v6-regional-structure" : "v7-joint-aggregate-relief"}`;
   const apply = (next: WorldStyle): void => {
     material.color.setHex(next.palette[kind === "ground" ? "ground" : kind]);
     material.envMapIntensity = kind === "road" ? 0.7 : 0.45;
