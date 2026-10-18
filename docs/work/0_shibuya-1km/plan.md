@@ -7,7 +7,7 @@ Updated: 2026-10-18
 
 ## Problem and outcome
 
-Build the approved 1 km Shibuya square as a believable world with moving pedestrians and vehicles. Goal ACTIVE; Satellite quality is the priority. Full quality/population/performance OPEN.
+Build the approved 1 km Shibuya square as a believable world with moving pedestrians and vehicles. User resumed; tracker BLOCKED; Satellite quality is the priority. Full quality/population/performance OPEN.
 
 ## Scope
 
@@ -33,7 +33,7 @@ Fleet recovery stopped after5 attempts: missing-witness provenance, replay bindi
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Satellite milestone | root;1714 REDIRECT | Inspect Start-to-crossing; choose one frontage improvement. Status/35/14/nine todos: artifacts/session-handoff1702/successor-state.json; exchange1/10. Gallery259/private. |
+| Satellite milestone | 1723 reference check | Qualify one exact-building reference; no implementation. [1639](reviews/1639_design.md). Tracker: artifacts/session-handoff1702/successor-state.json;2/10. Gallery260/private. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
