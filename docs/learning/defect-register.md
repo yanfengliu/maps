@@ -635,6 +635,8 @@ Fresh-context [1413 review](../work/0_shibuya-1km/reviews/1413_verification-dire
 
 2026-10-18 direction follow-up: [1603](../work/0_shibuya-1km/reviews/1603_design.md) retains both finished BLOCKED numerical/control branches without rescoring or a production-defect claim. Root accepts the fresh [1604](../work/0_shibuya-1km/reviews/1604_integration.md) redirect from further oracle expansion to perceived benefit. Four existing-sequence lossless clips are ready only for human inspection; tools cannot observe timed playback, so timed review DID_NOT_RUN and perceived benefit NOT_ESTABLISHED. A remains frozen/unadopted/parked; no automatic capture or oracle retry and no public gate retirement follows.
 
+2026-10-18 ordinary-inspection follow-up: [1607](../work/0_shibuya-1km/reviews/1607_implementation.md) retains two clear native originals and a FAILED capture: the live15s per-frame approval wait expired before root’s later visible/go decision, not because the scene was invisible. Future short non-event captures should use the existing bounded set, then inspect every original at native size after capture; retain initial setup qualification before long timed work. No framework, private runner fix or public gate retirement is claimed.
+
 ## 2026-10-17 — GPU facade eviction released retained models and normal hooks
 
 The 1458 complete data518 plugin check reproduced an inherited crash in the installed `UnloadTilesPlugin.unloadTileFromGPU`: commercial beauty-material disposal removed its group during `Object3D.traverse`, which then read `traverse` from an undefined child. The original crossing surround also removed its private GTAO normal lookup on GPU-only disposal. Neither event means the parsed tile was logically released.

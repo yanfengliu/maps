@@ -33,7 +33,7 @@ Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Next visible milestone | visual1630; preparation dispatched, no GPU lease | Inspect the ordinary default app through real controls; qualify setup first, then ≤60s exploration. Rank visible issues and choose one bounded improvement; no implementation yet. |
+| Next visible milestone | curb1635 prototype DISPATCHED; no GPU | [1609](reviews/1609_implementation.md):1633 source qualified. Owner curb1633_source_question; resolve ownership, then one coherent non-crossing profile in existing offline path; native pilot before expensive gates. |
 | Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
 
 A stays frozen/unadopted/parked at artifacts/taa1582a/worktree: [1603](reviews/1603_design.md) preserves both BLOCKED routes; no automatic oracle/capture. [1604](reviews/1604_integration.md): four clips ready for human inspection, timed review DID_NOT_RUN and perceived benefit NOT_ESTABLISHED.
