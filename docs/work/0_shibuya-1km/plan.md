@@ -21,21 +21,21 @@ Root owns priorities/contracts/status/integration; workers implement/check. Read
 
 ### Current adoption and evidence
 
-Adopted executable `80a27304498d21a20ab657ce035d24653086242d`: thirteen rooftop housings gain open caps, raised grilles, supported bases and fan guards over retained photography. Continuous asphalt f4960e2 retained. [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
+Adopted source `e1de28244694e7ecedbd75ea045ff49e80026ca3` (source3729868): fresh inputs/profile, historical/fresh fixtures, short-connector leader fix and14 raw byte rules. Roof80a2730/asphaltf4960e2 retained. Source1708/native1711 GO; evidence: artifacts/source1709-final/. Roof history: [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
 
-PRIMARY five gates PASS 388.064s: 138 files/1,200 tests,44 frames/3 GPU lifecycles,RTX4090/616.64,run `c4a75e885ab31d32`; audit2 moderate/no high. Root/independent22 final Satellite and two basic style extras PASS; Guard contact uses constructor tests, not global pixels. Pushed CI unavailable:0 checks/statuses/workflows/runs. Population/60fps unestablished.
+PRIMARY five gates PASS340.506s (wrapper374.879s):141files/1,231tests,44frames/3GPUlifecycles,RTX4090/616.64,run `bfe2ff3fc92d452c`; audit2moderate/nohigh. Root/independent22Satellite+2basic return originals GO; interior/occluded views do not prove A13. Pushed CI unavailable:0checks/statuses/workflows/runs. Population/60fps unestablished.
 
-Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
+Runtime156files/364,250,437B; served-scene digest `cec9aaf0cce77360e5bcc99c4fe8567473bd180d0796ba65fff5b161de542184` (visual wrapper). Copied prerequisites are not rebuilt outputs. Canon merge bytes preserved. Retain facade-emission, literal AGENTS/seven LF files and retained991.
 
-Safe docs cleanup is complete/pushed;1683 full inventory/navigation follow-up needs no further current edit. Full structural recovery remains REFUSED.
+Structural docs recovery is authorized; final census, review and safe application remain owed.
 
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Next visible increment | root; PLANNED, not dispatched | Fresh ordinary-app critic selects one Satellite milestone; bounded acceptance/resource closure required. |
-| A11 rebuild | 1682; unmerged | 45 focused/types PASS; repair GO. HTTP502/equivalence NOT_RUN; external review/final gates/source admission/full rebuild owed. A11 OPEN. |
-| Documentation recovery | root; waiting | [1599](reviews/1599_integration.md), [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md): structural REFUSED. Done: ID0/private-CLI/protected991 approvals, then fresh census before safe application. |
+| Satellite milestone | root;1714 REDIRECT | After A11, inspect Start-to-crossing; choose one frontage improvement. Status/35/14/nine todos: artifacts/session-handoff1702/successor-state.json; exchange1/10. Gallery258/private. |
+| A11 rebuild | source1712; rendering | Exact checkout;89generated/67external servedfiles exact. Debug maps:CRLF-only. Render/review owed; source1705 WT retired. |
+| Documentation recovery | fleet1706; HOLD | Attempt5:30focusedPASS; missing-witness removal holdout fails; exact review active/fullgate NOTRUN. Restaurant delivered/retired. Claude ABSTAIN. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
@@ -116,7 +116,7 @@ Curb1635 PARK/UNADOPTED: [1615](reviews/1615_implementation.md), [1616 REDIRECT]
 
 Rejected1560 stays unmerged at `artifacts/taa1554/worktree`, branch `codex/moving-taa1554-local`, base `b0bc935`. [1570](reviews/1570_moving-taa-gpu-result-review.md) is component evidence only. Retain `artifacts/taa1554/round1560-freeze.json` and `artifacts/taa1558/prerequisite-copy.receipt.json`.
 
-Parked sources: facade STOP1445/1452/1455, confirmed1456; TSUTAYA1454 128×512, other imagery UNKNOWN. Windows1458 STOP/1461/1464 NO QUALIFIED SET; WT retired, bounded not impossible. CPU profile unavailable;65-WT removal PARKED. [1472](reviews/1472_western-road-source-stop.md):2019 GSI cannot resolve paint/curbs or≥80m; no prototype.
+Facade1445/1452/1455/1456 STOP; TSUTAYA1454 source128×512. Windows1458/1461/1464 NO SET, WT retired, bounded.1692 media-skin REJECTED:6 native views/no full-frame gain; no tuning. CPU profile unavailable;65-WT cleanup PARK. [1472](reviews/1472_western-road-source-stop.md):2019 GSI cannot resolve paint/curbs or≥80m; no prototype.
 
 Traffic1499 PARK: [1527](reviews/1527_fixed-history-native-review.md); `artifacts/traffic1499/worktree`, `codex/traffic1499`, candidate `4aa2a023d`. Four arms, last four opaque; visible exit UNMET, no fifth. CPU 600 s: 20/24, bus refusals/queues. Gates NOT RUN; unmerged and UNADOPTED.
 

@@ -1,8 +1,12 @@
 # Review 1624: implementation
 
-## Target and coverage
+## Target
 
 Western rooftop finish, base main `600da509a1dfd391a2485d1b5d6efc955b9f2edd`; repaired tree `2d0401478dba3af9eeabca864e1eaf6c513d8d9d`, release SHA-256 `47262cb18321f170212dc778ff8193827b6fb0727d033b148c9972eeaf6f2c9f`. Adopted executable `80a27304498d21a20ab657ce035d24653086242d`; final acceptance and bounds are in [1625](1625_integration.md). The fresh-context ordinary-app critic and implementation worker reports below remain verbatim; their original pending statements retain their authored bounds.
+
+## Reviewers and coverage
+
+1677 supplied the ordinary-app critique;1679 supplied implementation and native-comparison evidence. Their original reports remain below. Independent integrated source/native coverage is recorded in1625.
 
 ## Reports
 
@@ -79,8 +83,10 @@ Source fan/grille photography disqualified the initial solid-cap/inset idea. Ope
 
 A11 remains HOLD. Investigations 1678/1680/1681 support preserving the bridge stop with empty applicability, excluding elevated routing, disclosing terminal-access omissions and changed walking geometry, and retaining explicit lane permissions plus the conservative via-way restriction. Walking endpoint reach survives; the newly unavailable interior lane route remains disclosed. No source guard, graph or cache was adopted. Unadopted feature 1682 originally passed 36 focused tests/types, but independent 1687 found malformed-type coercion and historical-to-live provenance defects. Both repairs have focused GO, 45 tests/types PASS and three literal old REDs. The sole dated request returned HTTP 502; equivalence DID_NOT_RUN. External review, final gates/integration, successful retrieval, source admission, coupled outputs, clean rebuild and native comparison remain owed.
 
-## Provenance and outcome
+## Verification
 
 Original bodies under ignored `artifacts/`: `artifacts/scene1677/report.md` SHA-256 `6b8e674a3eb96725d87316defd382cd77f3e9e21eec9b2c950c187154ee8d7f8`; `artifacts/roof1679/handoff.md` SHA-256 `2a4c96cbdaedb8a4de97b3da3d78a7b62ba400455bde1d85634f088a7de47526`. Concise source conclusions derive from `source1678/report.md` (1238dd48f4e8726e805b2e95e72bc8d434daf13e52b5c1c57dcf17356a67ee54), `source1680/report.md` (ecca700cd1de92f1b057807c48ae1a2ddd14e9a71fac72ac1ea8980e89c23260), `source1681/report.md` (d5b82e8da7240c0740e55d74c1d1bda58d1ca5f99adc554d368bff7c99010344) and `source1682/report.md` (07371f8eb2b2cc0e0c68c70e8998aef6c132f6f4d249e7a605d63e6a404cfa4b), also under `artifacts/`; their full diagnostics are not duplicated. Repair provenance: `artifacts/source1682/repair1687/report.md` SHA-256 `4fb4b15c9635e1701501716450a2eb295670e0bbbb9ff34bba4877f57b07a1df`; focused re-review `artifacts/source1687/final-review.md` SHA-256 `c016fb09724c251f7583691b5cddab26efa04811fadac5133f6c8ec54295a0fb`.
+
+## Round outcome
 
 Roof code is merged and pushed. A1/A4/A12 retain bounded PASS; eleven criteria, continuous motion and the full 3,000-pedestrian/200-vehicle/60 fps at 1080p target remain OPEN.

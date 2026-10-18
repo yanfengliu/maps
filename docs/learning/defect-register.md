@@ -8,6 +8,8 @@ Investigation and cause: current guidance, implementation references and retaine
 
 How it is checked: the [documentation audit](../work/0_shibuya-1km/reviews/1575_documentation-cleanup.md) inventories every authored Markdown file, scans full text, validates local Markdown paths/headings and checks devlog chronology, scope, unchanged reviews/snapshots and source/config bytes. Current navigation is repaired and historical records explicitly point to the canonical plan. Missing historical worktree/artifact links remain named exceptions; this docs-only check does not re-prove their old measurements, restore absent evidence or provide a permanent runtime regression gate.
 
+2026-10-18 structural follow-up: the separate section checker caught malformed current1624/1625 review wrappers that the inventory/navigation audit did not establish. Exact required headings were repaired and the structural preparation then passed; both original authored Reports spans remained byte-exact. The existing red/passing receipts and heading-only repair are bound in [1626](../work/0_shibuya-1km/reviews/1626_implementation.md). This checks wrapper structure, not historical prose truth, and its census must be refreshed after later edits before metadata application.
+
 ## 2026-10-17 — mounted light treated GPU eviction as permanent tile disposal
 
 Observed symptom: canonical visual run `d99c403d3c01bf82` failed its Satellite sweep with `Cannot read properties of undefined (reading 'traverse')`; no certificate was issued. Earlier focused lifetime tests and native stills passed, so they did not cover the complete tile lifecycle. The candidate remained uncommitted.

@@ -1,8 +1,12 @@
 # Review 1625: integration
 
-## Target and coverage
+## Target
 
 Adopted rooftop finish `80a27304498d21a20ab657ce035d24653086242d`, parent main `600da509a1dfd391a2485d1b5d6efc955b9f2edd`; reviewed/gated tree `2d0401478dba3af9eeabca864e1eaf6c513d8d9d`. The four exact LF blobs were committed, fast-forward merged and pushed; remote main matches. [1624](1624_implementation.md) retains implementation history. Original reports below remain verbatim, including their original pending statements.
+
+## Reviewers and coverage
+
+1685 independently reviewed exact source, repaired constructor checks and native frames;1683 supplied the bounded documentation audit. Root inspected final integrated pixels and gate/resource evidence. Original reports remain below.
 
 ## Reports
 
@@ -60,9 +64,11 @@ Full structural recovery remains refused at the recorded af440365 allocation-his
 
 This is a full inventory/text/navigation scan with targeted current-guidance and delta reading, not a revalidation of every historical measurement, external source or unavailable artifact. No build, unit, visual, audit, browser, server, GPU or product-source operation ran. The worker wrote only the ignored artifacts/docs1683 evidence and launched no persistent resources. All 17 protected raw pins still match; no primary Git/index/ref, code/tool/test/package, source-data or gallery write was issued. No worktree or branch was needed for this read-only outcome, and no patch awaits integration.
 
-## Integrated disposition and verification
+## Findings and disposition
 
 Root and independent reviewer each inspected 22 final Satellite originals and two basic style-return extras. FINAL_GO has no material findings. Pre-repair close/block/noon/seeded pixels establish the local gain; actual-constructor triangle checks establish all 104 repaired guard contacts; final global frames establish contextual integration. The latter do not resolve a sub-millimetre join. A1/A4/A12 bounded PASS are retained/rechecked; eleven criteria remain OPEN.
+
+## Verification
 
 All five primary gates PASS: 138 files/1,200 tests; 388.0641873 successful gate seconds, 418.9938279 wrapper seconds. Run `c4a75e885ab31d32`: 44 certified frames/3 GPU lifecycles, RTX4090/616.64; certificate SHA-256 `d2e70944d4fa470fd61842d26ba9e2b0d97bde6c1de6040c79bdf5d36a05f852`. Audit has two inherited moderate advisories/no high; dependencies unchanged. All 17 protected files, 156-file scene and harness pins remain unchanged. No configured remote checks/statuses/workflows/runs exist on pushed 80a2730; CI UNAVAILABLE, not PASS.
 
