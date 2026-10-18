@@ -33,7 +33,7 @@ Docs [1577](reviews/1577_documentation-cleanup-review.md) integrated; structure 
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Native AA | Candidate S1 captured; native review starting | [1593](reviews/1593_implementation.md): S0 detail PASS; [1595](reviews/1595_implementation.md):96 train-baseline originals qualify. Candidate/held-out quality owed; A unadopted at `artifacts/taa1582a/worktree`. |
+| Native AA | Root: held-out CPU preparation next; no lease | S0/S1 preserve detail ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)). Fresh odd1281×721/DPR1.25 baseline/candidate owed. A unadopted at `artifacts/taa1582a/worktree`. |
 | Documentation recovery | Maps cleanup integrated; tool fix69 tests/local review PASS | [Review463](../1_local-rules-refresh/reviews/463_integration.md), [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md). Fleet188/189 PASS; inherited restaurant census fails. Audits PASS; collision/CLI consent pending. No adoption. |
 | Scene history | Root: proposed, not dispatched | Reuse1591 pixel observer on real-controls app frames to distinguish previous-frame blending from current-only. Post flags/stills are insufficient. |
 
