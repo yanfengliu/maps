@@ -6,7 +6,7 @@ import type { AgentAssetManifest } from '../world/agent-assets.js';
 import { fetchAsset } from './render/assets.js';
 import { createLocalRig, type LocalRigPacket } from './render/local-walk-rig.js';
 import { LocalWalkDraw } from './render/local-walk-draw.js';
-import { LocalWalkGait, type LocalGaitFrame, type LocalGaitRoot } from './population/local-walk-gait.js';
+import { LocalWalkGait, localGaitEventCount, type LocalGaitFrame, type LocalGaitRoot } from './population/local-walk-gait.js';
 import { createOrderedFootEngine } from './population/local-ordered/controller.mjs';
 import { LocalSupportAdmission, createLocalFloor, type LocalContext } from './population/local-walk-support.js';
 import { LOCAL_WALK_BINDING as binding } from './local-walk-options.js';
@@ -56,8 +56,8 @@ export async function createLocalWalker(options:{renderer:WebGLRenderer;camera:C
       if(!proposal.sourceSurface?.startsWith('hero:')||!proposal.landingSurface?.startsWith('hero:'))return {ok:false,reason:'Actual local source/landing patch identity missing'};
       return {ok:true,sourceSurface:proposal.sourceSurface,landingSurface:proposal.landingSurface,evidence:{kind:'actual retained hero patches; actual posed interval checked before adoption'}};
     },interval(candidate,occupancy){if(occupancy.otherActors.length) return {ok:false,reason:'One-actor native scope received other actors'};
-      try{const event=candidate.current.gait.events.length!==lastEvent;admission.observe(candidate.sample(.5,1),event);admission.observe(candidate.current,event);return {ok:true};}catch(error){return {ok:false,reason:String(error)};}
-    }});tick++;if(frame.refused){admission.restore(saved);refusal=frame.refused;}else lastEvent=frame.current.gait.events.length;
+      try{const event=localGaitEventCount(candidate.current)!==lastEvent;admission.observe(candidate.sample(.5,1),event);admission.observe(candidate.current,event);return {ok:true};}catch(error){return {ok:false,reason:String(error)};}
+    }});tick++;if(frame.refused){admission.restore(saved);refusal=frame.refused;}else lastEvent=localGaitEventCount(frame.current);
     }catch(error){admission.restore(saved);refusal=String(error);}
     if(refusal){button.textContent='Local walk held: '+refusal;button.disabled=true;}
   });
