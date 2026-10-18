@@ -54,7 +54,7 @@ Train1473/walking1528 retirements COMPLETE;1495 and artifacts/walk-history1528/r
 
 A2 remainsOPEN: [1540](reviews/1540_terrain-contact-source-review.md) checks do not prove complete footprint contact; [1541](reviews/1541_terrain-contact-native-review.md) all22 native views qualify no defect, but obscure relief/bases. One purposeful noon uphill view is next; no source fix justified.
 
-Gallery:214images/193,013,931B;newestfirst,one image/row,plain captions,no categories;ignored,Never Git;15min heartbeat ACTIVE.
+Gallery: newestfirst,one image/row,plain captions,no categories;ignored,Never Git;15min heartbeat ACTIVE. Private manifest owns image inventory.
 
 Train5af00f1 four-car/current-poseAA/fractionalDPR remains;1490/1491/1493 preserve bounds. Lifetime59fbb1c/Coca-Cola1449/1450 remain. Train-only ABBA~60Hz;fulltarget OPEN.
 
