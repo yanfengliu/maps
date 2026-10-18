@@ -21,21 +21,21 @@ Root owns priorities/contracts/status/integration; workers implement/check. Read
 
 ### Current adoption and evidence
 
-Adopted executable `f4960e2bf95b7813443b803eb15876215785ef59`: continuous asphalt replaces repair stamps; coupled grain/relief/roughness, unchanged geometry/source paint. [1622](reviews/1622_implementation.md), [1623](reviews/1623_integration.md).
+Adopted executable `80a27304498d21a20ab657ce035d24653086242d`: thirteen rooftop housings gain open caps, raised grilles, supported bases and fan guards over retained photography. Continuous asphalt f4960e2 retained. [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
 
-PRIMARY five gates PASS 339.483s:137 files/1,193 tests,44 frames/3 GPU lifecycles, RTX4090/616.64, run `bb081deed726da61`; audit2 moderate/no high. Root/independent22 native Satellite and basic style continuity PASS. Observer scope bug interrupted unit; fix proven, unfinished gates resumed. Pushed-code CI unavailable:0 checks/statuses/workflows/runs. Population/60fps unestablished.
+PRIMARY five gates PASS 388.064s: 138 files/1,200 tests,44 frames/3 GPU lifecycles,RTX4090/616.64,run `c4a75e885ab31d32`; audit2 moderate/no high. Root/independent22 final Satellite and two basic style extras PASS; Guard contact uses constructor tests, not global pixels. Pushed CI unavailable:0 checks/statuses/workflows/runs. Population/60fps unestablished.
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
-Docs cleanup is pushed; full structural recovery remains REFUSED.
+Safe docs cleanup is complete/pushed;1683 full inventory/navigation follow-up needs no further current edit. Full structural recovery remains REFUSED.
 
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Next visual milestone | Root; ordinary inspection next | Road finish integrated/reviewed. Choose one visible improvement from the ordinary app. Middle paint blocked ([1620](reviews/1620_implementation.md)). |
-| A11 rebuild | Root; fresh-source HOLD | 1672: stop lacks an approach; lane changes and walk gap need decisions. Preserve fresh input; no guard/pin update. Full A11 OPEN. |
-| Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
+| Next visible increment | root; PLANNED, not dispatched | Fresh ordinary-app critic selects one Satellite milestone; bounded acceptance/resource closure required. |
+| A11 rebuild | 1682; unmerged | 45 focused/types PASS; repair GO. HTTP502/equivalence NOT_RUN; external review/final gates/source admission/full rebuild owed. A11 OPEN. |
+| Documentation recovery | root; waiting | [1599](reviews/1599_integration.md), [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md): structural REFUSED. Done: ID0/private-CLI/protected991 approvals, then fresh census before safe application. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
@@ -51,7 +51,7 @@ Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59f
 
 ## Acceptance criteria
 
-A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md), [1538](reviews/1538_attribution-completion-review.md); affected render/crossing/attribution rechecked on f4960e2 in [1623](reviews/1623_integration.md). The other11 criteria remain OPEN; no motion/population/performance acceptance.
+A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md), [1538](reviews/1538_attribution-completion-review.md); affected render/crossing/attribution rechecked on 80a2730 in [1625](reviews/1625_integration.md). The other11 criteria remain OPEN; no motion/population/performance acceptance.
 
 - A1. Terrain, buildings and roads render end to end across the full AOI, inspected from several angles/zooms at native resolution.
 - A2. The Shibuya valley and Dōgenzaka slope read in the terrain; building footprints neither float nor sink.
