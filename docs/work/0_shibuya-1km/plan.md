@@ -23,13 +23,13 @@ Root owns priorities,contracts,status/integration;workers own implementation/che
 
 Adopted `5af00f1c18a3fb306fa9fd70c705febc4f364b37`: authored four-car train passage and current-pose spatial antialiasing, including fractional-DPR sizing. [1491 PASS](reviews/1491_train-grid-integrated-review.md)/[1493 PASS](reviews/1493_cartographic-native-review.md). Lifetime59fbb1c and Coca-Cola1449/1450 gains remain.
 
-PRIMARY five PASS429.011s:build5.498/types8.794/unit136files,1187tests84.53s(outer87.396)/visual323.173/audit4.150(two existing moderate). Run cd4c31e67246bd8f:44frames/3hardware lifecycles,RTX4090/616.64;all46current originals reviewed natively. [1490](reviews/1490_train-grid-primary-gates.md). Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows on5af00f1; artifacts/train1473/remote-gates.json.
+PRIMARY five PASS429.011s:136files/1187tests,44frames/3hardware lifecycles,RTX4090/616.64;all46current originals reviewed. [1490](reviews/1490_train-grid-primary-gates.md),run cd4c31e67246bd8f. Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows on5af00f1;artifacts/train1473/remote-gates.json.
 
 Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older157-file certificates do not transfer. Preserve user-owned facade-emission.test.ts, AGENTS.md and991 snapshot.
 
 ### Current operation and next outcomes
 
-Stops1445/1452/1455 confirmed1456;retired/evidence preserved.1454:TSUTAYA128x512;other imagery UNKNOWN.
+Facade STOPs1445/1452/1455 confirmed1456.1454:TSUTAYA128x512;other imagery UNKNOWN.
 
 1457 limits remain;1458 window STOP/rejected1461;1464 NO QUALIFIED SET:bounded stops,not impossibility.1458 retired; artifacts/windows1458/closeout.json.
 
@@ -41,13 +41,15 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Governed vehicles | [1498](reviews/1498_visible-activity-feasibility.md) IMPLEMENTING | artifacts/traffic1499/worktree,codex/traffic1499,base0681715. >550s false halts;1501:1.015m body gap>0.5m required,enclosing circles falsely block. Straight-edge oriented-clearance repair UNVERIFIED;curves/portals conservative. Coexist walker;full-cycle stop/release/turn/boundary/occupied-walk holds+production test;A7/A9/A13 gap,A7–A10 OPEN. |
+| Governed traffic verification | 1516 DISPATCHED;1517 review | 1515 NO QUALIFIED→explicit preserved-candidate resumption;historical THIRD native arm. Qualify nested waits<=5min;ONE750s arm then five gates/review/main by02:51UTC else PARK. No production change. |
 
-Train cleanup COMPLETE:1494 denial→direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;raw reports/traffic1499 preserved. Receipt/preflight in1495.
+Traffic1499 PARK: [1511](reviews/1511_traffic-integration.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate3. Source/CPU600 PASS;20/24,bus refusals/queues. Native18+0 FAILED;five gates NOT RUN;unmerged/UNADOPTED. PRIMARY restored exactly. No third arm in that closed milestone.
 
-Gallery COMPLETE/heartbeat ACTIVE:147images/133,719,146B;144 app/diagnostic+3references,46accepted.Prior101 immutable;ignored,Never Git;15min support.
+Train cleanup COMPLETE:direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;reports/traffic1499 preserved.1495 retains denial/preflight/receipt.
 
-One429.011s bundle;FXAA/SMAA targeted110.56s/132.784s,no full bundles. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
+Gallery COMPLETE/heartbeat ACTIVE:171images/156,626,904B;168 app/diagnostic+3references,46accepted/18failed-verification.Prior165 immutable;ignored,Never Git;15min support.
+
+One429.011s bundle;FXAA/SMAA targeted110.56/132.784s. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
 
 [1497 adopted](reviews/1497_orchestration-critical-path-review.md):cleanup independent;helper debt only for material production blockers. Future review keeps automated44,native Satellite,basic style-switch/shared regressions;detailed Cartographic deferred,gates unchanged. Road/head/central STOPs preserved;generic crowd/head/anatomy/motion research PARKED;no head/baker fix. Sole queue;full35/14 OPEN,matching evidence/independent integrated main review required.
 
