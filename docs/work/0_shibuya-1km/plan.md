@@ -41,7 +41,7 @@ Profile COMPLETE/CPU unavailable/follow-up PARKED;65 historical WTs inventoried/
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| A2 terrain/contact | root;PREPARED | Compare terrain/placement checks and native evidence to the full criterion;qualify missing evidence or a visible defect before editing. |
+| A2 terrain/contact | root;PREPARED | 1540/1541 assessment complete; qualify a noon real-controls uphill view toward(-300,200), exposing road grade and frontage bases before any repair. |
 
 
 Peripheral1534/1535:no safe fix qualified from3NE views,target283.75m. HTTP-body instrumentFAIL:3cache evictions,URLsUNKNOWN;120hashesPASS/322pinsunchanged. No retry;A12 separate.
@@ -52,7 +52,9 @@ Traffic1499 PARK:[1527](reviews/1527_fixed-history-native-review.md);artifacts/t
 
 Train1473/walking1528 retirements COMPLETE;1495 and artifacts/walk-history1528/retirement.json retain receipts. Traffic WT preserved.
 
-Gallery:214images/193,013,931B;prior208 bytes preserved. Newestfirst,one image/row,no categories;ignored,Never Git;15min heartbeat ACTIVE.
+A2 remainsOPEN: [1540](reviews/1540_terrain-contact-source-review.md) checks do not prove complete footprint contact; [1541](reviews/1541_terrain-contact-native-review.md) all22 native views qualify no defect, but obscure relief/bases. One purposeful noon uphill view is next; no source fix justified.
+
+Gallery:214images/193,013,931B;newestfirst,one image/row,plain captions,no categories;ignored,Never Git;15min heartbeat ACTIVE.
 
 Train5af00f1 four-car/current-poseAA/fractionalDPR remains;1490/1491/1493 preserve bounds. Lifetime59fbb1c/Coca-Cola1449/1450 remain. Train-only ABBA~60Hz;fulltarget OPEN.
 
@@ -60,7 +62,7 @@ Train5af00f1 four-car/current-poseAA/fractionalDPR remains;1490/1491/1493 preser
 
 ## Acceptance criteria
 
-A1 and A12 PASS on unchanged executable e1097edd/current main0bae7fe, via [1539](reviews/1539_aoi-render-acceptance.md) and [1538](reviews/1538_attribution-completion-review.md). The other12 original criteria remain OPEN. Revalidate changed dependencies before final acceptance.
+A1/A4/A12 PASS on unchanged executable e1097edd/current mainb1c2f93, via [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md) and [1538](reviews/1538_attribution-completion-review.md). The other11 original criteria remain OPEN. A4 covers the static dusk crossing; revalidate changed dependencies before final acceptance.
 
 - A1. Terrain, buildings and roads render end to end across the full AOI, inspected from several angles/zooms at native resolution.
 - A2. The Shibuya valley and Dōgenzaka slope read in the terrain; building footprints neither float nor sink.
@@ -133,6 +135,6 @@ Private union1324 remains UNMET. Its frozen387/63-part proof constrains that exp
 
 ## Outcome
 
-Active; full deliverable incomplete. A1/A12 PASS current inputs;12 criteria remain OPEN, including full-map quality,continuous temporal behavior and population/FPS.
+Active; full deliverable incomplete. A1/A4/A12 PASS current inputs;11 criteria remain OPEN, including full-map quality,continuous temporal behavior and population/FPS.
 
 Exact old `plan.md` and `progress.md` remain in [Git at e483cd5](https://github.com/yanfengliu/maps/tree/e483cd5dfa58ee89876fba268c55c619daca9d5f/docs/work/0_shibuya-1km). Recover with `git show <commit>:<path>`; exact sizes/digests are in [1418](reviews/1418_orchestration-context-implementation.md). Authored reviews are unchanged; history is not a current queue.
