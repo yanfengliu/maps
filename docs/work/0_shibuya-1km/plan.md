@@ -25,17 +25,15 @@ Adopted source `e1de28244694e7ecedbd75ea045ff49e80026ca3` (source3729868): fresh
 
 PRIMARY five gates PASS340.506s (wrapper374.879s):141files/1,231tests,44frames/3GPUlifecycles,RTX4090/616.64,run `bfe2ff3fc92d452c`; audit2moderate/nohigh. Root/independent22Satellite+2basic return originals GO; interior/occluded views do not prove A13. Pushed CI unavailable:0checks/statuses/workflows/runs. Population/60fps unestablished.
 
-Runtime156files/364,250,437B; served-scene digest `cec9aaf0cce77360e5bcc99c4fe8567473bd180d0796ba65fff5b161de542184` (visual wrapper). Copied prerequisites are not rebuilt outputs. Canon merge bytes preserved. Retain facade-emission, literal AGENTS/seven LF files and retained991.
+Runtime156files/364,250,437B; served-scene digest `cec9aaf0cce77360e5bcc99c4fe8567473bd180d0796ba65fff5b161de542184`. A11 PASS: clean e1de282 regenerated89 servedfiles;67 externalassets unchanged. Five hardware originals/root+independent GO: [1632](reviews/1632_integration.md). Four runtime buildfiles exact;two debugmaps CRLF-only. Source1709 gates used copied prerequisites. Retain facade-emission, literal AGENTS/seven LF files and991.
 
-Structural docs recovery is authorized; final census, review and safe application remain owed.
+Fleet recovery stopped after5 attempts: missing-witness provenance, replay binding and old-test regression. Full gates/actual Maps census NOTRUN; no sixth repair. Evidence: artifacts/fleet1706/attempt5-handoff.md.
 
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Satellite milestone | root;1714 REDIRECT | After A11, inspect Start-to-crossing; choose one frontage improvement. Status/35/14/nine todos: artifacts/session-handoff1702/successor-state.json; exchange1/10. Gallery258/private. |
-| A11 rebuild | source1712; rendering | Exact checkout;89generated/67external servedfiles exact. Debug maps:CRLF-only. Render/review owed; source1705 WT retired. |
-| Documentation recovery | fleet1706; HOLD | Attempt5:30focusedPASS; missing-witness removal holdout fails; exact review active/fullgate NOTRUN. Restaurant delivered/retired. Claude ABSTAIN. |
+| Satellite milestone | root;1714 REDIRECT | Inspect Start-to-crossing; choose one frontage improvement. Status/35/14/nine todos: artifacts/session-handoff1702/successor-state.json; exchange1/10. Gallery259/private. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
@@ -51,7 +49,7 @@ Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59f
 
 ## Acceptance criteria
 
-A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md), [1538](reviews/1538_attribution-completion-review.md); affected render/crossing/attribution rechecked on 80a2730 in [1625](reviews/1625_integration.md). The other11 criteria remain OPEN; no motion/population/performance acceptance.
+A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md), [1538](reviews/1538_attribution-completion-review.md); affected render/crossing/attribution rechecked on 80a2730 in [1625](reviews/1625_integration.md). A11 PASS: clean source/render comparison [1632](reviews/1632_integration.md). The other10 criteria remain OPEN; no motion/population/performance acceptance.
 
 - A1. Terrain, buildings and roads render end to end across the full AOI, inspected from several angles/zooms at native resolution.
 - A2. The Shibuya valley and Dōgenzaka slope read in the terrain; building footprints neither float nor sink.
