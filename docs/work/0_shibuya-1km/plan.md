@@ -17,7 +17,7 @@ Non-goals: map viewer, navigation/routing, survey-grade reconstruction, second l
 
 ## Approach
 
-Root owns priorities,contracts,this sole status record and integration;workers own bounded implementation/checks. Read before delegation;at most three outcomes,park dependencies,reassess after two failures,land verified increments.
+Root owns priorities,contracts,status/integration;workers own implementation/checks. Read before delegation;≤3 outcomes,park dependencies,reassess two failures,land verified increments.
 
 ### Current adoption and evidence
 
@@ -41,12 +41,13 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Governed visible vehicles | 1498 worker IMPLEMENTATION DISPATCHED | traffic1499:artifacts/traffic1499/worktree,codex/traffic1499,base0681715. Coexist walker;settle paths/phase/occupancy/shared authority or physical separation. Full cycle stop/release/turn/boundary clearance,occupied-walk holds,production test;A7/A9/A13 gap,final A7–A10 OPEN. |
-| Train cleanup | root direct user approval PENDING | 1494 automatic review refused exact WT/3 copies/branch removal;nothing deleted,no retry. Retained artifacts/train1473/worktree;approval does not block product work. |
+| Governed vehicles | [1498](reviews/1498_visible-activity-feasibility.md) IMPLEMENTING | artifacts/traffic1499/worktree,codex/traffic1499,base0681715. >550s false halts;1501:1.015m body gap>0.5m required,enclosing circles falsely block. Straight-edge oriented-clearance repair UNVERIFIED;curves/portals conservative. Coexist walker;full-cycle stop/release/turn/boundary/occupied-walk holds+production test;A7/A9/A13 gap,A7–A10 OPEN. |
+
+Train cleanup COMPLETE:1494 denial→direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;raw reports/traffic1499 preserved. Receipt/preflight in1495.
 
 Gallery COMPLETE/heartbeat ACTIVE:147images/133,719,146B;144 app/diagnostic+3references,46accepted.Prior101 immutable;ignored,Never Git;15min support.
 
-One429.011s bundle;native/lifecycle overlapped. Rejected FXAA/SMAA captures110.56s/132.784s,no full bundles. ABBA train-only~60Hz;GPU headroom/full population OPEN.Multi-day elapsed unmeasured.
+One429.011s bundle;FXAA/SMAA targeted110.56s/132.784s,no full bundles. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
 
 [1497 adopted](reviews/1497_orchestration-critical-path-review.md):cleanup independent;helper debt only for material production blockers. Future review keeps automated44,native Satellite,basic style-switch/shared regressions;detailed Cartographic deferred,gates unchanged. Road/head/central STOPs preserved;generic crowd/head/anatomy/motion research PARKED;no head/baker fix. Sole queue;full35/14 OPEN,matching evidence/independent integrated main review required.
 
