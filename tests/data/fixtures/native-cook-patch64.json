@@ -1,0 +1,229 @@
+{
+  "bound": "Actual retained Source3 raw patch64/native source-description triangle1063539 plus exact source road operands under unchanged query. Source face IDs are not mapped to native cooked face IDs.",
+  "source_ray_file": {
+    "path": "data/prepared/surface/generations/generation-2bq8payb/support-native-rays.json",
+    "bytes": 3867988,
+    "sha256": "505e7e42bbaaa7acb7e9d1244df11e842069da7bffa8904288d1755198afc383"
+  },
+  "terrain_raw_native_cm": [
+    [
+      12090.83203125,
+      -909.2457885742188,
+      68.91686248779297
+    ],
+    [
+      12090.8056640625,
+      -909.2483520507812,
+      68.91580200195312
+    ],
+    [
+      12090.8076171875,
+      -909.2457885742188,
+      68.91581726074219
+    ]
+  ],
+  "sample": {
+    "id": "source3-patch-64",
+    "start_m": [
+      120.90815104166666,
+      -9.09246643066406,
+      1.489161605834961
+    ],
+    "end_m": [
+      120.90815104166666,
+      -9.09246643066406,
+      -0.3108383941650391
+    ],
+    "expected_hit": true,
+    "interval_native_cm_q": [
+      "19518739/131072",
+      "-8749322975838209/281474976710656"
+    ],
+    "reference": {
+      "position_m": [
+        120.90815104166666,
+        -9.09246643066406,
+        0.6891616058349609
+      ],
+      "source_face": {
+        "mesh_role": "terrain_support",
+        "source_path": "data/prepared/surface/generations/generation-2bq8payb/terrain-support.glb",
+        "source_triangle_index": 1063539,
+        "layer_ref": {
+          "kind": "retained-parent-fragment",
+          "triangle": 1063539,
+          "region_id": "native-curb-trim"
+        }
+      }
+    },
+    "scope": "SOURCE_GEOMETRY_CORRESPONDENCE_NOT_SUPPORT_ELIGIBILITY",
+    "expected": {
+      "actor_label": "City_069_terrain",
+      "mesh_role": "terrain_support",
+      "position_m": [
+        120.90815104166666,
+        -9.09246643066406,
+        0.6891616058349607
+      ],
+      "height_native_cm_q": "363715775535513431/5277655813324800",
+      "normal_enu": [
+        -0.04275814573159811,
+        0.026632810966640184,
+        0.998730411249007
+      ],
+      "source_path": "data/prepared/surface/generations/generation-2bq8payb/terrain-support.glb",
+      "source_triangle_index": 1063539,
+      "barycentric": [
+        0.33333333330140225,
+        0.33333333324463593,
+        0.33333333345396177
+      ],
+      "layer_ref": {
+        "kind": "terrain",
+        "triangle": 1063539
+      }
+    }
+  },
+  "road_record": {
+    "path": "data/prepared/surface/generations/generation-2bq8payb/roads/data68.glb",
+    "bytes": 502424,
+    "sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+  },
+  "road_actor_label": "City_055_data68",
+  "road_faces": [
+    {
+      "source_triangle_index": 3961,
+      "mesh": 0,
+      "primitive": 0,
+      "local_triangle": 3961,
+      "native_cm": [
+        [
+          11756.9169921875,
+          -1460.9561767578125,
+          36.82328796386719
+        ],
+        [
+          12090.8076171875,
+          -909.2457885742188,
+          52.43227005004883
+        ],
+        [
+          12445.8095703125,
+          -883.1631469726562,
+          59.510833740234375
+        ]
+      ],
+      "height_cm": 52.43239548739014,
+      "normal_enu": [
+        -0.01868601556606542,
+        -0.016974344349115038,
+        0.9996813014437064
+      ]
+    },
+    {
+      "source_triangle_index": 4074,
+      "mesh": 0,
+      "primitive": 0,
+      "local_triangle": 4074,
+      "native_cm": [
+        [
+          11756.9169921875,
+          -1460.9561767578125,
+          36.82328796386719
+        ],
+        [
+          12090.8076171875,
+          -909.2457885742188,
+          52.43227005004883
+        ],
+        [
+          12445.8095703125,
+          -883.1631469726562,
+          59.510833740234375
+        ]
+      ],
+      "height_cm": 52.43239548739014,
+      "normal_enu": [
+        -0.01868601556606542,
+        -0.016974344349115038,
+        0.9996813014437064
+      ]
+    },
+    {
+      "source_triangle_index": 4187,
+      "mesh": 0,
+      "primitive": 0,
+      "local_triangle": 4187,
+      "native_cm": [
+        [
+          11756.9169921875,
+          -1460.9561767578125,
+          36.82328796386719
+        ],
+        [
+          12090.8076171875,
+          -909.2457885742188,
+          52.43227005004883
+        ],
+        [
+          12445.8095703125,
+          -883.1631469726562,
+          59.510833740234375
+        ]
+      ],
+      "height_cm": 52.43239548739014,
+      "normal_enu": [
+        -0.01868601556606542,
+        -0.016974344349115038,
+        0.9996813014437064
+      ]
+    },
+    {
+      "source_triangle_index": 4300,
+      "mesh": 0,
+      "primitive": 0,
+      "local_triangle": 4300,
+      "native_cm": [
+        [
+          11756.9169921875,
+          -1460.9561767578125,
+          36.82328796386719
+        ],
+        [
+          12090.8076171875,
+          -909.2457885742188,
+          52.43227005004883
+        ],
+        [
+          12445.8095703125,
+          -883.1631469726562,
+          59.510833740234375
+        ]
+      ],
+      "height_cm": 52.43239548739014,
+      "normal_enu": [
+        -0.01868601556606542,
+        -0.016974344349115038,
+        0.9996813014437064
+      ]
+    }
+  ],
+  "actual_observed_road_height_cm": 52.432395487390124,
+  "ambiguity_native_cm": [
+    [
+      -0.904495358467102,
+      0.5511255264282227,
+      0
+    ],
+    [
+      0.06280823051929474,
+      1.4129271507263184,
+      0
+    ],
+    [
+      -0.2651774287223816,
+      1.1208176612854004,
+      0
+    ]
+  ]
+}

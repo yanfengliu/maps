@@ -1,4 +1,6 @@
 #include "ShibuyaWorld.h"
+#include "NativeFrame.h"
+#include "NativeFrameJson.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Dom/JsonObject.h"
@@ -9,11 +11,11 @@ TSharedPtr<FJsonValue> Coordinates(const FVector& Position)
 {
     return MakeShared<FJsonValueArray>(TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(Position.X),MakeShared<FJsonValueNumber>(Position.Y),MakeShared<FJsonValueNumber>(Position.Z)});
 }
-FVector Centimetres(const Shibuya::Point& Position) { return FVector(Position.x*100,Position.y*100,Position.z*100); }
+FVector Centimetres(const Shibuya::Point& Position) { const auto P=Shibuya::SourceToNativeCM(Position);return FVector(P.x,P.y,P.z); }
 }
 TSharedPtr<FJsonObject> AShibuyaWorld::AgentDiagnostic(size_t Slot) const
 {
-    auto Result=MakeShared<FJsonObject>();Result->SetNumberField(TEXT("agent_slot"),Slot);
+    auto Result=MakeShared<FJsonObject>();Result->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());Result->SetNumberField(TEXT("agent_slot"),Slot);
     if(Slot>=Simulation.agents.size()){Result->SetStringField(TEXT("error"),TEXT("Missing runtime agent slot."));return Result;}
     const auto& Agent=Simulation.agents[Slot];const auto& Route=Simulation.routes[Agent.route];
     Result->SetStringField(TEXT("route"),UTF8_TO_TCHAR(Route.id.c_str()));Result->SetStringField(TEXT("kind"),Route.kind==Shibuya::Kind::Vehicle?TEXT("vehicle"):TEXT("pedestrian"));
@@ -25,6 +27,7 @@ TSharedPtr<FJsonObject> AShibuyaWorld::AgentDiagnostic(size_t Slot) const
     Result->SetNumberField(TEXT("generation"),Agent.generation);Result->SetNumberField(TEXT("generation_travel_m"),Agent.generationTravelled);
     Result->SetBoolField(TEXT("closed"),Route.closed);Result->SetBoolField(TEXT("boundary_admitted"),Route.boundaryAdmitted);
     Result->SetField(TEXT("source_position_cm"),Coordinates(Centimetres(Agent.position)));
+    Result->SetField(TEXT("source_position_enu_m"),Coordinates(FVector(Agent.position.x,Agent.position.y,Agent.position.z)));
     Shibuya::Point Tangent;const auto Centre=Route.At(Agent.distance,0,&Tangent);
     Result->SetField(TEXT("route_centre_cm"),Coordinates(Centimetres(Centre)));
     Result->SetField(TEXT("route_tangent_enu"),Coordinates(FVector(Tangent.x,Tangent.y,Tangent.z)));

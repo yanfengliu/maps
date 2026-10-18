@@ -3,6 +3,8 @@
 These offline checks require the explicit fresh source/prepared outputs. They do
 not download, skip missing inputs, prove native rendering or surveyed accuracy.
 """
+import copy
+from fractions import Fraction
 import importlib.util
 import io
 import json
@@ -19,6 +21,7 @@ import unittest
 from unittest import mock
 
 ROOT=pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/"tools/data"))
 spec=importlib.util.spec_from_file_location("surface_network",ROOT/"tools/data/surface_network.py")
 surface=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=surface
@@ -378,6 +381,250 @@ class SharedRoadPhoto(unittest.TestCase):
         self.assertTrue(np.allclose(actual,[(232798.79964444446-232794)/9,(103246.02497316021-103241)/10],atol=1e-9,rtol=0))
 
 
+class SerializedCorridorWitnesses:
+    """Independent interpolation of hash-bound serialized faces, never check().
+
+    The admitted index supplies only the broad candidate set and versioned cook
+    membership. Positions, face order, barycentrics, normals and first heights
+    are recomputed from the consumed GLB bytes in float32 native centimetres.
+    """
+    def __init__(self, case, support):
+        self.case,self.support,self.cache=case,support,{}
+
+    def mesh(self, record):
+        key=record['path']
+        if key not in self.cache:
+            payload=surface.admitted_record(record,ROOT/'data',64*1024*1024 if record==self.support.derived_record else 32_000_000)
+            self.case.assertEqual(surface.sha(payload),record['sha256'])
+            doc,binary=surface.city.read_glb(payload)
+            self.case.assertTrue(all(not(set(n)-{'mesh','name'}) for n in doc['nodes']))
+            parts={};flat=[]
+            for m,mesh in enumerate(doc['meshes']):
+                for p,primitive in enumerate(mesh['primitives']):
+                    points=surface.accessor(doc,binary,primitive['attributes']['POSITION'])[:,[0,2,1]]
+                    ids=surface.accessor(doc,binary,primitive['indices']).reshape(-1,3)
+                    rows=points[ids].astype(float)
+                    self.case.assertTrue(np.isfinite(rows).all())
+                    parts[m,p]=rows;flat.extend(rows)
+            self.cache[key]=(parts,np.asarray(flat).reshape(-1,3,3))
+        return self.cache[key]
+
+    def face(self, ref):
+        kind=ref['kind'];s=self.support
+        self.case.assertIn(kind,('road','derived-road','inferred','terrain','terrain-fragment'))
+        if kind in ('road','derived-road'):
+            mapping=s.support_manifest['native_roads'][ref['source']]
+            parts,flat=self.mesh(mapping['source'])
+            self.case.assertTrue(np.array_equal(parts[ref['mesh'],ref['primitive']][ref['triangle']],flat[ref['source_triangle_index']]))
+            return flat[ref['source_triangle_index']]
+        return self.mesh(s.derived_record)[1][ref['triangle']]
+
+    @staticmethod
+    def intersection(triangle, point):
+        # GLB float32 metres -> float32 ESU cm -> ENU for independent algebra.
+        native=(np.asarray(triangle)*[100.,-100.,100.]).astype(np.float32).astype(float)
+        native*= [1.,-1.,1.]
+        a,b,c=[[Fraction(float(x)) for x in row] for row in native]
+        q=[Fraction(float(float(x)*100)) for x in point[:2]]
+        def det(u,v,w):return (v[0]-u[0])*(w[1]-u[1])-(v[1]-u[1])*(w[0]-u[0])
+        area=det(a,b,c)
+        if not area:return None
+        weights=[det(b,c,q)/area,det(c,a,q)/area,det(a,b,q)/area]
+        if min(weights)<0:return None
+        u,v=[b[i]-a[i] for i in range(3)],[c[i]-a[i] for i in range(3)]
+        normal=-np.asarray([float(u[i]*v[j]-u[j]*v[i]) for i,j in ((1,2),(2,0),(0,1))]);normal/=np.linalg.norm(normal)
+        height=sum(w*p[2] for w,p in zip(weights,(a,b,c)))/100
+        return height,np.asarray([float(w) for w in weights]),normal
+
+    def assert_proof(self,route,proof):
+        t,s=self.case,self.support;ref=proof['layer_ref'];provider=proof['source'];kind=ref['kind'];schema=s.support_manifest['schema_version']
+        expected={'road':'PLATEAU-road','derived-road':'derived-ground-road','inferred':'inferred-ground-road','terrain':'GSI-DEM5A','terrain-fragment':'GSI-DEM5A'}
+        t.assertIn(kind,expected);t.assertEqual(provider,expected[kind]);t.assertIn(provider,tuple(expected.values()))
+        t.assertIn(ref.get('reconstruction_role','support-top'),('support-top',))
+        road=kind in ('road','derived-road')
+        if road:
+            mapping=s.support_manifest['native_roads'][ref['source']]
+            flat=sum(r['triangles'] for r in s.support_manifest['native_roads'][:ref['source']])+ref['source_triangle_index']
+            t.assertEqual(ref,s.road.layer_refs[flat]);t.assertEqual(proof['triangle'],ref['source_triangle_index'] if schema==3 else flat)
+        elif schema==3:
+            refs=s.source3_terrain_refs if kind!='inferred' else s.road.layer_refs
+            t.assertIn(ref,refs);t.assertEqual(proof['triangle'],ref['triangle'])
+        else:
+            t.assertEqual(kind,'terrain');t.assertEqual(proof['triangle'],ref['triangle'])
+            t.assertEqual(ref['original_triangle'],s.terrain_sources[ref['triangle']])
+        if schema==3:
+            t.assertEqual(proof['support_geometry'],'exact-derived-triangle-native-cm')
+            t.assertEqual(proof['derived_terrain_sha256'],s.derived_record['sha256'])
+            t.assertEqual(proof['support_surface_sha256'],s.support_record['sha256'])
+            if road:t.assertEqual(proof['support_road_sha256'],mapping['source']['sha256'])
+        elif not road:t.assertEqual(proof['support_geometry'],'exact-derived-triangle')
+        p=proof['point'];hit=self.intersection(self.face(ref),p);t.assertIsNotNone(hit,'Serialized face must cover the actual witness XY')
+        height,weights,normal=hit
+        t.assertTrue(np.allclose(proof['barycentric'],weights,rtol=0,atol=1e-9))
+        t.assertAlmostEqual(p[2],float(height),places=7)
+        t.assertTrue(np.allclose(proof['normal_enu'],normal,rtol=0,atol=1e-9))
+        t.assertAlmostEqual(proof['normal_up_z'],normal[2],places=9)
+        t.assertTrue(np.allclose(proof['gradient_enu'],-normal[:2]/normal[2],rtol=0,atol=1e-9))
+        t.assertEqual(proof['query_coordinate_model'],surface.NATIVE_QUERY_MODEL)
+        t.assertGreaterEqual(normal[2],surface.CONFIG['support_surface']['minimum_support_normal_z'])
+        if route['kind']=='vehicle' and provider!='PLATEAU-road':
+            interval=proof['vehicle_source_interval'];t.assertEqual(interval['osm_sha256'],surface.CONFIG['osm']['sha256'])
+            t.assertEqual(interval['width_m'],route['width_m'])
+            t.assertTrue(set(k[0] for k in interval['directed_edges'])<=set(route['source_way_ids']))
+            qualified=s.vehicle_interval(interval['directed_edges'],*interval['points'],interval['width_m'])
+            t.assertTrue(qualified.covers(p),'Witness must lie in its source-directed lane/turn interval')
+        # Examine all broad-phase physical candidates, not a second Surface.check
+        # or the producer's serialized height. Include ineligible upper blockers.
+        candidates=[]
+        for role,index in (('road',s.road_index),('terrain',s.terrain_index)):
+            query_m=np.asarray(p[:2],dtype=float)*100/100
+            for i in index.raw_candidates(query_m,query_m):
+                state=index.physical_membership[i];t.assertNotEqual(state,-1,'Ambiguous cook membership cannot certify support')
+                if state!=1:continue
+                other=(s.road.layer_refs[i] if role=='road' else
+                    s.source3_terrain_refs[i] if schema==3 else {'kind':'terrain','triangle':int(i)})
+                actual=self.intersection(self.face(other),p)
+                if actual is not None:
+                    actor=('City_069_terrain' if other['kind'] in ('terrain','terrain-fragment','inferred') else
+                        s.support_manifest['native_roads'][other['source']]['actor_label'])
+                    candidates.append((actual[0],actor,actual[2]))
+        t.assertTrue(candidates,'Actual serialized physical geometry must exist')
+        if schema==3:
+            dem=s.dem_height(p);low,high=Fraction(float((dem-1.5)*100))/100,Fraction(float((dem+1.5)*100))/100
+            in_window=[row for row in candidates if low<=row[0]<=high];t.assertTrue(in_window)
+            top=max(row[0] for row in in_window)
+            t.assertEqual(top,height,'Witness must be the first physical ground hit')
+            near=[row for row in in_window if abs(row[0]-top)<=Fraction(1,1000)]
+            actor='City_069_terrain' if not road else mapping['actor_label']
+            t.assertTrue(all(label==actor and float(up@normal)>=.999 for _,label,up in near),'Source3 first physical actor/normal tie must refuse')
+        else:
+            t.assertFalse(any(surface.CONFIG['support_surface']['contact_gap_m']<float(h-height)<=surface.CONFIG['support_surface']['contact_ray_up_m'] for h,_,_ in candidates),'Higher physical surface violates unchanged contact bound')
+        for i in s.building_bins.get((math.floor(p[0]/12),math.floor(p[1]/12)),[]):
+            t.assertFalse(surface.point_inside(p[:2],s.buildings[i]['polygon']))
+
+
+class SerializedWitnessFixtures(unittest.TestCase):
+    """Real writer/readback + production witness builders; no city cache run."""
+    @contextlib.contextmanager
+    def fixture(self, provider='GSI-DEM5A', schema=2, height=0.):
+        with tempfile.TemporaryDirectory(prefix='measured-witness-') as tmp:
+            root=pathlib.Path(tmp);directory=root/'data/prepared';directory.mkdir(parents=True)
+            triangle=np.array([[0.,0.,height],[0.,10.,height],[10.,0.,height]])
+            def write(name,tri):
+                path=directory/name;writer=surface.city.GlbWriter();writer.doc['materials']=[{}]
+                flat=np.asarray(tri).reshape(-1,3)
+                writer.primitive({'POSITION':flat[:,[0,2,1]],'NORMAL':np.repeat([[0.,1.,0.]],len(flat),axis=0)},np.arange(len(flat),dtype=np.uint32).reshape(-1,3))
+                with mock.patch.object(surface.city,'ROOT',root):writer.save(path)
+                payload=path.read_bytes()
+                return {'path':path.relative_to(root).as_posix(),'bytes':len(payload),'sha256':surface.sha(payload)}
+            world=surface.Surface.__new__(surface.Surface)
+            world.building_bins={};world.buildings=[];world.dem_height=lambda p:0.
+            world.support_record={'path':'data/prepared/support.json','bytes':1,'sha256':'a'*64}
+            world.derived_record=write('terrain.glb',triangle[None])
+            world.support_manifest={'schema_version':schema,'native_roads':[]}
+            world.terrain_sources=[4]
+            ref={'kind':'terrain','triangle':0,'original_triangle':4}
+            world.source3_terrain_refs=[ref]
+            roads=np.empty((0,3,3));terrain=triangle[None];roadrefs=[]
+            if provider=='inferred-ground-road':
+                ref={'kind':'inferred','triangle':0,'patch_triangle':0,'region_id':'gap','reconstruction_role':'support-top'}
+                roads=triangle[None];terrain=np.empty((0,3,3));roadrefs=[ref];world.source3_terrain_refs=[]
+            elif provider in ('PLATEAU-road','derived-ground-road'):
+                ref={'kind':'derived-road' if provider=='derived-ground-road' else 'road','source':0,'mesh':0,'primitive':0,'triangle':0,'source_triangle_index':0}
+                roadrecord=write('road.glb',triangle[None]);world.support_manifest['native_roads']=[{'source':roadrecord,'triangles':1,'actor_label':'City_road'}]
+                roads=triangle[None];terrain=np.empty((0,3,3));roadrefs=[ref];world.source3_terrain_refs=[]
+            world.road=types.SimpleNamespace(layer_refs=roadrefs)
+            world.road_index=surface.NativeTriangleIndex(roads);world.terrain_index=surface.NativeTriangleIndex(terrain)
+            points={1:[1.,2.],2:[6.,2.]};ways={11:{'id':11,'nodes':[1,2],'tags':{'highway':'service','oneway':'yes','lanes':'1'}}}
+            world.vehicle_source=(points,ways,surface.TurnRestrictions(ET.fromstring('<osm/>')))
+            interval=world.vehicle_interval([[11,1,2]],[1.,2.],[6.,2.],2.)
+            with mock.patch.dict(globals(),ROOT=root),mock.patch.object(surface,'ROOT',root):
+                def proof(kind='vehicle'):
+                    p,row=world.check([2.,2.],kind,vehicle_interval=interval if kind=='vehicle' else None)
+                    return {'point':p,**row}
+                yield types.SimpleNamespace(root=root,world=world,proof=proof,interval=interval,write=write,triangle=triangle,
+                    route={'kind':'vehicle','width_m':2.,'source_way_ids':[11]})
+
+    def test_source2_terrain_vehicle_uses_actual_triangle_not_dem(self):
+        with self.fixture(height=.125) as f:
+            p=f.proof();self.assertNotEqual(p['point'][2],f.world.dem_height(p['point']))
+            SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_all_closed_current_providers_from_real_serialized_geometry(self):
+        for provider in ('GSI-DEM5A','PLATEAU-road','inferred-ground-road','derived-ground-road'):
+            with self.subTest(provider=provider),self.fixture(provider,schema=3,height=.125) as f:
+                p=f.proof();self.assertEqual(p['source'],provider)
+                SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_stale_independent_branch_rejects_legitimate_current_witnesses(self):
+        # Literal previous consumer arm. Its first assertion is the observed
+        # contract failure, never a mocked producer or a full cache-test result.
+        for provider,kind in (('GSI-DEM5A','vehicle'),('inferred-ground-road','pedestrian')):
+            with self.subTest(provider=provider),self.fixture(provider,schema=2 if provider=='GSI-DEM5A' else 3,height=.125) as f:
+                p=f.proof(kind);route={**f.route,'kind':kind}
+                with self.assertRaises(AssertionError):
+                    if p['source']=='PLATEAU-road':
+                        self.assertTrue(np.allclose(p['point'],np.asarray(p['barycentric'])@f.world.road.triangles[p['triangle']],atol=1e-4,rtol=0))
+                    else:
+                        self.assertEqual(route['kind'],'pedestrian')
+                        self.assertAlmostEqual(p['point'][2],f.world.dem_height(p['point'][:2]),places=7)
+                SerializedCorridorWitnesses(self,f.world).assert_proof(route,p)
+
+    def test_unknown_provider_identity_height_normal_and_interval_refuse(self):
+        with self.fixture('inferred-ground-road',schema=3,height=.125) as f:
+            original=f.proof()
+            mutations=(('unknown source',lambda p:p.update(source='other-ground')),
+                ('unknown kind',lambda p:p['layer_ref'].update(kind='other-ground')),
+                ('wrong hash',lambda p:p.update(derived_terrain_sha256='0'*64)),
+                ('ineligible',lambda p:p['layer_ref'].update(reconstruction_role='physical-sidewall')),
+                ('wrong height',lambda p:p['point'].__setitem__(2,2.)),
+                ('wrong normal',lambda p:p.update(normal_enu=[0,0,-1])),
+                ('missing interval',lambda p:p.pop('vehicle_source_interval')),
+                ('wrong OSM',lambda p:p['vehicle_source_interval'].update(osm_sha256='0'*64)),
+                ('wrong direction',lambda p:p['vehicle_source_interval'].update(directed_edges=[[11,2,1]])))
+            for name,mutate in mutations:
+                with self.subTest(name=name):
+                    p=copy.deepcopy(original);mutate(p)
+                    with self.assertRaises((AssertionError,KeyError,ValueError)):
+                        SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_missing_changed_geometry_and_wrong_road_hash_refuse(self):
+        with self.fixture('derived-ground-road',schema=3) as f:
+            p=f.proof();p['support_road_sha256']='0'*64
+            with self.assertRaises(AssertionError):SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+            p=f.proof();record=f.world.support_manifest['native_roads'][0]['source'];path=f.root/record['path'];payload=path.read_bytes()
+            path.write_bytes(payload+b'x')
+            with self.assertRaises(ValueError):SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+            path.unlink()
+            with self.assertRaises((ValueError,FileNotFoundError)):SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_independent_first_hit_includes_ineligible_upper_surface(self):
+        with self.fixture(schema=3) as f:
+            p=f.proof();upper=f.triangle.copy();upper[:,2]=.3
+            f.world.derived_record=f.write('terrain.glb',np.array([f.triangle,upper]))
+            p['derived_terrain_sha256']=f.world.derived_record['sha256']
+            f.world.source3_terrain_refs.append({'kind':'terrain','triangle':1,'reconstruction_role':'physical-transition'})
+            f.world.terrain_index=surface.NativeTriangleIndex(np.array([f.triangle,upper]))
+            with self.assertRaisesRegex(AssertionError,'first physical'):
+                SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_equal_height_different_physical_actor_refuses(self):
+        with self.fixture(schema=3) as f:
+            p=f.proof();r=f.write('coplanar-road.glb',f.triangle[None])
+            f.world.support_manifest['native_roads']=[{'source':r,'triangles':1,'actor_label':'Other_road'}]
+            f.world.road.layer_refs=[{'kind':'road','source':0,'mesh':0,'primitive':0,'triangle':0,'source_triangle_index':0}]
+            f.world.road_index=surface.NativeTriangleIndex(f.triangle[None])
+            with self.assertRaisesRegex(AssertionError,'actor/normal tie'):
+                SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+    def test_building_interior_and_forged_barycentrics_refuse(self):
+        with self.fixture() as f:
+            p=f.proof();bad=copy.deepcopy(p);bad['barycentric']=[1.,0.,0.]
+            with self.assertRaises(AssertionError):SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,bad)
+            f.world.building_bins={(0,0):[0]};f.world.buildings=[{'polygon':[[1,1],[3,1],[3,3],[1,3]]}]
+            with self.assertRaises(AssertionError):SerializedCorridorWitnesses(self,f.world).assert_proof(f.route,p)
+
+
 class MeasuredMovement(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -386,12 +633,16 @@ class MeasuredMovement(unittest.TestCase):
         cls.network=json.loads((surface.OUT/"movement-network.json").read_bytes())
         cls.nodes,cls.points,ways,buildings=surface.osm_sources(cls.base)
         cls.ways={row["id"]:row for row in ways}
-        cls.support=surface.Surface(cls.base,buildings)
+        cls.support=surface.Surface(cls.base,buildings,vehicle_source=(cls.points,cls.ways,surface.TurnRestrictions(surface.osm_tree())))
 
     def test_every_route_has_fresh_byte_bound_corridor_support(self):
         records={row["route_id"]:row for row in self.manifest["support_samples"]}
         source=(surface.OUT/"movement-source-manifest.json").read_bytes()
         self.assertEqual(surface.sha(source),self.network["source_manifest_sha256"])
+        verifier=SerializedCorridorWitnesses(self,self.support)
+        source_metadata=json.loads(source)
+        self.assertEqual(source_metadata["support_surface"],self.support.support_record)
+        self.assertEqual(source_metadata["derived_terrain"],self.support.derived_record)
         count=0
         for route in self.network["routes"]:
             payload=(ROOT/records[route["id"]]["path"]).read_bytes()
@@ -402,19 +653,12 @@ class MeasuredMovement(unittest.TestCase):
             self.assertEqual(len(samples),route["support"]["sample_count"])
             for point,sample in zip(route["points"],samples):
                 self.assertTrue(np.allclose(point,sample["point"],atol=1e-9,rtol=0))
-                self.assertEqual(len(sample["cross_section"]),3)
+                self.assertEqual([p["offset_m"] for p in sample["cross_section"]],[-route["width_m"]/2,0,route["width_m"]/2])
                 for proof in sample["cross_section"]:
                     self.assertAlmostEqual(math.dist(proof["point"][:2],point[:2]),abs(proof["offset_m"]),places=6)
                     self.assertLessEqual(abs(proof["point"][2]-point[2]),.5)
                     p=proof["point"]
-                    # Independent interpolation uses actual imported-source
-                    # triangle bytes, rather than trusting a verified flag.
-                    if proof["source"]=="PLATEAU-road":
-                        actual=np.asarray(proof["barycentric"])@self.support.road.triangles[proof["triangle"]]
-                        self.assertTrue(np.allclose(p,actual,atol=1e-4,rtol=0))
-                    else:
-                        self.assertEqual(route["kind"],"pedestrian")
-                        self.assertAlmostEqual(p[2],self.support.dem_height(p[:2]),places=7)
+                    verifier.assert_proof(route,proof)
                     # Full source population, including declared width edges,
                     # must remain outside independently admitted building ways.
                     indices=self.support.building_bins.get((math.floor(p[0]/12),math.floor(p[1]/12)),[])
@@ -562,6 +806,7 @@ class MeasuredMovement(unittest.TestCase):
         self.assertGreater(crossings,0)
 
     def test_one_boundary_flow_has_original_outside_continuation_heading_and_full_body_support(self):
+        verifier=SerializedCorridorWitnesses(self,self.support)
         flows=[route for route in self.network["routes"] if route["kind"]=="vehicle" and not route["closed"]]
         self.assertEqual(len(flows),1)
         flow=flows[0]
@@ -623,11 +868,8 @@ class MeasuredMovement(unittest.TestCase):
             for sample in samples:
                 self.assertEqual(len(sample["cross_section"]),3)
                 for proof in sample["cross_section"]:
-                    self.assertEqual(proof["source"],"PLATEAU-road")
-                    actual=np.asarray(proof["barycentric"])@self.support.road.triangles[proof["triangle"]]
-                    self.assertTrue(np.allclose(actual,proof["point"],atol=1e-4,rtol=0))
+                    verifier.assert_proof(flow,proof)
                     positions.append(np.asarray(proof["point"][:2])-point[:2])
-                    self.support.check(proof["point"][:2],"vehicle")
             positions=np.asarray(positions)
             longitudinal=positions@tangent
             lateral=positions@np.array([-tangent[1],tangent[0]])
@@ -636,6 +878,63 @@ class MeasuredMovement(unittest.TestCase):
             self.assertAlmostEqual(float(lateral.min()),-.9,places=7)
             self.assertAlmostEqual(float(lateral.max()),.9,places=7)
 
+
+
+class NetworkDiagnostics(unittest.TestCase):
+    """Fake clocks and existing normal CLI fixture; no city/index construction."""
+    def test_invalid_diagnostic_cli_refuses_before_source_or_fetch(self):
+        cases=(["--network-diagnostic-seconds","10"],
+               ["--network-only","--fetch","--network-diagnostic-seconds","10"],
+               ["--network-only","--network-diagnostic-seconds","nan"],
+               ["--network-only","--network-diagnostic-seconds","0"],
+               ["--network-only","--network-diagnostic-seconds","301"])
+        for flags in cases:
+            with self.subTest(flags=flags),mock.patch.object(surface,"verify_base") as base,mock.patch.object(surface,"fetch_sources") as fetch,contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as result:surface.main(flags)
+                self.assertEqual(result.exception.code,2);base.assert_not_called();fetch.assert_not_called()
+
+    def test_deadline_stop_escapes_route_refusal_before_support_work(self):
+        now=[0.];probe=surface.NetworkDiagnostic(10,clock=lambda:now[0]);world=surface.Surface.__new__(surface.Surface)
+        world.network_diagnostic=probe;world._check=mock.Mock(return_value=([1,2,3],{}));now[0]=11
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertRaises(surface.NetworkDiagnosticStop):
+                try:world.check([1,2],"vehicle")
+                except (ValueError,KeyError):self.fail("diagnostic stop was swallowed as route refusal")
+        world._check.assert_not_called();self.assertIn('DID_NOT_PUBLISH',output.getvalue())
+        self.assertTrue(issubclass(surface.NetworkDiagnosticStop,RuntimeError));self.assertFalse(issubclass(surface.NetworkDiagnosticStop,ValueError))
+
+    def test_normal_main_diagnostic_stop_never_writes_manifest(self):
+        now=[0.];probe=surface.NetworkDiagnostic(10,clock=lambda:now[0])
+        with mock.patch.object(surface,"NetworkDiagnostic",return_value=probe),mock.patch.object(surface,"verify_base",return_value={}),mock.patch.object(surface,"movement_network",return_value={}) as movement,mock.patch.object(surface,"guarded_write") as write,contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertRaises(surface.NetworkDiagnosticStop):surface.main(["--network-only","--network-diagnostic-seconds","10"])
+        movement.assert_called_once_with({},network_diagnostic=probe);write.assert_not_called();self.assertIn('movement-returned-without-diagnostic-stop',output.getvalue())
+
+    def test_progress_throttles_and_retains_way_and_query_counters(self):
+        now=[0.];probe=surface.NetworkDiagnostic(10,clock=lambda:now[0]);probe.support_queries['check:pedestrian']=12
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            probe.phase('mixed-segment-admission',way_id=42)
+            now[0]=4;probe.tick(mode='pedestrian');now[0]=5;probe.tick(from_node=7,to_node=8)
+        rows=[json.loads(line) for line in output.getvalue().splitlines()]
+        self.assertEqual(len(rows),2);self.assertEqual(rows[1]['elapsed_s'],5)
+        self.assertEqual(rows[1]['context']['way_id'],42);self.assertEqual(rows[1]['support_queries']['check:pedestrian'],12)
+
+    def test_support_wrapper_off_and_on_preserve_literal_result_and_arguments(self):
+        now=[0.];world=surface.Surface.__new__(surface.Surface);point=[1.25,2.5]
+        result=([*point,3.75],{'source':'literal-fixture','barycentric':[.25,.5,.25]})
+        world._check=mock.Mock(return_value=result);world._corridor=mock.Mock(return_value=[result])
+        baseline=surface.encoded(world.check(point,'pedestrian'))
+        world.network_diagnostic=surface.NetworkDiagnostic(10,clock=lambda:now[0])
+        measured=surface.encoded(world.check(point,'pedestrian'));self.assertEqual(baseline,measured)
+        self.assertEqual(world._check.call_args_list,[mock.call(point,'pedestrian',vehicle_interval=None)]*2)
+        self.assertEqual(world.corridor([point,point],'pedestrian',1),[result])
+        world._corridor.assert_called_once_with([point,point],'pedestrian',1,vehicle_contexts=None)
+        self.assertIn('check:pedestrian',world.network_diagnostic.method_seconds)
+
+    def test_failed_support_work_keeps_original_refusal_and_time(self):
+        now=[0.];probe=surface.NetworkDiagnostic(10,clock=lambda:now[0]);refusal=ValueError('real-source-gap')
+        def fail():now[0]=2;raise refusal
+        with self.assertRaises(ValueError) as failure:probe.call('check:vehicle',fail)
+        self.assertIs(failure.exception,refusal);self.assertEqual(probe.method_seconds['check:vehicle'],2);self.assertEqual(probe.in_flight,[])
 
 if __name__=="__main__":
     unittest.main()

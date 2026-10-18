@@ -129,7 +129,8 @@ class HelperCoverageTests(unittest.TestCase):
             EditorAssetLibrary=SimpleNamespace(list_assets=lambda *_, **__: []),
             ShibuyaRendererLibrary=SimpleNamespace(inspect_world_resources=lambda _: "{}"))
         namespace = {"unreal": stub, "json": json, "_actors": lambda: SimpleNamespace(get_all_level_actors=lambda: [volume]),
-                     "_require_complete_support": lambda: None, "_snapshot": lambda: {"saved": len(saved)}}
+                     "_require_complete_support": lambda: None, "_saved_photographic_tone": lambda: False,
+                     "_snapshot": lambda: {"saved": len(saved)}}
         for name in ("_exposure", "_daylight", "configure_daylight", "_lumen_capture_policy", "inspect_render_setup"):
             helper_function(name, namespace)
         self.assertEqual(json.loads(namespace["configure_daylight"]()), {"saved": 1})
@@ -236,7 +237,8 @@ class HelperCoverageTests(unittest.TestCase):
         stub.SystemLibrary.get_frame_count = lambda: 100
         def failed_witness(state):
             raise RuntimeError("Deliberate native readiness failure after capture")
-        namespace.update(json=json, _exposure=lambda: settings, _capture_witness=failed_witness)
+        namespace.update(json=json, _exposure=lambda: settings, _capture_witness=failed_witness,
+                         _capture_photographic_tone=lambda requested, use_saved: False)
         start = helper_function("capture_view", namespace)
         with tempfile.TemporaryDirectory() as directory:
             namespace["PROJECT"] = Path(directory)

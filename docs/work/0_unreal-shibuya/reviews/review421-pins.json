@@ -1,0 +1,188 @@
+{
+  "review": 421,
+  "status": "INDEPENDENT_METHOD_CONTRACT_NOT_IMPLEMENTED_OR_NATIVE_TESTED",
+  "fixed_raw_report": {
+    "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\report.json",
+    "bytes": 2351303,
+    "sha256": "0fef052b4a5fd37a4e6c33375c490df39da0c1093d20bafd862d1d6c95d2c834"
+  },
+  "closed_handoff": {
+    "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\native-esu-pipeline-20261017\\appearance-road-repair-v2\\implementation\\material-v2-trial-closed.json",
+    "bytes": 11669,
+    "sha256": "abdc0778b88a7e2c10a36c9dba39f4485d3e5dde38df02148334159c26ef5721"
+  },
+  "actual_images_individually_inspected": [
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\original-crossing-warmup.png",
+      "bytes": 1362486,
+      "sha256": "27a7d4425107f93d1e70ac8ed42dc60d2e17d4fe74b57ef76dc77db53b9dab6c",
+      "label": "original",
+      "view": "crossing",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\original-crossing.png",
+      "bytes": 1357715,
+      "sha256": "53ada7b1ccf496ac9cbe90f7cae326ef6e74754c48799973726a99591f0def5f",
+      "label": "original",
+      "view": "crossing",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\candidate-crossing-warmup.png",
+      "bytes": 1335772,
+      "sha256": "170a56262cebe3b44cdda4570824da6d2dddd3adf986a41f500d39a7053e583f",
+      "label": "candidate",
+      "view": "crossing",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\candidate-crossing.png",
+      "bytes": 1332415,
+      "sha256": "d9c8045647f26cafd0b38bcbd72abe1fc810f2380046b17e0440fad667e55672",
+      "label": "candidate",
+      "view": "crossing",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\candidate-crossing-west-warmup.png",
+      "bytes": 1422389,
+      "sha256": "725920efdcc6619f2b2b8e2334b895d529cbcab4bf6c5cdda10cafabad6c2980",
+      "label": "candidate",
+      "view": "crossing-west",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\candidate-crossing-west.png",
+      "bytes": 1422003,
+      "sha256": "ba00f9cf5c0f392749a85ca48908a7546494f744bd00e366dfb47d592e657ef3",
+      "label": "candidate",
+      "view": "crossing-west",
+      "width": 1280,
+      "height": 720,
+      "individually_inspected_native_resolution": true,
+      "producer_appearance_verdict": "REJECTED"
+    }
+  ],
+  "inspected_records": [
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\native-esu-pipeline-20261017\\appearance-road-repair-v2\\implementation\\material-v2-trial-closed.json",
+      "bytes": 11669,
+      "sha256": "abdc0778b88a7e2c10a36c9dba39f4485d3e5dde38df02148334159c26ef5721"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\artifacts\\unreal\\material-repair-v2-20261017-190403\\report.json",
+      "bytes": 2351303,
+      "sha256": "0fef052b4a5fd37a4e6c33375c490df39da0c1093d20bafd862d1d6c95d2c834"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\native-esu-pipeline-20261017\\gi-ablation-v1\\native-comparison.json",
+      "bytes": 12357,
+      "sha256": "ce4197e69203cd2e0f0d05a5217cafac52ec6f36065d09dbe6baab3bd0498fec"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\Content\\Python\\shibuya_tools.py",
+      "bytes": 240947,
+      "sha256": "c1ff255c0e8b96d2b6b17430c62465596374a1970f1baac05652230ae48c1277"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Engine\\Classes\\Engine\\Scene.h",
+      "bytes": 164040,
+      "sha256": "cd40d1a65e8635c2a561cc45786f5b588e3f3a119680c075a21dd89764c2591c"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Engine\\Private\\SceneView.cpp",
+      "bytes": 130957,
+      "sha256": "8ee3de0ded7b6454fc814e5f7357d48d989116b79ac2ef61972585a4bd1d9fd0"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Engine\\Classes\\Components\\SceneCaptureComponent.h",
+      "bytes": 16378,
+      "sha256": "b188b9bb5611bc3e2037cef04923c339d86de9c363edc3546620e5f25dc24d1a"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Renderer\\Private\\PostProcess\\PostProcessing.cpp",
+      "bytes": 197277,
+      "sha256": "5100aa2e063fe6834313a0039c681619c3e0a2b946b863a28955184443031bb9"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Renderer\\Private\\PostProcess\\PostProcessLocalExposure.cpp",
+      "bytes": 21671,
+      "sha256": "37ba8f8092e94695c6df60f881a61e48c890362a35d4487769938657265cadaf"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Source\\Runtime\\Renderer\\Private\\PostProcess\\PostProcessEyeAdaptation.cpp",
+      "bytes": 66613,
+      "sha256": "df1475d2550cff0b97a66fe8daa2a1ef746784df1a20631495321e0efe8f1113"
+    },
+    {
+      "path": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Shaders\\Private\\PostProcessLocalExposure.usf",
+      "bytes": 5283,
+      "sha256": "1972f72a3858fcc97e89cf4e6ac17801beb16f8f042060e5c198715d154a94fa"
+    }
+  ],
+  "candidate": "Existing bilateral versus installed experimental Exposure Fusion, same .8/.6 settings, unchanged V2/lighting/exposure",
+  "rois": [
+    {
+      "box": [
+        520,
+        520,
+        600,
+        600
+      ],
+      "id": "crossing-sun-road",
+      "encoded_luma": 0.701116425735294
+    },
+    {
+      "box": [
+        100,
+        60,
+        500,
+        300
+      ],
+      "id": "crossing-facade",
+      "encoded_luma": 0.09689226198529412
+    },
+    {
+      "box": [
+        20,
+        480,
+        120,
+        560
+      ],
+      "id": "crossing-surrounding-photo",
+      "encoded_luma": 0.6518296553921568
+    },
+    {
+      "box": [
+        800,
+        490,
+        900,
+        550
+      ],
+      "id": "west-sun-road",
+      "encoded_luma": 0.7244198190849672
+    }
+  ],
+  "roi_bound": "Visually selected display-encoded screen statistics only; no measured reflectance/irradiance/native UV-equivalence claim",
+  "discriminator": "Opposite-sign road/facade effects >=.02 encoded and >3x same-run A/A2 drift, plus actual native visual acceptance at both poses",
+  "owned_persistent_processes": [],
+  "canonical_writes": false,
+  "native_run": "DID_NOT_RUN",
+  "cost": "Read-only static source and six retained image inspections; total search/management cost unmeasured, no GPU/native cost incurred by this branch"
+}

@@ -19,7 +19,7 @@ HELPER = Path(os.environ.get("SHIBUYA_SUPPORT_HELPER", Path(__file__).parents[2]
 
 def functions():
     tree = ast.parse(HELPER.read_text(encoding="utf-8"))
-    names = {"_support_integer", "_support_point_key", "_support_geometry_digest", "_support_glb", "_support_compare_native_geometry"}
+    names = {"_native_frame_record", "_require_native_frame", "_source_to_native_cm", "_native_to_source_m", "_source_normal_to_native", "_native_actor_tag", "_native_scene_frame", "_support_oriented_key", "_support_integer", "_support_point_key", "_support_geometry_digest", "_support_glb", "_support_compare_native_geometry"}
     body = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
     environment = dict(Counter=Counter, hashlib=hashlib, json=json, math=math, struct=struct)
     exec(compile(ast.Module(body=body, type_ignores=[]), str(HELPER), "exec"), environment)
@@ -70,7 +70,7 @@ class NativeConversionTests(unittest.TestCase):
         self.assertEqual(geometry["source"]["triangles"], 1)
         self.assertEqual(geometry["excluded"], [])
         self.assertEqual(sum(geometry["retained"].values()), 1)
-        result = self.compare(Mesh(self.regular_native, [0, 1, 2]), geometry)
+        result = self.compare(Mesh(self.regular_native, [0, 2, 1]), geometry)
         self.assertEqual((result["raw_source_triangles"], result["exact_coincident_endpoint_exclusions"], result["expected_retained_triangles"], result["native_render_triangles"]), (1, 0, 1, 1))
 
     def collapsed_geometry(self):
@@ -89,20 +89,24 @@ class NativeConversionTests(unittest.TestCase):
         geometry, description, _ = self.collapsed_geometry()
         self.assertEqual(geometry["source"]["triangles"], 2)
         self.assertEqual(geometry["excluded"], [(0, (0, 1, 2))])
-        result = self.compare(Mesh(self.regular_native, [0, 1, 2], description), geometry)
+        result = self.compare(Mesh(self.regular_native, [0, 2, 1], description), geometry)
         self.assertEqual((result["raw_source_triangles"], result["exact_coincident_endpoint_exclusions"], result["expected_retained_triangles"], result["excluded_native_source_faces_verified"]), (2, 1, 1, 1))
 
     def test_collinear_but_distinct_is_never_excluded(self):
         geometry = self.geometry([(0, 0, 0), (1, 0, 0), (2, 0, 0)])
         self.assertEqual(geometry["excluded"], [])
-        self.compare(Mesh([(0, 0, 0), (100, 0, 0), (200, 0, 0)], [0, 1, 2]), geometry)
+        self.compare(Mesh([(0, 0, 0), (100, 0, 0), (200, 0, 0)], [0, 2, 1]), geometry)
 
     def test_duplicate_occurrences_are_preserved(self):
         geometry = self.geometry(faces=[(0, 1, 2), (0, 1, 2)])
         self.assertEqual(sum(geometry["retained"].values()), 2)
-        self.compare(Mesh(self.regular_native, [0, 1, 2, 2, 1, 0]), geometry)
+        self.compare(Mesh(self.regular_native, [0, 2, 1, 2, 1, 0]), geometry)
         with self.assertRaisesRegex(RuntimeError, "1 missing"):
-            self.compare(Mesh(self.regular_native, [0, 1, 2]), geometry)
+            self.compare(Mesh(self.regular_native, [0, 2, 1]), geometry)
+
+    def test_same_positions_with_reversed_winding_are_rejected(self):
+        with self.assertRaisesRegex(RuntimeError, "1 missing and 1 unexpected"):
+            self.compare(Mesh(self.regular_native, [0, 1, 2]), self.geometry())
 
     def test_same_count_moved_vertex_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "1 missing and 1 unexpected"):
@@ -112,13 +116,13 @@ class NativeConversionTests(unittest.TestCase):
         geometry, description, points = self.collapsed_geometry()
         points[0].x = 128.0
         with self.assertRaisesRegex(RuntimeError, "source vertex 0 differs"):
-            self.compare(Mesh(self.regular_native, [0, 1, 2], description), geometry)
+            self.compare(Mesh(self.regular_native, [0, 2, 1], description), geometry)
 
     def test_changed_excluded_source_index_set_is_rejected(self):
         geometry, description, _ = self.collapsed_geometry()
         description.get_vertex_instance_vertex = lambda instance: types.SimpleNamespace(id_value=instance[1] + 1)
         with self.assertRaisesRegex(RuntimeError, "source face 0 changed"):
-            self.compare(Mesh(self.regular_native, [0, 1, 2], description), geometry)
+            self.compare(Mesh(self.regular_native, [0, 2, 1], description), geometry)
 
     def test_missing_render_buffers_fail(self):
         with self.assertRaisesRegex(RuntimeError, "missing or incomplete"):
@@ -127,9 +131,9 @@ class NativeConversionTests(unittest.TestCase):
     def test_missing_source_description_cannot_admit_an_exclusion(self):
         geometry, _, _ = self.collapsed_geometry()
         with self.assertRaisesRegex(RuntimeError, "lost its source LOD0 population"):
-            self.compare(Mesh(self.regular_native, [0, 1, 2]), geometry)
+            self.compare(Mesh(self.regular_native, [0, 2, 1]), geometry)
 
-    def test_signed_zero_and_face_order_have_identical_geometry(self):
+    def test_signed_zero_and_cyclic_face_order_have_identical_geometry(self):
         self.compare(Mesh([(-0.0, 0, 0), (100, -0.0, 0), (0, 0, 100)], [2, 1, 0]), self.geometry())
 
 

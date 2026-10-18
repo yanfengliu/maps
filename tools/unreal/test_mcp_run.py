@@ -32,7 +32,7 @@ def constant_png(path, value, width=32, height=32):
 def capture_state(camera=(35, -45, 35), target=(0, 0, 15), frames=1):
     direction = [b - a for a, b in zip(camera, target)]
     length = math.sqrt(sum(value * value for value in direction))
-    forward = [value / length for value in direction]
+    forward = [direction[0] / length, -direction[1] / length, direction[2] / length]
     return {"started": True, "persistent_state": True, "render_target_matches_capture": True, "full_crop_coverage": False,
             "lumen_gi_override": True, "lumen_reflections_override": True,
             "lumen_gi": "<DynamicGlobalIlluminationMethod.LUMEN: 1>",
@@ -40,8 +40,8 @@ def capture_state(camera=(35, -45, 35), target=(0, 0, 15), frames=1):
             "capture_source": "<SceneCaptureSource.SCS_FINAL_COLOR_LDR: 2>",
             "render_target_format": "<TextureRenderTargetFormat.RTF_RGBA8: 2>",
             "target_gamma": 2.200000047683716, "post_process_blend_weight": 1.0,
-            "width": 1280, "height": 720, "actual_camera_cm": [value * 100 for value in camera],
-            "actual_component_cm": [value * 100 for value in camera],
+            "width": 1280, "height": 720, "actual_camera_cm": [camera[0] * 100, -camera[1] * 100, camera[2] * 100],
+            "actual_component_cm": [camera[0] * 100, -camera[1] * 100, camera[2] * 100],
             "forward_vector": forward, "component_forward_vector": list(forward),
             "capture_component": "/Game/Maps/Test.PersistentLevel.Capture.Component",
             "native_capture_flags": {"component": "/Game/Maps/Test.PersistentLevel.Capture.Component",
@@ -51,6 +51,40 @@ def capture_state(camera=(35, -45, 35), target=(0, 0, 15), frames=1):
             "native_current_frame": 100 if frames == 1 else 100 + frames * 2,
             "native_frames_elapsed": 0 if frames == 1 else frames * 2}
 
+
+
+class CaptureFrameESUTests(unittest.TestCase):
+    def literal_state(self):
+        state = capture_state(camera=(13, -17, 19), target=(2, 3, 5))
+        # Independent literal ESU camera and target delta; no producer converter.
+        state.update(actual_camera_cm=[1300, 1700, 1900], actual_component_cm=[1300, 1700, 1900],
+                     forward_vector=[-11/math.sqrt(717), -20/math.sqrt(717), -14/math.sqrt(717)],
+                     component_forward_vector=[-11/math.sqrt(717), -20/math.sqrt(717), -14/math.sqrt(717)])
+        return state
+
+    def test_literal_esu_camera_and_forward_accept(self):
+        mcp_run.validate_capture_state(self.literal_state(), [13, -17, 19], [2, 3, 5], 2.2, 1)
+
+    def test_old_north_position_and_direction_refuse(self):
+        state = self.literal_state()
+        state.update(actual_camera_cm=[1300, -1700, 1900], actual_component_cm=[1300, -1700, 1900],
+                     forward_vector=[-11/math.sqrt(717), 20/math.sqrt(717), -14/math.sqrt(717)],
+                     component_forward_vector=[-11/math.sqrt(717), 20/math.sqrt(717), -14/math.sqrt(717)])
+        with self.assertRaisesRegex(RuntimeError, "independently requested camera"):
+            mcp_run.validate_capture_state(state, [13, -17, 19], [2, 3, 5], 2.2, 1)
+
+    def test_old_north_forward_cannot_hide_behind_correct_position(self):
+        state = self.literal_state()
+        state["forward_vector"][1] *= -1; state["component_forward_vector"][1] *= -1
+        with self.assertRaisesRegex(RuntimeError, "independently requested camera"):
+            mcp_run.validate_capture_state(state, [13, -17, 19], [2, 3, 5], 2.2, 1)
+
+    def test_global_east_mirror_refuses(self):
+        state = self.literal_state()
+        state["actual_camera_cm"][0] *= -1; state["actual_component_cm"][0] *= -1
+        state["forward_vector"][0] *= -1; state["component_forward_vector"][0] *= -1
+        with self.assertRaisesRegex(RuntimeError, "independently requested camera"):
+            mcp_run.validate_capture_state(state, [13, -17, 19], [2, 3, 5], 2.2, 1)
 
 class CaptureAdmissionTests(unittest.TestCase):
     def setUp(self):
@@ -153,6 +187,11 @@ def helper_function(name, namespace):
     tree = ast.parse(source.read_text(encoding="utf-8"))
     functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
     functions += [node for item in tree.body if isinstance(item, ast.ClassDef) for node in item.body if isinstance(node, ast.FunctionDef)]
+    if name in ("apply_photo_roads", "capture_view"):
+        namespace.setdefault("_native_scene_frame", lambda **kwargs: {"admitted": True})
+    dependencies = [node for node in functions if node.name == "_source_to_native_cm"]
+    namespace.setdefault("math", math)
+    exec(compile(ast.Module(body=dependencies, type_ignores=[]), str(source), "exec"), namespace)
     wanted = next(node for node in functions if node.name == name)
     wanted.decorator_list = []
     exec(compile(ast.Module(body=[wanted], type_ignores=[]), str(source), "exec"), namespace)
@@ -366,6 +405,59 @@ class NativeMcpContractTests(unittest.TestCase):
         client._send = lambda *_args, **_kwargs: {"jsonrpc": "2.0", "id": 1, "error": {"code": -32601, "message": "Unknown method"}}
         with self.assertRaisesRegex(RuntimeError, "Unknown method"):
             client.request("unsupported_method")
+
+
+
+
+class CameraSurfaceSchemaTests(unittest.TestCase):
+    # Exact actual UE schema from surface-20261017-162734/report.json,
+    # SHA26d3514dbe7384a24cd84ec07e365aedba4cf190762f16de2456a33bbb32985d.
+    ACTUAL_SCHEMA_JSON = r'''{"type":"object","properties":{"east_m":{"type":"number"},"north_m":{"type":"number"},"height_m":{"type":"number"},"target_east_m":{"type":"number","default":0},"target_north_m":{"type":"number","default":0},"target_height_m":{"type":"number","default":15},"active_capture_stage":{"type":"string"},"relative_output_prefix":{"type":"string"}},"required":["east_m","north_m","height_m","active_capture_stage","relative_output_prefix"]}'''
+
+    def required_native_call(self, arguments):
+        self.assertEqual(hashlib.sha256(self.ACTUAL_SCHEMA_JSON.encode()).hexdigest(), '2764ab021adf363f532b53d29eb82a38ce6341b2c0969b5745aa52b894aafbe1')
+        schema = json.loads(self.ACTUAL_SCHEMA_JSON)
+        for field in schema['required']:
+            if field not in arguments:
+                raise RuntimeError('Actual native schema requires '+field)
+        for field in ('active_capture_stage', 'relative_output_prefix'):
+            self.assertIs(type(arguments[field]), str)
+            self.assertEqual(arguments[field], '')
+
+    def test_every_ordinary_call_supplies_actual_required_empty_fields(self):
+        path = Path(mcp_run.__file__).absolute()
+        for component in [*reversed(path.parents), path]:
+            info = component.lstat()
+            if stat.S_ISLNK(info.st_mode) or getattr(info, 'st_file_attributes', 0)&1024:
+                raise RuntimeError('Refused linked driver fixture: '+str(component))
+        tree = ast.parse(path.read_bytes())
+        calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and node.func.attr == 'project_tool'
+                 and node.args and isinstance(node.args[0], ast.Constant)
+                 and node.args[0].value == 'inspect_camera_surfaces']
+        self.assertEqual(len(calls), 1)
+        expression = next(node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                          and isinstance(node.value, ast.ListComp)
+                          and any(isinstance(target, ast.Subscript)
+                                  and ast.unparse(target) == "report['camera_surface_samples']"
+                                  for target in node.targets))
+        seen = []
+        def project_tool(name, arguments):
+            self.assertEqual(name, 'inspect_camera_surfaces')
+            self.required_native_call(arguments)
+            seen.append(arguments)
+            return {'content': [{'type': 'text', 'text': '{"legacy_body":true}'}]}
+        client = SimpleNamespace(project_tool=project_tool)
+        values = eval(compile(ast.Expression(expression), str(path), 'eval'),
+                      {'client': client, 'tool_value': tool_value})
+        self.assertEqual(values, [{'legacy_body': True}, {'legacy_body': True}])
+        self.assertEqual([(row['east_m'], row['north_m'], row['height_m']) for row in seen],
+                         [(35.0, -45.0, 35.0), (-70.0, 20.0, 65.0)])
+
+    def test_retained_old_native_request_refuses_at_required_active_stage(self):
+        # Literal actual refused request; no helper/default inference is involved.
+        with self.assertRaisesRegex(RuntimeError, 'requires active_capture_stage'):
+            self.required_native_call({'east_m': 35, 'north_m': -45, 'height_m': 35})
 
 
 if __name__ == "__main__":

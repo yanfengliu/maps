@@ -80,7 +80,8 @@ $source = Confined-Path $repo (Join-Path $repo 'tests/runtime/test_simulation.cp
 $fixtureDirectory = Confined-Path $repo (Join-Path $repo 'tests/runtime/fixtures') 'Directory'
 $fixtures = Fixture-Inventory $fixtureDirectory
 $inputs = @{ 'test_simulation.cpp'=$source }
-foreach ($name in 'CitySimulation.h','RuntimePath.h','RuntimeReadLimit.h') {
+foreach ($name in 'test_vehicle_body_pose.cpp','test_vehicle_body_support.cpp') { $inputs[$name] = Confined-Path $repo (Join-Path $repo ('tests/runtime/'+$name)) }
+foreach ($name in 'CitySimulation.h','RuntimePath.h','RuntimeReadLimit.h','VehicleBodyPose.h','VehicleBodySupport.h','NativeFrame.h') {
     $candidate = Confined-Path $repo (Join-Path $include $name) 'File' -AllowMissing
     try { $null = [IO.File]::GetAttributes($candidate) }
     catch {
@@ -116,7 +117,21 @@ foreach ($name in $fixtures.Keys) {
 $batch = Confined-Path $output (Join-Path $output 'run.cmd') 'File' -AllowMissing
 $exe = Confined-Path $output (Join-Path $output 'simulation-tests.exe') 'File' -AllowMissing
 $obj = Confined-Path $output (Join-Path $output 'simulation-tests.obj') 'File' -AllowMissing
-$lines = @('@echo off', ('call "'+$dev+'" -arch=amd64 -host_arch=amd64'), 'if errorlevel 1 exit /b 1', ('cl /nologo /std:c++20 /EHsc /W4 /O2 /I"'+$snapshot+'" /Fe"'+$exe+'" /Fo"'+$obj+'" "'+(Join-Path $snapshot 'test_simulation.cpp')+'"'), 'if errorlevel 1 exit /b 1', ('"'+$exe+'"'), 'exit /b %errorlevel%')
+$programs = @{
+    'simulation-tests'='test_simulation.cpp'
+    'vehicle-body-pose-tests'='test_vehicle_body_pose.cpp'
+    'vehicle-body-support-tests'='test_vehicle_body_support.cpp'
+}
+$lines = @('@echo off', ('call "'+$dev+'" -arch=amd64 -host_arch=amd64'), 'if errorlevel 1 exit /b 1')
+foreach ($program in @('simulation-tests','vehicle-body-pose-tests','vehicle-body-support-tests')) {
+    $programExe = Confined-Path $output (Join-Path $output ($program+'.exe')) 'File' -AllowMissing
+    $programObj = Confined-Path $output (Join-Path $output ($program+'.obj')) 'File' -AllowMissing
+    $lines += ('cl /nologo /std:c++20 /EHsc /W4 /O2 /I"'+$snapshot+'" /Fe"'+$programExe+'" /Fo"'+$programObj+'" "'+(Join-Path $snapshot $programs[$program])+'"')
+    $lines += 'if errorlevel 1 exit /b 1'
+    $lines += ('"'+$programExe+'"')
+    $lines += 'if errorlevel 1 exit /b 1'
+}
+$lines += 'exit /b 0'
 [IO.File]::WriteAllLines((Confined-Path $output $batch 'File' -AllowMissing), $lines, [Text.Encoding]::ASCII)
 $start = [Diagnostics.ProcessStartInfo]::new()
 $start.FileName = Guard-Path $env:ComSpec
@@ -141,9 +156,10 @@ try {
         Compare-Inventory @{ $name=$inputRecords[$name] } @{ $name=(File-Record $inputs[$name]) } 'compile'
         Compare-Inventory @{ $name=$inputRecords[$name] } @{ $name=(File-Record (Confined-Path $output (Join-Path $snapshot $name))) } 'snapshot'
     }
-    $passed=$process.ExitCode -eq 0 -and $text -match 'PASS: [0-9]+ actual-core assertions'
+    $passed=$process.ExitCode -eq 0 -and $text -match 'PASS: [0-9]+ actual-core assertions' -and $text -match 'PASS: [0-9]+ finite-body core assertions' -and $text -match 'PASS [0-9]+ support/coverage assertions'
+    $programHashes=@{}; foreach ($program in $programs.Keys) { $programHashes[$program]=(File-Record (Confined-Path $output (Join-Path $output ($program+'.exe'))) 134217728) }
     $fixtureHashes=@{}; foreach ($name in $fixtures.Keys) { $fixtureHashes[$name]=$fixtures[$name].sha256 }
-    $receipt=@{ passed=$passed; exit_code=$process.ExitCode; owned_pid=$process.Id; fixture_sha256=$fixtureHashes; fixture_inventory=$fixtures; input_inventory=$inputRecords; core_sha256=$inputRecords['CitySimulation.h'].sha256; test_sha256=$inputRecords['test_simulation.cpp'].sha256; executable_sha256=(File-Record (Confined-Path $output $exe) 134217728).sha256; bound='Actual compiled C++ core and admitted source fixture snapshots; exact input membership/size/hash and reparse-checked paths before/after. No native game rendering, physics or input claim.' }
+    $receipt=@{ passed=$passed; exit_code=$process.ExitCode; owned_pid=$process.Id; fixture_sha256=$fixtureHashes; fixture_inventory=$fixtures; input_inventory=$inputRecords; executables=$programHashes; core_sha256=$inputRecords['CitySimulation.h'].sha256; test_sha256=$inputRecords['test_simulation.cpp'].sha256; executable_sha256=(File-Record (Confined-Path $output $exe) 134217728).sha256; bound='Actual compiled simulation and finite-body support cores, numerical retained-road/contact and source fixtures; exact input membership/size/hash and reparse-checked paths before/after. Synthetic cost is diagnostic. No actual UE placement, native game rendering, collision, input or full-population performance claim.' }
     [IO.File]::WriteAllText((Confined-Path $output (Join-Path $output 'report.json') 'File' -AllowMissing),($receipt | ConvertTo-Json -Depth 8))
     Write-Output $text; if ($errors) { Write-Output $errors }; Write-Output ('Receipt: '+$output+'/report.json')
     if (-not $passed) { throw "Actual core failed: $output/report.json" }

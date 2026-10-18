@@ -2,6 +2,9 @@
 #include "RuntimeFiles.h"
 #include "RuntimePath.h"
 #include "RuntimeReadLimit.h"
+#include "VehicleBodySupport.h"
+#include "NativeFrame.h"
+#include "NativeFrameJson.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "CollisionShape.h"
@@ -112,10 +115,21 @@ bool Digest(const FString& Value)
     for(TCHAR C:Value) if(!FChar::IsHexDigit(C)) return false;
     return true;
 }
-FVector Native(const Shibuya::Point& Point) { return FVector(Point.x*100,Point.y*100,Point.z*100); }
+FVector Native(const Shibuya::Point& Point) { const auto P=Shibuya::SourceToNativeCM(Point);return FVector(P.x,P.y,P.z); }
 TSharedPtr<FJsonValue> VectorJSON(const FVector& Value)
 {
     return MakeShared<FJsonValueArray>(TArray<TSharedPtr<FJsonValue>>{MakeShared<FJsonValueNumber>(Value.X),MakeShared<FJsonValueNumber>(Value.Y),MakeShared<FJsonValueNumber>(Value.Z)});
+}
+void AdmitSceneFrame(UWorld* World)
+{
+    std::vector<std::vector<std::string>> Sources;
+    for(TActorIterator<AActor> It(World);It;++It)if(It->ActorHasTag(TEXT("ShibuyaSource")))
+    {
+        std::vector<std::string> Tags;for(const FName& Tag:It->Tags)Tags.emplace_back(TCHAR_TO_UTF8(*Tag.ToString()));
+        Sources.push_back(std::move(Tags));
+    }
+    if(!Shibuya::NativeSceneFramesKnown(Sources))
+        throw std::runtime_error("Runtime scene needs exactly112 ShibuyaSource actors, each with one current sealed native ESU frame tag; regenerate the saved map before spawning the population.");
 }
 AShibuyaWorld* FindCity(UWorld* World)
 {
@@ -149,6 +163,7 @@ bool ExplorerStart(AShibuyaWorld* City,const AActor* Ignore,FVector& Position,TS
 }
 #include "BoundaryAdmission.h"
 #include "SupportSource3Admission.h"
+#include "VehicleBodyAdmission.h"
 }
 
 AShibuyaWorld::AShibuyaWorld()
@@ -160,6 +175,7 @@ bool AShibuyaWorld::LoadNetwork()
 {
     try
     {
+        AdmitSceneFrame(GetWorld());
         const TArray<uint8> Empty,ABC{'a','b','c'};
         if(HashBytes(Empty)!=TEXT("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855") ||
            HashBytes(ABC)!=TEXT("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
@@ -172,11 +188,11 @@ bool AShibuyaWorld::LoadNetwork()
         InputDigests.Empty();InputSizes.Empty();InputRoles.Empty();SourceManifestPath.Empty();
         const TArray<uint8> Bytes=ReadBoundInput(Relative,FString(),InputDigests,InputSizes,InputRoles);
         NetworkSHA256=HashBytes(Bytes);
-        const auto Data=ObjectValue(ParseJSON(Bytes));
+        const auto Data=ObjectValue(ParseJSON(Bytes));Shibuya::AdmitNativeFrame(Data,TEXT("movement network"));
         const FString MovementPath=FPaths::Combine(FPaths::GetPath(Relative),TEXT("movement-manifest.json"));
         const auto MovementBytes=ReadBoundInput(MovementPath,FString(),InputDigests,InputSizes,InputRoles);
         MovementManifestSHA256=HashBytes(MovementBytes);
-        const auto Movement=ObjectField(ObjectValue(ParseJSON(MovementBytes)),TEXT("movement"));
+        const auto Movement=ObjectField(ObjectValue(ParseJSON(MovementBytes)),TEXT("movement"));Shibuya::AdmitNativeFrame(Movement,TEXT("movement manifest"));
         auto AdmitRecord=[&](const TSharedPtr<FJsonObject>& Record,Shibuya::RuntimeInputRole InputRole=Shibuya::RuntimeInputRole::Source)
         {
             const FString InputPath=Text(Record,TEXT("path")),Hash=Text(Record,TEXT("sha256"));
@@ -202,7 +218,7 @@ bool AShibuyaWorld::LoadNetwork()
         if(!Digest(SourceManifestSHA256) || Text(SourceRecord,TEXT("sha256"))!=SourceManifestSHA256)
             throw std::runtime_error("Runtime network source manifest differs from its actual movement receipt.");
         SourceManifestPath=Text(SourceRecord,TEXT("path"));
-        const auto Source=ObjectValue(ParseJSON(AdmitRecord(SourceRecord)));
+        const auto Source=ObjectValue(ParseJSON(AdmitRecord(SourceRecord)));Shibuya::AdmitNativeFrame(Source,TEXT("source manifest"));
         FSource3Metadata Source3;int32 SupportSchema=0;
         const bool HasSupport=Source->HasField(TEXT("support_surface")),HasDerived=Source->HasField(TEXT("derived_terrain"));
         if(HasSupport!=HasDerived)throw std::runtime_error("Runtime Source2 manifest needs both support_surface and derived_terrain records; regenerate the complete source pair.");
@@ -210,6 +226,7 @@ bool AShibuyaWorld::LoadNetwork()
         {
             // Admit the published closure, not the offline 80,000-parent proof again.
             const auto Support=ObjectValue(ParseJSON(AdmitRecord(ObjectField(Source,TEXT("support_surface")),Shibuya::RuntimeInputRole::SupportManifest)));
+            Shibuya::AdmitNativeFrame(Support,TEXT("support manifest"));
             const auto Schema=Support->TryGetField(TEXT("schema_version"));
             if(!Schema.IsValid() || Schema->Type!=EJson::Number || (Schema->AsNumber()!=2&&Schema->AsNumber()!=3))
                 throw std::runtime_error("Runtime support_surface needs published schema2 or schema3; rebuild support before importing this source.");
@@ -219,7 +236,7 @@ bool AShibuyaWorld::LoadNetwork()
                 throw std::runtime_error("Runtime Source2 derived_terrain differs from the support manifest record; restore the admitted source pair.");
             AdmitRecord(Derived,Shibuya::RuntimeInputRole::DerivedTerrain);
             if(SupportSchema==2)AdmitRecord(ObjectField(ObjectField(Support,TEXT("topology_provenance")),TEXT("record")));
-            AdmitRecord(ObjectField(Support,TEXT("native_ray_samples")));
+            Shibuya::AdmitNativeFrame(ObjectValue(ParseJSON(AdmitRecord(ObjectField(Support,TEXT("native_ray_samples"))))),TEXT("native ray packet"));
             const auto Preservation=ObjectValue(ParseJSON(AdmitRecord(ObjectField(Support,TEXT("source_preservation")))));
             const auto& Before=Array(Preservation,TEXT("inputs_before"));const auto& After=Array(Preservation,TEXT("inputs_after"));
             if(!Boolean(Preservation,TEXT("unchanged")) || Before.IsEmpty() ||
@@ -282,10 +299,11 @@ bool AShibuyaWorld::LoadNetwork()
         const auto OSM=ObjectField(Movement,TEXT("source_osm"));
         if(Text(OSM,TEXT("sha256"))!=Text(Source,TEXT("osm")))throw std::runtime_error("Runtime OSM source receipt differs from the source manifest.");
         const auto OSMBytes=AdmitRecord(OSM);FXmlFile SourceOSM;
+        bool NeedOSM=Movement->HasField(TEXT("vehicle_body_support"));
         for(const auto& Value:Array(Data,TEXT("routes")))
         {
             const auto Route=ObjectValue(Value);
-            if(Text(Route,TEXT("kind"))==TEXT("vehicle")&&!Boolean(Route,TEXT("closed")))
+            if(NeedOSM||(Text(Route,TEXT("kind"))==TEXT("vehicle")&&!Boolean(Route,TEXT("closed"))))
             {
                 FString XML;FFileHelper::BufferToString(XML,OSMBytes.GetData(),OSMBytes.Num());
                 if(!SourceOSM.LoadFile(XML,EConstructMethod::ConstructFromBuffer))throw std::runtime_error("Actual pinned OSM input cannot be parsed for boundary continuation admission.");
@@ -387,6 +405,16 @@ bool AShibuyaWorld::LoadNetwork()
             if(Route.kind==Shibuya::Kind::Vehicle&&!Route.closed&&!Route.boundaryAdmitted)throw std::runtime_error("Open vehicle route "+Route.id+" lacks admitted original-way boundary flow support.");
             Simulation.routes.push_back(std::move(Route));
         }
+        VehicleBodySupportData.reset();SupportFailures=0;
+        if(Movement->HasField(TEXT("vehicle_body_support")))
+        {
+            if(SupportSchema!=3)throw std::runtime_error("Vehicle body packet requires its admitted current Source3 support generation.");
+            const auto Record=ObjectField(Movement,TEXT("vehicle_body_support"));const FString Hash=Text(Record,TEXT("sha256"));
+            if(!Digest(Hash)||Text(Record,TEXT("path"))!=TEXT("data/prepared/surface/vehicle-body-support/body-")+Hash+TEXT(".json"))
+                throw std::runtime_error("Vehicle body packet needs its immutable content-addressed data path.");
+            VehicleBodySupportData=AdmitVehicleBody(ObjectValue(ParseJSON(AdmitRecord(Record))),Movement,Source,Base,Source3.Support,Data,SourceOSM,AdmitRecord);
+            VehicleBodySupportData->generationDigest=TCHAR_TO_UTF8(*Hash);
+        }
         const auto Population=ObjectField(Data,TEXT("default_population"));
         const double Pedestrians=Number(Population,TEXT("pedestrian_count")),Vehicles=Number(Population,TEXT("vehicle_count"));
         if(Pedestrians!=FMath::FloorToDouble(Pedestrians) || Vehicles!=FMath::FloorToDouble(Vehicles) || Pedestrians<0 || Vehicles<0 || Pedestrians>10000 || Vehicles>1000)
@@ -397,7 +425,7 @@ bool AShibuyaWorld::LoadNetwork()
         SpawnFeet=Native(ReadPoint(Data->TryGetField(TEXT("default_spawn"))));
         if(FMath::Abs(SpawnFeet.X)>60000 || FMath::Abs(SpawnFeet.Y)>60000 || FMath::Abs(SpawnFeet.Z)>20000)
             throw std::runtime_error("Default spawn is outside the bounded Shibuya local frame.");
-        SpawnYaw=static_cast<float>(Number(Data,TEXT("spawn_yaw_degrees")));
+        SpawnYaw=static_cast<float>(Shibuya::NativeHeading(Number(Data,TEXT("spawn_yaw_degrees"))));
         Attribution=TEXT("Processed PLATEAU MLIT 2025; GSI elevation/aerial; OpenStreetMap contributors.\nCC BY4.0 / GSI Terms / ODbL.  plateau.gov.jp | maps.gsi.go.jp | openstreetmap.org/copyright");
         Simulation.Initialise(static_cast<uint32_t>(Seed),PedestrianCount,VehicleCount);
         CreateGeometry();UpdateGeometry();Ready=true;Error.Empty();
@@ -428,7 +456,7 @@ bool AShibuyaWorld::InputsUnchanged() const
 void AShibuyaWorld::ResetPopulation()
 {
     if(!Ready) return;
-    Simulation.Reset();NativeBoundaryEvents.Empty();NativeBoundaryEventCount=0;UpdateGeometry();
+    Simulation.Reset();NativeBoundaryEvents.Empty();NativeBoundaryEventCount=0;if(VehicleBodySupportData)VehicleBodySupportData->cache.clear();UpdateGeometry();
 }
 void AShibuyaWorld::Tick(float DeltaSeconds)
 {
@@ -468,7 +496,7 @@ TSharedPtr<FJsonObject> AShibuyaWorld::Snapshot() const
     auto Result=MakeShared<FJsonObject>();
     Result->SetBoolField(TEXT("ready"),Ready);Result->SetStringField(TEXT("error"),Error);
     Result->SetStringField(TEXT("network_sha256"),NetworkSHA256);Result->SetStringField(TEXT("source_manifest_sha256"),SourceManifestSHA256);
-    Result->SetStringField(TEXT("movement_manifest_sha256"),MovementManifestSHA256);
+    Result->SetStringField(TEXT("movement_manifest_sha256"),MovementManifestSHA256);Result->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());
     Result->SetStringField(TEXT("source_manifest_path"),SourceManifestPath);
     auto Bindings=MakeShared<FJsonObject>();for(const auto& Pair:InputDigests)Bindings->SetStringField(Pair.Key,Pair.Value);Result->SetObjectField(TEXT("actual_input_sha256"),Bindings);
     auto Roles=MakeShared<FJsonObject>();for(const auto& Pair:InputRoles)Roles->SetStringField(Pair.Key,UTF8_TO_TCHAR(Shibuya::RuntimeInputRoleName(Pair.Value)));Result->SetObjectField(TEXT("actual_input_roles"),Roles);
@@ -617,7 +645,9 @@ void AShibuyaExplorer::Tick(float DeltaSeconds)
 }
 TSharedPtr<FJsonObject> AShibuyaExplorer::Snapshot() const
 {
-    auto Result=MakeShared<FJsonObject>();Result->SetField(TEXT("position_cm"),VectorJSON(GetActorLocation()));
+    auto Result=MakeShared<FJsonObject>();Result->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());Result->SetField(TEXT("position_cm"),VectorJSON(GetActorLocation()));
+    const auto ENU=Shibuya::NativeCMToSource(Shibuya::Point{GetActorLocation().X,GetActorLocation().Y,GetActorLocation().Z});
+    Result->SetField(TEXT("position_enu_m"),VectorJSON(FVector(ENU.x,ENU.y,ENU.z)));
     const FRotator Rotation=Controller?Controller->GetControlRotation():FRotator::ZeroRotator;
     Result->SetField(TEXT("control_rotation_degrees"),VectorJSON(FVector(Rotation.Pitch,Rotation.Yaw,Rotation.Roll)));
     Result->SetBoolField(TEXT("flying"),Flying);Result->SetBoolField(TEXT("fast"),Fast);

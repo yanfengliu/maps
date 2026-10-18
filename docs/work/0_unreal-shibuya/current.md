@@ -1,6 +1,6 @@
 # Current Unreal Shibuya graphics comparison
 
-Updated 2026-10-17. Root is the orchestrator. Read this board before resuming.
+Updated 2026-10-18. Root is the orchestrator. The owner requested submission and temporary-file cleanup before archiving; no development is queued. See the [checkpoint record](archive-checkpoint.md).
 
 ## Owner scope and final result
 
@@ -23,6 +23,6 @@ All workers completed bounded handoffs. Engine/GPU lease FREE, no owned native/b
 
 ## Branch and preserved work
 
-Use codex/shibuya-unreal-5.8 as a graphics experiment; current evidence does not justify a duplicate city implementation. This milestone commits authored documentation/reviews only. Earlier executable delta stays local/uncommitted; main and instruction files are unchanged. Retain ignored baseline/camera/native/QA evidence under parent artifacts/matched-graphics-comparison-20261017 and project artifacts/unreal/matched-graphics-20261017-230053 for inspection/reproduction. Current map remains32b89836.
+Use codex/shibuya-unreal-5.8 as a graphics experiment; current evidence does not justify a duplicate city implementation. The archive checkpoint submits the existing authored implementation, tests and documents as unfinished work, without new product acceptance. Main and instruction files are unchanged. Retain ignored baseline/camera/native/QA evidence under parent artifacts/matched-graphics-comparison-20261017 and project artifacts/unreal/matched-graphics-20261017-230053 for inspection/reproduction. Current map remains32b89836.
 
 Prior Source/body/capacity drafts and rejected graphics experiments remain preserved historical work, not dependencies. Any later change requires a new owner-directed increment. No further action is needed for this comparison.

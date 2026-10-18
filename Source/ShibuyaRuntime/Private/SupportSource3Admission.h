@@ -26,14 +26,15 @@ FSource3Metadata AdmitSource3Closure(const TSharedPtr<FJsonObject>& Support,cons
 {
     auto Metadata=[&](const TSharedPtr<FJsonObject>& Record)
     {Source3Whole(Record,TEXT("bytes"),16*1024*1024);return ObjectValue(ParseJSON(AdmitRecord(Record)));};
-    if(Text(Support,TEXT("coordinate_model"))!=TEXT("native-float32-centimetres-v1") || Support->HasField(TEXT("topology_provenance")) || Support->HasField(TEXT("terrain_source_triangle_indices")))
+    if(Text(Support,TEXT("coordinate_model"))!=TEXT("native-esu-float32-centimetres-v2") || Support->HasField(TEXT("topology_provenance")) || Support->HasField(TEXT("terrain_source_triangle_indices")))
         throw std::runtime_error("Runtime Source3 needs its native coordinate model and new ledger ancestry, not relabeled Source2 topology.");
     if(!Source3Equal(ObjectField(Source,TEXT("support_surface")),ObjectField(Movement,TEXT("support_surface"))) || !Source3Equal(ObjectField(Source,TEXT("derived_terrain")),ObjectField(Movement,TEXT("derived_terrain"))))
         throw std::runtime_error("Runtime Source3 movement/source manifests must bind the same published support and derived-terrain records.");
     const auto ParentRecord=ObjectField(Support,TEXT("parent_support_surface"));
     const auto Parent=Metadata(ParentRecord),Ledger=Metadata(ObjectField(Support,TEXT("surface_edits")));
+    Shibuya::AdmitNativeFrame(Parent,TEXT("Source3 parent support"));Shibuya::AdmitNativeFrame(Ledger,TEXT("Source3 edit ledger"));
     if(Number(Parent,TEXT("schema_version"))!=2 || Text(ParentRecord,TEXT("path"))==TEXT("data/prepared/surface/support-surface-manifest.json") ||
-       Number(Ledger,TEXT("schema_version"))!=1 || Text(Ledger,TEXT("coordinate_model"))!=TEXT("native-float32-centimetres-v1") ||
+       Number(Ledger,TEXT("schema_version"))!=1 || Text(Ledger,TEXT("coordinate_model"))!=TEXT("native-esu-float32-centimetres-v2") ||
        Text(Ledger,TEXT("output_order"))!=TEXT("parent-triangles-minus-deletions-then-patch-faces") ||
        !Source3Equal(ObjectField(Ledger,TEXT("parent_support_surface")),ParentRecord) || !Source3Equal(ObjectField(Ledger,TEXT("parent_derived_terrain")),ObjectField(Parent,TEXT("derived_terrain"))))
         throw std::runtime_error("Runtime Source3 edit ledger does not identify its immutable schema2 parent and exact output order.");

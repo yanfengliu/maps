@@ -72,6 +72,10 @@ class VehicleGraphDiagnostic(unittest.TestCase):
         for diagnostic_only in (False,True):
             calls=[];graphs=[]
             class FixtureSurface:
+                # Independent literal current-frame support at the publication seam.
+                support_manifest={'native_frame':{'schema_version':1,
+                    'id':'native-centimetres-Xeast-Ysouth-Zup-v2',
+                    'definition_sha256':'2099342528416aa9dcdceea63e6d2604974341d8248f3b1c7ccf287008759170'}}
                 support_record={'sha256':'support'}
                 derived_record={'sha256':'terrain'}
                 road=types.SimpleNamespace(sources=[])

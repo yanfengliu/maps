@@ -18,6 +18,22 @@ source=Path(os.environ.get('SHIBUYA_RUNNER_UNDER_TEST',str(ROOT/'tools/runtime/r
 spec=importlib.util.spec_from_file_location('native_runner',source)
 runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
 
+FRAME={'schema_version':1,'id':'native-centimetres-Xeast-Ysouth-Zup-v2',
+       'definition_sha256':'2099342528416aa9dcdceea63e6d2604974341d8248f3b1c7ccf287008759170'}
+def marked(value):return {'native_frame':dict(FRAME),**value}
+def marked_report(value):
+    value=marked(value)
+    for field in ('load_state','final_simulation','final_rendered_contacts'):
+        if field in value:value[field]=marked(value[field])
+    for row in value.get('snapshots',[]):
+        for field in ('simulation','native_geometry','pawn'):
+            if field in row:row[field]=marked(row[field])
+    value['physics_motion_samples']=[marked(row) for row in value.get('physics_motion_samples',[])]
+    for row in value.get('captures',[]):
+        if 'native_geometry' in row:row['native_geometry']=marked(row['native_geometry'])
+    return value
+
+
 
 class Verdicts(unittest.TestCase):
     def setUp(self):
@@ -41,6 +57,95 @@ class Verdicts(unittest.TestCase):
         self.path.write_text('{}')
         with self.assertRaises(ValueError):runner.validate_arm('report-write-negative',1,None,'SHIBUYA_RUNTIME_CHECK FAIL report persistence',self.run_id,self.started,self.path,0)
 
+    def test_exact_native_frame_record_rejects_missing_old_mixed_and_coercions(self):
+        runner.require_native_frame(marked({}),'unit current frame')
+        variants=[None,dict(FRAME,id='native-centimetres-Xeast-Ynorth-Zup'),dict(FRAME,definition_sha256='0'*64),
+                  dict(FRAME,schema_version=True),dict(FRAME,schema_version='1'),dict(FRAME,schema_version=1.0),
+                  dict(FRAME,schema_version=2),dict(FRAME,extra=True),dict(FRAME,id=True),dict(FRAME,definition_sha256=1)]
+        for frame in variants:
+            with self.subTest(frame=frame),self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):
+                runner.require_native_frame({'native_frame':frame},'unit altered frame')
+        with self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):runner.require_native_frame({},'missing frame')
+
+    def test_fresh_old_dll_inventory_cannot_pass_with_current_source_headers(self):
+        report=marked_report({'run_id':self.run_id,'passed':True,'inventory_only':True,
+            'final_simulation':{'ready':True},'actual_native_population_verified':True,'actual_inputs_unchanged':True})
+        runner.validate_arm('inventory',0,report,'SHIBUYA_RUNTIME_INVENTORY PASS',self.run_id,self.started,self.path,0)
+        old=dict(report);old.pop('native_frame')
+        with self.assertRaisesRegex(ValueError,'Native report needs the exact sealed ESU v2'):
+            runner.validate_arm('inventory',0,old,'SHIBUYA_RUNTIME_INVENTORY PASS',self.run_id,self.started,self.path,0)
+        old=marked_report(report);old['final_simulation'].pop('native_frame')
+        with self.assertRaisesRegex(ValueError,'final_simulation'):
+            runner.validate_arm('inventory',0,old,'SHIBUYA_RUNTIME_INVENTORY PASS',self.run_id,self.started,self.path,0)
+
+    def test_each_consumed_coordinate_state_requires_the_current_frame(self):
+        import copy
+        report=self.negative_fixture()
+        report.update(load_state=marked({}),final_rendered_contacts=marked({}),physics_motion_samples=[marked({})],captures=[{'native_geometry':marked({})}])
+        runner.require_native_report_frames(report)
+        paths=[(),('load_state',),('final_simulation',),('final_rendered_contacts',),('physics_motion_samples',0),
+               ('snapshots',0,'simulation'),('snapshots',0,'native_geometry'),('snapshots',0,'pawn'),('captures',0,'native_geometry')]
+        for path in paths:
+            for bad in (None,dict(FRAME,id='old'),dict(FRAME,schema_version=True),dict(FRAME,schema_version='1'),dict(FRAME,extra=1)):
+                value=copy.deepcopy(report);target=value
+                for key in path:target=target[key]
+                if bad is None:target.pop('native_frame')
+                else:target['native_frame']=bad
+                with self.subTest(path=path,bad=bad),self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):
+                    runner.require_native_report_frames(value)
+
+    def test_all_five_prerequisite_receipts_require_current_frame_even_without_native_json(self):
+        implementation={'module':'current'};assets={'map':'current'};inputs={'data/source.json':'a'*64};roles={'data/source.json':'source'}
+        for phase in ('controls','negative-input','report-write-negative','oversize-negative','suppressed-source-failure'):
+            proof=marked({'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,
+                'actual_input_sha256':inputs,'actual_input_roles':roles,'source_manifest_path':'data/source.json'})
+            runner.validate_prerequisite(proof,phase,implementation,assets,inputs,roles,'data/source.json')
+            for bad in (None,dict(FRAME,id='old'),dict(FRAME,schema_version=True),dict(FRAME,schema_version='1'),dict(FRAME,extra=1)):
+                altered=dict(proof)
+                if bad is None:altered.pop('native_frame')
+                else:altered['native_frame']=bad
+                with self.subTest(phase=phase,bad=bad),self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):
+                    runner.validate_prerequisite(altered,phase,implementation,assets,inputs,roles,'data/source.json')
+
+    def test_source_and_support_json_frames_cannot_be_laundered_by_fresh_hashes(self):
+        for role in ('source','support'):
+            for bad in (None,dict(FRAME,id='old'),dict(FRAME,schema_version=True),dict(FRAME,schema_version='1'),dict(FRAME,extra=1)):
+                state=self.source_role_fixture();path=self.folder/('data/'+role+'.json')
+                value=json.loads(path.read_bytes())
+                if bad is None:value.pop('native_frame')
+                else:value['native_frame']=bad
+                raw=json.dumps(value).encode();path.write_bytes(raw);changed=hashlib.sha256(raw).hexdigest()
+                state['actual_input_sha256']['data/'+role+'.json']=changed
+                if role=='support':
+                    path=self.folder/'data/source.json';value=json.loads(path.read_bytes());value['support_surface'].update(bytes=len(raw),sha256=changed)
+                    raw=json.dumps(value).encode();path.write_bytes(raw);changed=hashlib.sha256(raw).hexdigest()
+                    state['actual_input_sha256']['data/source.json']=changed
+                state['source_manifest_sha256']=changed
+                with self.subTest(role=role,bad=bad),self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):
+                    runner.source_digest_limits(self.folder,state)
+
+    def test_inventory_receipt_and_native_states_refuse_bad_frames_before_launch(self):
+        import copy
+        from unittest import mock
+        a='a'*64;bindings={'data/'+str(i)+'.json':a for i in range(5)};roles={name:'source' for name in bindings}
+        implementation={'ShibuyaUnreal.uproject':a,'Binaries/Win64/UnrealEditor-ShibuyaRuntime.dll':a,'@native_runner':a}
+        prepared=marked({'passed':True,'phase':'inventory','source_sha256':implementation,'asset_sha256':{},'native_report_sha256':a,
+            'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':'data/0.json'})
+        native=marked_report({'actual_assets_after':{},'final_simulation':{'actual_input_sha256':bindings,'actual_input_roles':roles,
+            'source_manifest_path':'data/0.json','source_manifest_sha256':a}})
+        inventory=self.folder/'inventory/report.json'
+        for target in ('receipt','native report','native state','current'):
+            proof,report=copy.deepcopy(prepared),copy.deepcopy(native)
+            if target=='receipt':proof.pop('native_frame')
+            elif target=='native report':report['native_frame']['schema_version']=True
+            elif target=='native state':report['final_simulation']['native_frame']['schema_version']='1'
+            arguments=[str(source),'--project-root',str(self.folder),'--phase','controls','--asset-receipt',str(inventory)]
+            with self.subTest(target=target),mock.patch.object(sys,'argv',arguments),mock.patch.object(runner,'project_root',return_value=self.folder),mock.patch.object(runner,'confined',side_effect=lambda root,relative,exists=True:root/relative),mock.patch.object(runner,'guard_path',side_effect=lambda path,exists=True:path),mock.patch.object(runner,'digest',return_value=a),mock.patch.object(runner,'read_report',side_effect=lambda path:proof if path==inventory else report),mock.patch.object(runner,'asset_set',return_value={}),mock.patch.object(runner,'hash_assets',return_value={}),mock.patch.object(runner,'verify_source_inputs'),mock.patch.object(runner,'content_assets',side_effect=AssertionError('frame preflight completed')),mock.patch.object(runner,'OwnedJob',side_effect=AssertionError('engine must not launch')):
+                if target=='current':
+                    with self.assertRaisesRegex(AssertionError,'frame preflight completed'):runner.main()
+                else:
+                    with self.assertRaisesRegex(ValueError,'exact sealed ESU v2'):runner.main()
+
     def negative_fixture(self):
         report={'run_id':self.run_id,'passed':False,'inventory_only':False,'negative_input_control':True,'walk_input_moved':False,'look_input_changed':False,'flight_input_moved':False}
         for flag in ['both_populations_moved','native_support_verified','agent_separation_verified','actual_native_population_verified','actual_inputs_unchanged','native_pedestrian_gait_rotated','native_vehicle_spokes_rotated','benchmark_unpaused_warm_interval']:report[flag]=True
@@ -48,7 +153,7 @@ class Verdicts(unittest.TestCase):
         states=['initial','walk','look','flight_mode','flight','walk_refused','descent_ground','walk_recovered','pause_start','pause_end','resume','reset','benchmark_start','benchmark_end']
         report['snapshots']=[{'stage':stage,'elapsed_s':i,'simulation':{'ready':True,'error':'','pedestrian_count':60,'vehicle_count':12,'fixed_steps':i*60,'simulation_time_s':i,'paused':False,'actual_input_sha256':bindings,'actual_input_roles':{name:'source' for name in bindings},'source_manifest_path':'0','source_manifest_sha256':'a'*64},'native_geometry':{'actual_counts_and_transforms_valid':True},'pawn':{key:0 for key in ['forward_input_events','look_input_events','mode_input_events','pause_input_events','reset_input_events']}} for i,stage in enumerate(states)]
         report['final_simulation']=report['snapshots'][-1]['simulation'];report['input_entry']='UGameViewportClient::InputKey/InputAxis'
-        return report
+        return marked_report(report)
 
     def test_negative_input_requires_full_independent_simulation(self):
         report=self.negative_fixture()
@@ -59,7 +164,7 @@ class Verdicts(unittest.TestCase):
         with self.assertRaises(ValueError):runner.validate_arm('negative-input',1,bare,'',self.run_id,self.started,self.path,0)
 
     def test_suppressed_source_failure_cannot_qualify_negative_input(self):
-        report={'run_id':self.run_id,'passed':False,'negative_input_control':True,'load_state':{'ready':False,'error':'Oversized before allocation'}}
+        report=marked_report({'run_id':self.run_id,'passed':False,'negative_input_control':True,'load_state':{'ready':False,'error':'Oversized before allocation'}})
         runner.validate_arm('suppressed-source-failure',1,report,'',self.run_id,self.started,self.path,0)
         with self.assertRaises(ValueError):runner.validate_arm('negative-input',1,report,'',self.run_id,self.started,self.path,0)
 
@@ -82,12 +187,12 @@ class Verdicts(unittest.TestCase):
         terrain_path='data/terrain.glb';terrain=self.folder/terrain_path;terrain.parent.mkdir(parents=True,exist_ok=True)
         with terrain.open('wb') as stream:stream.truncate(size)
         derived={'path':terrain_path,'bytes':size,'sha256':runner.digest(terrain,64*1024*1024),'triangles':1}
-        support=put('data/support.json',json.dumps({'schema_version':2,'derived_terrain':derived}).encode())
-        source=put('data/source.json',json.dumps({'support_surface':support,'derived_terrain':derived} if source2 else {}).encode())
+        support=put('data/support.json',json.dumps(marked({'schema_version':2,'derived_terrain':derived})).encode())
+        source=put('data/source.json',json.dumps(marked({'support_surface':support,'derived_terrain':derived} if source2 else {})).encode())
         records=[source,support,derived,put('data/ledger.bin',b'ledger'),put('data/rays.json',b'{}')]
         bindings={row['path']:row['sha256'] for row in records};roles={name:'source' for name in bindings}
         if source2:roles.update({support['path']:'support_manifest',terrain_path:'derived_terrain'})
-        return {'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source['path'],'source_manifest_sha256':source['sha256']}
+        return marked({'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source['path'],'source_manifest_sha256':source['sha256']})
 
     def test_large_mesh_requires_real_source2_role_and_terminal_hash(self):
         state=self.source_role_fixture(40800172)
@@ -176,7 +281,7 @@ class Verdicts(unittest.TestCase):
             current={item.name:runner.digest(item) for item in paths}
             for phase in phases:
                 roles={name:'source' for name in old}; source_path=next(iter(old))
-                receipt={'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':old,'actual_input_roles':roles,'source_manifest_path':source_path}
+                receipt=marked({'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':old,'actual_input_roles':roles,'source_manifest_path':source_path})
                 self.path.write_text(json.dumps(receipt));loaded=runner.read_report(self.path)
                 with self.subTest(dataset=path.name,phase=phase):
                     with self.assertRaisesRegex(ValueError,'actual source inputs'):
@@ -217,11 +322,11 @@ class Verdicts(unittest.TestCase):
               ('wrong',bindings|{'data/0.json':'b'*64}),('complete',bindings)]
         for label,control_map in maps:
             def read_fixture(path):
-                if path==inventory_path:return {'passed':True,'phase':'inventory','source_sha256':implementation,'asset_sha256':assets,'native_report_sha256':a,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path}
-                if path==inventory_path.parent/'native.json':return {'actual_assets_after':{},'final_simulation':{'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}}
-                if path==prior_paths['controls'].parent/'native.json':return {'final_simulation':{'actual_input_sha256':control_map,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}}
+                if path==inventory_path:return marked({'passed':True,'phase':'inventory','source_sha256':implementation,'asset_sha256':assets,'native_report_sha256':a,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path})
+                if path==inventory_path.parent/'native.json':return marked_report({'actual_assets_after':{},'final_simulation':{'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}})
+                if path==prior_paths['controls'].parent/'native.json':return marked_report({'final_simulation':{'actual_input_sha256':control_map,'actual_input_roles':roles,'source_manifest_path':source_path,'source_manifest_sha256':a}})
                 for phase,prior in prior_paths.items():
-                    if path==prior:return {'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'native_report_sha256':a}
+                    if path==prior:return marked({'passed':True,'phase':phase,'source_sha256':implementation,'asset_sha256':assets,'actual_input_sha256':bindings,'actual_input_roles':roles,'source_manifest_path':source_path,'native_report_sha256':a})
                 self.fail('Unexpected fixture read: '+str(path))
             with self.subTest(control_map=label):
                 with mock.patch.object(sys,'argv',arguments), mock.patch.object(runner,'project_root',return_value=self.folder), mock.patch.object(runner,'confined',side_effect=lambda root,relative,exists=True: root/relative), mock.patch.object(runner,'guard_path',side_effect=lambda path,exists=True:path), mock.patch.object(runner,'digest',return_value=a), mock.patch.object(runner,'read_report',side_effect=read_fixture), mock.patch.object(runner,'verify_source_inputs'), mock.patch.object(runner,'asset_set',return_value=assets), mock.patch.object(runner,'hash_assets',return_value=assets), mock.patch.object(runner,'content_assets',side_effect=AssertionError('All prerequisite admission completed')):
@@ -270,6 +375,7 @@ class Verdicts(unittest.TestCase):
                 self.assertEqual(len(receipts), 1)
                 receipt = json.loads(receipts[0].read_text())
                 self.assertIs(receipt['passed'], False)
+                self.assertEqual(receipt['native_frame'],FRAME)
                 self.assertIs(receipt['cleanup']['job_empty_verified'], False)
                 self.assertEqual(receipt['cleanup']['terminated_owned_remaining_pids'], [])
                 self.assertIn('controlled job close failure', receipt['error'])
@@ -335,5 +441,78 @@ class Verdicts(unittest.TestCase):
             if hasattr(job,'attempt_pid'):self.cleanup_known_child(job.attempt_pid)
         print(json.dumps({'proof':'assignment-failure-before-resume','root_pid':job.attempt_pid,'no_child_marker':not marker.exists(),'root_stopped':True}),flush=True)
 
+
+
+
+class CaptureVerdicts(unittest.TestCase):
+    """Saved pixels and actual-view receipt predicates only; no Game was run."""
+    def setUp(self):
+        self.folder=ROOT/'Artifacts/runtime-capture-unit'/uuid.uuid4().hex
+        self.folder.mkdir(parents=True);self.relative='frames';(self.folder/self.relative).mkdir()
+        self.run_id=uuid.uuid4().hex;self.started=time.time()-1
+        self.report={'capture_error':'','renderer_resources':{'world':'/Game/Maps/Shibuya.Shibuya'},'captures':[]}
+        for i in range(2):
+            raw=self.png(i);name=self.relative+('/runtime.png' if i==0 else '/runtime-2.png');(self.folder/name).write_bytes(raw)
+            view={'capture_id':self.run_id+'-'+str(i),'frame_counter':100+i,'callback':'PostRenderView_RenderThread','game_main_viewport_matched':True,'world':'/Game/Maps/Shibuya.Shibuya',
+                'camera_cm':[0,0,180],'forward':[1,0,0],'output_rect':[0,0,1920,1080],'view_projection_matrix':[1 if j%5==0 else 0 for j in range(16)],
+                'fov_degrees':80.,'iso':100.,'shutter_speed':125.,'fstop':8.,'exposure_bias':0.,'lumen_scene_distance_cm':240000.,'lumen_trace_distance_cm':20000.,'lumen_detail':1.,'lumen_quality':1.,'lumen_cache_resolution':1.,'cached_lighting_ev':6.,'clipmap_extent_cm':7500.,
+                'manual_exposure':True,'physical_camera':True,'lumen_gi':True,'lumen_reflections':True,'primary_fraction_upper_bound_available':True,'primary_fraction_upper_bound':.729,'secondary_fraction':1.,'feature_level':'SM6','camera_ev100_derived':__import__('math').log2(8000.)}
+            self.report['captures'].append({'path':name,'run_id':self.run_id,'saved_acknowledged':True,'saved_bytes':len(raw),'paused':False,'after_benchmark':True,'frame_counter':100+i,'fixed_steps':200+i*45,'elapsed_s':30+i*.75,'view':view,
+                'native_geometry':{'actual_counts_and_transforms_valid':True,'pedestrian_body_positions_cm':[[1,2,3]],'vehicle_body_positions_cm':[[4,5,6]]}})
+        self.report=marked_report(self.report)
+    def tearDown(self):
+        self.folder.resolve().relative_to((ROOT/'Artifacts/runtime-capture-unit').resolve());shutil.rmtree(self.folder)
+    @staticmethod
+    def png(phase=0,blank=False):
+        import struct,zlib
+        def chunk(k,v):return struct.pack('>I',len(v))+k+v+struct.pack('>I',zlib.crc32(k+v)&0xffffffff)
+        row=(bytes([0,0,0])*1920 if blank else b''.join(bytes(((x+phase)%256,(x*3+x//4)%256,128)) for x in range(1920)))
+        return b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',1920,1080,8,2,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+row)*1080))+chunk(b'IEND',b'')
+    def accept(self):return runner.validate_captures(self.folder,self.relative,self.report,self.run_id,self.started)
+    def test_two_saved_frames_bind_pixels_and_actual_view(self):
+        evidence=self.accept();self.assertEqual(len(evidence),2);self.assertNotEqual(evidence[0]['sha256'],evidence[1]['sha256'])
+        self.assertGreater(evidence[0]['pixels']['scene_luma_variance'],4)
+    def test_contact_red_retains_valid_pixels_and_preserves_arm_error(self):
+        self.report['passed']=False
+        evidence,error=runner.retain_captures(self.folder,self.relative,self.report,self.run_id,self.started,'Verdict: contact gap exceeds20cm')
+        self.assertEqual(len(evidence),2);self.assertEqual(error,'Verdict: contact gap exceeds20cm')
+        self.report.pop('captures')
+        evidence,error=runner.retain_captures(self.folder,self.relative,self.report,self.run_id,self.started,error)
+        self.assertEqual(evidence,[]);self.assertIn('contact gap exceeds20cm',error);self.assertIn('Capture verdict:',error)
+        evidence,error=runner.retain_captures(self.folder,self.relative,None,self.run_id,self.started,None)
+        self.assertEqual(evidence,[]);self.assertIn('Capture verdict:',error)
+    def test_old_capture_contract_cannot_pass_without_acknowledged_pair(self):
+        self.report.pop('captures')
+        with self.assertRaisesRegex(ValueError,'two saved'):self.accept()
+    def test_no_ack_or_frame_or_step_progress_refuses(self):
+        import copy
+        for field,value in [('saved_acknowledged',False),('frame_counter',100),('fixed_steps',200),('elapsed_s',30.5),('paused',True),('after_benchmark',False)]:
+            saved=copy.deepcopy(self.report);self.report['captures'][1][field]=value
+            with self.assertRaises(ValueError,msg=field):self.accept()
+            self.report=saved
+    def test_wrong_preview_view_and_frame_binding_refuse(self):
+        import copy
+        for key,value in [('world','/Engine/Transient.EditorPreview'),('game_main_viewport_matched',False),('capture_id','other'),('frame_counter',999),('manual_exposure',False),('cached_lighting_ev',4.),('iso',200.),('primary_fraction_upper_bound',0.)]:
+            saved=copy.deepcopy(self.report);self.report['captures'][0]['view'][key]=value
+            with self.assertRaises(ValueError,msg=key):self.accept()
+            self.report=saved
+    def test_missing_stale_or_changed_saved_bytes_refuse(self):
+        path=self.folder/self.report['captures'][0]['path'];raw=path.read_bytes();path.unlink()
+        with self.assertRaises(FileNotFoundError):self.accept()
+        path.write_bytes(raw);os.utime(path,(self.started-10,self.started-10))
+        with self.assertRaisesRegex(ValueError,'stale'):self.accept()
+        path.write_bytes(raw+b'extra')
+        with self.assertRaisesRegex(ValueError,'bytes are stale'):self.accept()
+    def test_blank_corrupt_and_duplicate_pixels_refuse(self):
+        with self.assertRaisesRegex(ValueError,'blank'):runner.capture_png(self.png(blank=True))
+        raw=bytearray(self.png());raw[-6]^=1
+        with self.assertRaisesRegex(ValueError,'checksum'):runner.capture_png(bytes(raw))
+        first=self.report['captures'][0];second=self.report['captures'][1]
+        raw=(self.folder/first['path']).read_bytes();(self.folder/second['path']).write_bytes(raw);second['saved_bytes']=len(raw)
+        with self.assertRaisesRegex(ValueError,'identical'):self.accept()
+    def test_derived_cache_range_changes_precision_not_camera(self):
+        import math
+        ev=math.log2(8**2*125*100/100)
+        self.assertGreater(ev,4+8);self.assertLess(ev,6+8);self.assertGreaterEqual(ev,6-12)
 
 if __name__=='__main__':unittest.main()

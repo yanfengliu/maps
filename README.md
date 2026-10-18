@@ -1,5 +1,9 @@
 # Shibuya in Unreal Engine 5.8
 
+Archive checkpoint, 2026-10-18: this branch preserves the unfinished Unreal experiment at the owner's request. The [graphics comparison](docs/work/0_unreal-shibuya/matched-comparison-result.md) found no decisive overall visual or workflow advantage. Source, body support, controls and population/performance acceptance remain incomplete; results below are historical bounds. See the [checkpoint record](docs/work/0_unreal-shibuya/archive-checkpoint.md) and [mission board](docs/work/0_unreal-shibuya/current.md).
+
+## Historical checkpoints
+
 The normal Source3 support producer succeeds in83.593seconds within default150/110second budgets and publishes schema3 surface9ef164ef from independently reviewed literal-parent closure370. The identity-only serializer fix371 passes134 Source tests21.865seconds (22.715wall). Source publication is now complete; replacement route capacity/crossing coverage372, native fullbody contacts, final rendered appearance373 and3000/200performance remain open.
 
 Shared Source2/3 support queries now match actual native coordinate packing and signed normals; all130 Source tests pass17.267seconds. The readiness-calibrated native probe confirms the corrected road hit and independently reproduces the remaining shoe/car failures. [Reviews360-365](docs/work/0_unreal-shibuya/reviews/361_native_source_query_contract.md) separate exact source conservation, lawful route capacity and real posed contacts. Final support, appearance coherence and3000/200 performance remain open.
@@ -14,7 +18,7 @@ This experimental branch builds a roughly 1 km Shibuya city crop from fresh publ
 
 The source milestone is reviewed, accepted and pushed at `e0d33fe` on `codex/shibuya-unreal-5.8`: 70 city GLBs, the 90-tile GSI aerial atlas, 25 road photo UV assets, 451 pedestrian routes, 18 legal vehicle cycles and one legal crop entry/exit vehicle path. All 47 canonical source tests passed in 18.440 seconds. Reviewed native Editor/Game targets also compile; compilation does not establish gameplay or appearance acceptance. The reach-only fixed-six hardware appearance trial and Source2 native collision installation now pass; final-source controls, boundary lifecycle, photorealism and the 3,000-pedestrian/200-vehicle 60 fps target at 1920 by 1080 remain pending. The [plan](docs/work/0_unreal-shibuya/plan.md) owns acceptance and the [branch rules](docs/policies/local-rules.md) define the exception to the historical browser project.
 
-## Current native verification
+## Historical native verification
 
 Both native targets compile and link with the reviewed Source3 consumer and persistent lighting configuration. Integrated checks pass148 Unreal helper tests,115 source tests and21 runner tests; the prior core result is reused only with identical four inputs and two fixtures. [Integrated review348](docs/work/0_unreal-shibuya/reviews/348_source3_integrated_code.md) binds all22 changed code files. The actual offscreen map has demonstrated walking, mouse look, flight, landing, pause/resume, reset and visible unsupported-walk refusal, with moving animated pedestrians and vehicles at60/12. That earlier controls run remains RED on30 support failures; Source3 data/import and final-source3000/200 performance remain pending.
 

@@ -1,4 +1,7 @@
 #include "ShibuyaWorld.h"
+#include "NativeFrame.h"
+#include "NativeFrameJson.h"
+#include "VehicleBodySupport.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -22,16 +25,18 @@ FLinearColor Paint(uint32_t Appearance)
     static const FLinearColor Colours[]={FLinearColor(0.90f,0.92f,0.94f),FLinearColor(0.025f,0.03f,0.04f),FLinearColor(0.32f,0.36f,0.40f),FLinearColor(0.45f,0.025f,0.02f),FLinearColor(0.08f,0.17f,0.32f),FLinearColor(0.75f,0.58f,0.025f)};
     return Colours[Appearance%UE_ARRAY_COUNT(Colours)];
 }
+FVector NativeLocal(const FVector& Source) {return FVector(Source.X,-Source.Y,Source.Z);}
+FQuat NativeJoint(const FQuat& Source) {return FQuat(-Source.X,Source.Y,-Source.Z,Source.W);}
 FTransform Part(const FVector& Origin,double Heading,const FVector& Local,const FVector& Scale,const FQuat& Joint=FQuat::Identity)
 {
-    const FQuat Yaw(FVector::UpVector,Heading);
-    return FTransform(Yaw*Joint,Origin+Yaw.RotateVector(Local),Scale);
+    const FQuat Yaw(FVector::UpVector,Shibuya::NativeHeading(Heading));
+    return FTransform(Yaw*NativeJoint(Joint),Origin+Yaw.RotateVector(NativeLocal(Local)),Scale);
 }
 FTransform WheelPart(const FVector& Origin,const FQuat& Pose,int32 Wheel,bool Face,double Spin)
 {
     const FQuat Rotation=FQuat(FVector(0,1,0),Spin)*(Face?FQuat::Identity:FQuat(FVector(1,0,0),PI/2));
     const FVector Local(Wheel<2?135:-135,Wheel%2?-(Face?88.5:78):(Face?88.5:78),32);
-    return FTransform(Pose*Rotation,Origin+Pose.RotateVector(Local),Face?FVector(0.52,0.025,0.055):FVector(0.64,0.64,0.22));
+    return FTransform(Pose*NativeJoint(Rotation),Origin+Pose.RotateVector(NativeLocal(Local)),Face?FVector(0.52,0.025,0.055):FVector(0.64,0.64,0.22));
 }
 }
 void AShibuyaWorld::CreateGeometry()
@@ -80,9 +85,11 @@ void AShibuyaWorld::CreateGeometry()
 void AShibuyaWorld::UpdateGeometry()
 {
     int32 PersonIndex=0,CarIndex=0;
+    size_t AgentSlot=0;
     for(const auto& Agent:Simulation.agents)
     {
-        const FVector Origin(Agent.position.x*100,Agent.position.y*100,Agent.position.z*100);
+        const size_t Slot=AgentSlot++;
+        const auto Native=Shibuya::SourceToNativeCM(Agent.position);FVector Origin(Native.x,Native.y,Native.z);
         if(Simulation.routes[Agent.route].kind==Shibuya::Kind::Pedestrian)
         {
             const double Height=0.94+((Agent.appearance>>10)%13)*0.01;
@@ -105,10 +112,40 @@ void AShibuyaWorld::UpdateGeometry()
         else
         {
             const auto& Route=Simulation.routes[Agent.route];Shibuya::Point Tangent;Route.At(Agent.distance,0,&Tangent);
-            const double Pitch=std::atan2(Tangent.z,std::hypot(Tangent.x,Tangent.y)),Roll=std::atan(Route.CrossSlope(Agent.distance));
-            const FQuat Pose=FQuat(FVector::UpVector,Agent.heading)*FQuat(FVector(0,1,0),-Pitch)*FQuat(FVector(1,0,0),Roll);
+            double Pitch=std::atan2(Tangent.z,std::hypot(Tangent.x,Tangent.y)),Roll=std::atan(Route.CrossSlope(Agent.distance));
+            if(VehicleBodySupportData)
+            {
+                auto Fit=VehicleBodySupportData->Pose(Slot,Agent.route,Route.id,Agent.distance,Agent.generation,
+                    {Agent.position.x,Agent.position.y,Agent.position.z},Agent.heading,Agent.travelled);
+                if(Fit.valid&&!VehicleBodySupportData->cache[Slot].nativeVerified)
+                {
+                    const FVector FitOrigin(Origin.X,Origin.Y,Fit.height*100);
+                    const FQuat FitRotation=FQuat(FVector::UpVector,Shibuya::NativeHeading(Agent.heading))*FQuat(FVector(0,1,0),-Fit.pitch)*FQuat(FVector(1,0,0),Shibuya::NativeRoll(Fit.roll));
+                    const FVector FitUp=FitRotation.RotateVector(FVector::UpVector);
+                    std::array<Shibuya::BodyPoint,10> Actual;
+                    for(size_t C=0;C<6;++C)
+                    {
+                        const auto Local=Shibuya::VehicleBodyContacts[C];const auto P=FitOrigin+FitRotation.RotateVector(FVector(Local.x*100,-Local.y*100,0));Actual[C]={P.X,P.Y,P.Z};
+                    }
+                    for(int32 Wheel=0;Wheel<4;++Wheel)
+                    {
+                        const auto Transform=WheelPart(FitOrigin,FitRotation,Wheel,false,Agent.travelled/0.32);
+                        const auto Mesh=VehicleParts[3+Wheel]->GetStaticMesh();
+                        if(!Mesh)throw std::runtime_error("Vehicle body verification needs the actual tyre mesh bounds.");
+                        FVector Radial=Transform.InverseTransformVectorNoScale(-FitUp);Radial.Z=0;Radial=Radial.GetSafeNormal();
+                        const auto Bounds=Mesh->GetBounds();const double Radius=FMath::Max(Bounds.BoxExtent.X,Bounds.BoxExtent.Y);
+                        const auto P=Transform.TransformPosition(Bounds.Origin+Radial*Radius);Actual[6+Wheel]={P.X,P.Y,P.Z};
+                    }
+                    Fit=VehicleBodySupportData->VerifyActual(Slot,Route.id,Actual);
+                }
+                if(Fit.valid){Origin.Z=Fit.height*100;Pitch=Fit.pitch;Roll=Fit.roll;}
+                // A refused pose stays visible and moving under the old pose.
+                // Its cumulative refusal vetoes native acceptance below.
+            }
+            else if(SupportFailures==0)++SupportFailures;
+            const FQuat Pose=FQuat(FVector::UpVector,Shibuya::NativeHeading(Agent.heading))*FQuat(FVector(0,1,0),-Pitch)*FQuat(FVector(1,0,0),Shibuya::NativeRoll(Roll));
             auto Set=[&](int32 Index,const FVector& Local,const FVector& Scale,const FQuat& Rotation=FQuat::Identity)
-            { VehicleTransforms[Index][CarIndex]=FTransform(Pose*Rotation,Origin+Pose.RotateVector(Local),Scale); };
+            { VehicleTransforms[Index][CarIndex]=FTransform(Pose*NativeJoint(Rotation),Origin+Pose.RotateVector(NativeLocal(Local)),Scale); };
             Set(0,FVector(0,0,68),FVector(4.25,1.75,0.80));
             Set(1,FVector(-15,0,119),FVector(2.15,1.60,0.36));
             Set(2,FVector(-15,0,108),FVector(2.28,1.65,0.41));
@@ -132,7 +169,7 @@ void AShibuyaWorld::UpdateGeometry()
 }
 TSharedPtr<FJsonObject> AShibuyaWorld::GeometrySnapshot() const
 {
-    auto Result=MakeShared<FJsonObject>();
+    auto Result=MakeShared<FJsonObject>();Result->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());
     Result->SetNumberField(TEXT("pedestrian_parts"),PedestrianParts.Num());Result->SetNumberField(TEXT("vehicle_parts"),VehicleParts.Num());
     bool Valid=PedestrianParts.Num()==10 && VehicleParts.Num()==14;
     TArray<TSharedPtr<FJsonValue>> People,Cars,Parts;
@@ -202,7 +239,7 @@ TSharedPtr<FJsonObject> AShibuyaWorld::GeometrySnapshot() const
 
 TSharedPtr<FJsonObject> AShibuyaWorld::PhysicsSnapshot() const
 {
-    auto Result=MakeShared<FJsonObject>();int32 Traces=0,Failures=0;double MaximumGap=0;
+    auto Result=MakeShared<FJsonObject>();Result->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());int32 Traces=0,Failures=0,SourceTraces=0,SourceFailures=0;double MaximumGap=0,MaximumSourceResidual=0;
     TArray<size_t> People,Cars;
     for(size_t Slot=0;Slot<Simulation.agents.size();++Slot)
         (Simulation.routes[Simulation.agents[Slot].route].kind==Shibuya::Kind::Pedestrian?People:Cars).Add(Slot);
@@ -220,9 +257,44 @@ TSharedPtr<FJsonObject> AShibuyaWorld::PhysicsSnapshot() const
             Reason=Gap>20?TEXT("gap"):Hit.ImpactNormal.Z<0.7?TEXT("normal"):TEXT("pass");
             if(Gap>20 || Hit.ImpactNormal.Z<0.7)++Failures;
         }
+        auto SourceProof=MakeShared<FJsonObject>();
+        if(Kind!=TEXT("shoe"))
+        {
+            ++SourceTraces;bool Matched=false;
+            try
+            {
+                if(VehicleBodySupportData&&Slot<Simulation.agents.size())
+                {
+                    const auto& Agent=Simulation.agents[Slot];const auto& Route=Simulation.routes[Agent.route];
+                    const auto* Window=VehicleBodySupportData->Window(Route.id,Agent.distance);
+                    if(Window)
+                    {
+                        const auto* NativeComponent=Found?Cast<UStaticMeshComponent>(Hit.GetComponent()):nullptr;
+                        const std::string Preferred=NativeComponent&&NativeComponent->GetStaticMesh()?TCHAR_TO_UTF8(*NativeComponent->GetStaticMesh()->GetPathName()):"";
+                        const Shibuya::BodyPoint Native{Position.X,Position.Y,Position.Z};
+                        const auto SourceHit=VehicleBodySupportData->Query(Shibuya::NativeCMToSource(Native),Agent.position.z,*Window,&Native,Preferred);
+                        SourceProof->SetBoolField(TEXT("found"),SourceHit.found);SourceProof->SetBoolField(TEXT("eligible"),SourceHit.eligible);SourceProof->SetBoolField(TEXT("same_first_hit"),SourceHit.sameFirstHit);
+                        if(SourceHit.found&&SourceHit.face<VehicleBodySupportData->faces.size())
+                        {
+                            const auto& Face=VehicleBodySupportData->faces[SourceHit.face];
+                            SourceProof->SetStringField(TEXT("source_path"),UTF8_TO_TCHAR(Face.sourcePath.c_str()));SourceProof->SetStringField(TEXT("mesh_path"),UTF8_TO_TCHAR(Face.meshPath.c_str()));
+                            SourceProof->SetNumberField(TEXT("source_triangle"),Face.triangle);SourceProof->SetNumberField(TEXT("height_cm"),SourceHit.height*100);SourceProof->SetNumberField(TEXT("signed_normal_z"),SourceHit.normalZ);
+                            const auto* Component=Found?Cast<UStaticMeshComponent>(Hit.GetComponent()):nullptr;
+                            const double Residual=Found?std::abs(SourceHit.height*100-Hit.ImpactPoint.Z):INFINITY;
+                            if(Found)MaximumSourceResidual=std::max(MaximumSourceResidual,Residual);
+                            Matched=Found&&SourceHit.eligible&&SourceHit.sameFirstHit&&Component&&Component->GetStaticMesh()&&
+                                Component->GetStaticMesh()->GetPathName()==UTF8_TO_TCHAR(Face.meshPath.c_str())&&Residual<=VehicleBodySupportData->nativeSourceToleranceCM;
+                        }
+                    }
+                }
+            }
+            catch(const std::exception&){SourceProof->SetStringField(TEXT("reason"),TEXT("qualified_source_query_refused"));}
+            SourceProof->SetBoolField(TEXT("native_matches_source"),Matched);
+            if(!Matched){++SourceFailures;if(VehicleBodySupportData)++VehicleBodySupportData->nativeContactFailures;if(Reason==TEXT("pass")){Reason=TEXT("source");++Failures;}}
+        }
         const FString Key=Kind+TEXT("/")+Reason;int32& Count=ExampleCounts.FindOrAdd(Key);
         if(Count<(Reason==TEXT("pass")?1:8))
-        {++Count;Examples.Add(MakeShared<FJsonValueObject>(SupportContactExample(Kind,Contact,Slot,Instance,Part,Position,Found?&Hit:nullptr,80,100)));}
+        {++Count;auto Example=SupportContactExample(Kind,Contact,Slot,Instance,Part,Position,Found?&Hit:nullptr,80,100);if(Kind!=TEXT("shoe")){Example->SetObjectField(TEXT("body_source_first_hit"),SourceProof);Example->SetStringField(TEXT("native_contact_reason"),Example->GetStringField(TEXT("reason")));Example->SetStringField(TEXT("reason"),Reason);}Examples.Add(MakeShared<FJsonValueObject>(Example));}
     };
     for(int32 Person=0;Person<PedestrianCount;++Person)for(int32 Shoe:{7,8})
     {
@@ -255,7 +327,22 @@ TSharedPtr<FJsonObject> AShibuyaWorld::PhysicsSnapshot() const
     }
     Result->SetNumberField(TEXT("fixed_steps"),Simulation.Steps());Result->SetNumberField(TEXT("actual_contact_traces"),Traces);Result->SetNumberField(TEXT("failures"),Failures);Result->SetNumberField(TEXT("maximum_ground_gap_cm"),MaximumGap);
     Result->SetArrayField(TEXT("contact_examples"),Examples);
-    Result->SetStringField(TEXT("examples_bound"),TEXT("At most8 failures per shoe/tyre/body_end/body_corner and miss/gap/normal reason, plus1 success per kind; exact existing rays and predicates. Counts still include every actual contact."));
-    Result->SetBoolField(TEXT("passed"),Traces==PedestrianCount*2+VehicleCount*10&&Failures==0);
+    Result->SetNumberField(TEXT("body_source_contact_checks"),SourceTraces);Result->SetNumberField(TEXT("body_source_contact_failures"),SourceFailures);Result->SetNumberField(TEXT("maximum_source_native_residual_cm"),MaximumSourceResidual);
+    Result->SetStringField(TEXT("examples_bound"),TEXT("At most8 failures per shoe/tyre/body_end/body_corner and miss/gap/normal/source reason, plus1 success per kind; existing native rays and native thresholds are preserved. Counts include every actual contact and every car source/native comparison."));
+    auto BodySupport=MakeShared<FJsonObject>();
+    BodySupport->SetBoolField(TEXT("available"),static_cast<bool>(VehicleBodySupportData));
+    BodySupport->SetNumberField(TEXT("unavailable_failures"),SupportFailures);
+    if(VehicleBodySupportData)
+    {
+        const auto& B=*VehicleBodySupportData;
+        BodySupport->SetStringField(TEXT("packet_sha256"),UTF8_TO_TCHAR(B.generationDigest.c_str()));
+        BodySupport->SetNumberField(TEXT("evaluations"),B.evaluations);BodySupport->SetNumberField(TEXT("qualified_points"),B.qualifiedPoints);
+        BodySupport->SetNumberField(TEXT("cumulative_failures"),B.failures);BodySupport->SetNumberField(TEXT("changed_first_hit_failures"),B.changedFirstHits);
+        BodySupport->SetNumberField(TEXT("native_source_contact_failures"),B.nativeContactFailures);
+        BodySupport->SetNumberField(TEXT("ineligible_failures"),B.ineligible);BodySupport->SetNumberField(TEXT("footprint_failures"),B.footprintFailures);
+    }
+    Result->SetObjectField(TEXT("vehicle_body_support"),BodySupport);
+    const bool PosesPassed=VehicleCount==0||(VehicleBodySupportData&&VehicleBodySupportData->failures==0&&VehicleBodySupportData->nativeContactFailures==0&&SupportFailures==0);
+    Result->SetBoolField(TEXT("passed"),Traces==PedestrianCount*2+VehicleCount*10&&Failures==0&&PosesPassed);
     Result->SetStringField(TEXT("bound"),TEXT("Sampled real game visibility physics at actual shoe bounds, actual tilted tyre contacts and car front/back/corners; gap<=20cm and normal.Z>=0.7. Discrete motion samples do not prove continuous support."));return Result;
 }

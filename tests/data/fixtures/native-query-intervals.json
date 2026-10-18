@@ -1,0 +1,1550 @@
+{
+  "bound": "Six source-byte/native-description face operands with retained actual XYs and explicit derived probes. Candidate GLB flat face IDs are NOT verified cooked-face identities; no global first-hit/city admission claim.",
+  "pins": [
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\native-ground-discriminator-20261017\\v2\\native.json",
+      "bytes": 130010,
+      "sha256": "fe50ef667e04555a7122dcb279739ace60f32bec792edfa938cc1a1bb961aeca"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\posed-contact-diagnosis-20261017\\diagnosis.json",
+      "bytes": 47075,
+      "sha256": "9ab6f64442b091f661af8660fb9dadcc18ea698e4e854d345aba2497bc73aa8f"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\data\\prepared\\surface\\generations\\generation-cjjfpj5m\\terrain-support.glb",
+      "bytes": 40800172,
+      "sha256": "1a420a5d2120926e02eb6d5cbff03b169a0169610a4a64055cb9129400edd21a"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\data\\prepared\\surface\\roads\\data65.glb",
+      "bytes": 273596,
+      "sha256": "92f5b4fa214c33a37e5fae11d44608b3f5a5deb255f05f6e37a53e39fb68fbec"
+    },
+    {
+      "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\shibuya-unreal-5.8\\worktree\\data\\prepared\\surface\\roads\\data66.glb",
+      "bytes": 686384,
+      "sha256": "0769c59db5d4fe7fd7243ae30c3917b06649533ab2776327f02a1fb53fb485f5"
+    }
+  ],
+  "faces": [
+    {
+      "id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620916",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "flat_face": 620916,
+      "mesh": 0,
+      "primitive": 0,
+      "triangle": 620916,
+      "enu_m": [
+        [
+          -149.9310302734375,
+          94.76223754882812,
+          0.6642456650733948
+        ],
+        [
+          -150.19322204589844,
+          94.86662292480469,
+          0.6641164422035217
+        ],
+        [
+          -150.1925506591797,
+          94.86662292480469,
+          0.6641198992729187
+        ]
+      ],
+      "native_mapping": "unverified; selected source flat index only, not cooked collision identity"
+    },
+    {
+      "id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "flat_face": 620961,
+      "mesh": 0,
+      "primitive": 0,
+      "triangle": 620961,
+      "enu_m": [
+        [
+          -149.08030700683594,
+          94.5277099609375,
+          0.6637799143791199
+        ],
+        [
+          -148.88807678222656,
+          94.34674072265625,
+          0.6614051461219788
+        ],
+        [
+          -148.94622802734375,
+          94.36978149414062,
+          0.6617509722709656
+        ]
+      ],
+      "native_mapping": "unverified; selected source flat index only, not cooked collision identity"
+    },
+    {
+      "id": "data/prepared/surface/roads/data65.glb#694",
+      "source_geometry": "data/prepared/surface/roads/data65.glb",
+      "flat_face": 694,
+      "mesh": 0,
+      "primitive": 0,
+      "triangle": 694,
+      "enu_m": [
+        [
+          390.0977783203125,
+          156.64544677734375,
+          13.170252799987793
+        ],
+        [
+          387.8855285644531,
+          158.1336212158203,
+          13.074527740478516
+        ],
+        [
+          389.80169677734375,
+          158.90829467773438,
+          13.130350112915039
+        ]
+      ],
+      "native_mapping": "unverified; selected source flat index only, not cooked collision identity"
+    },
+    {
+      "id": "data/prepared/surface/roads/data65.glb#695",
+      "source_geometry": "data/prepared/surface/roads/data65.glb",
+      "flat_face": 695,
+      "mesh": 0,
+      "primitive": 0,
+      "triangle": 695,
+      "enu_m": [
+        [
+          406.2388610839844,
+          164.5771484375,
+          13.49774169921875
+        ],
+        [
+          405.4886779785156,
+          162.43389892578125,
+          13.504761695861816
+        ],
+        [
+          405.1778564453125,
+          162.26644897460938,
+          13.499792098999023
+        ]
+      ],
+      "native_mapping": "unverified; selected source flat index only, not cooked collision identity"
+    },
+    {
+      "id": "data/prepared/surface/roads/data66.glb#1217",
+      "source_geometry": "data/prepared/surface/roads/data66.glb",
+      "flat_face": 1217,
+      "mesh": 0,
+      "primitive": 0,
+      "triangle": 1217,
+      "enu_m": [
+        [
+          29.612163543701172,
+          392.7804260253906,
+          2.0017364025115967
+        ],
+        [
+          43.41162872314453,
+          384.6551818847656,
+          1.9761042594909668
+        ],
+        [
+          43.40065383911133,
+          384.6351623535156,
+          1.9761018753051758
+        ]
+      ],
+      "native_mapping": "unverified; selected source flat index only, not cooked collision identity"
+    },
+    {
+      "id": "native-terrain-810530",
+      "enu_m": [
+        [
+          427.7392578125,
+          265.9136328125,
+          11.60529052734375
+        ],
+        [
+          428.291484375,
+          265.72216796875,
+          11.65822998046875
+        ],
+        [
+          426.63484375,
+          266.29599609375,
+          11.499415283203126
+        ]
+      ],
+      "native_world_cm": [
+        [
+          42773.92578125,
+          26591.36328125,
+          1160.529052734375
+        ],
+        [
+          42829.1484375,
+          26572.216796875,
+          1165.822998046875
+        ],
+        [
+          42663.484375,
+          26629.599609375,
+          1149.9415283203125
+        ]
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "id": "posed-0",
+      "xy_m": [
+        96.26952920928561,
+        92.3179176093721
+      ],
+      "native_height_m": 0.9305443906824692,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 20.816913389897564,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-1",
+      "xy_m": [
+        333.7276912019331,
+        178.8752428700352
+      ],
+      "native_height_m": 10.33820749066517,
+      "face_id": "data/prepared/surface/roads/data65.glb#694",
+      "source_geometry": "data/prepared/surface/roads/data65.glb",
+      "native_gap_cm": -23.90622350507101,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-2",
+      "xy_m": [
+        334.21389511941686,
+        178.11792711171958
+      ],
+      "native_height_m": 10.34089321355263,
+      "face_id": "data/prepared/surface/roads/data65.glb#694",
+      "source_geometry": "data/prepared/surface/roads/data65.glb",
+      "native_gap_cm": -22.751125241778254,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-3",
+      "xy_m": [
+        333.2414872844495,
+        179.6325586283508
+      ],
+      "native_height_m": 10.335562031050863,
+      "face_id": "data/prepared/surface/roads/data65.glb#695",
+      "source_geometry": "data/prepared/surface/roads/data65.glb",
+      "native_gap_cm": -25.05729544104861,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-4",
+      "xy_m": [
+        95.30003595780279,
+        92.4059833639882
+      ],
+      "native_height_m": 0.9022973406904646,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 20.4642021712974,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-5",
+      "xy_m": [
+        95.44426375741465,
+        92.19406695421576
+      ],
+      "native_height_m": 0.8915668482834386,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 21.00015752364139,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-6",
+      "xy_m": [
+        27.18821953465687,
+        185.08781196628803
+      ],
+      "native_height_m": 2.22990202477485,
+      "face_id": "data/prepared/surface/roads/data66.glb#1217",
+      "source_geometry": "data/prepared/surface/roads/data66.glb",
+      "native_gap_cm": -22.852043452216265,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-7",
+      "xy_m": [
+        95.13290973231364,
+        92.42116459102752
+      ],
+      "native_height_m": 0.8974279691511101,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 22.890550017112943,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-8",
+      "xy_m": [
+        94.65424820171012,
+        92.46464471720051
+      ],
+      "native_height_m": 0.8834817388256043,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620961",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 24.21766255829226,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-9",
+      "xy_m": [
+        94.50154138182812,
+        92.27970092564622
+      ],
+      "native_height_m": 0.8613881781308766,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620916",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 20.507324146928227,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-10",
+      "xy_m": [
+        94.0580463856584,
+        92.51880183768985
+      ],
+      "native_height_m": 0.8535969226742293,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620916",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 20.165270028702565,
+      "expected_hits": []
+    },
+    {
+      "id": "posed-11",
+      "xy_m": [
+        94.33119885123669,
+        92.29517431184748
+      ],
+      "native_height_m": 0.852660090839195,
+      "face_id": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb#620916",
+      "source_geometry": "data/prepared/surface/generations/generation-cjjfpj5m/terrain-support.glb",
+      "native_gap_cm": 22.185199086939967,
+      "expected_hits": []
+    },
+    {
+      "id": "native-0/calibration/native-0-2-vehicle_centre-5",
+      "xy_m": [
+        392.9418544760318,
+        225.45377010030992
+      ],
+      "raw_query_cm": [
+        39294.18544760318,
+        22545.377010030992
+      ],
+      "native_height_m": 10.730327765324336,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 765,
+      "expected_hits": []
+    },
+    {
+      "id": "native-1/calibration/native-0-2-vehicle_centre-5",
+      "xy_m": [
+        392.9418544760318,
+        225.45377010030992
+      ],
+      "raw_query_cm": [
+        39294.18544760318,
+        22545.377010030992
+      ],
+      "native_height_m": 10.730327765324336,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 765,
+      "expected_hits": []
+    },
+    {
+      "id": "native-2/source-refusal-exact/runtime-window",
+      "xy_m": [
+        427.47194895559466,
+        266.006031244335
+      ],
+      "raw_query_cm": [
+        42747.19489555946,
+        26600.603124433503
+      ],
+      "native_height_m": 11.268758489153083,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-3/source-refusal-exact/runtime-window",
+      "xy_m": [
+        427.47194895559466,
+        266.006031244335
+      ],
+      "raw_query_cm": [
+        42747.19489555946,
+        26600.603124433503
+      ],
+      "native_height_m": 11.268758489153083,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-4/source-refusal-exact/broad",
+      "xy_m": [
+        427.47194895559466,
+        266.006031244335
+      ],
+      "raw_query_cm": [
+        42747.19489555946,
+        26600.603124433503
+      ],
+      "native_height_m": 11.268758489153115,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-5/source-refusal-exact/broad",
+      "xy_m": [
+        427.47194895559466,
+        266.006031244335
+      ],
+      "raw_query_cm": [
+        42747.19489555946,
+        26600.603124433503
+      ],
+      "native_height_m": 11.268758489153115,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-6/native-edge-offset--0.01m/runtime-window",
+      "xy_m": [
+        427.4686783710763,
+        265.99658907350977
+      ],
+      "raw_query_cm": [
+        42746.86783710763,
+        26599.658907350975
+      ],
+      "native_height_m": 11.268952149803878,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-7/native-edge-offset--0.01m/runtime-window",
+      "xy_m": [
+        427.4686783710763,
+        265.99658907350977
+      ],
+      "raw_query_cm": [
+        42746.86783710763,
+        26599.658907350975
+      ],
+      "native_height_m": 11.268952149803878,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-8/native-edge-offset--0.01m/broad",
+      "xy_m": [
+        427.4686783710763,
+        265.99658907350977
+      ],
+      "raw_query_cm": [
+        42746.86783710763,
+        26599.658907350975
+      ],
+      "native_height_m": 11.268952149803882,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-9/native-edge-offset--0.01m/broad",
+      "xy_m": [
+        427.4686783710763,
+        265.99658907350977
+      ],
+      "raw_query_cm": [
+        42746.86783710763,
+        26599.658907350975
+      ],
+      "native_height_m": 11.268952149803882,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-10/native-edge-offset--0.001m/runtime-window",
+      "xy_m": [
+        427.47162408790666,
+        266.00509335198325
+      ],
+      "raw_query_cm": [
+        42747.16240879067,
+        26600.509335198327
+      ],
+      "native_height_m": 11.268777725496777,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-11/native-edge-offset--0.001m/runtime-window",
+      "xy_m": [
+        427.47162408790666,
+        266.00509335198325
+      ],
+      "raw_query_cm": [
+        42747.16240879067,
+        26600.509335198327
+      ],
+      "native_height_m": 11.268777725496777,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-12/native-edge-offset--0.001m/broad",
+      "xy_m": [
+        427.47162408790666,
+        266.00509335198325
+      ],
+      "raw_query_cm": [
+        42747.16240879067,
+        26600.509335198327
+      ],
+      "native_height_m": 11.268777725496802,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-13/native-edge-offset--0.001m/broad",
+      "xy_m": [
+        427.47162408790666,
+        266.00509335198325
+      ],
+      "raw_query_cm": [
+        42747.16240879067,
+        26600.509335198327
+      ],
+      "native_height_m": 11.268777725496802,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-14/native-edge-offset--0.0001m/runtime-window",
+      "xy_m": [
+        427.47191865958973,
+        266.00594377983066
+      ],
+      "raw_query_cm": [
+        42747.19186595897,
+        26600.594377983063
+      ],
+      "native_height_m": 11.268760283066067,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-15/native-edge-offset--0.0001m/runtime-window",
+      "xy_m": [
+        427.47191865958973,
+        266.00594377983066
+      ],
+      "raw_query_cm": [
+        42747.19186595897,
+        26600.594377983063
+      ],
+      "native_height_m": 11.268760283066067,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-16/native-edge-offset--0.0001m/broad",
+      "xy_m": [
+        427.47191865958973,
+        266.00594377983066
+      ],
+      "raw_query_cm": [
+        42747.19186595897,
+        26600.594377983063
+      ],
+      "native_height_m": 11.268760283066076,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-17/native-edge-offset--0.0001m/broad",
+      "xy_m": [
+        427.47191865958973,
+        266.00594377983066
+      ],
+      "raw_query_cm": [
+        42747.19186595897,
+        26600.594377983063
+      ],
+      "native_height_m": 11.268760283066076,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-18/native-edge-offset--2e-05m/runtime-window",
+      "xy_m": [
+        427.4719448437393,
+        266.0060193734171
+      ],
+      "raw_query_cm": [
+        42747.19448437393,
+        26600.601937341708
+      ],
+      "native_height_m": 11.268758732627782,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-19/native-edge-offset--2e-05m/runtime-window",
+      "xy_m": [
+        427.4719448437393,
+        266.0060193734171
+      ],
+      "raw_query_cm": [
+        42747.19448437393,
+        26600.601937341708
+      ],
+      "native_height_m": 11.268758732627782,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-20/native-edge-offset--2e-05m/broad",
+      "xy_m": [
+        427.4719448437393,
+        266.0060193734171
+      ],
+      "raw_query_cm": [
+        42747.19448437393,
+        26600.601937341708
+      ],
+      "native_height_m": 11.268758732627793,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-21/native-edge-offset--2e-05m/broad",
+      "xy_m": [
+        427.4719448437393,
+        266.0060193734171
+      ],
+      "raw_query_cm": [
+        42747.19448437393,
+        26600.601937341708
+      ],
+      "native_height_m": 11.268758732627793,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 913,
+      "expected_hits": []
+    },
+    {
+      "id": "native-22/native-edge-offset-0m/runtime-window",
+      "xy_m": [
+        427.47195138977673,
+        266.0060382718137
+      ],
+      "raw_query_cm": [
+        42747.19513897767,
+        26600.603827181367
+      ],
+      "native_height_m": 11.579665033440829,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665033441906,
+          "triangle": 5,
+          "barycentric": [
+            4.4982389289971684e-11,
+            0.5053043050463268,
+            0.49469569490878385
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-23/native-edge-offset-0m/runtime-window",
+      "xy_m": [
+        427.47195138977673,
+        266.0060382718137
+      ],
+      "raw_query_cm": [
+        42747.19513897767,
+        26600.603827181367
+      ],
+      "native_height_m": 11.579665033440829,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665033441906,
+          "triangle": 5,
+          "barycentric": [
+            4.4982389289971684e-11,
+            0.5053043050463268,
+            0.49469569490878385
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-24/native-edge-offset-0m/broad",
+      "xy_m": [
+        427.47195138977673,
+        266.0060382718137
+      ],
+      "raw_query_cm": [
+        42747.19513897767,
+        26600.603827181367
+      ],
+      "native_height_m": 11.579665033440833,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665033441906,
+          "triangle": 5,
+          "barycentric": [
+            4.4982389289971684e-11,
+            0.5053043050463268,
+            0.49469569490878385
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-25/native-edge-offset-0m/broad",
+      "xy_m": [
+        427.47195138977673,
+        266.0060382718137
+      ],
+      "raw_query_cm": [
+        42747.19513897767,
+        26600.603827181367
+      ],
+      "native_height_m": 11.579665033440833,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665033441906,
+          "triangle": 5,
+          "barycentric": [
+            4.4982389289971684e-11,
+            0.5053043050463268,
+            0.49469569490878385
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-26/native-edge-offset-2e-05m/runtime-window",
+      "xy_m": [
+        427.47195793581415,
+        266.0060571702103
+      ],
+      "raw_query_cm": [
+        42747.19579358141,
+        26600.605717021026
+      ],
+      "native_height_m": 11.579665664143645,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665664145596,
+          "triangle": 5,
+          "barycentric": [
+            0.11484940223084708,
+            0.4287428910062538,
+            0.4564077067630667
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-27/native-edge-offset-2e-05m/runtime-window",
+      "xy_m": [
+        427.47195793581415,
+        266.0060571702103
+      ],
+      "raw_query_cm": [
+        42747.19579358141,
+        26600.605717021026
+      ],
+      "native_height_m": 11.579665664143645,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665664145596,
+          "triangle": 5,
+          "barycentric": [
+            0.11484940223084708,
+            0.4287428910062538,
+            0.4564077067630667
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-28/native-edge-offset-2e-05m/broad",
+      "xy_m": [
+        427.47195793581415,
+        266.0060571702103
+      ],
+      "raw_query_cm": [
+        42747.19579358141,
+        26600.605717021026
+      ],
+      "native_height_m": 11.579665664143649,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665664145596,
+          "triangle": 5,
+          "barycentric": [
+            0.11484940223084708,
+            0.4287428910062538,
+            0.4564077067630667
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-29/native-edge-offset-2e-05m/broad",
+      "xy_m": [
+        427.47195793581415,
+        266.0060571702103
+      ],
+      "raw_query_cm": [
+        42747.19579358141,
+        26600.605717021026
+      ],
+      "native_height_m": 11.579665664143649,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579665664145596,
+          "triangle": 5,
+          "barycentric": [
+            0.11484940223084708,
+            0.4287428910062538,
+            0.4564077067630667
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-30/native-edge-offset-0.0001m/runtime-window",
+      "xy_m": [
+        427.47198411996374,
+        266.0061327637967
+      ],
+      "raw_query_cm": [
+        42747.198411996374,
+        26600.61327637967
+      ],
+      "native_height_m": 11.57966818695491,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579668186954914,
+          "triangle": 5,
+          "barycentric": [
+            0.5742470103823853,
+            0.12249723524007881,
+            0.3032557543775359
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-31/native-edge-offset-0.0001m/runtime-window",
+      "xy_m": [
+        427.47198411996374,
+        266.0061327637967
+      ],
+      "raw_query_cm": [
+        42747.198411996374,
+        26600.61327637967
+      ],
+      "native_height_m": 11.57966818695491,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579668186954914,
+          "triangle": 5,
+          "barycentric": [
+            0.5742470103823853,
+            0.12249723524007881,
+            0.3032557543775359
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-32/native-edge-offset-0.0001m/broad",
+      "xy_m": [
+        427.47198411996374,
+        266.0061327637967
+      ],
+      "raw_query_cm": [
+        42747.198411996374,
+        26600.61327637967
+      ],
+      "native_height_m": 11.579668186954914,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579668186954914,
+          "triangle": 5,
+          "barycentric": [
+            0.5742470103823853,
+            0.12249723524007881,
+            0.3032557543775359
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-33/native-edge-offset-0.0001m/broad",
+      "xy_m": [
+        427.47198411996374,
+        266.0061327637967
+      ],
+      "raw_query_cm": [
+        42747.198411996374,
+        26600.61327637967
+      ],
+      "native_height_m": 11.579668186954914,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809308,
+      "expected_hits": [
+        {
+          "height": 11.579668186954914,
+          "triangle": 5,
+          "barycentric": [
+            0.5742470103823853,
+            0.12249723524007881,
+            0.3032557543775359
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "native-34/native-edge-offset-0.001m/runtime-window",
+      "xy_m": [
+        427.4722786916468,
+        266.00698319164405
+      ],
+      "raw_query_cm": [
+        42747.22786916468,
+        26600.698319164407
+      ],
+      "native_height_m": 11.579693167760782,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-35/native-edge-offset-0.001m/runtime-window",
+      "xy_m": [
+        427.4722786916468,
+        266.00698319164405
+      ],
+      "raw_query_cm": [
+        42747.22786916468,
+        26600.698319164407
+      ],
+      "native_height_m": 11.579693167760782,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-36/native-edge-offset-0.001m/broad",
+      "xy_m": [
+        427.4722786916468,
+        266.00698319164405
+      ],
+      "raw_query_cm": [
+        42747.22786916468,
+        26600.698319164407
+      ],
+      "native_height_m": 11.579693167760778,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-37/native-edge-offset-0.001m/broad",
+      "xy_m": [
+        427.4722786916468,
+        266.00698319164405
+      ],
+      "raw_query_cm": [
+        42747.22786916468,
+        26600.698319164407
+      ],
+      "native_height_m": 11.579693167760778,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-38/native-edge-offset-0.01m/runtime-window",
+      "xy_m": [
+        427.4752244084772,
+        266.0154874701176
+      ],
+      "raw_query_cm": [
+        42747.522440847715,
+        26601.54874701176
+      ],
+      "native_height_m": 11.579938971763692,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-39/native-edge-offset-0.01m/runtime-window",
+      "xy_m": [
+        427.4752244084772,
+        266.0154874701176
+      ],
+      "raw_query_cm": [
+        42747.522440847715,
+        26601.54874701176
+      ],
+      "native_height_m": 11.579938971763692,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-40/native-edge-offset-0.01m/broad",
+      "xy_m": [
+        427.4752244084772,
+        266.0154874701176
+      ],
+      "raw_query_cm": [
+        42747.522440847715,
+        26601.54874701176
+      ],
+      "native_height_m": 11.579938971763696,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-41/native-edge-offset-0.01m/broad",
+      "xy_m": [
+        427.4752244084772,
+        266.0154874701176
+      ],
+      "raw_query_cm": [
+        42747.522440847715,
+        26601.54874701176
+      ],
+      "native_height_m": 11.579938971763696,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 809295,
+      "expected_hits": []
+    },
+    {
+      "id": "native-42/retained-step420/foot-1074513107-0/left_shoe_bottom",
+      "xy_m": [
+        96.26952920928561,
+        92.3179176093721
+      ],
+      "raw_query_cm": [
+        9626.952920928561,
+        9231.79176093721
+      ],
+      "native_height_m": 0.9305443906824692,
+      "trace_complex": false,
+      "actor_label": "City_069_terrain",
+      "native_face": 620961,
+      "expected_hits": []
+    },
+    {
+      "id": "native-43/retained-step420/foot-1074513107-0/left_shoe_bottom",
+      "xy_m": [
+        96.26952920928561,
+        92.3179176093721
+      ],
+      "raw_query_cm": [
+        9626.952920928561,
+        9231.79176093721
+      ],
+      "native_height_m": 0.9305443906824692,
+      "trace_complex": true,
+      "actor_label": "City_069_terrain",
+      "native_face": 620961,
+      "expected_hits": []
+    },
+    {
+      "id": "native-44/retained-step420/vehicle-loop-12/body_plane_5",
+      "xy_m": [
+        333.2414872844495,
+        179.6325586283508
+      ],
+      "raw_query_cm": [
+        33324.14872844495,
+        17963.25586283508
+      ],
+      "native_height_m": 10.335562031050863,
+      "trace_complex": false,
+      "actor_label": "City_052_data65",
+      "native_face": 695,
+      "expected_hits": []
+    },
+    {
+      "id": "native-45/retained-step420/vehicle-loop-12/body_plane_5",
+      "xy_m": [
+        333.2414872844495,
+        179.6325586283508
+      ],
+      "raw_query_cm": [
+        33324.14872844495,
+        17963.25586283508
+      ],
+      "native_height_m": 10.335562031050863,
+      "trace_complex": true,
+      "actor_label": "City_052_data65",
+      "native_face": 695,
+      "expected_hits": []
+    },
+    {
+      "id": "derived-centre-0",
+      "xy_m": [
+        -150.10560099283853,
+        94.83182779947917
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 0.6641606899101647,
+          "triangle": 0,
+          "barycentric": [
+            0.33331774097970734,
+            0.32547032408158033,
+            0.3412119349387376
+          ],
+          "gradient_enu": [
+            0.005095108695652174,
+            0.011559463304412907
+          ],
+          "normal_enu": [
+            -0.005094702202206021,
+            -0.011558541077556725,
+            0.9999202188863016
+          ],
+          "normal_up_z": 0.9999202188863016,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "derived-centre-1",
+      "xy_m": [
+        -148.9715372721354,
+        94.4147440592448
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 0.6623119888519381,
+          "triangle": 1,
+          "barycentric": [
+            0.3333108418506988,
+            0.33326748633118375,
+            0.3334216718181171
+          ],
+          "gradient_enu": [
+            -0.0012872939364188243,
+            0.011754412969756737
+          ],
+          "normal_enu": [
+            0.001287203948980198,
+            -0.011753591285224728,
+            0.9999300956556382
+          ],
+          "normal_up_z": 0.9999300956556382,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "derived-centre-2",
+      "xy_m": [
+        389.2616678873698,
+        157.89578755696616
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 13.125043583123453,
+          "triangle": 2,
+          "barycentric": [
+            0.3333336258625813,
+            0.3333327414708674,
+            0.33333363266655136
+          ],
+          "gradient_enu": [
+            0.03444019569229712,
+            -0.013127217774462383
+          ],
+          "normal_enu": [
+            -0.034416826840820265,
+            0.013118310507929505,
+            0.9993214657754663
+          ],
+          "normal_up_z": 0.9993214657754663,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "derived-centre-3",
+      "xy_m": [
+        405.6351318359375,
+        163.09249877929688
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 13.50076539422464,
+          "triangle": 3,
+          "barycentric": [
+            0.3333339989970887,
+            0.3333362975042197,
+            0.33332970349869157
+          ],
+          "gradient_enu": [
+            0.02187866104920839,
+            -0.010933634097754984
+          ],
+          "normal_enu": [
+            -0.02187211985576822,
+            0.010930365204129518,
+            0.9997010240514508
+          ],
+          "normal_up_z": 0.9997010240514508,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "derived-centre-4",
+      "xy_m": [
+        38.80814870198568,
+        387.35692342122394
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 1.984647519779425,
+          "triangle": 4,
+          "barycentric": [
+            0.33333326243664396,
+            0.3331794021550174,
+            0.3334873354083318
+          ],
+          "gradient_enu": [
+            -0.0013502507746037163,
+            0.0008614434067517432
+          ],
+          "normal_enu": [
+            0.0013502490427336163,
+            -0.0008614423018398949,
+            0.999998717371519
+          ],
+          "normal_up_z": 0.999998717371519,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    },
+    {
+      "id": "derived-centre-5",
+      "xy_m": [
+        427.5551953125,
+        265.97726562500003
+      ],
+      "bound": "Derived probe on actual retained operand, not an observed native query",
+      "expected_hits": [
+        {
+          "height": 11.587645263672302,
+          "triangle": 5,
+          "barycentric": [
+            0.33333333353083877,
+            0.33333333320166303,
+            0.3333333332675354
+          ],
+          "gradient_enu": [
+            0.09591728203013719,
+            0.00014946772621635804
+          ],
+          "normal_enu": [
+            -0.09547907682369387,
+            -0.00014878487183978518,
+            0.9954314259415146
+          ],
+          "normal_up_z": 0.9954314259415146,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+        }
+      ]
+    }
+  ],
+  "native_edge": {
+    "mesh": "/Game/Surface/TerrainSupport/terrain-support/StaticMeshes/terrain-support.terrain-support",
+    "source_description_triangle": 810530,
+    "vertices_world_cm": [
+      [
+        42773.92578125,
+        26591.36328125,
+        1160.529052734375
+      ],
+      [
+        42829.1484375,
+        26572.216796875,
+        1165.822998046875
+      ],
+      [
+        42663.484375,
+        26629.599609375,
+        1149.9415283203125
+      ]
+    ],
+    "edge_indices": [
+      1,
+      2
+    ],
+    "positive_side": "toward remaining vertex",
+    "inward_xy_unit": [
+      0.32730187004135164,
+      0.9449198303916762
+    ],
+    "nearest_to_refusal_xy_cm": [
+      42747.19513897767,
+      26600.603827181367
+    ],
+    "edge_parameter": 0.494695694923757,
+    "refusal_signed_distance_cm": -0.0007437116278205536
+  },
+  "baseline_code_sha256": "23e02a63f9e6ee4846a3e2ed932d5979e4fa5848f9166a88f9d1711587228b68"
+}

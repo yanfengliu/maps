@@ -45,7 +45,7 @@ class Source3ConsumerTests(unittest.TestCase):
         self.project = Path(self.folder.name)
         assert self.project.resolve().is_relative_to(output.resolve())
         self.addCleanup(self.folder.cleanup)
-        names = {"_support_integer", "_support_identity", "_support_read", "_support_glb", "_support_point_key", "_support_geometry_digest", "_support_compare_native_geometry", "_local_file", "_admit_support_surface", "_admit_support_surface3", "_support3_record", "_support_selected_road"}
+        names = {"_native_frame_record", "_require_native_frame", "_source_to_native_cm", "_native_to_source_m", "_source_normal_to_native", "_native_actor_tag", "_native_scene_frame", "_support_oriented_key", "_support_integer", "_support_identity", "_support_read", "_support_glb", "_support_point_key", "_support_geometry_digest", "_support_compare_native_geometry", "_local_file", "_admit_support_surface", "_admit_support_surface3", "_support3_record", "_support_selected_road"}
         tree = ast.parse(HELPER.read_text(encoding="utf-8"))
         self.env = dict(PROJECT=self.project, Path=Path, hashlib=hashlib, json=json, math=math, re=re, stat=stat, struct=struct, Counter=Counter)
         exec(compile(ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names], type_ignores=[]), str(HELPER), "exec"), self.env)
@@ -95,7 +95,7 @@ class Source3ConsumerTests(unittest.TestCase):
         assignment = {"material_path": config["support_surface"]["native_material"], "texture_path": config["support_surface"]["native_texture"], "original_actor_label": "City_069_terrain", "original_mesh_path": "/Game/Surface/TerrainPhoto/terrain-photo/StaticMeshes/terrain-photo.terrain-photo", "replacement_mesh_path": "/Game/Surface/TerrainSupport/terrain-support/StaticMeshes/terrain-support.terrain-support", "replace_original_terrain_actor_only": True, "preserve_material_packages": True, "collision_source_tolerance_cm": .1}
         rays = self.rays(native, frozen[3], multi_roads=multi_roads)
         preservation = self.put("data/source/provenance/parent-preservation.json", {"schema_version": 1, "inputs_before": inventory, "inputs_after": inventory, "unchanged": True, "data_bindings": data_bindings})
-        parent = {"schema_version": 2, "frame": {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ynorth-Zup"},
+        parent = {"native_frame": self.env["_native_frame_record"](), "coordinate_model":"native-esu-float32-centimetres-v2", "schema_version": 2, "frame": {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ysouth-Zup"},
             "origin": {"latitude": 35.6595, "longitude": 139.7005}, "vertical_reference": {"source": "synthetic"},
             "inputs": {"base_manifest": base, "original_terrain_photo": photo_terrain, "original_terrain": original, "roads": [row["original"] for row in photos], "road_photo_manifest": road_photos},
             "atlas": atlas, "attribution": ["synthetic"], "native_assignment": assignment, "native_roads": native,
@@ -106,7 +106,7 @@ class Source3ConsumerTests(unittest.TestCase):
             return self.put("data/schema2.json", parent), parent
         parent_record = self.put("data/prepared/surface/generations/parent/support-surface-manifest.json", parent)
         missing = lambda name: {"path": "data/producer-only/" + name, "bytes": 10, "sha256": "b" * 64}
-        ledger = {"schema_version": 1, "coordinate_model": "native-float32-centimetres-v1", "output_order": "parent-triangles-minus-deletions-then-patch-faces",
+        ledger = {"native_frame": self.env["_native_frame_record"](), "schema_version": 1, "coordinate_model": "native-esu-float32-centimetres-v2", "output_order": "parent-triangles-minus-deletions-then-patch-faces",
             "parent_support_surface": parent_record, "parent_derived_terrain": derived, "terrain_patch": missing("terrain-patch.glb"), "patch_faces": [], "deleted_parent_triangles": [],
             "terrain_edits": [], "regions": [{"id": "road-region", "native_xy_polygons_cm": [[[0, 0], [1, 0], [0, 1]]]}],
             "road_overrides": [{"source": 5, "replacement": missing("road-patch.glb")}], "recipe": {"algorithm": missing("constructor.py"), "source_inputs": [], "candidate_inputs": []}}
@@ -120,7 +120,7 @@ class Source3ConsumerTests(unittest.TestCase):
         inventory += [parent_record, edits, *producer, {"path": "tools/data/support_source3.py", "bytes": writer["bytes"], "sha256": writer["sha256"]}]
         preservation = self.put("data/source/provenance/source3-preservation.json", {"schema_version": 1, "inputs_before": inventory, "inputs_after": inventory, "unchanged": True, "data_bindings": data_bindings, "source3_writer": writer})
         manifest = {key: parent[key] for key in ("frame", "origin", "vertical_reference", "inputs", "atlas", "attribution", "native_assignment")}
-        manifest.update(schema_version=3, coordinate_model=ledger["coordinate_model"], parent_support_surface=parent_record, surface_edits=edits,
+        manifest.update(native_frame=self.env["_native_frame_record"](), schema_version=3, coordinate_model=ledger["coordinate_model"], parent_support_surface=parent_record, surface_edits=edits,
             derived_terrain={**self.put("data/derived/terrain-support.glb", tiny_glb()), **geometry}, derived_roads=[{"source": 5, "record": replacement, "face_map": face_map}],
             native_roads=native, algorithm=algorithm, configuration_inputs=configurations, source_preservation=preservation, native_ray_samples=self.rays(native, frozen[3], {5: face_map}, multi_roads))
         # The consumer must not allocate/read parent or patch geometry from this inventory.
@@ -135,22 +135,22 @@ class Source3ConsumerTests(unittest.TestCase):
             x = 2.1 if flat else .1
             samples.append({"id": f"ray-{i}", "start_m": [x, .1, 1], "end_m": [x, .1, -1], "expected_hit": True,
                 "expected": {"actor_label": row["actor_label"], "mesh_role": "road", "source_path": row["source_path"], "source_triangle_index": flat, "position_m": [x, .1, 0], "normal_enu": [0, 0, 1], "layer_ref": ref}})
-        return self.put("data/derived/rays-" + str(native[5]["triangles"]) + ".json", {"schema_version": 1, "frame": "metres-Xeast-Ynorth-Zup", "position_tolerance_cm": .1, "normal_dot_min": .999,
+        return self.put("data/derived/rays-" + str(native[5]["triangles"]) + ".json", {"native_frame": self.env["_native_frame_record"](), "schema_version": 1, "frame": "metres-Xeast-Ynorth-Zup", "position_tolerance_cm": .1, "normal_dot_min": .999,
             "inputs": [input_record], "road_coverage": {"source_roads": 25, "covered_actor_labels": sorted(row["actor_label"] for row in native), "uncovered_roads": []},
             "samples": samples})
 
     def admit(self, record): return self.env["_admit_support_surface"](self.project / record["path"])
 
     def runtime_state(self, record, manifest, admitted):
-        source = self.put("data/runtime/source.json", {"support_surface": record, "derived_terrain": manifest["derived_terrain"], "roads": [row["source"] for row in manifest["native_roads"]], "raw_roads": manifest["inputs"]["roads"], "dem": {}, "osm": "c" * 64})
-        network = self.put("data/runtime/network.json", {"source_manifest_sha256": source["sha256"]})
-        movement = self.put("data/runtime/movement-manifest.json", {"movement": {"network": network, "source_manifest": source, "support_surface": record, "derived_terrain": manifest["derived_terrain"]}})
+        source = self.put("data/runtime/source.json", {"native_frame": self.env["_native_frame_record"](), "support_surface": record, "derived_terrain": manifest["derived_terrain"], "roads": [row["source"] for row in manifest["native_roads"]], "raw_roads": manifest["inputs"]["roads"], "dem": {}, "osm": "c" * 64})
+        network = self.put("data/runtime/network.json", {"native_frame": self.env["_native_frame_record"](), "source_manifest_sha256": source["sha256"]})
+        movement = self.put("data/runtime/movement-manifest.json", {"movement": {"native_frame": self.env["_native_frame_record"](), "network": network, "source_manifest": source, "support_surface": record, "derived_terrain": manifest["derived_terrain"]}})
         values = [*admitted["bindings"].values(), source, network, movement]
         bindings = {row["path"]: row["sha256"] for row in values}; roles = {name: "source" for name in bindings}
         roles[record["path"]] = "support_manifest"; roles[manifest["derived_terrain"]["path"]] = "derived_terrain"
         for value in (manifest["algorithm"], *[manifest["algorithm"][key] for key in ("integration", "topology", "build_city", "edits")]): roles[value["path"]] = "code_snapshot"
         for value in manifest["configuration_inputs"].values(): roles[value["path"]] = "configuration_snapshot"
-        return {"actual_input_sha256": bindings, "actual_input_roles": roles, "source_manifest_path": source["path"], "source_manifest_sha256": source["sha256"], "network_sha256": network["sha256"], "movement_manifest_sha256": movement["sha256"]}
+        return {"native_frame": self.env["_native_frame_record"](), "actual_input_sha256": bindings, "actual_input_roles": roles, "source_manifest_path": source["path"], "source_manifest_sha256": source["sha256"], "network_sha256": network["sha256"], "movement_manifest_sha256": movement["sha256"]}
 
     def test_schema2_actual_entry_remains_admitted(self):
         record, _ = self.fixture(2); self.assertEqual(self.admit(record)["manifest"]["schema_version"], 2)
@@ -176,10 +176,10 @@ class Source3ConsumerTests(unittest.TestCase):
         payload = tiny_glb(primitives=2)
         with self.assertRaisesRegex(RuntimeError, "one complete terrain primitive"): self.env["_support_glb"](payload)
         geometry = self.env["_support_glb"](payload, native_geometry=True, road=True)
-        parts = [[SimpleNamespace(x=x, y=y, z=0) for x, y in ((0, 0), (100, 0), (0, 100))],
-                 [SimpleNamespace(x=x, y=y, z=0) for x, y in ((200, 0), (300, 0), (200, 100))]]
+        parts = [[SimpleNamespace(x=x, y=y, z=0) for x, y in ((0, 0), (100, 0), (0, -100))],
+                 [SimpleNamespace(x=x, y=y, z=0) for x, y in ((200, 0), (300, 0), (200, -100))]]
         mesh = SimpleNamespace(get_path_name=lambda: "/Game/Road", get_num_sections=lambda _: 2)
-        self.env["unreal"] = SimpleNamespace(ProceduralMeshLibrary=SimpleNamespace(get_section_from_static_mesh=lambda _, lod, section: (parts[section], [0, 1, 2], [], [], [])))
+        self.env["unreal"] = SimpleNamespace(ProceduralMeshLibrary=SimpleNamespace(get_section_from_static_mesh=lambda _, lod, section: (parts[section], [0, 2, 1], [], [], [])))
         receipt = self.env["_support_compare_native_geometry"](mesh, geometry)
         self.assertEqual((receipt["raw_source_triangles"], receipt["native_render_triangles"]), (2, 2))
         self.assertTrue(receipt["complete_rendered_geometry_multiset_equal"])
@@ -208,7 +208,7 @@ class Source3ConsumerTests(unittest.TestCase):
         record, manifest = self.fixture(); manifest["coordinate_model"] = "metres"
         self.put(record["path"], manifest)
         with self.assertRaisesRegex(RuntimeError, "native float32"): self.admit(record)
-        manifest["coordinate_model"] = "native-float32-centimetres-v1"; manifest["derived_terrain"]["bytes"] = 64 * 1024 * 1024 + 1
+        manifest["coordinate_model"] = "native-esu-float32-centimetres-v2"; manifest["derived_terrain"]["bytes"] = 64 * 1024 * 1024 + 1
         self.put(record["path"], manifest)
         with self.assertRaisesRegex(RuntimeError, "67108864"): self.admit(record)
 

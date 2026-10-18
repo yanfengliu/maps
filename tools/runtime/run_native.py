@@ -18,6 +18,9 @@ import stat
 import subprocess
 import time
 import uuid
+import math
+import struct
+import zlib
 
 ROOT = Path(__file__).resolve().parents[2]
 ENGINE = Path(r'C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe')
@@ -27,6 +30,34 @@ INPUT_ROLE_LIMITS = {'source': LIMIT, 'support_manifest': 16 * 1024 * 1024,
                      'configuration_snapshot': 100_000}
 ENGINE_ROOT = ENGINE.parents[2]
 ASSET_LIMIT = 512 * 1024 * 1024
+NATIVE_FRAME = {'schema_version':1, 'id':'native-centimetres-Xeast-Ysouth-Zup-v2',
+                'definition_sha256':'2099342528416aa9dcdceea63e6d2604974341d8248f3b1c7ccf287008759170'}
+
+
+def native_frame_record() -> dict:
+    return dict(NATIVE_FRAME)
+
+
+def require_native_frame(packet: dict, context: str) -> None:
+    frame = packet.get('native_frame') if type(packet) is dict else None
+    if type(frame) is not dict or type(frame.get('schema_version')) is not int or frame != NATIVE_FRAME:
+        raise ValueError('Native '+context+' needs the exact sealed ESU v2 native_frame record; rerun it with the current source and native implementation.')
+
+
+def require_native_report_frames(report: dict) -> None:
+    """Check consumed coordinate states; optional absent states stay absent."""
+    require_native_frame(report, 'report')
+    for key in ('load_state','final_simulation','final_rendered_contacts'):
+        if key in report: require_native_frame(report[key], key)
+    for key in ('snapshots','physics_motion_samples','captures'):
+        rows = report.get(key, [])
+        if type(rows) is not list: raise ValueError('Native '+key+' needs its observed state list.')
+        for index, row in enumerate(rows):
+            if type(row) is not dict: raise ValueError('Native '+key+' state needs an object.')
+            if key == 'physics_motion_samples': require_native_frame(row, key+'['+str(index)+']')
+            else:
+                for field in (('simulation','native_geometry','pawn') if key == 'snapshots' else ('native_geometry',)):
+                    if field in row: require_native_frame(row[field], key+'['+str(index)+'].'+field)
 
 
 def safe_parts(parts: tuple[str, ...] | list[str]) -> None:
@@ -118,6 +149,7 @@ def read_report(path: Path) -> dict:
 
 
 def source_binding_metadata(state: dict) -> tuple[dict, dict, str]:
+    require_native_frame(state, 'source-binding state')
     bindings = state.get('actual_input_sha256'); roles = state.get('actual_input_roles')
     source_path = state.get('source_manifest_path')
     if not isinstance(bindings, dict) or len(bindings) < 5 or any(not isinstance(name, str) or not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value) for name, value in bindings.items()):
@@ -131,6 +163,8 @@ def source_binding_metadata(state: dict) -> tuple[dict, dict, str]:
 
 def source3_binding_closure(root, state, source, support, record):
     """Verify actual Source3 consumed roles; producer geometry is only hash-bound ledger metadata."""
+    require_native_frame(source, 'Source3 source manifest')
+    require_native_frame(support, 'Source3 support manifest')
     bindings, roles, _ = source_binding_metadata(state)
     def metadata(value, maximum=16 * 1024 * 1024):
         name = record('source', value)
@@ -142,7 +176,7 @@ def source3_binding_closure(root, state, source, support, record):
         return json.loads(raw)
     same = lambda a, b: json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
     identity = lambda value: {key: value[key] for key in ('path', 'bytes', 'sha256')}
-    if support.get('coordinate_model') != 'native-float32-centimetres-v1':
+    if support.get('coordinate_model') != 'native-esu-float32-centimetres-v2':
         raise ValueError('Source3 requires its exact native coordinate model.')
     networks = [name for name, sha in bindings.items() if sha == state.get('network_sha256') and roles[name] == 'source']
     if len(networks) != 1:
@@ -154,10 +188,17 @@ def source3_binding_closure(root, state, source, support, record):
     if hashlib.sha256(movement_raw).hexdigest() != bindings[movement_name]:
         raise ValueError('Source3 actual movement manifest changed.')
     movement = json.loads(movement_raw)['movement']
+    require_native_frame(movement, 'Source3 movement')
     if not same(movement.get('support_surface'), source['support_surface']) or not same(movement.get('derived_terrain'), source['derived_terrain']) or movement.get('network', {}).get('path') != networks[0] or movement['network'].get('sha256') != state['network_sha256'] or movement.get('source_manifest', {}).get('sha256') != state['source_manifest_sha256']:
         raise ValueError('Source3 movement/profile/source records belong to different derived generations.')
     parent = metadata(support['parent_support_surface'])
     ledger = metadata(support['surface_edits'])
+    require_native_frame(parent, 'Source3 parent support')
+    require_native_frame(ledger, 'Source3 edit ledger')
+    require_native_frame(metadata(movement['network'], LIMIT), 'Source3 network')
+    require_native_frame(metadata(support['native_ray_samples'], LIMIT), 'Source3 native ray packet')
+    if 'vehicle_body_support' in movement:
+        require_native_frame(metadata(movement['vehicle_body_support'], LIMIT), 'Source3 vehicle body packet')
     if type(parent.get('schema_version')) is not int or parent['schema_version'] != 2 or ledger.get('schema_version') != 1 or ledger.get('coordinate_model') != support['coordinate_model'] or not same(ledger.get('parent_support_surface'), support['parent_support_surface']) or not same(ledger.get('parent_derived_terrain'), parent.get('derived_terrain')):
         raise ValueError('Source3 ledger/parent records or schema differ from the published pair.')
     if support['derived_terrain']['path'] == parent['derived_terrain']['path']:
@@ -209,6 +250,7 @@ def source_digest_limits(root: Path, state: dict) -> dict:
     if hashlib.sha256(raw).hexdigest() != bindings[source_path]:
         raise ValueError('Actual source manifest differs from the native bound SHA-256: ' + source_path)
     source = json.loads(raw)
+    require_native_frame(source, 'source manifest')
     if not isinstance(source, dict) or ('support_surface' in source) != ('derived_terrain' in source):
         raise ValueError('Source2 admission needs both support_surface and derived_terrain records.')
     derived_paths = {name for name, role in roles.items() if role == 'derived_terrain'}
@@ -226,12 +268,18 @@ def source_digest_limits(root: Path, state: dict) -> dict:
         if hashlib.sha256(support_raw).hexdigest() != bindings[support_path]:
             raise ValueError('Actual Source2 support manifest SHA-256 changed: ' + support_path)
         support = json.loads(support_raw)
+        require_native_frame(support, 'support manifest')
         if not isinstance(support, dict) or type(support.get('schema_version')) is not int or support['schema_version'] not in (2, 3) or json.dumps(support.get('derived_terrain'),sort_keys=True) != json.dumps(source['derived_terrain'],sort_keys=True):
             raise ValueError('Published support needs schema2 or schema3 and exactly the same derived terrain record in both admitted manifests.')
         if derived_paths != {record('derived_terrain', source['derived_terrain'])}:
             raise ValueError('Only the Source2 pair derived terrain may use the64 MiB role.')
         if support['schema_version'] == 3:
             source3_binding_closure(root, state, source, support, record)
+        elif 'native_ray_samples' in support:
+            rays_path=record('source',support['native_ray_samples'])
+            rays=read_bytes(confined(root,rays_path),LIMIT)
+            if hashlib.sha256(rays).hexdigest()!=bindings[rays_path]: raise ValueError('Source2 native ray packet differs from its bound bytes.')
+            require_native_frame(json.loads(rays),'Source2 native ray packet')
     elif derived_paths:
         raise ValueError('Ordinary source inputs cannot claim the64 MiB derived-terrain role without a Source2 pair.')
     return {name: INPUT_ROLE_LIMITS[role] for name, role in roles.items()}
@@ -253,6 +301,7 @@ def benchmark_duration(phase: str, value: int | None) -> int:
 
 
 def complete_probe(report: dict) -> dict:
+    require_native_report_frames(report)
     expected = ['initial', 'walk', 'look', 'flight_mode', 'flight', 'walk_refused', 'descent_ground', 'walk_recovered', 'pause_start', 'pause_end', 'resume', 'reset', 'benchmark_start', 'benchmark_end']
     snapshots = report.get('snapshots', [])
     if len(snapshots) != 14 or [s.get('stage') for s in snapshots] != expected or report.get('input_entry') != 'UGameViewportClient::InputKey/InputAxis':
@@ -273,6 +322,7 @@ def validate_arm(phase: str, code: int, report: dict | None, log: str, run_id: s
         return
     if report is None or report.get('run_id') != run_id or path.stat().st_mtime < started - 2:
         raise ValueError('Native result is missing, stale or from a different run id.')
+    require_native_report_frames(report)
     if phase in ('oversize-negative', 'suppressed-source-failure'):
         state = report.get('load_state', {})
         if code == 0 or report.get('passed') is not False or state.get('ready') is not False or 'before allocation' not in state.get('error', ''):
@@ -322,6 +372,101 @@ def validate_arm(phase: str, code: int, report: dict | None, log: str, run_id: s
         duration = states['benchmark_end']['elapsed_s'] - states['benchmark_start']['elapsed_s']
         if duration < 30 or report.get('benchmark_seconds', 0) < 30 or report.get('performance_target_passed') is not True or final.get('pedestrian_count') != 3000 or final.get('vehicle_count') != 200:
             raise ValueError('Actual dedicated benchmark needs at least30 warm unpaused seconds and the full3000/200 population.')
+
+
+def capture_png(raw: bytes) -> dict:
+    """Bound: saved 8-bit RGB/RGBA PNG pixels; sanity is not a visual review."""
+    if raw[:8] != b'\x89PNG\r\n\x1a\n': raise ValueError('Capture needs a complete PNG signature.')
+    offset = 8; compressed = []; header = None; ended = False
+    while offset + 12 <= len(raw):
+        length = struct.unpack_from('>I', raw, offset)[0]; kind = raw[offset+4:offset+8]
+        end = offset + 12 + length
+        if end > len(raw): raise ValueError('Capture PNG has a truncated chunk.')
+        payload = raw[offset+8:end-4]
+        if zlib.crc32(kind + payload) & 0xffffffff != struct.unpack_from('>I', raw, end-4)[0]: raise ValueError('Capture PNG chunk checksum differs.')
+        if kind == b'IHDR':
+            if header is not None or length != 13: raise ValueError('Capture PNG needs one valid header.')
+            header = struct.unpack('>IIBBBBB', payload)
+        elif kind == b'IDAT': compressed.append(payload)
+        elif kind == b'IEND':
+            if length or end != len(raw): raise ValueError('Capture PNG has trailing or invalid end bytes.')
+            ended = True; break
+        offset = end
+    if not ended or header is None or not compressed: raise ValueError('Capture PNG is incomplete.')
+    width, height, depth, colour, compression, filtering, interlace = header
+    if (width, height, depth, compression, filtering, interlace) != (1920, 1080, 8, 0, 0, 0) or colour not in (2, 6): raise ValueError('Capture needs non-interlaced 1920x1080 8-bit RGB/RGBA pixels.')
+    channels = 3 if colour == 2 else 4; stride = width * channels; expected = height * (stride + 1)
+    decoder = zlib.decompressobj(); pixels = decoder.decompress(b''.join(compressed), expected+1)
+    if len(pixels) != expected or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail: raise ValueError('Capture PNG pixel stream has invalid bounded length.')
+    previous = bytearray(stride); samples = []
+    for y in range(height):
+        index = y*(stride+1); method = pixels[index]; row = bytearray(pixels[index+1:index+1+stride])
+        if method not in range(5): raise ValueError('Capture PNG has an invalid row filter.')
+        if method:
+            for x in range(stride):
+                left = row[x-channels] if x >= channels else 0; above = previous[x]; corner = previous[x-channels] if x >= channels else 0
+                if method == 1: prediction = left
+                elif method == 2: prediction = above
+                elif method == 3: prediction = (left+above)//2
+                else:
+                    p = left+above-corner; a,b,c = abs(p-left),abs(p-above),abs(p-corner)
+                    prediction = left if a<=b and a<=c else above if b<=c else corner
+                row[x] = (row[x]+prediction) & 255
+        # Exclude the HUD/stat margins: a blank scene with overlay is still blank.
+        if height//5 <= y < height*4//5 and y%16 == 0:
+            samples.extend(tuple(row[x*channels:x*channels+3]) for x in range(width//5,width*4//5,16))
+        previous = row
+    luma = [sum(rgb)/3 for rgb in samples]; mean = sum(luma)/len(luma)
+    variance = sum((v-mean)**2 for v in luma)/len(luma)
+    if len(set(samples)) < 32 or variance < 4: raise ValueError('Capture scene is blank or lacks pixel variation outside overlays.')
+    return {'width':width,'height':height,'scene_samples':len(samples),'scene_rgb_values':len(set(samples)),'scene_luma_variance':variance,'bound':'Central saved pixels only; visible agents, animation and lighting still require full-size visual review.'}
+
+
+def validate_captures(root: Path, relative: str, report: dict, run_id: str, started: float) -> list[dict]:
+    require_native_report_frames(report)
+    captures = report.get('captures')
+    if report.get('capture_error') or not isinstance(captures,list) or len(captures)!=2: raise ValueError('Native capture needs two saved acknowledged frames without a capture error.')
+    evidence=[]; previous=None
+    for i, entry in enumerate(captures):
+        expected_path=relative+('/runtime.png' if i==0 else '/runtime-2.png')
+        if entry.get('path')!=expected_path or entry.get('run_id')!=run_id or entry.get('saved_acknowledged') is not True or entry.get('paused') is not False or entry.get('after_benchmark') is not True: raise ValueError('Capture path/run/save/unpaused/postbenchmark witness is missing or different.')
+        for key in ('frame_counter','fixed_steps','elapsed_s'):
+            value=entry.get(key)
+            if type(value) not in (int,float) or not math.isfinite(value) or value<0: raise ValueError('Capture needs finite frame, fixed-step and elapsed witnesses.')
+        if previous and (entry['frame_counter']<=previous['frame_counter'] or entry['fixed_steps']<=previous['fixed_steps'] or entry['elapsed_s']-previous['elapsed_s']<.75): raise ValueError('Capture pair did not advance frames and unpaused fixed steps over the declared interval.')
+        view=entry.get('view',{})
+        if view.get('capture_id')!=run_id+'-'+str(i) or view.get('frame_counter')!=entry['frame_counter'] or view.get('callback')!='PostRenderView_RenderThread' or view.get('game_main_viewport_matched') is not True or view.get('world')!=report.get('renderer_resources',{}).get('world'): raise ValueError('Capture is not bound to its actual rendered Game main-viewport frame.')
+        for key,size in (('camera_cm',3),('forward',3),('output_rect',4),('view_projection_matrix',16)):
+            values=view.get(key)
+            if not isinstance(values,list) or len(values)!=size or any(type(v) not in (int,float) or not math.isfinite(v) for v in values): raise ValueError('Capture actual-view coordinates or projection are missing or nonfinite.')
+        expected={'fov_degrees':80.,'iso':100.,'shutter_speed':125.,'fstop':8.,'exposure_bias':0.,'lumen_scene_distance_cm':240000.,'lumen_trace_distance_cm':20000.,'lumen_detail':1.,'lumen_quality':1.,'lumen_cache_resolution':1.,'cached_lighting_ev':6.,'clipmap_extent_cm':7500.}
+        for key,required in expected.items():
+            actual=view.get(key)
+            if type(actual) not in (int,float) or not math.isfinite(actual) or abs(actual-required)>.001: raise ValueError('Capture actual-view '+key+' differs from the preserved lighting/camera policy.')
+        if any(view.get(k) is not True for k in ('manual_exposure','physical_camera','lumen_gi','lumen_reflections','primary_fraction_upper_bound_available')) or view.get('feature_level')!='SM6' or view['output_rect']!=[0,0,1920,1080]: raise ValueError('Capture lacks actual manual/Lumen/SM6/full-output-view policy.')
+        for key in ('primary_fraction_upper_bound','secondary_fraction'):
+            actual=view.get(key)
+            if type(actual) not in (int,float) or not math.isfinite(actual) or actual<=0: raise ValueError('Capture screen-fraction observation is missing or invalid.')
+        derived=math.log2(view['fstop']**2*view['shutter_speed']*100/view['iso'])
+        actual=view.get('camera_ev100_derived')
+        if type(actual) not in (int,float) or not math.isfinite(actual) or abs(actual-derived)>1e-5 or not view['cached_lighting_ev']-12<=derived<=view['cached_lighting_ev']+8: raise ValueError('Capture derived physical EV is outside the cache range or differs from its merged camera settings.')
+        geometry=entry.get('native_geometry',{})
+        if geometry.get('actual_counts_and_transforms_valid') is not True or not geometry.get('pedestrian_body_positions_cm') or not geometry.get('vehicle_body_positions_cm'): raise ValueError('Capture lacks actual native population transforms for visual review.')
+        path=confined(root,expected_path); info=path.stat()
+        if info.st_mtime<started-2 or info.st_size!=entry.get('saved_bytes'): raise ValueError('Capture bytes are stale or differ from the native save acknowledgement.')
+        raw=read_bytes(path,32*1024*1024); pixels=capture_png(raw); sha=hashlib.sha256(raw).hexdigest()
+        if evidence and evidence[-1]['sha256']==sha: raise ValueError('Capture pair contains identical saved pixels; visible motion is unproved.')
+        evidence.append({'path':expected_path,'bytes':len(raw),'sha256':sha,'frame_counter':entry['frame_counter'],'fixed_steps':entry['fixed_steps'],'pixels':pixels,'visual_review':'required; native transforms/projection do not prove pixel visibility'})
+        previous=entry
+    return evidence
+
+
+def retain_captures(root: Path, relative: str, report: dict | None, run_id: str, started: float, error: str | None) -> tuple[list[dict], str | None]:
+    # Saved visual evidence remains useful when a contact/control arm is RED.
+    try:
+        return validate_captures(root, relative, report or {}, run_id, started), error
+    except BaseException as failure:
+        return [], (error or '') + ' Capture verdict: ' + str(failure)
 
 
 def asset_set(snapshot: dict) -> dict[str, Path]:
@@ -398,6 +543,7 @@ def validate_assets(report: dict, admitted: dict, full: bool, prepared_inventory
 def validate_prerequisite(proof: dict, phase: str, implementation: dict, assets: dict, source_inputs: dict, source_roles: dict, source_manifest_path: str) -> None:
     if proof.get('passed') is not True or proof.get('phase') != phase or proof.get('source_sha256') != implementation or proof.get('asset_sha256') != assets:
         raise ValueError('Prior native arm is missing, failed, wrong-phase or stale against current implementation: ' + phase)
+    require_native_frame(proof, 'prerequisite '+phase)
     if proof.get('actual_input_sha256') != source_inputs:
         raise ValueError('Prior native arm has stale actual source inputs; rerun this arm against the current admitted dataset: ' + phase)
     if proof.get('actual_input_roles') != source_roles or proof.get('source_manifest_path') != source_manifest_path:
@@ -584,9 +730,11 @@ def main() -> int:
         prepared_path = confined(root, guard_path(args.asset_receipt.absolute()).relative_to(root).as_posix()); prepared = read_report(prepared_path)
         if prepared.get('passed') is not True or prepared.get('phase') != 'inventory' or prepared.get('source_sha256') != before:
             raise ValueError('Actual asset preparation is missing, failed or stale against this implementation.')
+        require_native_frame(prepared, 'inventory receipt')
         preparation_native = confined(root,(prepared_path.parent/'native.json').relative_to(root).as_posix())
         if digest(preparation_native) != prepared.get('native_report_sha256'): raise ValueError('Native inventory preparation receipt bytes changed.')
         native_preparation = read_report(preparation_native)
+        require_native_report_frames(native_preparation)
         prepared_inventory = native_preparation['actual_assets_after']
         if set(asset_set(prepared_inventory)) != set(prepared['asset_sha256']): raise ValueError('Preparation asset binding does not match actual loaded native packages.')
         source_inputs, source_roles, source_manifest_path = source_binding_metadata(native_preparation['final_simulation'])
@@ -604,7 +752,9 @@ def main() -> int:
             if expected=='controls':
                 native=confined(root,(previous.parent/'native.json').relative_to(root).as_posix())
                 if digest(native)!=proof.get('native_report_sha256'):raise ValueError('Prior native control result bytes changed.')
-                control_state = read_report(native)['final_simulation']
+                control_report = read_report(native)
+                require_native_report_frames(control_report)
+                control_state = control_report['final_simulation']
                 if control_state.get('actual_input_sha256') != source_inputs or control_state.get('actual_input_roles') != source_roles or control_state.get('source_manifest_path') != source_manifest_path:
                     raise ValueError('Prior native control source map differs from the complete current admitted source input map.')
                 source_binding_metadata(control_state)
@@ -655,7 +805,7 @@ def main() -> int:
             except BaseException as failure: error = (error or '') + ' Guarded temporary cleanup: ' + str(failure)
     engine_and_cleanup_seconds = time.perf_counter() - engine_started
     verdict_started = time.perf_counter()
-    report = None
+    report = None; capture_evidence=[]
     try:
         if native_path.exists(): report = read_report(confined(root, relative+'/native.json'))
         text = read_bytes(confined(root,relative+'/stdout.log'),64*1024*1024).decode('utf-8', errors='replace')
@@ -679,12 +829,14 @@ def main() -> int:
                     raise ValueError('Actual project-loaded asset was not bound before inventory preparation.')
         elif args.phase != 'report-write-negative':
             validate_assets(report, asset_before, args.phase in ('controls','negative-input','performance'),prepared_inventory)
-        verify_source_inputs(root, {'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles,
+        verify_source_inputs(root, {'native_frame':native_frame_record(), 'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles,
                                     'source_manifest_path':source_manifest_path, 'source_manifest_sha256':source_inputs.get(source_manifest_path)})
         if hash_assets(root, asset_before) != asset_before: raise ValueError('Admitted actual asset bytes changed during the native arm.')
     except BaseException as failure:
         error = (error or '')+' Verdict: '+str(failure)
-    receipt = {'passed':error is None, 'phase':args.phase, 'run_id':run_id, 'owned_pid':process.pid if process else None, 'exit_code':code, 'duration_s':time.time()-started, 'error':error, 'command':command, 'source_sha256':before, 'asset_sha256':asset_before, 'project_content_sha256':content_before, 'asset_preparation':asset_preparation, 'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles, 'source_manifest_path':source_manifest_path, 'actual_loaded_assets':report.get('actual_assets_after') if report else None, 'native_report_sha256':digest(native_path) if native_path.exists() else None, 'timing':{'preflight_s':engine_started-whole_started, 'engine_and_cleanup_s':engine_and_cleanup_seconds, 'verdict_s':time.perf_counter()-verdict_started, 'total_through_verdict_s':time.perf_counter()-whole_started, 'bound':'main entry through native report digest; excludes receipt publication, interpreter startup and outer orchestration'}, 'cleanup':{'assigned_before_resume':process is not None and process.resumed,'kill_on_close_job':job is not None,'job_empty_verified':cleanup_complete,'terminated_owned_remaining_pids':cleaned}, 'bound':'Actual offscreen native Game through ordinary viewport keyboard/mouse events; arm-specific fresh run-id receipt and exit validation. Performance is accepted only in separately requested full-population phase.'}
+    if args.phase in ('controls','performance'): capture_evidence,error=retain_captures(root,relative,report,run_id,started,error)
+    # Receipt frame is current-runner policy; report-write-negative intentionally has no native JSON.
+    receipt = {'native_frame':native_frame_record(), 'passed':error is None, 'phase':args.phase, 'run_id':run_id, 'owned_pid':process.pid if process else None, 'exit_code':code, 'duration_s':time.time()-started, 'error':error, 'command':command, 'source_sha256':before, 'asset_sha256':asset_before, 'project_content_sha256':content_before, 'asset_preparation':asset_preparation, 'actual_input_sha256':source_inputs, 'actual_input_roles':source_roles, 'source_manifest_path':source_manifest_path, 'actual_loaded_assets':report.get('actual_assets_after') if report else None, 'native_report_sha256':digest(native_path) if native_path.exists() else None, 'capture_evidence':capture_evidence, 'timing':{'preflight_s':engine_started-whole_started, 'engine_and_cleanup_s':engine_and_cleanup_seconds, 'verdict_s':time.perf_counter()-verdict_started, 'total_through_verdict_s':time.perf_counter()-whole_started, 'bound':'main entry through native report digest; excludes receipt publication, interpreter startup and outer orchestration'}, 'cleanup':{'assigned_before_resume':process is not None and process.resumed,'kill_on_close_job':job is not None,'job_empty_verified':cleanup_complete,'terminated_owned_remaining_pids':cleaned}, 'bound':'Actual offscreen native Game through ordinary viewport keyboard/mouse events; arm-specific fresh run-id receipt and exit validation. Performance is accepted only in separately requested full-population phase.'}
     confined(root,relative+'/report.json',False).write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'passed':receipt['passed'],'receipt':str(output/'report.json'),'error':error,'total_main_s':time.perf_counter()-whole_started}),flush=True)
     return 0 if receipt['passed'] else 1

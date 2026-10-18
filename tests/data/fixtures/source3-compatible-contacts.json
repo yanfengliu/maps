@@ -1,0 +1,294 @@
+{
+  "bound": "Literal authenticated3face interval58 actor-only refusal. No complete city/provider/body/native proof.",
+  "provenance": {
+    "local_replay_sha256": "e8c9b3ff77cdd1b14da3f6e9d8b396c0745c2f4546ac2b5dc61b4f31f613059f",
+    "actual_attempt_result": {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/lawful-capacity-preparation-20261017/thin-operator-v2/runs/attempt-v1/result.json",
+      "bytes": 6809,
+      "sha256": "152665b19bbc701c6c684e828e49b6cb069729f9a5503a86f14d2149b4d3058e"
+    },
+    "support_manifest": {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/data/prepared/surface/generations/reconstruction-local-20261017-v7/support-surface-manifest.json",
+      "bytes": 3075326,
+      "sha256": "8615898d905a5fbf4f0fd426b2ce3e09a3d9a7fb29a3b7042cb225fc6c269ce5"
+    }
+  },
+  "query": {
+    "reference": "admitted-GSI-DEM5A",
+    "reference_height_m": 1.1385908995333185,
+    "start_m": [
+      152.8597781655082,
+      247.5029461865511,
+      2.6385908995333187
+    ],
+    "end_m": [
+      152.8597781655082,
+      247.5029461865511,
+      -0.3614091004666815
+    ],
+    "policy": "Source3-first-physical-blocker-in-independent-DEM-window-v1",
+    "outside_window_hits": []
+  },
+  "witness": {
+    "source_ground_query": {
+      "reference": "admitted-GSI-DEM5A",
+      "reference_height_m": 1.1385908995333185,
+      "start_m": [
+        152.8597781655082,
+        247.5029461865511,
+        2.6385908995333187
+      ],
+      "end_m": [
+        152.8597781655082,
+        247.5029461865511,
+        -0.3614091004666815
+      ],
+      "policy": "Source3-first-physical-blocker-in-independent-DEM-window-v1",
+      "outside_window_hits": []
+    },
+    "top_height_native_cm_q": "5534015398525007489272517155/48273255189439787541987328",
+    "first_blockers": [
+      {
+        "height_native_cm_q": "5534015398525007489272517155/48273255189439787541987328",
+        "role": "road",
+        "actor_label": "City_053_data66",
+        "hit": {
+          "height": 1.1463936659766885,
+          "triangle": 8145,
+          "barycentric": [
+            0.37829783312073395,
+            0.1700317902358646,
+            0.45167037664340143
+          ],
+          "gradient_enu": [
+            0.014482338113267322,
+            -0.031901578311030604
+          ],
+          "normal_enu": [
+            -0.014473458122847208,
+            0.03188201753931178,
+            0.9993868400012026
+          ],
+          "normal_up_z": 0.9993868400012026,
+          "query_coordinate_model": "binary64-cm-query-on-float32-esu-cm-vertices-v2"
+        }
+      },
+      {
+        "height_native_cm_q": "2476654227931729583506165/21603927400234203742208",
+        "role": "terrain",
+        "actor_label": "City_069_terrain",
+        "hit": {
+          "height": 1.1463907381511016,
+          "triangle": 783845,
+          "barycentric": [
+            0.00023729704281820154,
+            0.605867481036248,
+            0.39389522192093385
+          ],
+          "gradient_enu": [
+            0.010599147780972151,
+            -0.020124817625657196
+          ],
+          "normal_enu": [
+            -0.010596407108633552,
+            0.020119613855304544,
+            0.9997414252168916
+          ],
+          "normal_up_z": 0.9997414252168916,
+          "query_coordinate_model": "binary64-cm-query-on-float32-esu-cm-vertices-v2"
+        }
+      },
+      {
+        "height_native_cm_q": "4646959297692731511593/40535563239822458880",
+        "role": "terrain",
+        "actor_label": "City_069_terrain",
+        "hit": {
+          "height": 1.146390706402422,
+          "triangle": 783846,
+          "barycentric": [
+            2.8558327835512525e-11,
+            0.3940063749524239,
+            0.6059936250188626
+          ],
+          "gradient_enu": [
+            0.010659201429575814,
+            -0.020307346322769922
+          ],
+          "normal_enu": [
+            -0.010656399128353877,
+            0.020302007526820657,
+            0.9997371002658639
+          ],
+          "normal_up_z": 0.9997371002658639,
+          "query_coordinate_model": "binary64-cm-query-on-float32-esu-cm-vertices-v2"
+        }
+      }
+    ]
+  },
+  "faces": [
+    {
+      "role": "road",
+      "raw_index": 8145,
+      "native_esu_cm": [
+        [
+          14880.7451171875,
+          -24074.8125,
+          130.31959533691406
+        ],
+        [
+          15807.59765625,
+          -25070.76953125,
+          111.96998596191406
+        ],
+        [
+          14801.94140625,
+          -25401.845703125,
+          86.84387969970703
+        ]
+      ],
+      "source_ref": {
+        "kind": "road",
+        "source": 9,
+        "mesh": 0,
+        "primitive": 0,
+        "original_triangle": 84,
+        "triangle": 84,
+        "source_triangle_index": 84
+      }
+    },
+    {
+      "role": "terrain",
+      "raw_index": 783845,
+      "native_esu_cm": [
+        [
+          15354.5625,
+          -24661.2109375,
+          117.15880584716797
+        ],
+        [
+          15438.4189453125,
+          -24800.58984375,
+          115.24263763427734
+        ],
+        [
+          15186.84375,
+          -24717.630859375,
+          114.24568939208984
+        ]
+      ],
+      "source_ref": {
+        "kind": "terrain",
+        "triangle": 783845,
+        "parent_triangle": 788144,
+        "original_triangle": 59861
+      }
+    },
+    {
+      "role": "terrain",
+      "raw_index": 783846,
+      "native_esu_cm": [
+        [
+          15354.5673828125,
+          -24772.9296875,
+          114.9105224609375
+        ],
+        [
+          15186.86328125,
+          -24717.611328125,
+          114.24629974365234
+        ],
+        [
+          15438.4189453125,
+          -24800.5625,
+          115.2431640625
+        ]
+      ],
+      "source_ref": {
+        "kind": "terrain",
+        "triangle": 783846,
+        "parent_triangle": 788145,
+        "original_triangle": 59861
+      }
+    }
+  ],
+  "road_mapping": {
+    "source_index": 53,
+    "road_index": 9,
+    "source_path": "data/prepared/surface/generations/reconstruction-local-20261017-v7/roads/data66.glb",
+    "source": {
+      "path": "data/prepared/surface/generations/reconstruction-local-20261017-v7/roads/data66.glb",
+      "bytes": 687524,
+      "sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+    },
+    "original_source": {
+      "path": "data/prepared/roads/data66.glb",
+      "bytes": 533912,
+      "sha256": "d49467ce385164d2f735737f224f76171e1d37dc6dbac2b780b8c62364b550ee"
+    },
+    "actor_label": "City_053_data66",
+    "native_mesh_path": "/Game/Surface/Roads/Tile_053/data66/StaticMeshes/data66.data66",
+    "triangles": 6343
+  },
+  "interval": {
+    "edge": [
+      534157302,
+      1685221012,
+      2393500066
+    ],
+    "lane_points": [
+      [
+        157.65488083049317,
+        138.57137297213586
+      ],
+      [
+        153.80463754143008,
+        249.10332287151036
+      ]
+    ],
+    "width_m": 2.0
+  },
+  "actual_vehicle_source": {
+    "points": {
+      "1685221012": [
+        157.65488083049317,
+        138.57137297213586
+      ],
+      "2393500066": [
+        153.80463754143008,
+        249.10332287151036
+      ]
+    },
+    "way": {
+      "id": 534157302,
+      "nodes": [
+        252683801,
+        2086698242,
+        12669269501,
+        12669269502,
+        1685221012,
+        2393500066,
+        158030029
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "primary",
+        "int_name": "Meiji-dori",
+        "lit": "yes",
+        "maxspeed": "50",
+        "name": "\u660e\u6cbb\u901a\u308a",
+        "name:en": "Meiji Street",
+        "name:es": "Calle Meiji",
+        "name:fr": "Rue Meiji",
+        "name:ja": "\u660e\u6cbb\u901a\u308a",
+        "name:ja-Hira": "\u3081\u3044\u3058\u3069\u304a\u308a",
+        "name:ja-Latn": "Meiji-d\u014dri",
+        "oneway": "yes",
+        "ref": "305",
+        "source": "Bing,2007-04",
+        "surface": "paved",
+        "wikidata": "Q8011176"
+      }
+    },
+    "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918"
+  }
+}

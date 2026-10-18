@@ -1,0 +1,4977 @@
+{
+  "bound": "Actual original66flow source traversal and OSM authority only; no physical support/native/capacity claims.",
+  "flow_target_sha256": "dbcbd4bb4585a4a5ac9adb1841e79a86ea03fe57448e509409bd51261328e963",
+  "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+  "base": {
+    "origin": {
+      "latitude": 35.6595,
+      "longitude": 139.7005,
+      "ellipsoidal_height_m": 52.00357901001459
+    },
+    "bounds": {
+      "south": 35.655,
+      "north": 35.664,
+      "west": 139.695,
+      "east": 139.706
+    }
+  },
+  "source_lane_segments": [
+    {
+      "edge_id": "car-edge-31856144-7596347456-11932523519",
+      "way_id": 31856144,
+      "from_osm_node": 7596347456,
+      "to_osm_node": 11932523519,
+      "lane_points": [
+        [
+          -483.7672862677275,
+          46.967121552418824
+        ],
+        [
+          -465.68401620867866,
+          55.45411021588362
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-31856144-11932523519-664495203",
+      "way_id": 31856144,
+      "from_osm_node": 11932523519,
+      "to_osm_node": 664495203,
+      "lane_points": [
+        [
+          -465.68462089445654,
+          55.45382628285789
+        ],
+        [
+          -453.21560570648944,
+          61.31153467993901
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-310155108-664495203-11932523512",
+      "way_id": 310155108,
+      "from_osm_node": 664495203,
+      "to_osm_node": 11932523512,
+      "lane_points": [
+        [
+          -453.2108775173519,
+          61.313747530244115
+        ],
+        [
+          -446.69113870460404,
+          64.35354762241347
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-310155108-11932523512-1014529751",
+      "way_id": 310155108,
+      "from_osm_node": 11932523512,
+      "to_osm_node": 1014529751,
+      "lane_points": [
+        [
+          -446.6544822221115,
+          64.37014232236723
+        ],
+        [
+          -368.418050952385,
+          98.73999817631713
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-310155108-1014529751-13038536252",
+      "way_id": 310155108,
+      "from_osm_node": 1014529751,
+      "to_osm_node": 13038536252,
+      "lane_points": [
+        [
+          -368.3836643763397,
+          98.75468030501523
+        ],
+        [
+          -349.7392330806139,
+          106.48739723046451
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-310155108-13038536252-6219729358",
+      "way_id": 310155108,
+      "from_osm_node": 13038536252,
+      "to_osm_node": 6219729358,
+      "lane_points": [
+        [
+          -349.7392140185713,
+          106.48740513625629
+        ],
+        [
+          -342.7305823709149,
+          109.39411802564952
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-310155108-6219729358-252675826",
+      "way_id": 310155108,
+      "from_osm_node": 6219729358,
+      "to_osm_node": 252675826,
+      "lane_points": [
+        [
+          -342.7239542008644,
+          109.39685149010785
+        ],
+        [
+          -327.2216767538697,
+          115.75391202986452
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-252675826-6219729338",
+      "way_id": 153108795,
+      "from_osm_node": 252675826,
+      "to_osm_node": 6219729338,
+      "lane_points": [
+        [
+          -325.875713354051,
+          115.76194047113968
+        ],
+        [
+          -316.24140814321055,
+          111.94478739454149
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-6219729338-13038536250",
+      "way_id": 153108795,
+      "from_osm_node": 6219729338,
+      "to_osm_node": 13038536250,
+      "lane_points": [
+        [
+          -316.19195479363384,
+          111.92433810005245
+        ],
+        [
+          -310.94017480326687,
+          109.66069864310056
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-13038536250-1108870926",
+      "way_id": 153108795,
+      "from_osm_node": 13038536250,
+      "to_osm_node": 1108870926,
+      "lane_points": [
+        [
+          -310.9401428239853,
+          109.6606848589188
+        ],
+        [
+          -273.07291906182087,
+          93.33816102257175
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-1108870926-598416635",
+      "way_id": 153108795,
+      "from_osm_node": 1108870926,
+      "to_osm_node": 598416635,
+      "lane_points": [
+        [
+          -273.04278927208463,
+          93.32484546180103
+        ],
+        [
+          -262.1407769224107,
+          88.38708048925004
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-598416635-598417899",
+      "way_id": 153108795,
+      "from_osm_node": 598416635,
+      "to_osm_node": 598417899,
+      "lane_points": [
+        [
+          -262.120626888482,
+          88.37780403432018
+        ],
+        [
+          -255.9542866380494,
+          85.49282982086451
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-598417899-6219729361",
+      "way_id": 153108795,
+      "from_osm_node": 598417899,
+      "to_osm_node": 6219729361,
+      "lane_points": [
+        [
+          -255.96240299470972,
+          85.49660255921698
+        ],
+        [
+          -247.4327436966149,
+          81.5575069978818
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-6219729361-11681901178",
+      "way_id": 153108795,
+      "from_osm_node": 6219729361,
+      "to_osm_node": 11681901178,
+      "lane_points": [
+        [
+          -247.42216425869287,
+          81.55257961682508
+        ],
+        [
+          -243.1935520856086,
+          79.56639285981623
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-11681901178-13038536248",
+      "way_id": 153108795,
+      "from_osm_node": 11681901178,
+      "to_osm_node": 13038536248,
+      "lane_points": [
+        [
+          -243.1908432793906,
+          79.56511777782552
+        ],
+        [
+          -210.683891656963,
+          64.23049567605061
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-13038536248-2253591033",
+      "way_id": 153108795,
+      "from_osm_node": 13038536248,
+      "to_osm_node": 2253591033,
+      "lane_points": [
+        [
+          -210.68528726021032,
+          64.23115329799607
+        ],
+        [
+          -205.21613997018272,
+          61.65690106811914
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-2253591033-1014529394",
+      "way_id": 153108795,
+      "from_osm_node": 2253591033,
+      "to_osm_node": 1014529394,
+      "lane_points": [
+        [
+          -205.2156867717206,
+          61.65668767681462
+        ],
+        [
+          -196.16985515034395,
+          57.39586395203851
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-1014529394-2253591032",
+      "way_id": 153108795,
+      "from_osm_node": 1014529394,
+      "to_osm_node": 2253591032,
+      "lane_points": [
+        [
+          -196.17527533154646,
+          57.3984059946306
+        ],
+        [
+          -189.09434742686048,
+          54.091834304767545
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-2253591032-13038536249",
+      "way_id": 153108795,
+      "from_osm_node": 2253591032,
+      "to_osm_node": 13038536249,
+      "lane_points": [
+        [
+          -189.0918625037649,
+          54.09067161599489
+        ],
+        [
+          -184.61874182710378,
+          51.99355394438882
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-13038536249-1745599774",
+      "way_id": 153108795,
+      "from_osm_node": 13038536249,
+      "to_osm_node": 1745599774,
+      "lane_points": [
+        [
+          -184.61984709758377,
+          51.99407166750607
+        ],
+        [
+          -173.0024001579796,
+          46.55711002510157
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-153108795-1745599774-1014529496",
+      "way_id": 153108795,
+      "from_osm_node": 1745599774,
+      "to_osm_node": 1014529496,
+      "lane_points": [
+        [
+          -173.0272557874378,
+          46.56851309734336
+        ],
+        [
+          -128.8029435043948,
+          26.684871732100166
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1035760831-1014529496-2850364789",
+      "way_id": 1035760831,
+      "from_osm_node": 1014529496,
+      "to_osm_node": 2850364789,
+      "lane_points": [
+        [
+          -128.76173341927534,
+          26.66571430756351
+        ],
+        [
+          -107.09320512520942,
+          16.257976455986427
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562286-2850364789-2253572966",
+      "way_id": 1134562286,
+      "from_osm_node": 2850364789,
+      "to_osm_node": 2253572966,
+      "lane_points": [
+        [
+          -106.7371184184235,
+          16.03215373531706
+        ],
+        [
+          -103.0245926391924,
+          13.014171289071378
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562286-2253572966-12782722048",
+      "way_id": 1134562286,
+      "from_osm_node": 2253572966,
+      "to_osm_node": 12782722048,
+      "lane_points": [
+        [
+          -102.87319830938452,
+          12.87606725303073
+        ],
+        [
+          -99.97562236838269,
+          9.913572409068578
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562286-12782722048-3756997365",
+      "way_id": 1134562286,
+      "from_osm_node": 12782722048,
+      "to_osm_node": 3756997365,
+      "lane_points": [
+        [
+          -99.7824121533226,
+          9.679423321554914
+        ],
+        [
+          -97.45530600482003,
+          6.317502761335841
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1112568718-3756997365-252675828",
+      "way_id": 1112568718,
+      "from_osm_node": 3756997365,
+      "to_osm_node": 252675828,
+      "lane_points": [
+        [
+          -97.30857202966708,
+          6.063530137807239
+        ],
+        [
+          -94.79132944086608,
+          0.7488246236646754
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1106270530-252675828-2253572964",
+      "way_id": 1106270530,
+      "from_osm_node": 252675828,
+      "to_osm_node": 2253572964,
+      "lane_points": [
+        [
+          -97.06213253962324,
+          1.6591663286253242
+        ],
+        [
+          -89.3019319343257,
+          4.632642362161559
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1298036687-2253572964-10577113262",
+      "way_id": 1298036687,
+      "from_osm_node": 2253572964,
+      "to_osm_node": 10577113262,
+      "lane_points": [
+        [
+          -89.04442266939036,
+          4.7098149424057985
+        ],
+        [
+          -83.14052519488793,
+          6.007915317315239
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562285-10577113262-1014529169",
+      "way_id": 1134562285,
+      "from_osm_node": 10577113262,
+      "to_osm_node": 1014529169,
+      "lane_points": [
+        [
+          -83.011570466855,
+          6.031382597375952
+        ],
+        [
+          -71.1947327254698,
+          7.739966150980534
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1109680533-1014529169-701873039",
+      "way_id": 1109680533,
+      "from_osm_node": 1014529169,
+      "to_osm_node": 701873039,
+      "lane_points": [
+        [
+          -71.10775542888582,
+          7.750388360722501
+        ],
+        [
+          -63.99954739053834,
+          8.42715156174615
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-23334685-701873039-2850364788",
+      "way_id": 23334685,
+      "from_osm_node": 701873039,
+      "to_osm_node": 2850364788,
+      "lane_points": [
+        [
+          -63.838755433534025,
+          8.43522799491376
+        ],
+        [
+          -55.70733353263609,
+          8.479554834447868
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-23334685-2850364788-2850364787",
+      "way_id": 23334685,
+      "from_osm_node": 2850364788,
+      "to_osm_node": 2850364787,
+      "lane_points": [
+        [
+          -55.64215292645419,
+          8.478729804965871
+        ],
+        [
+          -49.5118951667307,
+          8.290072413651588
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-23334685-2850364787-2850364786",
+      "way_id": 23334685,
+      "from_osm_node": 2850364787,
+      "to_osm_node": 2850364786,
+      "lane_points": [
+        [
+          -49.38992590633216,
+          8.282167150280031
+        ],
+        [
+          -43.4498255904858,
+          7.694081915509513
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-23334685-2850364786-1499530625",
+      "way_id": 23334685,
+      "from_osm_node": 2850364786,
+      "to_osm_node": 1499530625,
+      "lane_points": [
+        [
+          -43.38290936731724,
+          7.686189741788104
+        ],
+        [
+          -37.30698374821405,
+          6.854009957165842
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-23334685-1499530625-6219685051",
+      "way_id": 23334685,
+      "from_osm_node": 1499530625,
+      "to_osm_node": 6219685051,
+      "lane_points": [
+        [
+          -37.22872140993333,
+          6.841529937506388
+        ],
+        [
+          -30.95358492061141,
+          5.698683494132341
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562282-6219685051-12352271622",
+      "way_id": 1134562282,
+      "from_osm_node": 6219685051,
+      "to_osm_node": 12352271622,
+      "lane_points": [
+        [
+          -30.9535448857238,
+          5.698676202392477
+        ],
+        [
+          -28.273255214708023,
+          5.21047130415192
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562282-12352271622-1499530624",
+      "way_id": 1134562282,
+      "from_osm_node": 12352271622,
+      "to_osm_node": 1499530624,
+      "lane_points": [
+        [
+          -28.26804137876554,
+          5.20951368882889
+        ],
+        [
+          -24.673192976643236,
+          4.5437812073960195
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562282-1499530624-291758776",
+      "way_id": 1134562282,
+      "from_osm_node": 1499530624,
+      "to_osm_node": 291758776,
+      "lane_points": [
+        [
+          -24.732417642427798,
+          4.553730212680681
+        ],
+        [
+          6.815342237174811,
+          -0.2062123206225881
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562281-291758776-2021391989",
+      "way_id": 1134562281,
+      "from_osm_node": 291758776,
+      "to_osm_node": 2021391989,
+      "lane_points": [
+        [
+          4.813625090631075,
+          -1.5001496881015604
+        ],
+        [
+          10.300955280817647,
+          18.07207287701694
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562281-2021391989-12352271625",
+      "way_id": 1134562281,
+      "from_osm_node": 2021391989,
+      "to_osm_node": 12352271625,
+      "lane_points": [
+        [
+          10.28469165835091,
+          18.00980146824586
+        ],
+        [
+          11.434672681306076,
+          22.758617701323693
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1134562281-12352271625-6219685052",
+      "way_id": 1134562281,
+      "from_osm_node": 12352271625,
+      "to_osm_node": 6219685052,
+      "lane_points": [
+        [
+          11.43563485262,
+          22.76257142046422
+        ],
+        [
+          12.241526385758142,
+          26.057894953460103
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1382159336-6219685052-12796417290",
+      "way_id": 1382159336,
+      "from_osm_node": 6219685052,
+      "to_osm_node": 12796417290,
+      "lane_points": [
+        [
+          12.236134209636354,
+          26.035210408039692
+        ],
+        [
+          19.63400517897374,
+          58.07862935987502
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-260252968-12796417290-2850364792",
+      "way_id": 260252968,
+      "from_osm_node": 12796417290,
+      "to_osm_node": 2850364792,
+      "lane_points": [
+        [
+          19.633919586321678,
+          58.078258441680724
+        ],
+        [
+          23.418856183197608,
+          74.48830871972693
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-260252968-2850364792-2207504003",
+      "way_id": 260252968,
+      "from_osm_node": 2850364792,
+      "to_osm_node": 2207504003,
+      "lane_points": [
+        [
+          23.40740811271147,
+          74.43499985293786
+        ],
+        [
+          26.784856187989437,
+          91.41091430760915
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-260252968-2207504003-252674261",
+      "way_id": 260252968,
+      "from_osm_node": 2207504003,
+      "to_osm_node": 252674261,
+      "lane_points": [
+        [
+          26.752539338597675,
+          91.15033044825941
+        ],
+        [
+          27.395398919510555,
+          103.89890405602758
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-46769498-252674261-3340683526",
+      "way_id": 46769498,
+      "from_osm_node": 252674261,
+      "to_osm_node": 3340683526,
+      "lane_points": [
+        [
+          29.19311477126962,
+          103.80825243533504
+        ],
+        [
+          38.85474308886624,
+          101.23416525207377
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-46769498-3340683526-597686597",
+      "way_id": 46769498,
+      "from_osm_node": 3340683526,
+      "to_osm_node": 597686597,
+      "lane_points": [
+        [
+          38.85474308886624,
+          101.23416525207377
+        ],
+        [
+          56.81976366829286,
+          97.83908088106111
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-116806275-597686597-1316007425",
+      "way_id": 116806275,
+      "from_osm_node": 597686597,
+      "to_osm_node": 1316007425,
+      "lane_points": [
+        [
+          56.81976366829286,
+          97.83908088106111
+        ],
+        [
+          52.94472285124238,
+          18.074500621334078
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-116806275-1316007425-6124432717",
+      "way_id": 116806275,
+      "from_osm_node": 1316007425,
+      "to_osm_node": 6124432717,
+      "lane_points": [
+        [
+          52.94472285124238,
+          18.074500621334078
+        ],
+        [
+          53.144016853253106,
+          4.094346855985967
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-116806275-6124432717-1316007410",
+      "way_id": 116806275,
+      "from_osm_node": 6124432717,
+      "to_osm_node": 1316007410,
+      "lane_points": [
+        [
+          53.144016853253106,
+          4.094346855985967
+        ],
+        [
+          53.28895605434533,
+          -5.691760569784849
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-1071930093-1316007410-1657351118",
+      "way_id": 1071930093,
+      "from_osm_node": 1316007410,
+      "to_osm_node": 1657351118,
+      "lane_points": [
+        [
+          53.26570751323719,
+          -3.8919107134533983
+        ],
+        [
+          85.0670313124456,
+          -3.481135125124069
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-213526440-1657351118-10605619818",
+      "way_id": 213526440,
+      "from_osm_node": 1657351118,
+      "to_osm_node": 10605619818,
+      "lane_points": [
+        [
+          84.90703270054239,
+          -3.490336919743437
+        ],
+        [
+          137.06402306334937,
+          1.8471831647370522
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-213526440-10605619818-2086698240",
+      "way_id": 213526440,
+      "from_osm_node": 10605619818,
+      "to_osm_node": 2086698240,
+      "lane_points": [
+        [
+          137.06425995442578,
+          1.8472073913084837
+        ],
+        [
+          149.33382067497098,
+          3.10118084920217
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-213526440-2086698240-252683801",
+      "way_id": 213526440,
+      "from_osm_node": 2086698240,
+      "to_osm_node": 252683801,
+      "lane_points": [
+        [
+          149.22807170876325,
+          3.0871959583418676
+        ],
+        [
+          168.82311912043582,
+          6.271915326655855
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-534157302-252683801-2086698242",
+      "way_id": 534157302,
+      "from_osm_node": 252683801,
+      "to_osm_node": 2086698242,
+      "lane_points": [
+        [
+          169.11187834857847,
+          4.495227929232644
+        ],
+        [
+          166.42227600044305,
+          18.197948160403318
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "measured-refusal",
+      "old_refusal": {
+        "edge_id": "car-edge-534157302-252683801-2086698242",
+        "reason": "Source3 span grade 0.375 exceeds 0.2 across 3.552713678800501e-15 m",
+        "witness": {
+          "previous": {
+            "point": [
+              167.11305663387955,
+              14.678627258689588,
+              2.372210573866564
+            ],
+            "cross_section": [
+              {
+                "offset_m": -1.0,
+                "point": [
+                  168.09433257890657,
+                  14.871234422915986,
+                  2.409533461512558
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3789,
+                  "triangle": 3778,
+                  "source_triangle_index": 3778
+                },
+                "height": 2.409533461512558,
+                "triangle": 3778,
+                "barycentric": [
+                  0.027156521697872665,
+                  0.6249567425597408,
+                  0.34788673574238654
+                ],
+                "gradient_enu": [
+                  0.037285219112372855,
+                  0.0038202059041650754
+                ],
+                "normal_enu": [
+                  -0.03725905787854851,
+                  -0.0038175254505618712,
+                  0.9992983483952314
+                ],
+                "normal_up_z": 0.9992983483952314,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.6067327418002617,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              },
+              {
+                "offset_m": 0,
+                "point": [
+                  167.11305663387955,
+                  14.678627258689588,
+                  2.372210573866564
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3789,
+                  "triangle": 3778,
+                  "source_triangle_index": 3778
+                },
+                "height": 2.372210573866564,
+                "triangle": 3778,
+                "barycentric": [
+                  8.833276669661434e-15,
+                  0.6680845894546733,
+                  0.33191541054531837
+                ],
+                "gradient_enu": [
+                  0.037285219112372855,
+                  0.0038202059041650754
+                ],
+                "normal_enu": [
+                  -0.03725905787854851,
+                  -0.0038175254505618712,
+                  0.9992983483952314
+                ],
+                "normal_up_z": 0.9992983483952314,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.559169616094045,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              },
+              {
+                "offset_m": 1.0,
+                "point": [
+                  166.13178068885253,
+                  14.48602009446319,
+                  2.3348991774400605
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3814,
+                  "triangle": 3803,
+                  "source_triangle_index": 3803
+                },
+                "height": 2.3348991774400605,
+                "triangle": 3803,
+                "barycentric": [
+                  0.7046212307931793,
+                  0.0073912209059265556,
+                  0.2879875483008942
+                ],
+                "gradient_enu": [
+                  0.03707097601130741,
+                  0.004852049048566325
+                ],
+                "normal_enu": [
+                  -0.03704509424278812,
+                  -0.004848661503272645,
+                  0.9993018320178191
+                ],
+                "normal_up_z": 0.9993018320178191,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.5113549308189396,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              }
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 11,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 3789,
+              "triangle": 3778,
+              "source_triangle_index": 3778
+            },
+            "height": 2.372210573866564,
+            "triangle": 3778,
+            "barycentric": [
+              8.833276669661434e-15,
+              0.6680845894546733,
+              0.33191541054531837
+            ],
+            "gradient_enu": [
+              0.037285219112372855,
+              0.0038202059041650754
+            ],
+            "normal_enu": [
+              -0.03725905787854851,
+              -0.0038175254505618712,
+              0.9992983483952314
+            ],
+            "normal_up_z": 0.9992983483952314,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 2.559169616094045,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+          },
+          "current": {
+            "point": [
+              167.11305663387955,
+              14.678627258689591,
+              2.3722105738665626
+            ],
+            "cross_section": [
+              {
+                "offset_m": -1.0,
+                "point": [
+                  168.09433257890657,
+                  14.87123442291599,
+                  2.4095334615125577
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3789,
+                  "triangle": 3778,
+                  "source_triangle_index": 3778
+                },
+                "height": 2.4095334615125577,
+                "triangle": 3778,
+                "barycentric": [
+                  0.027156521697861306,
+                  0.6249567425597407,
+                  0.34788673574239787
+                ],
+                "gradient_enu": [
+                  0.037285219112372855,
+                  0.0038202059041650754
+                ],
+                "normal_enu": [
+                  -0.03725905787854851,
+                  -0.0038175254505618712,
+                  0.9992983483952314
+                ],
+                "normal_up_z": 0.9992983483952314,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.6067327418002617,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              },
+              {
+                "offset_m": 0,
+                "point": [
+                  167.11305663387955,
+                  14.678627258689591,
+                  2.3722105738665626
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3814,
+                  "triangle": 3803,
+                  "source_triangle_index": 3803
+                },
+                "height": 2.3722105738665626,
+                "triangle": 3803,
+                "barycentric": [
+                  0.6680845894546725,
+                  5.230865519395018e-16,
+                  0.3319154105453269
+                ],
+                "gradient_enu": [
+                  0.03707097601130741,
+                  0.004852049048566325
+                ],
+                "normal_enu": [
+                  -0.03704509424278812,
+                  -0.004848661503272645,
+                  0.9993018320178191
+                ],
+                "normal_up_z": 0.9993018320178191,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.559169616094045,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              },
+              {
+                "offset_m": 1.0,
+                "point": [
+                  166.13178068885253,
+                  14.486020094463193,
+                  2.33489917744006
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 11,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 3814,
+                  "triangle": 3803,
+                  "source_triangle_index": 3803
+                },
+                "height": 2.33489917744006,
+                "triangle": 3803,
+                "barycentric": [
+                  0.7046212307931778,
+                  0.0073912209059279295,
+                  0.2879875483008941
+                ],
+                "gradient_enu": [
+                  0.03707097601130741,
+                  0.004852049048566325
+                ],
+                "normal_enu": [
+                  -0.03704509424278812,
+                  -0.004848661503272645,
+                  0.9993018320178191
+                ],
+                "normal_up_z": 0.9993018320178191,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.5113549308189396,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+              }
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 11,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 3814,
+              "triangle": 3803,
+              "source_triangle_index": 3803
+            },
+            "height": 2.3722105738665626,
+            "triangle": 3803,
+            "barycentric": [
+              0.6680845894546725,
+              5.230865519395018e-16,
+              0.3319154105453269
+            ],
+            "gradient_enu": [
+              0.03707097601130741,
+              0.004852049048566325
+            ],
+            "normal_enu": [
+              -0.03704509424278812,
+              -0.004848661503272645,
+              0.9993018320178191
+            ],
+            "normal_up_z": 0.9993018320178191,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 2.559169616094045,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+          },
+          "segment_xy_length_m": 3.552713678800501e-15
+        }
+      }
+    },
+    {
+      "edge_id": "car-edge-534157302-2086698242-12669269501",
+      "way_id": 534157302,
+      "from_osm_node": 2086698242,
+      "to_osm_node": 12669269501,
+      "lane_points": [
+        [
+          166.42227600044305,
+          18.197948160403318
+        ],
+        [
+          164.60196407713903,
+          31.834113353415873
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-534157302-12669269501-12669269502",
+      "way_id": 534157302,
+      "from_osm_node": 12669269501,
+      "to_osm_node": 12669269502,
+      "lane_points": [
+        [
+          164.60196407713903,
+          31.834113353415873
+        ],
+        [
+          163.84119027633,
+          40.14452507052852
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-534157302-12669269502-1685221012",
+      "way_id": 534157302,
+      "from_osm_node": 12669269502,
+      "to_osm_node": 1685221012,
+      "lane_points": [
+        [
+          163.84119027633,
+          40.14452507052852
+        ],
+        [
+          157.65488083049317,
+          138.57137297213586
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-534157302-1685221012-2393500066",
+      "way_id": 534157302,
+      "from_osm_node": 1685221012,
+      "to_osm_node": 2393500066,
+      "lane_points": [
+        [
+          157.65488083049317,
+          138.57137297213586
+        ],
+        [
+          153.80463754143008,
+          249.10332287151036
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "measured-refusal",
+      "old_refusal": {
+        "edge_id": "car-edge-534157302-1685221012-2393500066",
+        "reason": "Source3 span grade 1.0625 exceeds 0.2 across 2.842170943040401e-14 m",
+        "witness": {
+          "previous": {
+            "point": [
+              155.59429197939684,
+              197.7263111287869,
+              2.107913954302281
+            ],
+            "cross_section": [
+              {
+                "offset_m": -1.0,
+                "point": [
+                  156.59368583557995,
+                  197.76112377337884,
+                  2.107836264018395
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 189,
+                  "triangle": 189,
+                  "source_triangle_index": 189
+                },
+                "height": 2.107836264018395,
+                "triangle": 189,
+                "barycentric": [
+                  0.3852302437260296,
+                  0.038639847887874314,
+                  0.576129908386096
+                ],
+                "gradient_enu": [
+                  0.00011930408651691505,
+                  -0.0064349943993539695
+                ],
+                "normal_enu": [
+                  -0.00011930161560404342,
+                  0.006434861123864802,
+                  0.9999792889502467
+                ],
+                "normal_up_z": 0.9999792889502467,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.022940529420263,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              },
+              {
+                "offset_m": 0,
+                "point": [
+                  155.59429197939684,
+                  197.7263111287869,
+                  2.107913954302281
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 138,
+                  "triangle": 138,
+                  "source_triangle_index": 138
+                },
+                "height": 2.107913954302281,
+                "triangle": 138,
+                "barycentric": [
+                  0.4503945506929618,
+                  0.5496054493067541,
+                  2.757818725035696e-13
+                ],
+                "gradient_enu": [
+                  0.0010487323578096423,
+                  -0.003428936544570742
+                ],
+                "normal_enu": [
+                  -0.0010487256158651483,
+                  0.003428914501101133,
+                  0.9999935713392994
+                ],
+                "normal_up_z": 0.9999935713392994,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 1.9950355890527798,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              },
+              {
+                "offset_m": 1.0,
+                "point": [
+                  154.59489812321374,
+                  197.69149848419497,
+                  2.107919210957491
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 66,
+                  "triangle": 66,
+                  "source_triangle_index": 66
+                },
+                "height": 2.107919210957491,
+                "triangle": 66,
+                "barycentric": [
+                  0.3040943171689401,
+                  0.45018099296362707,
+                  0.2457246898674326
+                ],
+                "gradient_enu": [
+                  0.00032365937900676305,
+                  -0.005840879649891032
+                ],
+                "normal_enu": [
+                  -0.0003236538412348873,
+                  0.005840779713163865,
+                  0.9999828901238927
+                ],
+                "normal_up_z": 0.9999828901238927,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 1.9750658646594106,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              }
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 9,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 138,
+              "triangle": 138,
+              "source_triangle_index": 138
+            },
+            "height": 2.107913954302281,
+            "triangle": 138,
+            "barycentric": [
+              0.4503945506929618,
+              0.5496054493067541,
+              2.757818725035696e-13
+            ],
+            "gradient_enu": [
+              0.0010487323578096423,
+              -0.003428936544570742
+            ],
+            "normal_enu": [
+              -0.0010487256158651483,
+              0.003428914501101133,
+              0.9999935713392994
+            ],
+            "normal_up_z": 0.9999935713392994,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 1.9950355890527798,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+          },
+          "current": {
+            "point": [
+              155.59429197939684,
+              197.72631112878693,
+              2.1079139543023113
+            ],
+            "cross_section": [
+              {
+                "offset_m": -1.0,
+                "point": [
+                  156.59368583557995,
+                  197.76112377337887,
+                  2.107836264018395
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 189,
+                  "triangle": 189,
+                  "source_triangle_index": 189
+                },
+                "height": 2.107836264018395,
+                "triangle": 189,
+                "barycentric": [
+                  0.3852302437260296,
+                  0.038639847887874314,
+                  0.576129908386096
+                ],
+                "gradient_enu": [
+                  0.00011930408651691505,
+                  -0.0064349943993539695
+                ],
+                "normal_enu": [
+                  -0.00011930161560404342,
+                  0.006434861123864802,
+                  0.9999792889502467
+                ],
+                "normal_up_z": 0.9999792889502467,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 2.022940529420263,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              },
+              {
+                "offset_m": 0,
+                "point": [
+                  155.59429197939684,
+                  197.72631112878693,
+                  2.1079139543023113
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 113,
+                  "triangle": 113,
+                  "source_triangle_index": 113
+                },
+                "height": 2.1079139543023113,
+                "triangle": 113,
+                "barycentric": [
+                  0.45039455069297,
+                  8.007214633440295e-13,
+                  0.5496054493062354
+                ],
+                "gradient_enu": [
+                  0.0006144283920027394,
+                  -0.0048254917226219236
+                ],
+                "normal_enu": [
+                  -0.0006144211225552217,
+                  0.004825434631088914,
+                  0.9999881687636635
+                ],
+                "normal_up_z": 0.9999881687636635,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 1.9950355890527798,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              },
+              {
+                "offset_m": 1.0,
+                "point": [
+                  154.59489812321374,
+                  197.691498484195,
+                  2.1079192109574914
+                ],
+                "source": "PLATEAU-road",
+                "layer_ref": {
+                  "kind": "road",
+                  "source": 9,
+                  "mesh": 0,
+                  "primitive": 0,
+                  "original_triangle": 66,
+                  "triangle": 66,
+                  "source_triangle_index": 66
+                },
+                "height": 2.1079192109574914,
+                "triangle": 66,
+                "barycentric": [
+                  0.3040943171689762,
+                  0.45018099296362724,
+                  0.24572468986739643
+                ],
+                "gradient_enu": [
+                  0.00032365937900676305,
+                  -0.005840879649891032
+                ],
+                "normal_enu": [
+                  -0.0003236538412348873,
+                  0.005840779713163865,
+                  0.9999828901238927
+                ],
+                "normal_up_z": 0.9999828901238927,
+                "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+                "dem_nearest_m": 1.9750658646594106,
+                "support_geometry": "exact-derived-triangle-native-cm",
+                "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+                "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+                "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+              }
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 9,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 113,
+              "triangle": 113,
+              "source_triangle_index": 113
+            },
+            "height": 2.1079139543023113,
+            "triangle": 113,
+            "barycentric": [
+              0.45039455069297,
+              8.007214633440295e-13,
+              0.5496054493062354
+            ],
+            "gradient_enu": [
+              0.0006144283920027394,
+              -0.0048254917226219236
+            ],
+            "normal_enu": [
+              -0.0006144211225552217,
+              0.004825434631088914,
+              0.9999881687636635
+            ],
+            "normal_up_z": 0.9999881687636635,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 1.9950355890527798,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+          },
+          "segment_xy_length_m": 2.842170943040401e-14
+        }
+      }
+    },
+    {
+      "edge_id": "car-edge-534157302-2393500066-158030029",
+      "way_id": 534157302,
+      "from_osm_node": 2393500066,
+      "to_osm_node": 158030029,
+      "lane_points": [
+        [
+          153.80463754143008,
+          249.10332287151036
+        ],
+        [
+          153.17052217810559,
+          265.3802126275256
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-931455737-158030029-2393500098",
+      "way_id": 931455737,
+      "from_osm_node": 158030029,
+      "to_osm_node": 2393500098,
+      "lane_points": [
+        [
+          151.37230502159423,
+          265.3001185701415
+        ],
+        [
+          150.62952807389343,
+          281.9764400656328
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-931455737-2393500098-1685221018",
+      "way_id": 931455737,
+      "from_osm_node": 2393500098,
+      "to_osm_node": 1685221018,
+      "lane_points": [
+        [
+          150.62953195682013,
+          281.97635293629594
+        ],
+        [
+          146.0280020623766,
+          385.1742784518639
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-931455737-1685221018-1685221034",
+      "way_id": 931455737,
+      "from_osm_node": 1685221018,
+      "to_osm_node": 1685221034,
+      "lane_points": [
+        [
+          146.02795885623502,
+          385.1752533691196
+        ],
+        [
+          143.67287575423848,
+          438.6437916180171
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-931455737-1685221034-252683741",
+      "way_id": 931455737,
+      "from_osm_node": 1685221034,
+      "to_osm_node": 252683741,
+      "lane_points": [
+        [
+          143.67141735914046,
+          438.69096088799245
+        ],
+        [
+          143.3542158345147,
+          456.5101172158102
+        ]
+      ],
+      "left_offset_m": 1.8,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-798794764-252683741-6234707187",
+      "way_id": 798794764,
+      "from_osm_node": 252683741,
+      "to_osm_node": 6234707187,
+      "lane_points": [
+        [
+          145.15393070933894,
+          456.5421542153002
+        ],
+        [
+          145.6698714267368,
+          466.9385229735717
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    },
+    {
+      "edge_id": "car-edge-798794764-6234707187-158030048",
+      "way_id": 798794764,
+      "from_osm_node": 6234707187,
+      "to_osm_node": 158030048,
+      "lane_points": [
+        [
+          145.6698714267368,
+          466.9385229735717
+        ],
+        [
+          149.11929044386778,
+          489.07384088819344
+        ]
+      ],
+      "left_offset_m": 0.0,
+      "old_graph_status": "admitted-edge-only",
+      "old_refusal": null
+    }
+  ],
+  "ways": [
+    {
+      "id": 23334685,
+      "nodes": [
+        701873039,
+        2850364788,
+        2850364787,
+        2850364786,
+        1499530625,
+        6219685051
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 31856144,
+      "nodes": [
+        258037422,
+        1496842448,
+        7545737933,
+        7596347447,
+        1108870960,
+        597719874,
+        694150800,
+        11407650787,
+        664495192,
+        664495199,
+        9559829352,
+        980259131,
+        9559829361,
+        7596347448,
+        9559829359,
+        664495205,
+        9559829350,
+        2866947414,
+        7596347454,
+        1014529328,
+        7596347456,
+        11932523519,
+        664495203
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u677e\u6d9b\u6587\u5316\u6751\u30b9\u30c8\u30ea\u30fc\u30c8",
+        "source": "NRPB of MLIT Japan",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 46769498,
+      "nodes": [
+        252674261,
+        3340683526,
+        597686597
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lane_markings": "no",
+        "lit": "yes",
+        "oneway": "yes",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 116806275,
+      "nodes": [
+        597686597,
+        1316007425,
+        6124432717,
+        1316007410
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "oneway": "yes",
+        "oneway:bicycle": "no",
+        "source": "Bing, 2007-04",
+        "surface": "paved"
+      }
+    },
+    {
+      "id": 153108795,
+      "nodes": [
+        252675826,
+        6219729338,
+        13038536250,
+        1108870926,
+        598416635,
+        598417899,
+        6219729361,
+        11681901178,
+        13038536248,
+        2253591033,
+        1014529394,
+        2253591032,
+        13038536249,
+        1745599774,
+        1014529496
+      ],
+      "tags": {
+        "alt_name": "\u6587\u5316\u6751\u901a\u308a",
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "2",
+        "lit": "yes",
+        "maxspeed": "30",
+        "name": "\u6587\u5316\u6751\u901a\u308a",
+        "name:en": "Bunkamura-dori Street",
+        "parking:both": "lane",
+        "source": "NRPB of MLIT Japan",
+        "source:ja": "\u56fd\u571f\u753b\u50cf\u60c5\u5831(\u30aa\u30eb\u30bd\u5316\u7a7a\u4e2d\u5199\u771f)\u56fd\u571f\u8a08\u753b\u5c40",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 213526440,
+      "nodes": [
+        1657351118,
+        10605619818,
+        2086698240,
+        252683801
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "name": "\u65e7\u5927\u5c71\u8857\u9053",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 260252968,
+      "nodes": [
+        252674261,
+        2207504003,
+        2850364792,
+        12796417290
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u795e\u5bae\u901a\u308a",
+        "name:en": "Jingu-dori Street",
+        "name:ko": "\uc9c4\uad6c\ub3c4\ub9ac",
+        "source": "Bing 2010",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 310155108,
+      "nodes": [
+        664495203,
+        11932523512,
+        1014529751,
+        13038536252,
+        6219729358,
+        252675826
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u677e\u6d9b\u6587\u5316\u6751\u30b9\u30c8\u30ea\u30fc\u30c8",
+        "source": "NRPB of MLIT Japan",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 534157302,
+      "nodes": [
+        252683801,
+        2086698242,
+        12669269501,
+        12669269502,
+        1685221012,
+        2393500066,
+        158030029
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "primary",
+        "int_name": "Meiji-dori",
+        "lit": "yes",
+        "maxspeed": "50",
+        "name": "\u660e\u6cbb\u901a\u308a",
+        "name:en": "Meiji Street",
+        "name:es": "Calle Meiji",
+        "name:fr": "Rue Meiji",
+        "name:ja": "\u660e\u6cbb\u901a\u308a",
+        "name:ja-Hira": "\u3081\u3044\u3058\u3069\u304a\u308a",
+        "name:ja-Latn": "Meiji-d\u014dri",
+        "oneway": "yes",
+        "ref": "305",
+        "source": "Bing,2007-04",
+        "surface": "paved",
+        "wikidata": "Q8011176"
+      }
+    },
+    {
+      "id": 798794764,
+      "nodes": [
+        252683741,
+        6234707187,
+        158030048,
+        1520546474,
+        2393515295,
+        517547731
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "primary",
+        "int_name": "Meiji-dori",
+        "lit": "yes",
+        "maxspeed": "50",
+        "name": "\u660e\u6cbb\u901a\u308a",
+        "name:en": "Meiji Street",
+        "name:es": "Calle Meiji",
+        "name:fr": "Rue Meiji",
+        "name:ja": "\u660e\u6cbb\u901a\u308a",
+        "name:ja-Hira": "\u3081\u3044\u3058\u3069\u304a\u308a",
+        "name:ja-Latn": "Meiji-d\u014dri",
+        "oneway": "yes",
+        "ref": "305",
+        "source": "Bing,2007-04",
+        "surface": "paved",
+        "wikidata": "Q8011176"
+      }
+    },
+    {
+      "id": 931455737,
+      "nodes": [
+        158030029,
+        2393500098,
+        1685221018,
+        1685221034,
+        252683741
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "primary",
+        "int_name": "Meiji-dori",
+        "lanes": "3",
+        "lit": "yes",
+        "maxspeed": "50",
+        "name": "\u660e\u6cbb\u901a\u308a",
+        "name:en": "Meiji Street",
+        "name:es": "Calle Meiji",
+        "name:fr": "Rue Meiji",
+        "name:ja": "\u660e\u6cbb\u901a\u308a",
+        "name:ja-Hira": "\u3081\u3044\u3058\u3069\u304a\u308a",
+        "name:ja-Latn": "Meiji-d\u014dri",
+        "oneway": "yes",
+        "ref": "305",
+        "source": "Bing,2007-04",
+        "surface": "paved",
+        "wikidata": "Q8011176"
+      }
+    },
+    {
+      "id": 1035760831,
+      "nodes": [
+        1014529496,
+        2850364789
+      ],
+      "tags": {
+        "alt_name": "\u6587\u5316\u6751\u901a\u308a",
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "maxspeed": "30",
+        "name": "\u6587\u5316\u6751\u901a\u308a",
+        "name:en": "Bunkamura-dori Street",
+        "source": "NRPB of MLIT Japan",
+        "source:ja": "\u56fd\u571f\u753b\u50cf\u60c5\u5831(\u30aa\u30eb\u30bd\u5316\u7a7a\u4e2d\u5199\u771f)\u56fd\u571f\u8a08\u753b\u5c40",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1071930093,
+      "nodes": [
+        1316007410,
+        1657351118
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "name": "\u65e7\u5927\u5c71\u8857\u9053",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1106270530,
+      "nodes": [
+        252675828,
+        2253572964
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1109680533,
+      "nodes": [
+        1014529169,
+        701873039
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1112568718,
+      "nodes": [
+        3756997365,
+        252675828
+      ],
+      "tags": {
+        "alt_name": "\u6587\u5316\u6751\u901a\u308a",
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "name": "\u6587\u5316\u6751\u901a\u308a",
+        "name:en": "Bunkamura-dori Street",
+        "source": "NRPB of MLIT Japan",
+        "source:ja": "\u56fd\u571f\u753b\u50cf\u60c5\u5831(\u30aa\u30eb\u30bd\u5316\u7a7a\u4e2d\u5199\u771f)\u56fd\u571f\u8a08\u753b\u5c40",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1134562281,
+      "nodes": [
+        6219685052,
+        12352271625,
+        2021391989,
+        291758776
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u795e\u5bae\u901a\u308a",
+        "name:en": "Jingu-dori Street",
+        "name:ko": "\uc9c4\uad6c\ub3c4\ub9ac",
+        "source": "Bing 2010",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1134562282,
+      "nodes": [
+        6219685051,
+        12352271622,
+        1499530624,
+        291758776
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1134562285,
+      "nodes": [
+        10577113262,
+        1014529169
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1134562286,
+      "nodes": [
+        2850364789,
+        2253572966,
+        12782722048,
+        3756997365
+      ],
+      "tags": {
+        "alt_name": "\u6587\u5316\u6751\u901a\u308a",
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "name": "\u6587\u5316\u6751\u901a\u308a",
+        "name:en": "Bunkamura-dori Street",
+        "source": "NRPB of MLIT Japan",
+        "source:ja": "\u56fd\u571f\u753b\u50cf\u60c5\u5831(\u30aa\u30eb\u30bd\u5316\u7a7a\u4e2d\u5199\u771f)\u56fd\u571f\u8a08\u753b\u5c40",
+        "surface": "asphalt"
+      }
+    },
+    {
+      "id": 1298036687,
+      "nodes": [
+        2253572964,
+        10577113262
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lanes": "4",
+        "lit": "yes",
+        "name": "\u9053\u7384\u5742",
+        "name:en": "Dogen-zaka Street",
+        "surface": "asphalt",
+        "turn:lanes:backward": "through|right"
+      }
+    },
+    {
+      "id": 1382159336,
+      "nodes": [
+        12796417290,
+        6219685052
+      ],
+      "tags": {
+        "foot": "no",
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u795e\u5bae\u901a\u308a",
+        "name:en": "Jingu-dori Street",
+        "name:ko": "\uc9c4\uad6c\ub3c4\ub9ac",
+        "source": "Bing 2010",
+        "surface": "asphalt"
+      }
+    }
+  ],
+  "points": {
+    "158030029": [
+      153.17052217810559,
+      265.3802126275256
+    ],
+    "158030048": [
+      149.11929044386778,
+      489.07384088819344
+    ],
+    "252674261": [
+      29.19311477126962,
+      103.80825243533504
+    ],
+    "252675826": [
+      -326.53873721866677,
+      114.08850109221076
+    ],
+    "252675828": [
+      -96.41808709458066,
+      -0.02166842372837148
+    ],
+    "252683741": [
+      145.15393070933894,
+      456.5421542153002
+    ],
+    "252683801": [
+      169.11187834857847,
+      4.495227929232644
+    ],
+    "258037422": [
+      -862.4646802240982,
+      -177.57272319192037
+    ],
+    "291758776": [
+      6.546796802585578,
+      -1.9860671881781649
+    ],
+    "517547731": [
+      162.6821450290068,
+      535.7190113729537
+    ],
+    "597686597": [
+      56.81976366829286,
+      97.83908088106111
+    ],
+    "597719874": [
+      -781.1274546524745,
+      -140.9322654183846
+    ],
+    "598416635": [
+      -262.88341590562095,
+      86.74741974976264
+    ],
+    "598417899": [
+      -256.71707565518835,
+      83.86244553630698
+    ],
+    "664495192": [
+      -711.0552395473912,
+      -100.99484772422981
+    ],
+    "664495199": [
+      -620.0203777621747,
+      -50.87282061361364
+    ],
+    "664495203": [
+      -452.4502476915181,
+      59.68235479149232
+    ],
+    "664495205": [
+      -571.4288877691291,
+      -21.95046892493429
+    ],
+    "694150800": [
+      -753.9515267365259,
+      -125.39001160347469
+    ],
+    "701873039": [
+      -63.828943235047994,
+      6.635254739345535
+    ],
+    "980259131": [
+      -596.0596880639253,
+      -37.26045071557231
+    ],
+    "1014529169": [
+      -70.93715127339549,
+      5.958491538321884
+    ],
+    "1014529328": [
+      -500.00835741278786,
+      35.6856323579401
+    ],
+    "1014529394": [
+      -196.93687365017738,
+      55.767465161535
+    ],
+    "1014529496": [
+      -129.54106584618307,
+      25.04317279241818
+    ],
+    "1014529751": [
+      -367.69407760904375,
+      97.09201073761157
+    ],
+    "1108870926": [
+      -273.7854282552949,
+      91.68518472231364
+    ],
+    "1108870960": [
+      -821.8869266696533,
+      -163.48545825165252
+    ],
+    "1316007410": [
+      53.28895605434533,
+      -5.691760569784849
+    ],
+    "1316007425": [
+      52.94472285124238,
+      18.074500621334078
+    ],
+    "1496842448": [
+      -853.3821143341509,
+      -175.72067395350422
+    ],
+    "1499530624": [
+      -25.00096307701703,
+      2.773875345125104
+    ],
+    "1499530625": [
+      -37.55123763947703,
+      5.070659168172579
+    ],
+    "1520546474": [
+      153.43796790491396,
+      508.80148066875915
+    ],
+    "1657351118": [
+      85.09027985355372,
+      -5.28098498145552
+    ],
+    "1685221012": [
+      157.65488083049317,
+      138.57137297213586
+    ],
+    "1685221018": [
+      147.82621533596125,
+      385.25445963858493
+    ],
+    "1685221034": [
+      145.4711322339647,
+      438.7229978874824
+    ],
+    "1745599774": [
+      -173.7653781292261,
+      44.926814157661376
+    ],
+    "2021391989": [
+      12.03412699277215,
+      17.586155376940336
+    ],
+    "2086698240": [
+      149.5168309369059,
+      1.310508560918656
+    ],
+    "2086698242": [
+      166.42227600044305,
+      18.197948160403318
+    ],
+    "2207504003": [
+      28.55025519035674,
+      91.05967882756687
+    ],
+    "2253572964": [
+      -88.65788648928311,
+      2.9518076098078634
+    ],
+    "2253572966": [
+      -104.16001177288605,
+      11.617452494595415
+    ],
+    "2253591032": [
+      -189.8559457454914,
+      52.460893471671945
+    ],
+    "2253591033": [
+      -205.98270527155404,
+      60.02828888631111
+    ],
+    "2393500066": [
+      153.80463754143008,
+      249.10332287151036
+    ],
+    "2393500098": [
+      152.42774523040478,
+      282.05653412301695
+    ],
+    "2393515295": [
+      159.3774295580688,
+      525.8995494008906
+    ],
+    "2850364786": [
+      -43.62716325858022,
+      5.902838952794841
+    ],
+    "2850364787": [
+      -49.567263574426576,
+      6.490924187565359
+    ],
+    "2850364788": [
+      -55.69752133415006,
+      6.679581578879643
+    ],
+    "2850364789": [
+      -107.87253755211715,
+      14.635434940841098
+    ],
+    "2850364792": [
+      25.172807115078772,
+      74.08376437289559
+    ],
+    "2866947414": [
+      -536.4293221991197,
+      6.95076747386985
+    ],
+    "3340683526": [
+      38.85474308886624,
+      101.23416525207377
+    ],
+    "3756997365": [
+      -98.93532968338165,
+      5.293037090414192
+    ],
+    "6124432717": [
+      53.144016853253106,
+      4.094346855985967
+    ],
+    "6219685051": [
+      -31.27610115015511,
+      3.9278127247985326
+    ],
+    "6219685052": [
+      13.989999548865457,
+      25.630295143014052
+    ],
+    "6219729338": [
+      -316.9044320078263,
+      110.27134801561257
+    ],
+    "6219729358": [
+      -342.04101466566146,
+      107.73144055245409
+    ],
+    "6219729361": [
+      -248.18741635709353,
+      79.9233499749718
+    ],
+    "6234707187": [
+      145.6698714267368,
+      466.9385229735717
+    ],
+    "7545737933": [
+      -843.9281735741272,
+      -172.65925663689274
+    ],
+    "7596347447": [
+      -833.5143003369012,
+      -168.6770044961797
+    ],
+    "7596347448": [
+      -584.3600462638718,
+      -29.971574867937587
+    ],
+    "7596347454": [
+      -508.7467625932336,
+      30.005302539409456
+    ],
+    "7596347456": [
+      -483.00253293853405,
+      45.33765773094641
+    ],
+    "9559829350": [
+      -568.7213058543404,
+      -20.108812507971432
+    ],
+    "9559829352": [
+      -598.7400947068675,
+      -38.791430507778614
+    ],
+    "9559829359": [
+      -576.1467658798106,
+      -24.879339923245315
+    ],
+    "9559829361": [
+      -592.6910579679165,
+      -35.15255723641284
+    ],
+    "10577113262": [
+      -82.75398901478069,
+      4.249907984717304
+    ],
+    "10605619818": [
+      137.2472702163607,
+      0.05653510302496961
+    ],
+    "11407650787": [
+      -723.044805451695,
+      -107.81752761923013
+    ],
+    "11681901178": [
+      -243.95880418400924,
+      77.93716321796295
+    ],
+    "11932523512": [
+      -445.93050887877024,
+      62.72215488366167
+    ],
+    "11932523519": [
+      -464.9192628794852,
+      53.824646394411204
+    ],
+    "12352271622": [
+      -28.595811479139332,
+      3.4396078265579746
+    ],
+    "12352271625": [
+      13.184108015727315,
+      22.33497161001817
+    ],
+    "12669269501": [
+      164.60196407713903,
+      31.834113353415873
+    ],
+    "12669269502": [
+      163.84119027633,
+      40.14452507052852
+    ],
+    "12782722048": [
+      -101.26243583188422,
+      8.654957650633264
+    ],
+    "12796417290": [
+      21.387870518202842,
+      57.67371409484938
+    ],
+    "13038536248": [
+      -211.45185256158163,
+      62.60254111618804
+    ],
+    "13038536249": [
+      -185.38282506883027,
+      50.36377580006587
+    ],
+    "13038536250": [
+      -311.65265201745933,
+      108.00770855866068
+    ],
+    "13038536252": [
+      -349.0496463133179,
+      104.82472766306086
+    ]
+  },
+  "nodes": {
+    "158030029": {
+      "id": "158030029",
+      "lat": "35.6618918",
+      "lon": "139.7021916"
+    },
+    "158030048": {
+      "id": "158030048",
+      "lat": "35.6639079",
+      "lon": "139.7021469"
+    },
+    "252674261": {
+      "id": "252674261",
+      "lat": "35.6604356",
+      "lon": "139.7008224"
+    },
+    "252675826": {
+      "id": "252675826",
+      "lat": "35.6605282",
+      "lon": "139.6968938"
+    },
+    "252675828": {
+      "id": "252675828",
+      "lat": "35.6594998",
+      "lon": "139.6994352"
+    },
+    "252683741": {
+      "id": "252683741",
+      "lat": "35.6636147",
+      "lon": "139.7021031"
+    },
+    "252683801": {
+      "id": "252683801",
+      "lat": "35.6595405",
+      "lon": "139.7023676"
+    },
+    "258037422": {
+      "id": "258037422",
+      "lat": "35.6578992",
+      "lon": "139.6909755"
+    },
+    "291758776": {
+      "id": "291758776",
+      "lat": "35.6594821",
+      "lon": "139.7005723"
+    },
+    "517547731": {
+      "id": "517547731",
+      "lat": "35.6643283",
+      "lon": "139.7022967"
+    },
+    "597686597": {
+      "id": "597686597",
+      "lat": "35.6603818",
+      "lon": "139.7011275"
+    },
+    "597719874": {
+      "id": "597719874",
+      "lat": "35.6582295",
+      "lon": "139.6918737"
+    },
+    "598416635": {
+      "id": "598416635",
+      "lat": "35.6602818",
+      "lon": "139.6975968"
+    },
+    "598417899": {
+      "id": "598417899",
+      "lat": "35.6602558",
+      "lon": "139.6976649"
+    },
+    "664495192": {
+      "id": "664495192",
+      "lat": "35.6585895",
+      "lon": "139.6926475"
+    },
+    "664495199": {
+      "id": "664495199",
+      "lat": "35.6590413",
+      "lon": "139.6936528"
+    },
+    "664495203": {
+      "id": "664495203",
+      "lat": "35.6600378",
+      "lon": "139.6955033"
+    },
+    "664495205": {
+      "id": "664495205",
+      "lat": "35.6593020",
+      "lon": "139.6941894"
+    },
+    "694150800": {
+      "id": "694150800",
+      "lat": "35.6583696",
+      "lon": "139.6921738"
+    },
+    "701873039": {
+      "id": "701873039",
+      "lat": "35.6595598",
+      "lon": "139.6997951"
+    },
+    "980259131": {
+      "id": "980259131",
+      "lat": "35.6591640",
+      "lon": "139.6939174"
+    },
+    "1014529169": {
+      "id": "1014529169",
+      "lat": "35.6595537",
+      "lon": "139.6997166"
+    },
+    "1014529328": {
+      "id": "1014529328",
+      "lat": "35.6598215",
+      "lon": "139.6949781"
+    },
+    "1014529394": {
+      "id": "1014529394",
+      "lat": "35.6600026",
+      "lon": "139.6983251"
+    },
+    "1014529496": {
+      "id": "1014529496",
+      "lat": "35.6597257",
+      "lon": "139.6990694"
+    },
+    "1014529751": {
+      "id": "1014529751",
+      "lat": "35.6603750",
+      "lon": "139.6964393"
+    },
+    "1108870926": {
+      "id": "1108870926",
+      "lat": "35.6603263",
+      "lon": "139.6974764"
+    },
+    "1108870960": {
+      "id": "1108870960",
+      "lat": "35.6580262",
+      "lon": "139.6914236"
+    },
+    "1316007410": {
+      "id": "1316007410",
+      "lat": "35.6594487",
+      "lon": "139.7010885"
+    },
+    "1316007425": {
+      "id": "1316007425",
+      "lat": "35.6596629",
+      "lon": "139.7010847"
+    },
+    "1496842448": {
+      "id": "1496842448",
+      "lat": "35.6579159",
+      "lon": "139.6910758"
+    },
+    "1499530624": {
+      "id": "1499530624",
+      "lat": "35.6595250",
+      "lon": "139.7002239"
+    },
+    "1499530625": {
+      "id": "1499530625",
+      "lat": "35.6595457",
+      "lon": "139.7000853"
+    },
+    "1520546474": {
+      "id": "1520546474",
+      "lat": "35.6640857",
+      "lon": "139.7021946"
+    },
+    "1657351118": {
+      "id": "1657351118",
+      "lat": "35.6594524",
+      "lon": "139.7014397"
+    },
+    "1685221012": {
+      "id": "1685221012",
+      "lat": "35.6607489",
+      "lon": "139.7022411"
+    },
+    "1685221018": {
+      "id": "1685221018",
+      "lat": "35.6629722",
+      "lon": "139.7021326"
+    },
+    "1685221034": {
+      "id": "1685221034",
+      "lat": "35.6634541",
+      "lon": "139.7021066"
+    },
+    "1745599774": {
+      "id": "1745599774",
+      "lat": "35.6599049",
+      "lon": "139.6985810"
+    },
+    "2021391989": {
+      "id": "2021391989",
+      "lat": "35.6596585",
+      "lon": "139.7006329"
+    },
+    "2086698240": {
+      "id": "2086698240",
+      "lat": "35.6595118",
+      "lon": "139.7021512"
+    },
+    "2086698242": {
+      "id": "2086698242",
+      "lat": "35.6596640",
+      "lon": "139.7023379"
+    },
+    "2207504003": {
+      "id": "2207504003",
+      "lat": "35.6603207",
+      "lon": "139.7008153"
+    },
+    "2253572964": {
+      "id": "2253572964",
+      "lat": "35.6595266",
+      "lon": "139.6995209"
+    },
+    "2253572966": {
+      "id": "2253572966",
+      "lat": "35.6596047",
+      "lon": "139.6993497"
+    },
+    "2253591032": {
+      "id": "2253591032",
+      "lat": "35.6599728",
+      "lon": "139.6984033"
+    },
+    "2253591033": {
+      "id": "2253591033",
+      "lat": "35.6600410",
+      "lon": "139.6982252"
+    },
+    "2393500066": {
+      "id": "2393500066",
+      "lat": "35.6617451",
+      "lon": "139.7021986"
+    },
+    "2393500098": {
+      "id": "2393500098",
+      "lat": "35.6620421",
+      "lon": "139.7021834"
+    },
+    "2393515295": {
+      "id": "2393515295",
+      "lat": "35.6642398",
+      "lon": "139.7022602"
+    },
+    "2850364786": {
+      "id": "2850364786",
+      "lat": "35.6595532",
+      "lon": "139.7000182"
+    },
+    "2850364787": {
+      "id": "2850364787",
+      "lat": "35.6595585",
+      "lon": "139.6999526"
+    },
+    "2850364788": {
+      "id": "2850364788",
+      "lat": "35.6595602",
+      "lon": "139.6998849"
+    },
+    "2850364789": {
+      "id": "2850364789",
+      "lat": "35.6596319",
+      "lon": "139.6993087"
+    },
+    "2850364792": {
+      "id": "2850364792",
+      "lat": "35.6601677",
+      "lon": "139.7007780"
+    },
+    "2866947414": {
+      "id": "2866947414",
+      "lat": "35.6595625",
+      "lon": "139.6945759"
+    },
+    "3340683526": {
+      "id": "3340683526",
+      "lat": "35.6604124",
+      "lon": "139.7009291"
+    },
+    "3756997365": {
+      "id": "3756997365",
+      "lat": "35.6595477",
+      "lon": "139.6994074"
+    },
+    "6124432717": {
+      "id": "6124432717",
+      "lat": "35.6595369",
+      "lon": "139.7010869"
+    },
+    "6219685051": {
+      "id": "6219685051",
+      "lat": "35.6595354",
+      "lon": "139.7001546"
+    },
+    "6219685052": {
+      "id": "6219685052",
+      "lat": "35.6597310",
+      "lon": "139.7006545"
+    },
+    "6219729338": {
+      "id": "6219729338",
+      "lat": "35.6604938",
+      "lon": "139.6970002"
+    },
+    "6219729358": {
+      "id": "6219729358",
+      "lat": "35.6604709",
+      "lon": "139.6967226"
+    },
+    "6219729361": {
+      "id": "6219729361",
+      "lat": "35.6602203",
+      "lon": "139.6977591"
+    },
+    "6234707187": {
+      "id": "6234707187",
+      "lat": "35.6637084",
+      "lon": "139.7021088"
+    },
+    "7545737933": {
+      "id": "7545737933",
+      "lat": "35.6579435",
+      "lon": "139.6911802"
+    },
+    "7596347447": {
+      "id": "7596347447",
+      "lat": "35.6579794",
+      "lon": "139.6912952"
+    },
+    "7596347448": {
+      "id": "7596347448",
+      "lat": "35.6592297",
+      "lon": "139.6940466"
+    },
+    "7596347454": {
+      "id": "7596347454",
+      "lat": "35.6597703",
+      "lon": "139.6948816"
+    },
+    "7596347456": {
+      "id": "7596347456",
+      "lat": "35.6599085",
+      "lon": "139.6951659"
+    },
+    "9559829350": {
+      "id": "9559829350",
+      "lat": "35.6593186",
+      "lon": "139.6942193"
+    },
+    "9559829352": {
+      "id": "9559829352",
+      "lat": "35.6591502",
+      "lon": "139.6938878"
+    },
+    "9559829359": {
+      "id": "9559829359",
+      "lat": "35.6592756",
+      "lon": "139.6941373"
+    },
+    "9559829361": {
+      "id": "9559829361",
+      "lat": "35.6591830",
+      "lon": "139.6939546"
+    },
+    "10577113262": {
+      "id": "10577113262",
+      "lat": "35.6595383",
+      "lon": "139.6995861"
+    },
+    "10605619818": {
+      "id": "10605619818",
+      "lat": "35.6595005",
+      "lon": "139.7020157"
+    },
+    "11407650787": {
+      "id": "11407650787",
+      "lat": "35.6585280",
+      "lon": "139.6925151"
+    },
+    "11681901178": {
+      "id": "11681901178",
+      "lat": "35.6602024",
+      "lon": "139.6978058"
+    },
+    "11932523512": {
+      "id": "11932523512",
+      "lat": "35.6600652",
+      "lon": "139.6955753"
+    },
+    "11932523519": {
+      "id": "11932523519",
+      "lat": "35.6599850",
+      "lon": "139.6953656"
+    },
+    "12352271622": {
+      "id": "12352271622",
+      "lat": "35.6595310",
+      "lon": "139.7001842"
+    },
+    "12352271625": {
+      "id": "12352271625",
+      "lat": "35.6597013",
+      "lon": "139.7006456"
+    },
+    "12669269501": {
+      "id": "12669269501",
+      "lat": "35.6597869",
+      "lon": "139.7023178"
+    },
+    "12669269502": {
+      "id": "12669269502",
+      "lat": "35.6598618",
+      "lon": "139.7023094"
+    },
+    "12782722048": {
+      "id": "12782722048",
+      "lat": "35.6595780",
+      "lon": "139.6993817"
+    },
+    "12796417290": {
+      "id": "12796417290",
+      "lat": "35.6600198",
+      "lon": "139.7007362"
+    },
+    "13038536248": {
+      "id": "13038536248",
+      "lat": "35.6600642",
+      "lon": "139.6981648"
+    },
+    "13038536249": {
+      "id": "13038536249",
+      "lat": "35.6599539",
+      "lon": "139.6984527"
+    },
+    "13038536250": {
+      "id": "13038536250",
+      "lat": "35.6604734",
+      "lon": "139.6970582"
+    },
+    "13038536252": {
+      "id": "13038536252",
+      "lat": "35.6604447",
+      "lon": "139.6966452"
+    }
+  },
+  "restriction_relations": [
+    {
+      "relation_id": 10741818,
+      "rule": "only_straight_on",
+      "from_ways": [
+        1071659164
+      ],
+      "to_ways": [
+        922479809
+      ],
+      "via_nodes": [
+        381063833
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1071659164
+        ],
+        [
+          "via",
+          "node",
+          381063833
+        ],
+        [
+          "to",
+          "way",
+          922479809
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 11687771,
+      "rule": "only_left_turn",
+      "from_ways": [
+        231404549
+      ],
+      "to_ways": [
+        375809353
+      ],
+      "via_nodes": [
+        2397979255
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          231404549
+        ],
+        [
+          "via",
+          "node",
+          2397979255
+        ],
+        [
+          "to",
+          "way",
+          375809353
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 11694153,
+      "rule": "only_straight_on",
+      "from_ways": [
+        23673079
+      ],
+      "to_ways": [
+        367462234
+      ],
+      "via_nodes": [
+        2138385688
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          23673079
+        ],
+        [
+          "via",
+          "node",
+          2138385688
+        ],
+        [
+          "to",
+          "way",
+          367462234
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 12421766,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1160263983
+      ],
+      "to_ways": [
+        915103113
+      ],
+      "via_nodes": [
+        252835332
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1160263983
+        ],
+        [
+          "via",
+          "node",
+          252835332
+        ],
+        [
+          "to",
+          "way",
+          915103113
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 12494713,
+      "rule": "only_straight_on",
+      "from_ways": [
+        28195682
+      ],
+      "to_ways": [
+        215958749
+      ],
+      "via_nodes": [
+        381044653
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          28195682
+        ],
+        [
+          "via",
+          "node",
+          381044653
+        ],
+        [
+          "to",
+          "way",
+          215958749
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 12494714,
+      "rule": "no_right_turn",
+      "from_ways": [
+        775467747
+      ],
+      "to_ways": [
+        915103113
+      ],
+      "via_nodes": [
+        381044653
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          775467747
+        ],
+        [
+          "via",
+          "node",
+          381044653
+        ],
+        [
+          "to",
+          "way",
+          915103113
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 12589764,
+      "rule": "no_right_turn",
+      "from_ways": [
+        213526435
+      ],
+      "to_ways": [
+        41857237
+      ],
+      "via_nodes": [
+        1685221014
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          213526435
+        ],
+        [
+          "via",
+          "node",
+          1685221014
+        ],
+        [
+          "to",
+          "way",
+          41857237
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 13830081,
+      "rule": "only_right_turn",
+      "from_ways": [
+        1071659160
+      ],
+      "to_ways": [
+        33476791
+      ],
+      "via_nodes": [
+        381063833
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1071659160
+        ],
+        [
+          "via",
+          "node",
+          381063833
+        ],
+        [
+          "to",
+          "way",
+          33476791
+        ]
+      ],
+      "tags": {
+        "restriction": "only_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 13830082,
+      "rule": "no_left_turn",
+      "from_ways": [
+        1071659161
+      ],
+      "to_ways": [
+        404515763
+      ],
+      "via_nodes": [
+        381063833
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1071659161
+        ],
+        [
+          "via",
+          "node",
+          381063833
+        ],
+        [
+          "to",
+          "way",
+          404515763
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14212347,
+      "rule": "only_left_turn",
+      "from_ways": [
+        26958821
+      ],
+      "to_ways": [
+        1066165139
+      ],
+      "via_nodes": [
+        1075301281
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          26958821
+        ],
+        [
+          "via",
+          "node",
+          1075301281
+        ],
+        [
+          "to",
+          "way",
+          1066165139
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14216885,
+      "rule": "only_left_turn",
+      "from_ways": [
+        41857283
+      ],
+      "to_ways": [
+        375814212
+      ],
+      "via_nodes": [
+        1075301283
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          41857283
+        ],
+        [
+          "via",
+          "node",
+          1075301283
+        ],
+        [
+          "to",
+          "way",
+          375814212
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14275567,
+      "rule": "no_left_turn",
+      "from_ways": [
+        1160263983
+      ],
+      "to_ways": [
+        915103111
+      ],
+      "via_nodes": [
+        252835332
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1160263983
+        ],
+        [
+          "via",
+          "node",
+          252835332
+        ],
+        [
+          "to",
+          "way",
+          915103111
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14275568,
+      "rule": "no_right_turn",
+      "from_ways": [
+        915103110
+      ],
+      "to_ways": [
+        915103113
+      ],
+      "via_nodes": [
+        252835332
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          915103110
+        ],
+        [
+          "via",
+          "node",
+          252835332
+        ],
+        [
+          "to",
+          "way",
+          915103113
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14304377,
+      "rule": "",
+      "from_ways": [],
+      "to_ways": [],
+      "via_nodes": [],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "node",
+          5925771435
+        ]
+      ],
+      "tags": {
+        "restriction:conditional": "no_right_turn @ (08:00-20:00)",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 14304378,
+      "rule": "",
+      "from_ways": [],
+      "to_ways": [
+        1074238466
+      ],
+      "via_nodes": [
+        694150810
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "via",
+          "node",
+          694150810
+        ],
+        [
+          "to",
+          "way",
+          1074238466
+        ]
+      ],
+      "tags": {
+        "restriction:conditional": "only_left_turn @ (08:00-20:00)",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 14472887,
+      "rule": "no_right_turn",
+      "from_ways": [
+        310155079
+      ],
+      "to_ways": [
+        141293454
+      ],
+      "via_nodes": [
+        728435743
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          310155079
+        ],
+        [
+          "via",
+          "node",
+          728435743
+        ],
+        [
+          "to",
+          "way",
+          141293454
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14769357,
+      "rule": "no_right_turn",
+      "from_ways": [
+        976275942
+      ],
+      "to_ways": [
+        976275946
+      ],
+      "via_nodes": [
+        250652228
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          976275942
+        ],
+        [
+          "via",
+          "node",
+          250652228
+        ],
+        [
+          "to",
+          "way",
+          976275946
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14769358,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1112568721
+      ],
+      "to_ways": [
+        31855878
+      ],
+      "via_nodes": [
+        356642816
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1112568721
+        ],
+        [
+          "via",
+          "node",
+          356642816
+        ],
+        [
+          "to",
+          "way",
+          31855878
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14769359,
+      "rule": "no_right_turn",
+      "from_ways": [
+        31855878
+      ],
+      "to_ways": [
+        1112568722
+      ],
+      "via_nodes": [
+        356642816
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          31855878
+        ],
+        [
+          "via",
+          "node",
+          356642816
+        ],
+        [
+          "to",
+          "way",
+          1112568722
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 14909875,
+      "rule": "no_right_turn",
+      "from_ways": [
+        213526434
+      ],
+      "to_ways": [
+        945364031
+      ],
+      "via_nodes": [
+        1685220989
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          213526434
+        ],
+        [
+          "via",
+          "node",
+          1685220989
+        ],
+        [
+          "to",
+          "way",
+          945364031
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352357,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1035760830
+      ],
+      "to_ways": [
+        1256602978
+      ],
+      "via_nodes": [
+        444301910
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1035760830
+        ],
+        [
+          "via",
+          "node",
+          444301910
+        ],
+        [
+          "to",
+          "way",
+          1256602978
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352570,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1134562280
+      ],
+      "to_ways": [
+        87250185
+      ],
+      "via_nodes": [
+        291758776
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562280
+        ],
+        [
+          "via",
+          "node",
+          291758776
+        ],
+        [
+          "to",
+          "way",
+          87250185
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352571,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1134562280
+      ],
+      "to_ways": [
+        1134562281
+      ],
+      "via_nodes": [
+        291758776
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562280
+        ],
+        [
+          "via",
+          "node",
+          291758776
+        ],
+        [
+          "to",
+          "way",
+          1134562281
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352572,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1156909226
+      ],
+      "to_ways": [
+        1134562280
+      ],
+      "via_nodes": [
+        291758776
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1156909226
+        ],
+        [
+          "via",
+          "node",
+          291758776
+        ],
+        [
+          "to",
+          "way",
+          1134562280
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352573,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1134562281
+      ],
+      "to_ways": [
+        87250185
+      ],
+      "via_nodes": [
+        291758776
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562281
+        ],
+        [
+          "via",
+          "node",
+          291758776
+        ],
+        [
+          "to",
+          "way",
+          87250185
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15352574,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1134562281
+      ],
+      "to_ways": [
+        1134562282
+      ],
+      "via_nodes": [
+        291758776
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562281
+        ],
+        [
+          "via",
+          "node",
+          291758776
+        ],
+        [
+          "to",
+          "way",
+          1134562282
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15354393,
+      "rule": "only_left_turn",
+      "from_ways": [
+        1112568718
+      ],
+      "to_ways": [
+        1106270530
+      ],
+      "via_nodes": [
+        252675828
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1112568718
+        ],
+        [
+          "via",
+          "node",
+          252675828
+        ],
+        [
+          "to",
+          "way",
+          1106270530
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 15690308,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1134562282
+      ],
+      "to_ways": [
+        31610468
+      ],
+      "via_nodes": [],
+      "via_ways": [
+        1033129755
+      ],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562282
+        ],
+        [
+          "via",
+          "way",
+          1033129755
+        ],
+        [
+          "to",
+          "way",
+          31610468
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 16809094,
+      "rule": "only_straight_on",
+      "from_ways": [
+        375814212
+      ],
+      "to_ways": [
+        1066165140
+      ],
+      "via_nodes": [
+        508443076
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          375814212
+        ],
+        [
+          "via",
+          "node",
+          508443076
+        ],
+        [
+          "to",
+          "way",
+          1066165140
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 16809095,
+      "rule": "only_left_turn",
+      "from_ways": [
+        354926363
+      ],
+      "to_ways": [
+        153109040
+      ],
+      "via_nodes": [
+        295413622
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          354926363
+        ],
+        [
+          "via",
+          "node",
+          295413622
+        ],
+        [
+          "to",
+          "way",
+          153109040
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17293356,
+      "rule": "no_right_turn",
+      "from_ways": [
+        46867241
+      ],
+      "to_ways": [
+        1256602979
+      ],
+      "via_nodes": [
+        598416625
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          46867241
+        ],
+        [
+          "via",
+          "node",
+          598416625
+        ],
+        [
+          "to",
+          "way",
+          1256602979
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17295285,
+      "rule": "only_straight_on",
+      "from_ways": [
+        1256773489
+      ],
+      "to_ways": [
+        257223001
+      ],
+      "via_nodes": [
+        1685220982
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1256773489
+        ],
+        [
+          "via",
+          "node",
+          1685220982
+        ],
+        [
+          "to",
+          "way",
+          257223001
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17304309,
+      "rule": "only_left_turn",
+      "from_ways": [
+        968189472
+      ],
+      "to_ways": [
+        1257445135
+      ],
+      "via_nodes": [
+        356644262
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          968189472
+        ],
+        [
+          "via",
+          "node",
+          356644262
+        ],
+        [
+          "to",
+          "way",
+          1257445135
+        ]
+      ],
+      "tags": {
+        "restriction": "only_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788712,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1298036686
+      ],
+      "to_ways": [
+        1298036686
+      ],
+      "via_nodes": [
+        10577113263
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1298036686
+        ],
+        [
+          "via",
+          "node",
+          10577113263
+        ],
+        [
+          "to",
+          "way",
+          1298036686
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788713,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1298036686
+      ],
+      "to_ways": [
+        1298036686
+      ],
+      "via_nodes": [
+        3756997364
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1298036686
+        ],
+        [
+          "via",
+          "node",
+          3756997364
+        ],
+        [
+          "to",
+          "way",
+          1298036686
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788714,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1298036687
+      ],
+      "to_ways": [
+        1298036687
+      ],
+      "via_nodes": [
+        10577113262
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1298036687
+        ],
+        [
+          "via",
+          "node",
+          10577113262
+        ],
+        [
+          "to",
+          "way",
+          1298036687
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788715,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1298036687
+      ],
+      "to_ways": [
+        1298036687
+      ],
+      "via_nodes": [
+        2253572964
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1298036687
+        ],
+        [
+          "via",
+          "node",
+          2253572964
+        ],
+        [
+          "to",
+          "way",
+          1298036687
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788716,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1134562285
+      ],
+      "to_ways": [
+        1134562285
+      ],
+      "via_nodes": [
+        10577113262
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562285
+        ],
+        [
+          "via",
+          "node",
+          10577113262
+        ],
+        [
+          "to",
+          "way",
+          1134562285
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788717,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1134562287
+      ],
+      "to_ways": [
+        1134562287
+      ],
+      "via_nodes": [
+        10577113263
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562287
+        ],
+        [
+          "via",
+          "node",
+          10577113263
+        ],
+        [
+          "to",
+          "way",
+          1134562287
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 17788718,
+      "rule": "no_u_turn",
+      "from_ways": [
+        1134562287
+      ],
+      "to_ways": [
+        1134562287
+      ],
+      "via_nodes": [
+        444301910
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1134562287
+        ],
+        [
+          "via",
+          "node",
+          444301910
+        ],
+        [
+          "to",
+          "way",
+          1134562287
+        ]
+      ],
+      "tags": {
+        "restriction": "no_u_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 18253075,
+      "rule": "",
+      "from_ways": [
+        1117318760
+      ],
+      "to_ways": [
+        87250179
+      ],
+      "via_nodes": [],
+      "via_ways": [
+        1117793792,
+        1117318753
+      ],
+      "members": [
+        [
+          "from",
+          "way",
+          1117318760
+        ],
+        [
+          "via",
+          "way",
+          1117793792
+        ],
+        [
+          "via",
+          "way",
+          1117318753
+        ],
+        [
+          "to",
+          "way",
+          87250179
+        ]
+      ],
+      "tags": {
+        "restriction:conditional": "no_right_turn @ 08:00-20:00",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 18253076,
+      "rule": "no_left_turn",
+      "from_ways": [
+        1117318760
+      ],
+      "to_ways": [
+        1117318751
+      ],
+      "via_nodes": [
+        10219242888
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1117318760
+        ],
+        [
+          "via",
+          "node",
+          10219242888
+        ],
+        [
+          "to",
+          "way",
+          1117318751
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 18253077,
+      "rule": "no_right_turn",
+      "from_ways": [
+        759282884
+      ],
+      "to_ways": [
+        1117318753
+      ],
+      "via_nodes": [],
+      "via_ways": [
+        1256773487,
+        87250214
+      ],
+      "members": [
+        [
+          "from",
+          "way",
+          759282884
+        ],
+        [
+          "via",
+          "way",
+          1256773487
+        ],
+        [
+          "via",
+          "way",
+          87250214
+        ],
+        [
+          "to",
+          "way",
+          1117318753
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 18253078,
+      "rule": "only_straight_on",
+      "from_ways": [
+        1256773487
+      ],
+      "to_ways": [
+        1201531278
+      ],
+      "via_nodes": [
+        11387427658
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1256773487
+        ],
+        [
+          "via",
+          "node",
+          11387427658
+        ],
+        [
+          "to",
+          "way",
+          1201531278
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 18253079,
+      "rule": "no_left_turn",
+      "from_ways": [
+        1117318760
+      ],
+      "to_ways": [
+        156167860
+      ],
+      "via_nodes": [],
+      "via_ways": [
+        1117793792
+      ],
+      "members": [
+        [
+          "from",
+          "way",
+          1117318760
+        ],
+        [
+          "via",
+          "way",
+          1117793792
+        ],
+        [
+          "to",
+          "way",
+          156167860
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": false
+    },
+    {
+      "relation_id": 18842615,
+      "rule": "no_left_turn",
+      "from_ways": [
+        46773396
+      ],
+      "to_ways": [
+        46773424
+      ],
+      "via_nodes": [
+        597718103
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          46773396
+        ],
+        [
+          "via",
+          "node",
+          597718103
+        ],
+        [
+          "to",
+          "way",
+          46773424
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 19399270,
+      "rule": "only_straight_on",
+      "from_ways": [
+        1416429956
+      ],
+      "to_ways": [
+        1418098572
+      ],
+      "via_nodes": [
+        13031660187
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1416429956
+        ],
+        [
+          "via",
+          "node",
+          13031660187
+        ],
+        [
+          "to",
+          "way",
+          1418098572
+        ]
+      ],
+      "tags": {
+        "restriction": "only_straight_on",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 19399271,
+      "rule": "no_right_turn",
+      "from_ways": [
+        1418098571
+      ],
+      "to_ways": [
+        852978902
+      ],
+      "via_nodes": [
+        256180209
+      ],
+      "via_ways": [],
+      "members": [
+        [
+          "from",
+          "way",
+          1418098571
+        ],
+        [
+          "via",
+          "node",
+          256180209
+        ],
+        [
+          "to",
+          "way",
+          852978902
+        ]
+      ],
+      "tags": {
+        "restriction": "no_right_turn",
+        "type": "restriction"
+      },
+      "simple": true
+    },
+    {
+      "relation_id": 19399272,
+      "rule": "no_left_turn",
+      "from_ways": [
+        852978901
+      ],
+      "to_ways": [
+        1418098573
+      ],
+      "via_nodes": [],
+      "via_ways": [
+        1418098572,
+        1418098571
+      ],
+      "members": [
+        [
+          "from",
+          "way",
+          852978901
+        ],
+        [
+          "via",
+          "way",
+          1418098572
+        ],
+        [
+          "via",
+          "way",
+          1418098571
+        ],
+        [
+          "to",
+          "way",
+          1418098573
+        ]
+      ],
+      "tags": {
+        "restriction": "no_left_turn",
+        "type": "restriction"
+      },
+      "simple": false
+    }
+  ]
+}

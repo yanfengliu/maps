@@ -1,0 +1,198 @@
+{
+  "bound": "Authentic admitted OSM endpoint authority/pose arithmetic only; physical positive tests use separately declared synthetic flat faces. Actual SourceV3 failing sample XY not retained.",
+  "provenance": [
+    {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/lawful-capacity-preparation-20261017/thin-operator-v3/runs/attempt-v1/result.json",
+      "bytes": 5035,
+      "sha256": "624af8789873781bba96071bea1f265726b722acf863f3d2300cfce73b3b17f1"
+    },
+    {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/tools/data/surface_network.py",
+      "bytes": 178469,
+      "sha256": "16b746927898a174c9d541bd66c1ae1b65a2d1ed7ae4f20d94bd062492920faa"
+    },
+    {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/tools/data/support_source3.py",
+      "bytes": 76167,
+      "sha256": "87d030fa3ae91613bf9d08ddb563b084f67b3e11fee9849e5cebffc7f9929c09"
+    },
+    {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/lawful-capacity-preparation-20261017/flow-target.json",
+      "bytes": 89527,
+      "sha256": "dbcbd4bb4585a4a5ac9adb1841e79a86ea03fe57448e509409bd51261328e963"
+    },
+    {
+      "path": "C:/Users/38909/Documents/github/maps/artifacts/shibuya-unreal-5.8/worktree/data/source/osm/crop.osm",
+      "bytes": 8187120,
+      "sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918"
+    }
+  ],
+  "source": {
+    "way": {
+      "id": 31856144,
+      "nodes": [
+        258037422,
+        1496842448,
+        7545737933,
+        7596347447,
+        1108870960,
+        597719874,
+        694150800,
+        11407650787,
+        664495192,
+        664495199,
+        9559829352,
+        980259131,
+        9559829361,
+        7596347448,
+        9559829359,
+        664495205,
+        9559829350,
+        2866947414,
+        7596347454,
+        1014529328,
+        7596347456,
+        11932523519,
+        664495203
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lit": "yes",
+        "name": "\u677e\u6d9b\u6587\u5316\u6751\u30b9\u30c8\u30ea\u30fc\u30c8",
+        "source": "NRPB of MLIT Japan",
+        "surface": "asphalt"
+      }
+    },
+    "points": {
+      "1014529328": [
+        -500.00835741278786,
+        35.6856323579401
+      ],
+      "7596347456": [
+        -483.00253293853405,
+        45.33765773094641
+      ],
+      "11932523519": [
+        -464.9192628794852,
+        53.824646394411204
+      ]
+    },
+    "wgs84": {
+      "1014529328": {
+        "id": "1014529328",
+        "visible": "true",
+        "version": "4",
+        "changeset": "86258302",
+        "timestamp": "2020-06-05T18:49:56Z",
+        "user": "yossaito",
+        "uid": "10598740",
+        "lat": "35.6598215",
+        "lon": "139.6949781"
+      },
+      "7596347456": {
+        "id": "7596347456",
+        "visible": "true",
+        "version": "1",
+        "changeset": "86258302",
+        "timestamp": "2020-06-05T18:49:56Z",
+        "user": "yossaito",
+        "uid": "10598740",
+        "lat": "35.6599085",
+        "lon": "139.6951659"
+      },
+      "11932523519": {
+        "id": "11932523519",
+        "visible": "true",
+        "version": "1",
+        "changeset": "151799673",
+        "timestamp": "2024-05-25T08:25:46Z",
+        "user": "wattmto",
+        "uid": "20317244",
+        "lat": "35.6599850",
+        "lon": "139.6953656"
+      }
+    },
+    "intervals": [
+      {
+        "start": [
+          -500.89685228707856,
+          37.25106420198797
+        ],
+        "end": [
+          -483.89102781282475,
+          46.90308957499428
+        ],
+        "width": 2.0,
+        "edges": [
+          [
+            31856144,
+            1014529328,
+            7596347456
+          ]
+        ]
+      },
+      {
+        "start": [
+          -483.89102781282475,
+          46.90308957499428
+        ],
+        "end": [
+          -483.7672862677275,
+          46.967121552418824
+        ],
+        "width": 2.0,
+        "edges": [
+          [
+            31856144,
+            1014529328,
+            7596347456
+          ],
+          [
+            31856144,
+            7596347456,
+            11932523519
+          ]
+        ]
+      },
+      {
+        "start": [
+          -483.7672862677275,
+          46.967121552418824
+        ],
+        "end": [
+          -465.68401620867866,
+          55.45411021588362
+        ],
+        "width": 2.0,
+        "edges": [
+          [
+            31856144,
+            7596347456,
+            11932523519
+          ]
+        ]
+      }
+    ]
+  },
+  "original_point": [
+    -483.7672862677275,
+    46.967121552418824,
+    5.849890122464738
+  ],
+  "shift_m": 2.200001,
+  "shifted_xy": [
+    -481.7757184695591,
+    47.901820490740484
+  ],
+  "extension": [
+    [
+      -483.7672853624698,
+      46.967121977281785
+    ],
+    [
+      -479.78415157664836,
+      48.83651900419918
+    ]
+  ],
+  "raw_flow_upper_bound_before_trim_m": 1377.001627587129
+}

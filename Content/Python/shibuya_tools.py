@@ -20,6 +20,180 @@ MAP = "/Game/Maps/Shibuya"
 _capture = None
 _support_update = None
 _support_completed = None
+_native_import_receipts = {}
+
+
+def _native_frame_record():
+    return {"schema_version": 1, "id": "native-centimetres-Xeast-Ysouth-Zup-v2",
+            "definition_sha256": "2099342528416aa9dcdceea63e6d2604974341d8248f3b1c7ccf287008759170"}
+
+
+def _require_native_frame(packet, label):
+    marker = packet.get("native_frame") if isinstance(packet, dict) else None
+    if not isinstance(marker, dict) or set(marker) != {"schema_version", "id", "definition_sha256"} or type(marker.get("schema_version")) is not int or marker != _native_frame_record():
+        raise RuntimeError(f"DID_NOT_RUN: {label} requires the exact sealed ESU native_frame; missing, old or mixed frames cannot enter the current runtime.")
+
+
+def _source_to_native_cm(point):
+    if len(point) != 3 or any(type(v) not in (int, float) or not math.isfinite(v) for v in point):
+        raise RuntimeError("Source/native conversion requires a finite ENU metre triple.")
+    result = [point[0]*100, -point[1]*100, point[2]*100]
+    if not all(math.isfinite(v) for v in result):
+        raise RuntimeError("Source/native conversion exceeds finite ESU centimetres.")
+    return result
+
+
+def _native_to_source_m(point):
+    if len(point) != 3 or any(type(v) not in (int, float) or not math.isfinite(v) for v in point):
+        raise RuntimeError("Native/source conversion requires a finite ESU centimetre triple.")
+    return [point[0]/100, -point[1]/100, point[2]/100]
+
+
+def _source_normal_to_native(normal):
+    return [normal[0], -normal[1], normal[2]]
+
+
+def _native_actor_tag():
+    frame = _native_frame_record()
+    return "ShibuyaNativeFrame:"+frame["id"]+":"+frame["definition_sha256"]
+
+
+def _native_scene_frame(require=False):
+    actors = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.StaticMeshActor) and actor.actor_has_tag("ShibuyaSource")]
+    wrong = []
+    for actor in actors:
+        markers = [str(tag) for tag in actor.tags if str(tag).startswith("ShibuyaNativeFrame:")]
+        if markers != [_native_actor_tag()]: wrong.append(actor.get_actor_label())
+    admitted = len(actors) == 112 and not wrong and len({actor.get_actor_label() for actor in actors}) == 112
+    result = {"admitted": admitted, "source_actor_count": len(actors), "invalid_actor_labels": wrong,
+              "native_frame": _native_frame_record() if admitted else None}
+    if require and not admitted:
+        raise RuntimeError("DID_NOT_RUN: native map requires112 unique ShibuyaSource actors with exactly one current ESU frame tag each; reimport the converted source geometry before current native operations: "+json.dumps(result, sort_keys=True))
+    return result
+
+
+def _native_glb_derivative(payload):
+    """Bake the ONE raw EUN->EUS reflection plus final corner021 for UE import.
+
+    Original BIN bytes remain verbatim. New attribute/index accessors append to
+    it; images, UVs, materials, source names and primitive IDs are untouched.
+    This verifies authored bytes, not native importer equivalence or appearance.
+    """
+    if len(payload) < 28 or len(payload) > 256*1024*1024 or struct.unpack_from("<4sII", payload) != (b"glTF", 2, len(payload)):
+        raise RuntimeError("Native frame derivative requires a complete GLB2 within256MiB.")
+    count, kind = struct.unpack_from("<II", payload, 12)
+    if kind != 0x4E4F534A or 28+count > len(payload):
+        raise RuntimeError("Native frame derivative requires a JSON then BIN GLB.")
+    doc = json.loads(payload[20:20+count])
+    size, kind = struct.unpack_from("<II", payload, 20+count)
+    binary = bytearray(payload[28+count:])
+    if kind != 0x004E4942 or size != len(binary) or len(doc.get("buffers", [])) != 1 or "uri" in doc["buffers"][0] or doc["buffers"][0]["byteLength"] > len(binary):
+        raise RuntimeError("Native frame derivative requires one embedded complete BIN buffer.")
+    if "shibuya_native_frame" in doc.get("asset", {}).get("extras", {}):
+        raise RuntimeError("Native frame derivative refuses an already framed input; supply immutable raw EUN source to avoid a second reflection.")
+    meshes, nodes = doc.get("meshes", []), doc.get("nodes", [])
+    if not meshes or len(nodes) != len(meshes) or sorted(node.get("mesh", -1) for node in nodes) != list(range(len(meshes))) or any(set(node)-{"name", "mesh", "extras"} for node in nodes):
+        raise RuntimeError("Native frame derivative requires each baked source mesh node once without transforms, children or instances.")
+    if any("uri" in image or "bufferView" not in image for image in doc.get("images", [])):
+        raise RuntimeError("Native frame derivative requires embedded images; external image references cannot be silently relocated.")
+    cache, observations = {}, []
+    def converted(index, semantic):
+        key = (index, semantic)
+        if key in cache: return cache[key]
+        accessor = doc["accessors"][index]
+        components = {"POSITION": 3, "NORMAL": 3, "TANGENT": 4, "indices": 1}[semantic]
+        component = accessor["componentType"]
+        if "sparse" in accessor or accessor.get("normalized", False) or accessor["type"] != ("SCALAR" if semantic == "indices" else "VEC"+str(components)) or component not in ((5121, 5123, 5125) if semantic == "indices" else (5126,)):
+            raise RuntimeError(f"Native frame derivative cannot convert accessor{index} {semantic}: require finite float vectors or unsigned scalar triangle indices without sparse/normalized data.")
+        fmt = {5121:"B", 5123:"H", 5125:"I", 5126:"f"}[component]
+        width = struct.calcsize("<"+fmt)*components
+        view = doc["bufferViews"][accessor["bufferView"]]
+        start = view.get("byteOffset", 0)+accessor.get("byteOffset", 0)
+        stride = view.get("byteStride", width)
+        number = accessor["count"]
+        if type(number) is not int or not 1 <= number <= 6_000_000 or view.get("buffer", 0) != 0 or stride < width or start < view.get("byteOffset", 0) or start+(number-1)*stride+width > view.get("byteOffset", 0)+view["byteLength"] or start+(number-1)*stride+width > size:
+            raise RuntimeError(f"Native frame derivative accessor{index} {semantic} is out of its bounded buffer view.")
+        output = bytearray()
+        low, high = [math.inf]*components, [-math.inf]*components
+        if semantic == "indices":
+            if number % 3: raise RuntimeError("Native frame derivative requires complete triangle indices.")
+            for i in range(0, number, 3):
+                values = [struct.unpack_from("<"+fmt, binary, start+(i+j)*stride)[0] for j in (0,2,1)]
+                output.extend(struct.pack("<"+fmt*3, *values))
+        else:
+            for i in range(number):
+                row = list(struct.unpack_from("<"+fmt*components, binary, start+i*stride))
+                if not all(math.isfinite(v) for v in row):
+                    raise RuntimeError(f"Native frame derivative accessor{index} {semantic} contains nonfinite data.")
+                row[2] = -row[2]
+                if semantic == "TANGENT": row[3] = -row[3]
+                for axis,value in enumerate(row):
+                    low[axis] = min(low[axis], value); high[axis] = max(high[axis], value)
+                output.extend(struct.pack("<"+fmt*components, *row))
+        binary.extend(b"\0"*(-len(binary)%4))
+        offset = len(binary)
+        binary.extend(output)
+        new_view = {"buffer":0, "byteOffset":offset, "byteLength":number*width}
+        if "target" in view: new_view["target"] = view["target"]
+        doc["bufferViews"].append(new_view)
+        replacement = {k:v for k,v in accessor.items() if k not in ("bufferView", "byteOffset", "min", "max")}
+        replacement["bufferView"] = len(doc["bufferViews"])-1
+        if semantic != "indices":
+            replacement["min"] = low
+            replacement["max"] = high
+        doc["accessors"].append(replacement)
+        result = len(doc["accessors"])-1
+        cache[key] = result
+        observations.append({"source_accessor":index, "derivative_accessor":result, "semantic":semantic, "count":number})
+        return result
+    attributes = []
+    for mesh_index,mesh in enumerate(meshes):
+        for primitive_index,primitive in enumerate(mesh["primitives"]):
+            if primitive.get("mode", 4) != 4 or "indices" not in primitive or "POSITION" not in primitive["attributes"] or primitive.get("targets") or primitive.get("extensions"):
+                raise RuntimeError("Native frame derivative requires indexed triangles without morph/compressed primitive extensions.")
+            attributes.append({"mesh":mesh_index,"primitive":primitive_index,"normal_status":"SOURCE_ATTRIBUTE_REFLECTED" if "NORMAL" in primitive["attributes"] else "SOURCE_ABSENT_IMPORTER_GENERATION_UNOBSERVED", "tangent_status":"SOURCE_ATTRIBUTE_AND_HANDEDNESS_REFLECTED" if "TANGENT" in primitive["attributes"] else "SOURCE_ABSENT_IMPORTER_GENERATION_UNOBSERVED"})
+            for semantic in ("POSITION", "NORMAL", "TANGENT"):
+                if semantic in primitive["attributes"]:
+                    primitive["attributes"][semantic] = converted(primitive["attributes"][semantic], semantic)
+            primitive["indices"] = converted(primitive["indices"], "indices")
+    raw_sha = hashlib.sha256(payload).hexdigest()
+    doc["asset"].setdefault("extras", {})["shibuya_native_frame"] = {"native_frame":_native_frame_record(), "raw_eun_sha256":raw_sha, "raw_corner_order":[0,2,1], "derivative_glb_frame":"metres-Xeast-Yup-Zsouth"}
+    binary.extend(b"\0"*(-len(binary)%4))
+    doc["buffers"][0]["byteLength"] = len(binary)
+    metadata = json.dumps(doc, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    metadata += b" "*(-len(metadata)%4)
+    result = struct.pack("<4sII", b"glTF", 2, 28+len(metadata)+len(binary))+struct.pack("<II", len(metadata), 0x4E4F534A)+metadata+struct.pack("<II", len(binary), 0x004E4942)+binary
+    return result, {"native_frame":_native_frame_record(), "raw_eun_sha256":raw_sha, "raw_bytes":len(payload), "derivative_sha256":hashlib.sha256(result).hexdigest(), "derivative_bytes":len(result), "accessors":observations, "primitive_attributes":attributes, "raw_corner_order":[0,2,1], "images_uv_materials":"ORIGINAL_BYTES_AND_REFERENCES_RETAINED", "native_import_equivalence":"NOT_OBSERVED"}
+
+
+def _native_import_file(path):
+    path = _local_file(str(path.relative_to(PROJECT)))
+    if not 1 <= path.stat().st_size <= 256*1024*1024:
+        raise RuntimeError("Native derivative input must be1byte..256MiB before reading.")
+    payload = path.read_bytes()
+    derived, receipt = _native_glb_derivative(payload)
+    folder = PROJECT/"data/prepared/native-esu"/receipt["raw_eun_sha256"]
+    for part in [*reversed(folder.parents), folder]:
+        try: info = part.lstat()
+        except FileNotFoundError:
+            part.mkdir()
+            info = part.lstat()
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0)&1024:
+            raise RuntimeError("Cannot write native derivative through linked/reparse path: "+str(part))
+    def retain(target, content):
+        try:
+            info = target.lstat()
+        except FileNotFoundError:
+            with target.open("xb") as stream: stream.write(content)
+        else:
+            if not stat.S_ISREG(info.st_mode) or getattr(info, "st_file_attributes", 0)&1024 or target.read_bytes() != content:
+                raise RuntimeError("Native derivative immutable content conflict: "+str(target))
+        _local_file(str(target.relative_to(PROJECT)))
+    target = folder/path.name
+    retain(target, derived)
+    receipt.update(raw_source=str(path.relative_to(PROJECT)).replace("\\", "/"), derivative_path=str(target.relative_to(PROJECT)).replace("\\", "/"))
+    retain(target.with_suffix(".frame.json"), (json.dumps(receipt, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)+"\n").encode("utf-8"))
+    return target, receipt
 
 
 def _support_integer(value, name, maximum):
@@ -30,6 +204,43 @@ def _support_integer(value, name, maximum):
 
 def _support_identity(record):
     return {"path": record["path"], "bytes": record.get("bytes", record.get("size")), "sha256": record["sha256"]}
+
+
+def _support_fixed_ray_contract(samples):
+    tuples, binary, native_binary = [], bytearray(), bytearray()
+    compact = lambda value: json.dumps(value, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")
+    for row in samples:
+        if row["start_m"][:2] != row["end_m"][:2] or row["start_m"][2] <= row["end_m"][2]:
+            raise RuntimeError("DID_NOT_RUN: physical correspondence requires the original downward vertical ray.")
+        item = {"id": row["id"], "xy_m": row["start_m"][:2], "reference": row.get("reference"),
+                "start_m": row["start_m"], "end_m": row["end_m"], "trace_modes": [False, True]}
+        tuples.append(item)
+        identity = compact({"id": item["id"], "reference": item["reference"]})
+        binary.extend(struct.pack("<I", len(identity)) + identity)
+        binary.extend(struct.pack("<6dBB", *item["start_m"], *item["end_m"], 0, 1))
+        native_binary.extend(struct.pack("<6dBB", *_source_to_native_cm(item["start_m"]), *_source_to_native_cm(item["end_m"]), 0, 1))
+    if not samples or len({row["id"] for row in samples}) != len(samples):
+        raise RuntimeError("DID_NOT_RUN: physical correspondence requires unique nonempty fixed sample IDs.")
+    return {"ordered_sample_count": len(samples), "declared_query_modes": len(samples) * 2,
+            "tuple_sha256": hashlib.sha256(compact(tuples)).hexdigest(),
+            "endpoints_modes_binary64_sha256": hashlib.sha256(binary).hexdigest(),
+            "native_frame": _native_frame_record(), "native_endpoints_modes_binary64_sha256": hashlib.sha256(native_binary).hexdigest()}
+
+
+def _support_admit_physical_model(manifest, rays, bindings):
+    _require_native_frame(manifest, "support manifest")
+    _require_native_frame(rays, "native-ray packet")
+    known = {"schema_version": 1, "id": "ue5.8.3-cl58210709-chaos-cook-float32-cm-v1",
+             "definition_sha256": "e5ba1adad4fcab4e05d61d899babf8f6c789655cfe4637c393d7002f4f742428"}
+    if manifest.get("physical_query_model") != known or rays.get("physical_query_model") != known:
+        raise RuntimeError("DID_NOT_RUN: support/native rays declare an unknown conditional physical query model.")
+    fixed = rays["fixed_reference_population"]
+    original = json.loads(_support_read(fixed["record"], bindings))
+    _require_native_frame(original, "fixed native-ray reference")
+    declared = {key: value for key, value in fixed.items() if key != "record"}
+    if _support_fixed_ray_contract(original["samples"]) != declared or _support_fixed_ray_contract(rays["samples"]) != declared:
+        raise RuntimeError("DID_NOT_RUN: physical expectations changed the fixed query/reference population.")
+    return known
 
 
 def _support_read(record, bindings, limit=32 * 1024 * 1024):
@@ -63,6 +274,10 @@ def _support_read(record, bindings, limit=32 * 1024 * 1024):
 
 def _support_point_key(point):
     return struct.pack("<3f", *(value if value != 0 else 0.0 for value in point))
+
+
+def _support_oriented_key(points):
+    return min(b"".join(points[i:]+points[:i]) for i in range(3))
 
 
 def _support_geometry_digest(triangles):
@@ -118,7 +333,7 @@ def _support_glb(payload, native_geometry=False, road=False):
                 for axis, value in enumerate(point):
                     low[axis] = min(low[axis], value); high[axis] = max(high[axis], value)
                 if native_geometry:
-                    points.append(_support_point_key((100 * point[0], 100 * point[2], 100 * point[1])))
+                    points.append(_support_point_key((100 * point[0], -100 * point[2], 100 * point[1])))
             if road:
                 face_ids.extend((mesh_index, primitive_index, face) for face in range(elements // 3))
             if native_geometry or road:
@@ -136,7 +351,7 @@ def _support_glb(payload, native_geometry=False, road=False):
                         if a == b or a == c or b == c:
                             excluded.append((total_triangles + local_face, triangle))
                         else:
-                            retained[b"".join(sorted((a, b, c)))] += 1
+                            retained[_support_oriented_key([a, c, b])] += 1
             total_vertices += vertices; total_triangles += elements // 3
     source = {"vertices": total_vertices, "triangles": total_triangles, "bounds_glb_m": [low, high]}
     if road:
@@ -176,11 +391,11 @@ def _support_compare_native_geometry(mesh, geometry):
             triangle = indices[offset:offset + 3]
             if min(triangle) < 0 or max(triangle) >= len(points):
                 raise RuntimeError(f"Cannot compare native support geometry: {mesh.get_path_name()} section {section} has an invalid render vertex index.")
-            native[b"".join(sorted(points[index] for index in triangle))] += 1
+            native[_support_oriented_key([points[index] for index in triangle])] += 1
     retained = geometry["retained"]
     if native != retained:
         raise RuntimeError(f"Cannot compare native support geometry: {mesh.get_path_name()} has {sum((retained - native).values())} missing and {sum((native - retained).values())} unexpected converted-source triangle occurrences.")
-    return {"raw_source_triangles": source["triangles"], "exact_coincident_endpoint_exclusions": len(excluded), "expected_retained_triangles": sum(retained.values()), "native_render_triangles": sum(native.values()), "excluded_native_source_faces_verified": len(excluded), "excluded_source_face_ids_sha256": hashlib.sha256(b"".join(struct.pack("<I", face) for face, _ in excluded)).hexdigest(), "complete_rendered_geometry_multiset_equal": True, "geometry_multiset_sha256": _support_geometry_digest(native)}
+    return {"raw_source_triangles": source["triangles"], "exact_coincident_endpoint_exclusions": len(excluded), "expected_retained_triangles": sum(retained.values()), "native_render_triangles": sum(native.values()), "excluded_native_source_faces_verified": len(excluded), "excluded_source_face_ids_sha256": hashlib.sha256(b"".join(struct.pack("<I", face) for face, _ in excluded)).hexdigest(), "native_frame": _native_frame_record(), "final_raw_corner_order": [0, 2, 1], "complete_signed_rendered_geometry_multiset_equal": True, "complete_rendered_geometry_multiset_equal": True, "geometry_multiset_sha256": _support_geometry_digest(native)}
 
 
 def _support3_record(record, maximum=32 * 1024 * 1024):
@@ -198,15 +413,21 @@ def _support3_record(record, maximum=32 * 1024 * 1024):
 
 def _admit_support_surface3(manifest, bindings, relative):
     """Bind published Source3 closure; source reconstruction and patch GLBs remain producer-only."""
-    model = "native-float32-centimetres-v1"
+    model = "native-esu-float32-centimetres-v2"
     if manifest.get("coordinate_model") != model or any(key in manifest for key in ("topology_provenance", "terrain_source_triangle_indices", "construction_policy")):
         raise RuntimeError("Cannot admit Source3: require native float32 centimetres and explicit ledger ancestry, without relabeled Source2 topology.")
     parent = json.loads(_support_read(manifest["parent_support_surface"], bindings, 16 * 1024 * 1024))
+    _require_native_frame(parent, "current Source3 parent")
+    if parent.get("coordinate_model") != model:
+        raise RuntimeError("DID_NOT_RUN: current Source3 parent must declare the same ESU coordinate model.")
     if type(parent.get("schema_version")) is not int or parent["schema_version"] != 2 or manifest["parent_support_surface"]["path"] in (relative, "data/prepared/surface/support-surface-manifest.json"):
         raise RuntimeError("Cannot admit Source3: parent must be a separate immutable schema2 manifest.")
     for key in ("frame", "origin", "vertical_reference", "inputs", "atlas", "attribution", "native_assignment"):
         if manifest.get(key) != parent.get(key):
             raise RuntimeError("Cannot admit Source3: parent " + key + " changed.")
+    _require_native_frame(manifest, "current support manifest")
+    if manifest.get("coordinate_model") != "native-esu-float32-centimetres-v2":
+        raise RuntimeError("DID_NOT_RUN: current support requires the ESU native coordinate model.")
     inputs = manifest["inputs"]
     if inputs["base_manifest"]["path"] != "data/prepared/manifest.json":
         raise RuntimeError("Cannot admit Source3: wrong base-manifest role.")
@@ -214,6 +435,7 @@ def _admit_support_surface3(manifest, bindings, relative):
     if manifest["origin"] != base["origin"] or manifest["vertical_reference"] != base["vertical_reference"] or manifest["origin"].get("latitude") != 35.6595 or manifest["origin"].get("longitude") != 139.7005:
         raise RuntimeError("Cannot admit Source3: wrong source origin or vertical reference.")
     ledger = json.loads(_support_read(manifest["surface_edits"], bindings, 16 * 1024 * 1024))
+    _require_native_frame(ledger, "Source3 edit ledger")
     if type(ledger.get("schema_version")) is not int or ledger["schema_version"] != 1 or ledger.get("coordinate_model") != model or ledger.get("output_order") != "parent-triangles-minus-deletions-then-patch-faces" or ledger.get("parent_support_surface") != manifest["parent_support_surface"] or ledger.get("parent_derived_terrain") != parent["derived_terrain"]:
         raise RuntimeError("Cannot admit Source3: edit ledger differs from its exact parent, coordinate or output-order contract.")
     if manifest["derived_terrain"]["path"] == parent["derived_terrain"]["path"]:
@@ -318,6 +540,7 @@ def _admit_support_surface3(manifest, bindings, relative):
     if any(assignment.get(key) != value for key, value in expected_assignment.items()):
         raise RuntimeError("Cannot admit Source3: original native actor/material/collision assignment changed.")
     rays = json.loads(_support_read(manifest["native_ray_samples"], bindings))
+    _require_native_frame(rays, "current native-ray packet")
     labels = {road["actor_label"] for road in native_roads}
     if rays.get("schema_version") != 1 or rays.get("frame") != "metres-Xeast-Ynorth-Zup" or rays.get("position_tolerance_cm") != .1 or rays.get("normal_dot_min") != .999 or rays.get("inputs") != support["native_ray_inputs"] or rays["road_coverage"]["source_roads"] != 25 or rays["road_coverage"]["covered_actor_labels"] != sorted(labels) or rays["road_coverage"]["uncovered_roads"]:
         raise RuntimeError("Cannot admit Source3: ray source/frame/tolerance or complete road coverage changed.")
@@ -342,7 +565,10 @@ def _admit_support_surface3(manifest, bindings, relative):
                 covered.add(road["actor_label"])
     if covered != labels:
         raise RuntimeError("Cannot admit Source3: rays omit an admitted road actor.")
-    return {"manifest": manifest, "manifest_path": relative, "manifest_sha256": bindings[relative]["sha256"], "bindings": bindings, "rays": rays, "road_geometry": road_geometry}
+    result = {"manifest": manifest, "manifest_path": relative, "manifest_sha256": bindings[relative]["sha256"], "bindings": bindings, "rays": rays, "road_geometry": road_geometry}
+    if "physical_query_model" in manifest or "physical_query_model" in rays:
+        result["physical_query_model"] = _support_admit_physical_model(manifest, rays, bindings)
+    return result
 
 
 def _support_selected_road(entry, state, label):
@@ -354,7 +580,7 @@ def _support_selected_road(entry, state, label):
 
 
 def _support_road_bounds(actor, bounds):
-    points = [_vector(actor.get_actor_transform().transform_location(unreal.Vector(x * 100, z * 100, y * 100))) for x in (bounds[0][0], bounds[1][0]) for y in (bounds[0][1], bounds[1][1]) for z in (bounds[0][2], bounds[1][2])]
+    points = [_vector(actor.get_actor_transform().transform_location(unreal.Vector(x * 100, -z * 100, y * 100))) for x in (bounds[0][0], bounds[1][0]) for y in (bounds[0][1], bounds[1][1]) for z in (bounds[0][2], bounds[1][2])]
     low, high = [[operation(point[axis] for point in points) for axis in range(3)] for operation in (min, max)]
     centre, extent = actor.get_actor_bounds(False)
     return all(abs(value - wanted) <= .1 for values, expected in (([a - b for a, b in zip(_vector(centre), _vector(extent))], low), ([a + b for a, b in zip(_vector(centre), _vector(extent))], high)) for value, wanted in zip(values, expected))
@@ -375,11 +601,15 @@ def _admit_support_surface(manifest_path):
     bindings[relative] = {"path": relative, "bytes": size, "sha256": hashlib.sha256(raw).hexdigest()}
     manifest = json.loads(raw)
     if type(manifest.get("schema_version")) is int and manifest["schema_version"] == 3:
-        if manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ynorth-Zup"}:
+        if manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ysouth-Zup"}:
             raise RuntimeError("Cannot admit Source3: require the exact GLB/runtime/Unreal frames.")
+        _require_native_frame(manifest, "Source3 support manifest")
         return _admit_support_surface3(manifest, bindings, relative)
-    if type(manifest.get("schema_version")) is not int or manifest["schema_version"] != 2 or manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ynorth-Zup"}:
+    if type(manifest.get("schema_version")) is not int or manifest["schema_version"] != 2 or manifest.get("frame") != {"glb": "metres-Xeast-Yup-Znorth", "runtime": "metres-Xeast-Ynorth-Zup", "unreal": "centimetres-Xeast-Ysouth-Zup"}:
         raise RuntimeError("Cannot admit support surface: require schema2 with the exact GLB/runtime/Unreal frames.")
+    _require_native_frame(manifest, "current support manifest")
+    if manifest.get("coordinate_model") != "native-esu-float32-centimetres-v2":
+        raise RuntimeError("DID_NOT_RUN: current support requires the ESU native coordinate model.")
     inputs = manifest["inputs"]
     if inputs["base_manifest"]["path"] != "data/prepared/manifest.json":
         raise RuntimeError("Cannot admit support surface: wrong base-manifest role.")
@@ -457,6 +687,7 @@ def _admit_support_surface(manifest_path):
     if any(assignment.get(key) != value for key, value in expected.items()):
         raise RuntimeError("Cannot admit support surface: unsupported native replacement/material/collision contract.")
     rays = json.loads(_support_read(manifest["native_ray_samples"], bindings))
+    _require_native_frame(rays, "current native-ray packet")
     labels = {road["actor_label"] for road in native_roads}
     if rays.get("schema_version") != 1 or rays.get("frame") != "metres-Xeast-Ynorth-Zup" or rays.get("position_tolerance_cm") != .1 or rays.get("normal_dot_min") != .999 or rays.get("inputs") != support["native_ray_inputs"] or rays["road_coverage"]["source_roads"] != 25 or rays["road_coverage"]["covered_actor_labels"] != sorted(labels) or rays["road_coverage"]["uncovered_roads"]:
         raise RuntimeError("Cannot admit support surface: ray frame/tolerances/source inputs or25-road coverage differ.")
@@ -477,7 +708,10 @@ def _admit_support_surface(manifest_path):
                 covered.add(road["actor_label"])
     if covered != labels:
         raise RuntimeError("Cannot admit support surface: actual ray population misses an admitted road actor.")
-    return {"manifest": manifest, "manifest_path": relative, "manifest_sha256": hashlib.sha256(raw).hexdigest(), "bindings": bindings, "rays": rays}
+    result = {"manifest": manifest, "manifest_path": relative, "manifest_sha256": hashlib.sha256(raw).hexdigest(), "bindings": bindings, "rays": rays}
+    if "physical_query_model" in manifest or "physical_query_model" in rays:
+        result["physical_query_model"] = _support_admit_physical_model(manifest, rays, bindings)
+    return result
 
 
 def _support_check_hit(sample, actual):
@@ -491,7 +725,7 @@ def _support_check_hit(sample, actual):
     if any(len(actual[key]) != 3 or not all(type(value) in (int, float) and math.isfinite(value) for value in actual[key]) for key in ("position_cm", "normal_enu")):
         raise RuntimeError(f"Support ray {sample['id']} returned a malformed native position/normal.")
     norm = math.sqrt(sum(value * value for value in actual["normal_enu"]))
-    if norm == 0 or math.dist(actual["position_cm"], [100 * value for value in expected["position_m"]]) > .1 or sum(a * b / norm for a, b in zip(actual["normal_enu"], expected["normal_enu"])) < .999:
+    if norm == 0 or math.dist(actual["position_cm"], _source_to_native_cm(expected["position_m"])) > .1 or sum(a * b / norm for a, b in zip(actual["normal_enu"], expected["normal_enu"])) < .999:
         raise RuntimeError(f"Support ray {sample['id']} differs from the actual source plane by more than0.1cm or its normal.")
 
 
@@ -709,6 +943,52 @@ def _support_ray_collision_state(sample):
     return result
 
 
+def _support_ray_failure_packet(receipt, state):
+    """Retain bounded actual failures; digests/counts cover the complete observed population."""
+    def safe(value):
+        if isinstance(value, dict): return {key: safe(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)): return [safe(item) for item in value]
+        if type(value) is float and not math.isfinite(value): return repr(value)
+        return value
+    def digest(value):
+        raw = json.dumps(safe(value), sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
+    key = lambda row: (row["id"], row["trace_complex"])
+    declared = [{"id": sample["id"], "trace_complex": mode} for sample in state["rays"]["samples"] for mode in (False, True)]
+    queries, failures = receipt["queries"], receipt["failures"]
+    declared_keys, executed_keys, failed_keys = set(map(key, declared)), set(map(key, queries)), set(map(key, failures))
+    if len(declared_keys) != len(declared) or len(executed_keys) != len(queries) or len(failed_keys) != len(failures) or not failed_keys <= executed_keys <= declared_keys or any(row.get("query_ran") is not True for row in queries):
+        raise RuntimeError("Cannot retain failed support rays: declared/executed/failure identities are inconsistent.")
+    selected = [row for row in queries if key(row) in failed_keys][:16]
+    selected_keys = set(map(key, selected))
+    not_run = [row for row in declared if key(row) not in executed_keys]
+    modes = {}
+    for mode, name in ((False, "simple"), (True, "complex")):
+        executed = sum(row["trace_complex"] is mode for row in queries)
+        failed = sum(row["trace_complex"] is mode for row in failures)
+        modes[name] = {"declared": len(state["rays"]["samples"]), "executed": executed, "observed_failed": failed,
+                       "observed_succeeded": executed-failed, "did_not_run": len(state["rays"]["samples"])-executed}
+    labels = {(row.get("expected") or {}).get("actor_label") or "<source-expected-miss>" for row in selected}
+    return {"schema_version": 2, "passed": False, "map_saved": False,
+            "declared_sample_count": len(state["rays"]["samples"]), "declared_query_count": len(declared),
+            "query_count": len(queries), "failed_query_count": len(failures), "observed_succeeded_query_count": len(queries)-len(failures),
+            "query_modes": modes, "selected_failed_query_count": len(selected), "omitted_failed_query_count": len(failures)-len(selected),
+            "omitted_succeeded_query_count": len(queries)-len(failures),
+            "did_not_run": {"status": "DID_NOT_RUN", "query_count": len(not_run), "ordered_query_identities_sha256": digest(not_run)},
+            "declared_ordered_query_identities_sha256": digest(declared),
+            "all_executed_query_rows_sha256": digest(queries), "all_observed_failure_rows_sha256": digest(failures),
+            "digest_encoding": "SHA-256 of UTF-8 sorted compact JSON; nonfinite floats become repr strings. Identity rows contain id and trace_complex; executed rows are complete actual records.",
+            "queries": selected, "failures": [row for row in failures if key(row) in selected_keys],
+            "record_selection": "First16 observed failed queries in actual execution order; all successful rows and later failed rows omitted with counts and complete-population digests.",
+            "support_surface": {"path": state.get("manifest_path"), "sha256": state.get("manifest_sha256")},
+            "declared_ray_file": state["manifest"]["native_ray_samples"], "source_bindings": state.get("bindings", {}),
+            "expected_colliders": {label: value for label, value in receipt["expected_colliders"].items() if label in labels},
+            "terrain_collision": receipt.get("terrain_collision"), "road_collision_receipts": receipt.get("road_collision_receipts", []),
+            "city_collision": receipt.get("city_collision"), "physical_context": receipt.get("physical_context"),
+            "run_status": receipt.get("run_status", "NATIVE_QUERIES_EXECUTED_WITH_FAILURES"),
+            "bound": "Failure evidence only; declared ray-file record binds original source bytes, actual row digests cover only executed queries. Unexecuted queries are neither successes nor failures; no map save or support acceptance."}
+
+
 def _support_save_ray_failure(receipt):
     def safe(value):
         if isinstance(value, dict): return {key: safe(item) for key, item in value.items()}
@@ -728,10 +1008,90 @@ def _support_save_ray_failure(receipt):
     return {"path": output.relative_to(PROJECT).as_posix(), "bytes": len(encoded), "sha256": hashlib.sha256(encoded).hexdigest()}
 
 
+def _support_physical_context(state):
+    """Read all26colliders through one public native observer; unknown stays DNR."""
+    rows, issues = [], []
+    version, clean = None, None
+    manifest = state["manifest"]
+    expected = {row["actor_label"]: row["native_mesh_path"] for row in manifest["native_roads"]}
+    expected["City_069_terrain"] = manifest["native_assignment"]["replacement_mesh_path"]
+    comparisons = [state.get("collision", {})] + [row["collision"] for row in state.get("road_collision_receipts", [])]
+    by_asset = {row.get("asset"): row for row in comparisons}
+    actors = list(_actors().get_all_level_actors())
+    vectors = ("body_build_scale", "render_build_scale", "actor_scale", "component_scale",
+               "actor_location_cm", "actor_rotation", "component_location_cm", "component_rotation")
+    numbers = ("lod_for_collision", "selected_collision_lod", "fallback_percent_triangles",
+               "fallback_relative_error", "keep_percent_triangles", "trim_relative_error")
+    exact = {"own_complex_source": True, "collision_trace_flag": "CTF_UseComplexAsSimple", "double_sided": False,
+             "lod_for_collision": 0, "selected_collision_lod": 0, "collision_enabled": "QueryAndPhysics",
+             "collision_profile": "BlockAll", "collision_object_type": "ECC_WorldStatic", "visibility_response": "ECR_Block",
+             "fallback_target": "PercentTriangles", "generate_fallback": "Enabled", "fallback_percent_triangles": 1.,
+             "fallback_relative_error": 0., "keep_percent_triangles": 1., "trim_relative_error": 0.}
+    required = {"schema_version", "observer", "available", "editor_data_available", "engine_version", "current_enable_mesh_clean",
+                "actor_path", "component_path", "mesh_path", "body_path", "mesh_collide_all", "nanite_enabled", "section_collision_enabled",
+                *exact, *vectors}
+    for label, wanted in expected.items():
+        row = {"actor_label": label, "expected_mesh_path": wanted}
+        try:
+            matches = [actor for actor in actors if actor.get_actor_label() == label]
+            if len(matches) != 1:
+                raise RuntimeError("expected exactly one loaded ground actor")
+            actor = matches[0]
+            component = actor.static_mesh_component
+            observed = json.loads(unreal.ShibuyaRendererLibrary.inspect_support_collision_context(component))
+            if (not isinstance(observed, dict) or type(observed.get("schema_version")) is not int or observed["schema_version"] != 1
+                    or observed.get("observer") != "ue-public-static-mesh-collision-context-v1" or observed.get("available") is not True
+                    or observed.get("editor_data_available") is not True or not required.issubset(observed)):
+                raise RuntimeError("native collision context unavailable/incomplete/unknown: " + str(observed.get("unavailable_reason") if isinstance(observed, dict) else observed))
+            row.update(observed)
+            if (row["component_path"] != component.get_path_name() or row["actor_path"] != actor.get_path_name()
+                    or row["mesh_path"] != wanted or not isinstance(row["body_path"], str) or not row["body_path"]):
+                raise RuntimeError("native collision context identity does not match the actual selected component/actor/mesh")
+            if version is None: version, clean = row["engine_version"], row["current_enable_mesh_clean"]
+            if (not isinstance(row["engine_version"], str) or not re.match(r"^5\.8\.3-58210709(?:\+|$)", row["engine_version"])
+                    or type(row["current_enable_mesh_clean"]) is not int or row["current_enable_mesh_clean"] != 1
+                    or (row["engine_version"], row["current_enable_mesh_clean"]) != (version, clean)):
+                raise RuntimeError("unsupported or inconsistent current engine version or p.EnableMeshClean")
+            row["complete_rendered_geometry_multiset_equal"] = by_asset.get(row["mesh_path"], {}).get("complete_rendered_geometry_multiset_equal")
+            if (any(row[key] != value for key, value in exact.items())
+                    or any(type(row[key]) is not bool for key in ("own_complex_source", "double_sided", "mesh_collide_all", "nanite_enabled"))
+                    or any(type(row[key]) not in (int, float) or not math.isfinite(row[key]) for key in numbers)
+                    or any(not isinstance(row[key], list) or len(row[key]) != 3 or any(type(v) not in (int, float) or not math.isfinite(v) for v in row[key]) for key in vectors)
+                    or any(row[key] != [1., 1., 1.] for key in vectors[:4])
+                    or any(row[key] != [0., 0., 0.] for key in vectors[4:])
+                    or not isinstance(row["section_collision_enabled"], list) or not row["section_collision_enabled"]
+                    or any(value is not True for value in row["section_collision_enabled"])
+                    or row["complete_rendered_geometry_multiset_equal"] is not True):
+                raise RuntimeError("current ground collider differs from the declared conditional model context")
+            row["supported"] = True
+        except Exception as error:
+            row.update(supported=False, unsupported_reason=str(error))
+            issues.append(label + ": " + str(error))
+        rows.append(row)
+    if len(rows) != 26:
+        issues.append("conditional physical context requires all26groundcolliders")
+    return {"status": "MATCHED_CURRENT_CONTEXT" if not issues else "DID_NOT_RUN_UNSUPPORTED_PHYSICAL_CONTEXT",
+            "passed": not issues, "engine_version": version, "current_enable_mesh_clean": clean,
+            "historical_ddc_cook_time_flags": "UNOBSERVED_CONDITIONAL_PREDICTION_ONLY",
+            "physical_query_model": state["physical_query_model"], "colliders": rows, "issues": issues,
+            "bound": "Current public native settings/readback and raw render geometry only. Full native queries qualify this bounded prediction; no global raw-to-cooked or source-to-Chaos-ray equivalence."}
+
+
 def _support_native_rays(state):
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     if world is None:
         raise RuntimeError("Cannot validate support rays: the native editor world is unavailable.")
+    context = None
+    if state.get("physical_query_model") is not None:
+        try:
+            context = _support_physical_context(state)
+        except Exception as error:
+            context = {"passed": False, "status": "DID_NOT_RUN_UNSUPPORTED_PHYSICAL_CONTEXT", "issues": [str(error)]}
+        if not context["passed"]:
+            receipt = {"passed": False, "map_saved": False, "run_status": context["status"], "query_count": 0,
+                "failed_query_count": 0, "queries": [], "failures": [], "expected_colliders": {}, "physical_context": context}
+            retained = _support_save_ray_failure(_support_ray_failure_packet(receipt, state))
+            raise RuntimeError("DID_NOT_RUN: unsupported physical context; zero native queries executed: " + json.dumps(retained, sort_keys=True))
     manifest = state["manifest"]
     mesh_paths = {row["actor_label"]: row["native_mesh_path"] for row in manifest["native_roads"]}
     mesh_paths["City_069_terrain"] = manifest["native_assignment"]["replacement_mesh_path"]
@@ -740,17 +1100,17 @@ def _support_native_rays(state):
         if sample["expected_hit"]:
             sample["expected"]["native_mesh_path"] = mesh_paths[sample["expected"]["actor_label"]]
         for complex_query in (False, True):
-            hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(*[value * 100 for value in sample["start_m"]]), unreal.Vector(*[value * 100 for value in sample["end_m"]]), unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, complex_query, [], unreal.DrawDebugTrace.NONE, True)
+            hit = unreal.SystemLibrary.line_trace_single(world, unreal.Vector(*_source_to_native_cm(sample["start_m"])), unreal.Vector(*_source_to_native_cm(sample["end_m"])), unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, complex_query, [], unreal.DrawDebugTrace.NONE, True)
             actual = None
             if hit is not None:
                 fields = hit.to_dict()
                 component = fields["hit_component"]
                 mesh = component.get_editor_property("static_mesh") if isinstance(component, unreal.StaticMeshComponent) else None
-                actual = {"actor_label": fields["hit_actor"].get_actor_label(), "mesh_path": mesh.get_path_name() if mesh else None, "position_cm": _vector(fields["impact_point"]), "normal_enu": _vector(fields["impact_normal"])}
+                actual = {"actor_label": fields["hit_actor"].get_actor_label(), "mesh_path": mesh.get_path_name() if mesh else None, "position_cm": _vector(fields["impact_point"]), "normal_enu": _source_normal_to_native(_vector(fields["impact_normal"])), "normal_native": _vector(fields["impact_normal"])}
             result = {"id": sample["id"], "trace_complex": complex_query, "query_ran": True,
                       "query_returned_none": hit is None, "query_result_type": type(hit).__name__,
                       "world_present": world is not None, "expected_hit": sample["expected_hit"],
-                      "start_m": sample["start_m"], "end_m": sample["end_m"], "expected": sample.get("expected"), "actual": actual}
+                      "start_m": sample["start_m"], "end_m": sample["end_m"], "native_frame": _native_frame_record(), "start_native_cm": _source_to_native_cm(sample["start_m"]), "end_native_cm": _source_to_native_cm(sample["end_m"]), "expected": sample.get("expected"), "actual": actual}
             results.append(result)
             try:
                 _support_check_hit(sample, actual)
@@ -762,13 +1122,13 @@ def _support_native_rays(state):
     if failures:
         receipt = {"passed": False, "map_saved": False, "query_count": len(results), "failed_query_count": len(failures),
                    "queries": results, "failures": failures, "expected_colliders": colliders,
-                   "terrain_collision": state.get("collision"), "road_collision_receipts": state.get("road_collision_receipts", []), "city_collision": state.get("city_collision")}
+                   "terrain_collision": state.get("collision"), "road_collision_receipts": state.get("road_collision_receipts", []), "city_collision": state.get("city_collision"), "physical_context": context}
         try:
-            retained = _support_save_ray_failure(receipt)
+            retained = _support_save_ray_failure(_support_ray_failure_packet(receipt, state))
         except Exception as error:
             raise RuntimeError(failures[0]["error"] + "; failed ray diagnostic publication: " + str(error)) from error
-        raise RuntimeError(failures[0]["error"] + "; all existing queries retained before map save: " + json.dumps(retained, sort_keys=True))
-    return {"passed": True, "ray_file": manifest["native_ray_samples"], "query_count": len(results), "road_actor_count": 25, "queries": results}
+        raise RuntimeError(failures[0]["error"] + "; bounded failed queries and complete population digests retained before map save: " + json.dumps(retained, sort_keys=True))
+    return {"passed": True, "ray_file": manifest["native_ray_samples"], "query_count": len(results), "road_actor_count": 25, "queries": results, "physical_context": context}
 
 
 def _abort_support_update(reason):
@@ -865,6 +1225,8 @@ def _prepare_support_terrain(manifest_path):
     global _support_update
     if _support_update:
         raise RuntimeError("Cannot replace support terrain: this process has an unfinished/failed support update; restart the normal surface operation.")
+    _prepare_gsi_sampling(True)
+    _native_scene_frame(require=True)
     state = _admit_support_surface(manifest_path)
     assignment = state["manifest"]["native_assignment"]
     actors = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.StaticMeshActor) and actor.actor_has_tag("ShibuyaSource")]
@@ -906,7 +1268,8 @@ def _prepare_support_terrain(manifest_path):
         terrain.static_mesh_component.set_static_mesh(mesh)
         centre, extent = terrain.get_actor_bounds(False)
         bounds = state["manifest"]["derived_terrain"]["bounds_glb_m"]
-        expected_low, expected_high = [[point[0] * 100, point[2] * 100, point[1] * 100] for point in bounds]
+        expected_low = [bounds[0][0]*100, -bounds[1][2]*100, bounds[0][1]*100]
+        expected_high = [bounds[1][0]*100, -bounds[0][2]*100, bounds[1][1]*100]
         if any(abs(actual - wanted) > .1 for values, expected in (([a - b for a, b in zip(_vector(centre), _vector(extent))], expected_low), ([a + b for a, b in zip(_vector(centre), _vector(extent))], expected_high)) for actual, wanted in zip(values, expected)) or not _support_transforms_equal(state["transform"], terrain.get_actor_transform()) or _source_actor_state({"City_069_terrain"}) != state["unaffected"]:
             raise RuntimeError("Cannot prepare support terrain: conservation failed before rollback; " + _support_terrain_failure(state, terrain, centre, extent))
     except Exception as error:
@@ -916,6 +1279,7 @@ def _prepare_support_terrain(manifest_path):
 
 
 def _require_complete_support():
+    _native_scene_frame(require=True)
     if _support_update:
         raise RuntimeError("Cannot configure/save daylight: support installation is unfinished or failed; complete the normal25-road/ray validation first.")
     for actor in _actors().get_all_level_actors():
@@ -987,6 +1351,583 @@ def _restore_capture_coverage(state):
     return {"changed": True, "prior_extent_cm": prior, "observed_restored_extent_cm": actual, "restored": True}
 
 
+def _capture_diagnostic_path(relative, new=True):
+    """Fixed diagnostic artifacts only; inspect lexical ancestry before any IO."""
+    if type(relative) is not str or not re.fullmatch(r"artifacts/unreal/buffers-[0-9]{8}-[0-9]{6}/crossing(?:-[a-z0-9-]+\.rgba32f)?", relative):
+        raise RuntimeError("Cannot retain camera buffers: use artifacts/unreal/buffers-YYYYMMDD-HHMMSS/crossing and fixed diagnostic suffixes.")
+    path = PROJECT / relative
+    for part in list(reversed(path.parents)) + [path]:
+        try:
+            info = part.lstat()
+        except FileNotFoundError:
+            if part == path and new:
+                return path
+            raise RuntimeError("Cannot retain camera buffers: missing owned parent or file " + str(part)) from None
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 1024:
+            raise RuntimeError("Cannot retain camera buffers through linked/reparse path: " + str(part))
+        if part == path:
+            if new:
+                raise RuntimeError("Cannot retain camera buffers: output already exists: " + str(path))
+            if not stat.S_ISREG(info.st_mode):
+                raise RuntimeError("Cannot read back camera buffers: output is not a regular file: " + str(path))
+    return path
+
+
+def _capture_diagnostic_restore(state):
+    diagnostic = state.get("diagnostic")
+    if not diagnostic:
+        return {"changed": False}
+    component = state["actor"].capture_component2d
+    component.capture_source = diagnostic["original_source"]
+    component.texture_target = diagnostic["original_target"]
+    if component.capture_source != diagnostic["original_source"] or component.texture_target != diagnostic["original_target"]:
+        raise RuntimeError("Cannot restore camera diagnostic: native capture source/target did not retain the original final-color objects.")
+    unreal.RenderingLibrary.release_render_target2d(diagnostic["texture"])
+    state.pop("diagnostic")
+    return {"changed": True, "restored": True, "linear_target_release_requested": True, "diagnostic_capture_frames": diagnostic["frames"],
+            "final_capture_frames": state["frames"], "raw_bytes_written": diagnostic["bytes_written"]}
+
+
+def _capture_diagnostic_witness(state):
+    diagnostic = state["diagnostic"]
+    actor, texture = state["actor"], diagnostic["texture"]
+    component = actor.capture_component2d
+    forward_shading = unreal.SystemLibrary.get_console_variable_int_value("r.ForwardShading")
+    if type(forward_shading) is not int or forward_shading != 0:
+        raise RuntimeError("Cannot read BaseColor/normal buffers: require the deferred renderer with actual r.ForwardShading=0; forward rendering substitutes scene color.")
+    if component.texture_target != texture or texture.render_target_format != unreal.TextureRenderTargetFormat.RTF_RGBA32F or [texture.size_x, texture.size_y] != [1280, 720] or abs(texture.get_editor_property("target_gamma") - 1.0) > 1e-6:
+        raise RuntimeError("Cannot read camera diagnostic: expected the owned1280x720 linearRGBA32F target with gamma1.")
+    return {"native_frame": _native_frame_record(), "source_camera_enu_m": state["camera_m"],
+            "source_target_enu_m": state["target_m"], "actor_location_cm": _vector(actor.get_actor_location()),
+            "component_location_cm": _vector(component.get_world_location()), "forward": _vector(component.get_forward_vector()),
+            "right": _vector(actor.get_actor_right_vector()), "up": _vector(actor.get_actor_up_vector()),
+            "capture_source": str(component.capture_source), "render_target_format": str(texture.render_target_format),
+            "target_dimensions": [1280, 720], "target_gamma": texture.get_editor_property("target_gamma"),
+            "fov_horizontal_degrees": component.fov_angle, "final_capture_frames": state["frames"],
+            "diagnostic_capture_frames": diagnostic["frames"], "native_current_frame": unreal.SystemLibrary.get_frame_count(),
+            "photographic_policy_properties": _photographic_policy(component.get_editor_property("post_process_settings")),
+            "resolved_post_process": "UNOBSERVED; these are actual pixel buffers and object properties, not merged FSceneView settings."}
+
+
+def _capture_diagnostic_write(state, name, box):
+    diagnostic = state["diagnostic"]
+    x, y, right, bottom = box
+    width, height = right - x, bottom - y
+    expected = width * height
+    # UE5.8's MaxX/MaxY binding arguments reach Width/Height in the native helper.
+    pixels = unreal.RenderingLibrary.read_render_target_raw_pixel_area(state["world"], diagnostic["texture"], x, y, width, height, False)
+    if len(pixels) != expected:
+        raise RuntimeError(f"Cannot retain camera buffer {name}: native ROI returned{len(pixels)}pixels; expected{expected}for{x},{y},{width},{height} Width/Height.")
+    payload = bytearray(expected * 16)
+    for index, color in enumerate(pixels):
+        values = (color.r, color.g, color.b, color.a)
+        if any(type(value) not in (int, float) or not math.isfinite(value) for value in values):
+            raise RuntimeError(f"Cannot retain camera buffer {name}: nonfinite/non-numeric RGBA at ROI pixel{index}.")
+        try:
+            struct.pack_into("<4f", payload, index * 16, *values)
+        except (OverflowError, struct.error) as error:
+            raise RuntimeError(f"Cannot retain camera buffer {name}: RGBA exceeds float32 at ROI pixel{index}.") from error
+    if diagnostic["bytes_written"] + len(payload) > 32 * 1024 * 1024:
+        raise RuntimeError("Cannot retain camera buffers: fixed raw payloads exceed32MiB for this capture.")
+    relative = diagnostic["prefix"] + "-" + name + ".rgba32f"
+    output = _capture_diagnostic_path(relative)
+    with output.open("xb") as stream:
+        if stream.write(payload) != len(payload):
+            raise RuntimeError("Cannot retain camera buffer: incomplete write: " + relative)
+    checked = _capture_diagnostic_path(relative, False)
+    with checked.open("rb") as stream:
+        saved = stream.read(len(payload) + 1)
+    if saved != payload:
+        raise RuntimeError("Cannot retain camera buffer: saved bytes differ from native float samples: " + relative)
+    diagnostic["bytes_written"] += len(saved)
+    return {"path": relative, "bytes": len(saved), "sha256": hashlib.sha256(saved).hexdigest(),
+            "box_xyxy_exclusive": list(box), "width": width, "height": height, "channels": "RGBA", "encoding": "float32-le",
+            "pixel_order": "row-major; native readback", "normalization": False, "gamma_conversion": False,
+            "bound": "Native float sample values repacked without range clipping; not an untouched GPU-memory dump."}
+
+
+def _capture_gi_restore(state):
+    prior = state.get("gi_diagnostic")
+    if not prior:
+        return {"changed": False}
+    component = state["actor"].capture_component2d
+    settings = component.get_editor_property("post_process_settings")
+    settings.override_dynamic_global_illumination_method = prior["override"]
+    settings.dynamic_global_illumination_method = prior["method"]
+    component.set_editor_property("post_process_settings", settings)
+    actual = component.get_editor_property("post_process_settings")
+    if actual.override_dynamic_global_illumination_method != prior["override"] or actual.dynamic_global_illumination_method != prior["method"]:
+        raise RuntimeError("Cannot restore GI diagnostic: native component GI fields did not retain their original values.")
+    state.pop("gi_diagnostic")
+    return {"changed": True, "restored": True, "gi_override": actual.override_dynamic_global_illumination_method,
+            "gi_method": str(actual.dynamic_global_illumination_method), "bound": "Component property restoration; merged SceneCapture GI solver is unobserved."}
+
+
+def _capture_gi_diagnostic(stage, camera, target, prefix):
+    if stage not in ("gi_lumen", "gi_none", "gi_restore") or prefix != "":
+        raise RuntimeError("GI diagnostic requires a fixed gi_lumen/gi_none/gi_restore stage and empty output prefix.")
+    state = _capture
+    if not state:
+        if stage == "gi_restore":
+            return {"changed": False}
+        raise RuntimeError("Cannot begin GI diagnostic: start the original crossing capture first.")
+    if stage == "gi_restore":
+        return _capture_gi_restore(state)
+    _native_scene_frame(require=True)
+    if camera != [35.0, -45.0, 35.0] or target != [0.0, 0.0, 15.0] or state["camera_m"] != camera or state["target_m"] != target:
+        raise RuntimeError("GI diagnostic requires the original crossing ENU pose35,-45,35 target0,0,15.")
+    component = state["actor"].capture_component2d
+    if state.get("diagnostic") or state.get("gi_diagnostic") or state["frames"] != 1:
+        raise RuntimeError("GI diagnostic must begin once at initial capture frame1, before exports or float diagnostics.")
+    settings = component.get_editor_property("post_process_settings")
+    if settings.override_dynamic_global_illumination_method is not True or settings.dynamic_global_illumination_method != unreal.DynamicGlobalIlluminationMethod.LUMEN:
+        raise RuntimeError("GI diagnostic requires the original explicit Lumen component policy before a new counted arm.")
+    mode = getattr(unreal.DynamicGlobalIlluminationMethod, "NONE" if stage == "gi_none" else "LUMEN", None)
+    if mode is None or not callable(getattr(component, "capture_scene", None)):
+        raise RuntimeError("GI diagnostic requires the installed fixed GI enum and native capture_scene API before mutation.")
+    prior = {"override": settings.override_dynamic_global_illumination_method, "method": settings.dynamic_global_illumination_method,
+             "unscored_initial_frames": state["frames"], "unscored_native_start_frame": state["native_start_frame"], "stage": stage}
+    state["gi_diagnostic"] = prior
+    try:
+        settings.override_dynamic_global_illumination_method = True
+        settings.dynamic_global_illumination_method = mode
+        component.set_editor_property("post_process_settings", settings)
+        actual = component.get_editor_property("post_process_settings")
+        if actual.override_dynamic_global_illumination_method is not True or actual.dynamic_global_illumination_method != mode:
+            raise RuntimeError("GI diagnostic fixed-method native readback failed.")
+        state["native_start_frame"] = unreal.SystemLibrary.get_frame_count()
+        component.capture_scene()
+        state["frames"] = 1
+        return {"started": True, "stage": stage, "gi_original_policy": {"override": prior["override"], "method": str(prior["method"])}, "unscored_initial_frames": prior["unscored_initial_frames"],
+                "unscored_native_start_frame": prior["unscored_native_start_frame"], **_capture_witness(state),
+                "diagnostic_bound": "Only component GI override/method changed. Merged SceneCapture GI is unobserved; gi_none is ineligible for production Lumen readiness or appearance/runtime/performance acceptance."}
+    except BaseException as error:
+        try:
+            _capture_gi_restore(state)
+        except Exception as cleanup_error:
+            error.add_note("GI diagnostic rollback also failed: " + str(cleanup_error))
+        raise
+
+
+def _capture_exposure_api(component):
+    """Finite actual binding/read inspection. Never invoke a setter or capture_scene."""
+    def member(owner, name):
+        try:
+            value = getattr(owner, name)
+            return value, {"present": True, "callable": callable(value), "python_type": type(value).__name__}
+        except Exception as error:
+            return None, {"present": False, "callable": False, "error": type(error).__name__ + ": " + str(error)}
+    def flags(values):
+        if len(values) > 512:raise RuntimeError("Named show-flag read exceeds512entries")
+        rows = []
+        for value in values:
+            name = value.get_editor_property("show_flag_name");enabled = value.get_editor_property("enabled")
+            rows.append({"name": str(name), "name_python_type": type(name).__name__, "enabled": enabled if type(enabled) is bool else str(enabled),
+                         "enabled_python_type": type(enabled).__name__, "struct_copy_callable": callable(getattr(value, "copy", None))})
+        return rows
+    result = {"component_python_type": type(component).__name__, "component_path": component.get_path_name(), "members": {}, "enum_members": {},
+              "bound": "Actual fixed Python names/callability and read-only results; no writer, renderer-pass, exposure or appearance equivalence inferred."}
+    def enum_members(owner):
+        try:
+            names = [name for name in dir(owner) if name.isupper() and not name.startswith("_")]
+            if len(names) > 32:raise RuntimeError("Fixed enum inspection exceeds32member names")
+            return {"status": "READ", "members": [{"name": name, "value": str(getattr(owner, name)), "python_type": type(getattr(owner, name)).__name__} for name in names]}
+        except Exception as error:return {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+    try:
+        actual_method = component.get_editor_property("post_process_settings").local_exposure_method
+        result["actual_post_process_local_exposure_method"] = {"status": "READ", "value": str(actual_method), "python_type": type(actual_method).__name__, "actual_type_members": enum_members(type(actual_method))}
+    except Exception as error:result["actual_post_process_local_exposure_method"] = {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+    enum, result["enum_class"] = member(unreal, "LocalExposureMethod")
+    result["declared_enum_finite_members"] = enum_members(enum)
+    for name in ("BILATERAL", "FUSION"):
+        value, observation = member(enum, name);observation["value"] = None if value is None else str(value);result["enum_members"][name] = observation
+    for name in ("get_show_flag_settings", "set_show_flag_settings", "get_editor_property", "set_editor_property", "capture_scene"):
+        value, result["members"][name] = member(component, name)
+        if name == "get_show_flag_settings" and callable(value):
+            try:result["public_getter_read"] = {"status": "READ", "rows": flags(value())}
+            except Exception as error:result["public_getter_read"] = {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+    if "public_getter_read" not in result:result["public_getter_read"] = {"status": "UNAVAILABLE"}
+    # This is a separately named observation, never an implicit replacement for a missing trial API.
+    try:result["editor_property_show_flag_settings_read"] = {"status": "READ", "rows": flags(component.get_editor_property("show_flag_settings"))}
+    except Exception as error:result["editor_property_show_flag_settings_read"] = {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+    struct_type, result["flag_struct_class"] = member(unreal, "EngineShowFlagsSetting")
+    if callable(struct_type):
+        try:
+            flag = struct_type();result["flag_struct_default_read"] = {"status": "READ", "rows": flags([flag]), "setter_callable_not_exercised": callable(getattr(flag, "set_editor_property", None))}
+            if callable(getattr(flag, "copy", None)):
+                try:result["flag_struct_copy_read"] = {"status": "READ", "rows": flags([flag.copy()])}
+                except Exception as error:result["flag_struct_copy_read"] = {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+            else:result["flag_struct_copy_read"] = {"status": "UNAVAILABLE"}
+        except Exception as error:result["flag_struct_default_read"] = {"status": "ERROR", "error": type(error).__name__ + ": " + str(error)}
+    missing = []
+    for name in ("BILATERAL", "FUSION"):
+        if not result["enum_members"][name]["present"] or result["enum_members"][name]["value"] is None:missing.append("unreal.LocalExposureMethod." + name)
+    # The actual native probe found the named Blueprint accessors absent in Python.
+    # Use only the EditAnywhere show_flag_settings property; no method fallback.
+    for name in ("get_editor_property", "set_editor_property", "capture_scene"):
+        if not result["members"][name]["callable"]:missing.append("component." + name)
+    if result["editor_property_show_flag_settings_read"]["status"] != "READ":missing.append("component.get_editor_property('show_flag_settings') read")
+    if not result["flag_struct_class"]["callable"]:missing.append("unreal.EngineShowFlagsSetting")
+    if result["flag_struct_class"]["callable"] and result.get("flag_struct_default_read", {}).get("status") != "READ":missing.append("unreal.EngineShowFlagsSetting() construction/field read")
+    if result["flag_struct_class"]["callable"] and result.get("flag_struct_default_read", {}).get("status") == "READ" and result.get("flag_struct_copy_read", {}).get("status") != "READ":missing.append("unreal.EngineShowFlagsSetting.copy() read")
+    result["missing_for_current_fixed_trial"] = missing
+    result["all_current_trial_api_names_observed"] = not missing
+    result["writers_exercised"] = False
+    result["fixed_trial_show_flag_access_path"] = "editor_property_show_flag_settings"
+    return result
+
+
+def _inspect_exposure_api(camera, target, prefix):
+    if camera != [35., -45., 35.] or target != [0., 0., 15.] or prefix != "" or _capture:
+        raise RuntimeError("Exposure API read requires the fixed crossing operands, empty prefix and no active capture; it does not render.")
+    actors = _actors();before_count = len(actors.get_all_level_actors())
+    actor = actors.spawn_actor_from_class(unreal.SceneCapture2D, unreal.Vector(*_source_to_native_cm(camera)))
+    if actor is None:raise RuntimeError("Cannot inspect exposure API: actual SceneCapture2D object creation failed.")
+    primary = None
+    try:
+        component = actor.capture_component2d
+        policy_before = _photographic_policy(component.get_editor_property("post_process_settings"))
+        cvar_before = unreal.SystemLibrary.get_console_variable_int_value("r.LocalExposure")
+        observation = _capture_exposure_api(component)
+        policy_after = _photographic_policy(component.get_editor_property("post_process_settings"))
+        cvar_after = unreal.SystemLibrary.get_console_variable_int_value("r.LocalExposure")
+        if policy_before != policy_after or cvar_before != cvar_after:
+            raise RuntimeError("Exposure API read changed native component policy/CVar unexpectedly.")
+        result = {"stage": "exposure_api", "api": observation, "r.LocalExposure_before": cvar_before, "r.LocalExposure_after": cvar_after,
+                  "component_photographic_policy_unchanged": True, "active_capture": False, "capture_scene_calls": 0,
+                  "render_target_created": False, "setters_called": False, "image_outputs": [], "native_frame_definition": _native_frame_record(),
+                  "source_camera_operands_enu_m": camera, "source_target_operands_enu_m": target,
+                  "bound": "Transient native SceneCaptureComponent2D Python API observation only. Entry/NullRHI allowed; no current-city frame/source/GPU/lighting/pass or appearance acceptance."}
+    except BaseException as error:
+        primary = error
+        raise
+    finally:
+        try:
+            if actors.destroy_actor(actor) is not True or len(actors.get_all_level_actors()) != before_count:
+                raise RuntimeError("Exposure API read did not destroy its owned transient actor or retain the original actor count.")
+        except Exception as cleanup_error:
+            if primary is None:raise
+            primary.add_note("Exposure API owned-actor cleanup also failed: " + str(cleanup_error))
+    result["owned_actor_destroyed"] = True;result["actor_count_before"] = before_count;result["actor_count_after"] = len(actors.get_all_level_actors())
+    return result
+
+
+def _capture_exposure_flags(component):
+    rows = []
+    for flag in component.get_editor_property("show_flag_settings"):
+        name, enabled = flag.get_editor_property("show_flag_name"), flag.get_editor_property("enabled")
+        if type(name) is not str or type(enabled) is not bool:
+            raise RuntimeError("Exposure diagnostic requires native string/bool show-flag readbacks.")
+        rows.append({"name": name, "enabled": enabled})
+    return rows
+
+
+def _capture_exposure_witness(state):
+    prior = state["exposure_diagnostic"]
+    component = state["actor"].capture_component2d
+    value = unreal.SystemLibrary.get_console_variable_int_value("r.LocalExposure")
+    flags = _capture_exposure_flags(component)
+    settings = component.get_editor_property("post_process_settings")
+    method = getattr(unreal.LocalExposureMethod, "FUSION" if prior["stage"] == "exposure_fusion" else "BILATERAL")
+    actual = _photographic_policy(settings)
+    expected = _photographic_policy(_exposure(True))
+    expected["local_exposure_method"]["value"] = str(method)
+    if type(value) is not int or value <= 0 or value != prior["cvar"] or flags != prior["applied_flags"] or actual != expected:
+        raise RuntimeError("Exposure diagnostic native local-exposure policy/CVar/show-flag readback differs from its fixed arm.")
+    return {"stage": prior["stage"], "method": str(settings.local_exposure_method), "r.LocalExposure": value,
+            "raw_show_flag_settings": flags, "local_exposure_explicit_flag": True, "show_flag_access_path": "editor_property_show_flag_settings", "photographic_policy": actual,
+            "capture_frames": state["frames"], "native_start_frame": state["native_start_frame"],
+            "bound": "Actual component policy, positive CVar and supported explicit LocalExposure override. Merged SceneCapture settings/pass execution and actual PreExposure remain unobserved."}
+
+
+def _capture_exposure_restore(state):
+    prior = state.get("exposure_diagnostic")
+    if not prior:
+        return {"changed": False}
+    component = state["actor"].capture_component2d
+    errors = []
+    try:
+        settings = component.get_editor_property("post_process_settings")
+        for name, values in prior["fields"].items():
+            setattr(settings, name, values["value"]);setattr(settings, "override_" + name, values["override"])
+        component.set_editor_property("post_process_settings", settings)
+        actual = component.get_editor_property("post_process_settings")
+        if any(getattr(actual, name) != values["value"] or getattr(actual, "override_" + name) != values["override"] for name, values in prior["fields"].items()):
+            raise RuntimeError("original local-exposure fields/overrides differ")
+    except Exception as error:errors.append("PostProcess restoration: " + str(error))
+    try:
+        component.set_editor_property("show_flag_settings", prior["raw_flags"])
+        if _capture_exposure_flags(component) != prior["original_flags"]:
+            raise RuntimeError("original raw show-flag array differs")
+    except Exception as error:errors.append("Show-flag restoration: " + str(error))
+    if unreal.SystemLibrary.get_console_variable_int_value("r.LocalExposure") != prior["cvar"]:
+        errors.append("r.LocalExposure changed; this diagnostic never mutates the CVar")
+    if errors:
+        raise RuntimeError("Cannot restore exposure diagnostic: " + json.dumps(errors))
+    state["photographic_tone"] = prior["photographic_tone"]
+    state.pop("exposure_diagnostic")
+    return {"changed": True, "restored": True, "photographic_policy": _photographic_policy(actual),
+            "raw_show_flag_settings": prior["original_flags"], "r.LocalExposure": prior["cvar"], "show_flag_access_path": "editor_property_show_flag_settings",
+            "capture_frames": state["frames"], "bound": "Original component local fields/rawflags restored; no volume, light, CVar, material or save mutation."}
+
+
+def _capture_exposure_diagnostic(stage, camera, target, prefix):
+    if type(stage) is not str or stage not in ("exposure_bilateral", "exposure_fusion", "exposure_read", "exposure_restore") or prefix != "":
+        raise RuntimeError("Exposure diagnostic requires its fixed bilateral/fusion/read/restore stage and empty output prefix.")
+    state = _capture
+    if not state:
+        if stage == "exposure_restore":return {"changed": False}
+        raise RuntimeError("Cannot begin exposure diagnostic: start the fixed original persistent capture first.")
+    if stage == "exposure_restore":return _capture_exposure_restore(state)
+    if camera not in ([35., -45., 35.], [-70., 20., 65.]) or target != [0., 0., 15.] or state["camera_m"] != camera or state["target_m"] != target:
+        raise RuntimeError("Exposure diagnostic requires the exact original crossing or crossing-west ENU pose and target.")
+    if stage == "exposure_read":
+        if not state.get("exposure_diagnostic"):raise RuntimeError("Exposure diagnostic read requires its active fixed mode first.")
+        return _capture_exposure_witness(state)
+    _native_scene_frame(require=True)
+    if state.get("diagnostic") or state.get("gi_diagnostic") or state.get("exposure_diagnostic") or state["frames"] != 1:
+        raise RuntimeError("Exposure diagnostic must begin once at initial capture frame1, before GI/float diagnostics or exports.")
+    component = state["actor"].capture_component2d
+    api = _capture_exposure_api(component)
+    if api["missing_for_current_fixed_trial"]:
+        raise RuntimeError("DID_NOT_RUN: exposure diagnostic native Python API unavailable: " + json.dumps(api["missing_for_current_fixed_trial"]) + "; actual availability=" + json.dumps(api))
+    mode = getattr(unreal.LocalExposureMethod, "FUSION" if stage == "exposure_fusion" else "BILATERAL")
+    cvar = unreal.SystemLibrary.get_console_variable_int_value("r.LocalExposure")
+    if type(cvar) is not int or cvar <= 0:
+        raise RuntimeError("DID_NOT_RUN: exposure diagnostic requires actual r.LocalExposure>0 before mutation; observed=" + repr(cvar))
+    settings = component.get_editor_property("post_process_settings")
+    if _photographic_policy(settings) != _photographic_policy(_exposure(False)) or state.get("photographic_tone") is not False:
+        raise RuntimeError("Exposure diagnostic requires the unchanged original manual f8/ISO100/shutter125/toneFalse component before its new counted arm.")
+    original_flags = _capture_exposure_flags(component)
+    if sum(row["name"] == "LocalExposure" for row in original_flags) > 1:
+        raise RuntimeError("Exposure diagnostic refuses duplicate LocalExposure overrides before mutation.")
+    raw_flags = [flag.copy() for flag in component.get_editor_property("show_flag_settings")]
+    enabled = unreal.EngineShowFlagsSetting();enabled.set_editor_property("show_flag_name", "LocalExposure");enabled.set_editor_property("enabled", True)
+    applied = [enabled if row["name"] == "LocalExposure" else raw for row, raw in zip(original_flags, raw_flags)]
+    if not any(row["name"] == "LocalExposure" for row in original_flags):applied.append(enabled)
+    local_names = [name for name in _photographic_policy(settings) if name.startswith("local_exposure_")]
+    prior = {"stage": stage, "fields": {name: {"value": getattr(settings, name), "override": getattr(settings, "override_" + name)} for name in local_names},
+             "raw_flags": raw_flags, "original_flags": original_flags, "applied_flags": [{"name": flag.get_editor_property("show_flag_name"), "enabled": flag.get_editor_property("enabled")} for flag in applied],
+             "cvar": cvar, "photographic_tone": state["photographic_tone"], "unscored_initial_frames": state["frames"], "unscored_native_start_frame": state["native_start_frame"]}
+    state["exposure_diagnostic"] = prior
+    try:
+        wanted = _exposure(True)
+        for name in local_names:
+            setattr(settings, name, mode if name == "local_exposure_method" else getattr(wanted, name));setattr(settings, "override_" + name, True)
+        component.set_editor_property("post_process_settings", settings)
+        component.set_editor_property("show_flag_settings", applied)
+        state["photographic_tone"] = True
+        _capture_exposure_witness(state)
+        state["native_start_frame"] = unreal.SystemLibrary.get_frame_count()
+        component.capture_scene();state["frames"] = 1
+        return {"started": True, "stage": stage, "unscored_initial_frames": prior["unscored_initial_frames"],
+                "unscored_native_start_frame": prior["unscored_native_start_frame"], "original_show_flag_settings": prior["original_flags"], "exposure_diagnostic": _capture_exposure_witness(state), **_capture_witness(state),
+                "diagnostic_bound": "Same .8highlight/.6shadow/detail1/blur.6/middleGrey0 in allarms; method enum differs only. Experimental Fusion pixel response is not production performance or solver identity proof."}
+    except BaseException as error:
+        try:_capture_exposure_restore(state)
+        except Exception as cleanup_error:error.add_note("Exposure diagnostic rollback also failed: " + str(cleanup_error))
+        raise
+
+
+def _capture_daylight_lights():
+    native, observed = [], []
+    actors = _actors().get_all_level_actors()
+    for label, kind in (("Shibuya_Sun", unreal.DirectionalLight), ("Shibuya_SkyLight", unreal.SkyLight)):
+        matches = [actor for actor in actors if isinstance(actor, kind)]
+        if len(matches) != 1 or matches[0].get_actor_label() != label:
+            raise RuntimeError("Daylight ratio requires exactly one admitted movable light: " + label)
+        actor = matches[0];component = actor.light_component
+        if not all(callable(getattr(component, name, None)) for name in ("get_editor_property", "set_intensity", "get_path_name")):
+            raise RuntimeError("DID_NOT_RUN: daylight ratio native get_editor_property/set_intensity/get_path_name unavailable on " + label)
+        if component.get_editor_property("mobility") != unreal.ComponentMobility.MOVABLE:
+            raise RuntimeError("Daylight ratio requires movable native light before mutation: " + label)
+        intensity = component.get_editor_property("intensity")
+        if type(intensity) not in (int, float) or not math.isfinite(intensity):raise RuntimeError("Daylight ratio requires finite native intensity: " + label)
+        color = component.get_editor_property("light_color")
+        protected = {"mobility": str(component.get_editor_property("mobility")), "light_color_rgba": [color.r, color.g, color.b, color.a],
+                     "indirect_lighting_intensity": component.get_editor_property("indirect_lighting_intensity"),
+                     "cast_shadows": component.get_editor_property("cast_shadows"), "cast_static_shadows": component.get_editor_property("cast_static_shadows"),
+                     "cast_dynamic_shadows": component.get_editor_property("cast_dynamic_shadows"),
+                     "actor_location_cm": _vector(actor.get_actor_location()), "actor_rotation_degrees": _rotator(actor.get_actor_rotation())}
+        if label == "Shibuya_SkyLight":
+            if component.get_editor_property("source_type") != unreal.SkyLightSourceType.SLS_CAPTURED_SCENE or component.get_editor_property("real_time_capture") is not False or component.get_editor_property("cubemap") is not None or component.get_editor_property("sky_distance_threshold") != 5.0:
+                raise RuntimeError("Daylight ratio requires retained captured sky/realtimeFalse/no cubemap/threshold5; no recapture permitted.")
+            protected.update(source_type=str(component.get_editor_property("source_type")), real_time_capture=False, cubemap=None, sky_distance_threshold=5.0,
+                             lower_hemisphere_is_black=component.get_editor_property("lower_hemisphere_is_black"), capture_emissive_only=component.get_editor_property("capture_emissive_only"))
+        native.append({"component": component, "intensity": intensity})
+        observed.append({"actor": label, "component": component.get_path_name(), "intensity": intensity, "protected": protected})
+    return native, observed
+
+
+def _capture_daylight_witness(state):
+    prior = state["daylight_diagnostic"]
+    _, observed = _capture_daylight_lights()
+    expected = [dict(row, intensity=value) for row, value in zip(prior["lights_before"], prior["expected_intensities"])]
+    capture = _capture_witness(state);flags = _capture_exposure_flags(state["actor"].capture_component2d)
+    if observed != expected or capture["photographic_policy"] != prior["photographic_policy"] or flags != prior["raw_flags"] or capture["native_skylights"] != prior["sky_resources"]:
+        raise RuntimeError("Daylight ratio native lights/shadows/color/camera/rawflags/retained-sky differ from the fixed arm.")
+    return {"stage": prior["stage"], "lights": observed, "photographic_policy": capture["photographic_policy"], "raw_show_flag_settings": flags,
+            "native_skylights": capture["native_skylights"], "capture_frames": state["frames"], "native_start_frame": state["native_start_frame"],
+            "bound": "Component intensity/protected fields and retained sky/SH observations; no consumed irradiance, merged GI or full HDR cubemap byte-equivalence claim."}
+
+
+def _capture_daylight_restore(state):
+    prior = state.get("daylight_diagnostic")
+    if not prior:return {"changed": False}
+    errors = []
+    for index, row in enumerate(prior["native_lights"]):
+        try:
+            component = row["component"]
+            if component.get_editor_property("intensity") != row["intensity"]:component.set_intensity(row["intensity"])
+            if component.get_editor_property("intensity") != row["intensity"]:raise RuntimeError("native intensity did not restore")
+        except Exception as error:errors.append(prior["lights_before"][index]["actor"] + ": " + str(error))
+    try:
+        _, observed = _capture_daylight_lights();capture = _capture_witness(state)
+        if observed != prior["lights_before"]:errors.append("Original raw light intensity/protected fields differ")
+        if capture["photographic_policy"] != prior["photographic_policy"] or _capture_exposure_flags(state["actor"].capture_component2d) != prior["raw_flags"]:errors.append("Original actual camera/PP/rawflags differ")
+        if capture["native_skylights"] != prior["sky_resources"]:errors.append("Retained sky resource/SH observations differ")
+    except Exception as error:errors.append("Restoration readback: " + str(error))
+    if errors:raise RuntimeError("Cannot restore daylight ratio: " + json.dumps(errors))
+    state.pop("daylight_diagnostic")
+    return {"changed": True, "restored": True, "lights": observed, "photographic_policy": capture["photographic_policy"], "raw_show_flag_settings": prior["raw_flags"],
+            "native_skylights": capture["native_skylights"], "saved": False, "sky_recapture_requested": False}
+
+
+def _capture_daylight_diagnostic(stage, camera, target, prefix):
+    if type(stage) is not str or stage not in ("daylight_reference", "daylight_candidate", "daylight_read", "daylight_restore") or prefix != "":
+        raise RuntimeError("Daylight ratio requires its fixed reference/candidate/read/restore stage and empty output prefix.")
+    state = _capture
+    if not state:
+        if stage == "daylight_restore":return {"changed": False}
+        raise RuntimeError("Cannot begin daylight ratio: start the fixed original persistent capture first.")
+    if stage == "daylight_restore":return _capture_daylight_restore(state)
+    if camera not in ([35., -45., 35.], [-70., 20., 65.]) or target != [0., 0., 15.] or state["camera_m"] != camera or state["target_m"] != target:
+        raise RuntimeError("Daylight ratio requires exact original crossing/crossing-west ENU pose and target.")
+    if stage == "daylight_read":
+        if not state.get("daylight_diagnostic"):raise RuntimeError("Daylight ratio read requires an active fixed arm first.")
+        return _capture_daylight_witness(state)
+    _native_scene_frame(require=True)
+    if any(state.get(name) for name in ("diagnostic", "gi_diagnostic", "exposure_diagnostic", "daylight_diagnostic")) or state["frames"] != 1:
+        raise RuntimeError("Daylight ratio must begin once at initial capture frame1 with no other diagnostic.")
+    component = state["actor"].capture_component2d
+    if not callable(getattr(component, "capture_scene", None)):raise RuntimeError("DID_NOT_RUN: daylight ratio native capture_scene unavailable before light mutation.")
+    capture = _capture_witness(state)
+    if capture["photographic_policy"] != _photographic_policy(_exposure(False)) or state.get("photographic_tone") is not False:
+        raise RuntimeError("Daylight ratio requires actual unchanged Manual/physicalTrue/f8/ISO100/shutter125/bias0/toneFalse policy before mutation.")
+    sky = capture["native_skylights"]
+    if len(sky) != 1 or any(sky[0].get(name) is not True for name in ("processed_present", "processed_initialized", "processed_rhi_present", "sh_finite")):
+        raise RuntimeError("Daylight ratio requires one initialized native retained sky/finite SH before mutation.")
+    rows, observed = _capture_daylight_lights()
+    if [row["intensity"] for row in rows] != [100000.0, 1.0]:raise RuntimeError("Daylight ratio requires actual Sun100000/Sky1 before each arm; no arbitrary baseline.")
+    prior = {"stage": stage, "native_lights": rows, "lights_before": observed, "photographic_policy": capture["photographic_policy"], "sky_resources": sky,
+             "raw_flags": _capture_exposure_flags(component), "expected_intensities": [25000.0, 4.0] if stage == "daylight_candidate" else [100000.0, 1.0],
+             "unscored_initial_frames": state["frames"], "unscored_native_start_frame": state["native_start_frame"]}
+    state["daylight_diagnostic"] = prior
+    try:
+        if stage == "daylight_candidate":
+            for row, value in zip(rows, prior["expected_intensities"]):row["component"].set_intensity(value)
+        _capture_daylight_witness(state)
+        state["native_start_frame"] = unreal.SystemLibrary.get_frame_count();component.capture_scene();state["frames"] = 1
+        return {"started": True, "stage": stage, "unscored_initial_frames": prior["unscored_initial_frames"], "unscored_native_start_frame": prior["unscored_native_start_frame"],
+                "original_lights": observed, "daylight_diagnostic": _capture_daylight_witness(state), **_capture_witness(state), "saved": False, "sky_recapture_requested": False}
+    except BaseException as error:
+        try:_capture_daylight_restore(state)
+        except Exception as cleanup_error:error.add_note("Daylight ratio rollback also failed: " + str(cleanup_error))
+        raise
+
+
+def _capture_surface_diagnostic(stage, prefix, camera, target):
+    if stage in ("daylight_reference", "daylight_candidate", "daylight_read", "daylight_restore"):
+        return _capture_daylight_diagnostic(stage, camera, target, prefix)
+    if _capture and _capture.get("daylight_diagnostic"):
+        raise RuntimeError("Restore the daylight ratio before any exposure/GI/float diagnostic stage.")
+    if stage == "exposure_api":
+        return _inspect_exposure_api(camera, target, prefix)
+    if stage in ("exposure_bilateral", "exposure_fusion", "exposure_read", "exposure_restore"):
+        return _capture_exposure_diagnostic(stage, camera, target, prefix)
+    if _capture and _capture.get("exposure_diagnostic"):
+        raise RuntimeError("Restore the exposure diagnostic before any GI/float diagnostic stage.")
+    if stage in ("gi_lumen", "gi_none", "gi_restore"):
+        return _capture_gi_diagnostic(stage, camera, target, prefix)
+    if type(stage) is not str or stage not in ("begin_hdr", "read_hdr", "read_gbuffer", "restore"):
+        raise RuntimeError("Cannot inspect active camera buffers: stage must be begin_hdr, read_hdr, read_gbuffer or restore.")
+    state = _capture
+    if not state:
+        if stage == "restore":
+            return {"changed": False}
+        raise RuntimeError("Cannot inspect active camera buffers: start the original crossing capture first.")
+    if stage == "restore":
+        return _capture_diagnostic_restore(state)
+    _native_scene_frame(require=True)
+    _source_to_native_cm(camera)
+    _source_to_native_cm(target)
+    if camera != [35.0, -45.0, 35.0] or target != [0.0, 0.0, 15.0] or state["camera_m"] != camera or state["target_m"] != target:
+        raise RuntimeError("Cannot inspect active camera buffers: require original crossing ENU camera35,-45,35 and target0,0,15, matching the active capture.")
+    component = state["actor"].capture_component2d
+    try:
+        if stage == "begin_hdr":
+            if state.get("diagnostic"):
+                raise RuntimeError("Cannot begin HDR diagnostic: restore the active diagnostic first.")
+            _capture_diagnostic_path(prefix)
+            if state["frames"] != 80 or component.capture_source != unreal.SceneCaptureSource.SCS_FINAL_COLOR_LDR or component.texture_target != state["texture"] or component.fov_angle != 60.0 or not component.always_persist_rendering_state:
+                raise RuntimeError("Cannot begin HDR diagnostic: require the unchanged original80-frame persistent final-color crossing capture at FOV60.")
+            texture = unreal.RenderingLibrary.create_render_target2d(state["world"], 1280, 720, unreal.TextureRenderTargetFormat.RTF_RGBA32F)
+            texture.set_editor_property("target_gamma", 1.0)
+            state["diagnostic"] = {"original_source": component.capture_source, "original_target": component.texture_target,
+                                   "texture": texture, "prefix": prefix, "frames": 0, "bytes_written": 0, "hdr_reads": []}
+            component.texture_target = texture
+            component.capture_source = unreal.SceneCaptureSource.SCS_SCENE_COLOR_HDR
+            component.capture_scene()
+            state["diagnostic"]["frames"] = 1
+            return {"stage": stage, **_capture_diagnostic_witness(state)}
+        diagnostic = state.get("diagnostic")
+        if not diagnostic or prefix != diagnostic["prefix"]:
+            raise RuntimeError("Cannot read active camera buffers: begin_hdr with the same owned output prefix first.")
+        if component.capture_source != unreal.SceneCaptureSource.SCS_SCENE_COLOR_HDR:
+            raise RuntimeError("Cannot read active camera buffers: actual capture source is not SCENE_COLOR_HDR.")
+        witness = _capture_diagnostic_witness(state)
+        rois = (("sun-ground", (550, 520, 920, 680)), ("shadow-facade", (100, 60, 500, 300)), ("shadow-ground", (100, 450, 300, 550)))
+        if stage == "read_hdr":
+            frames = diagnostic["frames"]
+            if frames not in (60, 80) or frames in diagnostic["hdr_reads"]:
+                raise RuntimeError("Cannot read HDR buffers: require one actual read at each diagnostic frame60 and80.")
+            outputs = [_capture_diagnostic_write(state, f"hdr-{frames:03d}-" + name, box) for name, box in rois]
+            diagnostic["hdr_reads"].append(frames)
+            return {"stage": stage, "outputs": outputs, **witness, "value_space": "Linear scene HDR before tone curve; absolute irradiance and actual PreExposure are UNOBSERVED."}
+        if diagnostic["frames"] != 80 or diagnostic["hdr_reads"] != [60, 80]:
+            raise RuntimeError("Cannot read GBuffer: require ordered actual HDR60 and80 readbacks first.")
+        outputs, sources = [], []
+        read_error = None
+        try:
+            for name, mode in (("base-color", unreal.SceneCaptureSource.SCS_BASE_COLOR), ("world-normal", unreal.SceneCaptureSource.SCS_NORMAL), ("axial-depth-cm", unreal.SceneCaptureSource.SCS_SCENE_DEPTH)):
+                component.capture_source = mode
+                component.capture_scene()
+                sources.append(_capture_diagnostic_witness(state))
+                outputs.extend(_capture_diagnostic_write(state, name + "-" + region, box) for region, box in rois)
+                if name == "base-color":
+                    outputs.append(_capture_diagnostic_write(state, "base-color-full", (0, 0, 1280, 720)))
+            return {"stage": stage, "outputs": outputs, "sources": sources,
+                    "value_spaces": {"base-color": "Linear GBuffer material BaseColor; no sRGB conversion.", "world-normal": "Signed native ESU world normal; preserve negative channels.", "axial-depth-cm": "Axial scene depth in centimetres, red channel."},
+                    "roi_labels": "Fixed legacy screen regions; depth/normal must confirm actual surfaces after geographic correction.",
+                    "final_capture_preserved": True, "bound": "Actual pixel buffers, not a photorealism verdict or final merged PP witness."}
+        except BaseException as error:
+            read_error = error
+            raise
+        finally:
+            try:
+                _capture_diagnostic_restore(state)
+            except Exception as cleanup_error:
+                if read_error is None:
+                    raise
+                read_error.add_note("Camera GBuffer restoration also failed: " + str(cleanup_error))
+    except BaseException as error:
+        try:
+            _capture_diagnostic_restore(state)
+        except Exception as cleanup_error:
+            error.add_note("Camera diagnostic restoration also failed: " + str(cleanup_error))
+        raise
+
+
 def _finish_capture():
     global _capture
     if not _capture:
@@ -994,7 +1935,48 @@ def _finish_capture():
     state = _capture
     restore_error = None
     try:
-        return _restore_capture_coverage(state)
+        if state.get("diagnostic"):
+            try:
+                _capture_diagnostic_restore(state)
+            except Exception as error:
+                try:
+                    _restore_capture_coverage(state)
+                except Exception as coverage_error:
+                    error.add_note("Capture coverage restoration also failed: " + str(coverage_error))
+                raise
+        daylight_restored = None
+        if state.get("daylight_diagnostic"):
+            try:daylight_restored = _capture_daylight_restore(state)
+            except Exception as error:
+                try:_restore_capture_coverage(state)
+                except Exception as coverage_error:error.add_note("Daylight cleanup coverage restoration also failed: " + str(coverage_error))
+                raise
+        exposure_restored = None
+        if state.get("exposure_diagnostic"):
+            try:
+                exposure_restored = _capture_exposure_restore(state)
+            except Exception as error:
+                try:_restore_capture_coverage(state)
+                except Exception as coverage_error:error.add_note("Exposure cleanup coverage restoration also failed: " + str(coverage_error))
+                raise
+        gi_restored = None
+        if state.get("gi_diagnostic"):
+            try:
+                gi_restored = _capture_gi_restore(state)
+            except Exception as error:
+                try:
+                    _restore_capture_coverage(state)
+                except Exception as coverage_error:
+                    error.add_note("GI cleanup coverage restoration also failed: " + str(coverage_error))
+                raise
+        coverage_restored = _restore_capture_coverage(state)
+        if daylight_restored is not None:
+            coverage_restored["daylight_diagnostic_restoration"] = daylight_restored
+        if exposure_restored is not None:
+            coverage_restored["exposure_diagnostic_restoration"] = exposure_restored
+        if gi_restored is not None:
+            coverage_restored["gi_diagnostic_restoration"] = gi_restored
+        return coverage_restored
     except Exception as error:
         restore_error = error
         raise
@@ -1124,15 +2106,178 @@ def _exposure(photographic_tone=False):
     return settings
 
 
+def _saved_photographic_tone():
+    """Resolve only the two exact saved policies; partial/custom policy needs review."""
+    volumes = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.PostProcessVolume)
+               and actor.get_actor_label() == "Shibuya_Exposure"]
+    if not volumes:
+        return False
+    if len(volumes) != 1:
+        raise RuntimeError("Cannot inherit photographic tone: expected one Shibuya_Exposure volume.")
+    settings = volumes[0].get_editor_property("settings")
+    names = [name for name in _photographic_policy(settings) if name.startswith("local_exposure_")]
+    if all(getattr(settings, "override_" + name) is False for name in names):
+        return False
+    expected = _exposure(True)
+    if any(getattr(settings, "override_" + name) is not True or
+           (getattr(settings, name) != getattr(expected, name) if name.endswith("_method") else
+            not math.isfinite(getattr(settings, name)) or abs(getattr(settings, name) - getattr(expected, name)) > 1e-5)
+           for name in names):
+        raise RuntimeError("Cannot inherit photographic tone: saved local exposure is neither original nor the exact reviewed bilateral candidate.")
+    return True
+
+
+def _capture_photographic_tone(photographic_tone, use_saved_tone):
+    saved = _saved_photographic_tone()
+    if use_saved_tone and not photographic_tone:
+        return saved
+    if not use_saved_tone and not photographic_tone and saved:
+        raise RuntimeError("DID_NOT_RUN: explicit original-tone control requires original local exposure in the loaded Shibuya_Exposure volume; set it in memory before the A/B arm.")
+    return photographic_tone
+
+
+def _gsi_sampling_state():
+    """Exact selected shared GSI asset and authored policy; residency is not exposed."""
+    source = {"path": "data/prepared/surface/terrain-aerial.png", "bytes": 10896930,
+              "sha256": "b3ae2bdccd106b22f3a3ab0624a6f1a1c80410289c55429724f99029d8477e58"}
+    _support_read(source, {})
+    path = "/Game/Surface/TerrainPhoto/terrain-photo/Textures/terrain-photo_texture_0.terrain-photo_texture_0"
+    texture = unreal.load_asset(path)
+    if not isinstance(texture, unreal.Texture2D) or texture.get_path_name() != path:
+        raise RuntimeError("Cannot prepare GSI sampling: import the exact admitted shared TerrainPhoto Texture2D first.")
+    properties = {name: texture.get_editor_property(name) for name in
+                  ("filter", "lod_group", "srgb", "lod_bias", "max_texture_size", "mip_gen_settings", "never_stream",
+                   "virtual_texture_streaming", "compression_settings", "num_cinematic_mip_levels", "power_of_two_mode")}
+    state = {"asset": path, "source": source, "dimensions": [texture.blueprint_get_size_x(), texture.blueprint_get_size_y()],
+             "properties": {key: value if type(value) in (bool, int, float, str) else str(value) for key, value in properties.items()},
+             "max_anisotropy": unreal.SystemLibrary.get_console_variable_int_value("r.MaxAnisotropy"),
+             "resident_mips_observed": False}
+    return texture, properties, state
+
+
+def _prepare_gsi_sampling(persist):
+    texture, properties, before = _gsi_sampling_state()
+    if (type(before["max_anisotropy"]) is not int or before["max_anisotropy"] < 4 or
+        properties["lod_group"] != unreal.TextureGroup.TEXTUREGROUP_WORLD or properties["srgb"] is not True or
+        properties["lod_bias"] != 0 or before["dimensions"] != [2304, 2560]):
+        raise RuntimeError("DID_NOT_RUN: GSI sampling requires actual anisotropy>=4, World group, sRGB, LOD bias0 and original2304x2560 texture dimensions before mutation; observed " + json.dumps(before))
+    original = properties["filter"]
+    if original not in (unreal.TextureFilter.TF_TRILINEAR, unreal.TextureFilter.TF_DEFAULT):
+        raise RuntimeError("DID_NOT_RUN: GSI filter differs from the original Trilinear or retained Default policy; observed " + json.dumps(before))
+    changed = original != unreal.TextureFilter.TF_DEFAULT
+    try:
+        if changed:
+            texture.set_editor_property("filter", unreal.TextureFilter.TF_DEFAULT)
+        _, current, after = _gsi_sampling_state()
+        if current["filter"] != unreal.TextureFilter.TF_DEFAULT or any(current[name] != value for name, value in properties.items() if name != "filter") or {key: value for key, value in before.items() if key != "properties"} != {key: value for key, value in after.items() if key != "properties"}:
+            raise RuntimeError("Cannot prepare GSI sampling: selected texture changed beyond the admitted filter or did not retain Default.")
+        if persist and not unreal.EditorAssetLibrary.save_loaded_asset(texture, False):
+            raise RuntimeError("Cannot persist GSI sampling: editor refused the selected shared texture package save.")
+    except Exception:
+        if changed:
+            texture.set_editor_property("filter", original)
+        raise
+    return {"before": before, "after": after, "changed": changed, "saved": persist,
+            "bound": "Selected shared GSI texture filter only; no resident-mip, geometry, UV or appearance acceptance."}
+
+
+def _set_saved_photographic_tone(enabled, persist):
+    if persist:
+        _require_complete_support()
+    if type(enabled) is not bool:
+        raise RuntimeError("Cannot save photographic tone: enabled must be boolean.")
+    _saved_photographic_tone()
+    volumes = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.PostProcessVolume)
+               and actor.get_actor_label() == "Shibuya_Exposure"]
+    if len(volumes) != 1:
+        raise RuntimeError("Cannot save photographic tone: configure the unique Shibuya_Exposure volume first.")
+    volume = volumes[0]
+    original = volume.get_editor_property("settings")
+    settings = volume.get_editor_property("settings")
+    expected = _exposure(enabled)
+    for name in _photographic_policy(expected):
+        if name.startswith("local_exposure_"):
+            setattr(settings, name, getattr(expected, name))
+            setattr(settings, "override_" + name, getattr(expected, "override_" + name))
+    try:
+        volume.set_editor_property("settings", settings)
+        if _saved_photographic_tone() is not enabled:
+            raise RuntimeError("Cannot save photographic tone: native settings did not retain the requested exact policy.")
+        if persist and not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level():
+            raise RuntimeError("Cannot save photographic tone: editor refused the Shibuya map save.")
+    except Exception:
+        volume.set_editor_property("settings", original)
+        raise
+    return {"photographic_tone": enabled, "saved": persist, "photographic_policy": _photographic_policy(volume.get_editor_property("settings"))}
+
+
+def _set_sky_distance_trial(candidate):
+    """One transient sky-only capture-distance trial; no save, tone, geometry or other light edits."""
+    if type(candidate) is not bool:
+        raise RuntimeError("Sky distance trial requires a literal Boolean candidate, not a numeric or string alias.")
+    if candidate and _capture:
+        raise RuntimeError("Sky distance trial must begin before an active capture; finish that capture first.")
+    frame = _native_scene_frame(require=True)
+    actors = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.SkyLight)]
+    if len(actors) != 1 or actors[0].get_actor_label() != "Shibuya_SkyLight":
+        raise RuntimeError("Sky distance trial requires exactly one SkyLight named Shibuya_SkyLight.")
+    actor = actors[0]
+    component = actor.light_component
+    api_readiness = {name: callable(getattr(component, name, None)) for name in ("get_editor_property", "set_editor_property", "recapture_sky")}
+    if not all(api_readiness.values()):
+        raise RuntimeError("Sky distance trial requires callable native property/readback and recapture_sky APIs before any mutation: " + json.dumps(api_readiness, sort_keys=True))
+    if component.get_editor_property("mobility") != unreal.ComponentMobility.MOVABLE or component.get_editor_property("source_type") != unreal.SkyLightSourceType.SLS_CAPTURED_SCENE or component.get_editor_property("real_time_capture") is not False or component.get_editor_property("cubemap") is not None:
+        raise RuntimeError("Sky distance trial requires the existing movable captured-scene SkyLight with no cubemap or real-time capture.")
+    original = component.get_editor_property("sky_distance_threshold")
+    if type(original) not in (int, float) or original not in (5.0, 150000.0) or (candidate and original != 5.0):
+        raise RuntimeError("Sky distance trial requires threshold5cm before candidate, or5/150000cm before fixed restoration.")
+    world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
+    library = getattr(unreal, "ShibuyaRendererLibrary", None)
+    if library is None or not callable(getattr(library, "inspect_world_resources", None)):
+        raise RuntimeError("Sky distance trial requires the callable compiled native SkyLight resource observer before mutation.")
+    api_readiness["inspect_world_resources"] = True
+    def resources():
+        rows = json.loads(library.inspect_world_resources(world)).get("skylights", [])
+        rows = [row for row in rows if row.get("component") == component.get_path_name()]
+        if len(rows) != 1:
+            raise RuntimeError("Sky distance trial cannot identify its actual native SkyLight resource.")
+        return rows[0]
+    before = resources()
+    threshold = 150000.0 if candidate else 5.0
+    try:
+        component.set_editor_property("sky_distance_threshold", threshold)
+        if component.get_editor_property("sky_distance_threshold") != threshold:
+            raise RuntimeError("Sky distance trial threshold readback differs from the fixed requested value.")
+        component.recapture_sky()
+        after = resources()
+    except BaseException as error:
+        try:
+            component.set_editor_property("sky_distance_threshold", original)
+            component.recapture_sky()
+            if component.get_editor_property("sky_distance_threshold") != original:
+                raise RuntimeError("Original SkyLight threshold was not restored.")
+        except Exception as cleanup_error:
+            error.add_note("Sky distance trial rollback also failed: " + str(cleanup_error))
+        raise
+    return {"candidate": candidate, "threshold_before_cm": original, "threshold_after_cm": component.get_editor_property("sky_distance_threshold"),
+            "native_frame": frame["native_frame"], "component": component.get_path_name(), "native_resource_before": before, "native_resource_after_request": after,
+            "api_readiness_before_mutation": api_readiness, "recapture_requested": True, "saved": False, "resource_bound": "Recapture is asynchronous; inspect actual SH/resource again after subsequent native capture frames."}
+
+
+def _saved_daylight_values():
+    return (25000.0, 4.0)
+
+
 def _daylight():
+    photographic_tone = _saved_photographic_tone()
     world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
     unreal.SystemLibrary.execute_console_command(world, "Editor.AsyncAssetCompilationFinishAll")
     actors = _actors().get_all_level_actors()
     for actor in actors:
         if isinstance(actor, unreal.DirectionalLight):
             actor.light_component.set_mobility(unreal.ComponentMobility.MOVABLE)
-            actor.set_actor_rotation(unreal.Rotator(pitch=-55.0, yaw=-35.0, roll=0.0), False)
-            actor.light_component.set_intensity(100000.0)
+            actor.set_actor_rotation(unreal.Rotator(pitch=-55.0, yaw=35.0, roll=0.0), False)
+            actor.light_component.set_intensity(_saved_daylight_values()[0])
             actor.light_component.set_atmosphere_sun_light(True)
         if isinstance(actor, unreal.SkyLight):
             actor.light_component.set_mobility(unreal.ComponentMobility.MOVABLE)
@@ -1147,20 +2292,21 @@ def _daylight():
             # Scene-capture views cannot update real-time sky irradiance (native
             # ReflectionEnvironmentRealTimeCapture.cpp). Use the explicit path.
             actor.light_component.set_real_time_capture(False)
-            actor.light_component.set_intensity(1.0)
+            actor.light_component.set_intensity(_saved_daylight_values()[1])
             actor.light_component.recapture_sky()
     volume = next((actor for actor in actors if actor.get_actor_label() == "Shibuya_Exposure"), None)
     if not volume:
         volume = _actors().spawn_actor_from_class(unreal.PostProcessVolume, unreal.Vector(0, 0, 0))
         volume.set_actor_label("Shibuya_Exposure")
     volume.set_editor_property("unbound", True)
-    settings = _exposure()
+    settings = _exposure(photographic_tone)
     settings.override_lumen_scene_view_distance = True
     settings.lumen_scene_view_distance = 240000.0
     volume.set_editor_property("settings", settings)
 
 
 def _snapshot():
+    frame_state = _native_scene_frame()
     actors = _actors().get_all_level_actors()
     meshes = [actor for actor in actors if isinstance(actor, unreal.StaticMeshActor)]
     unique_meshes = {actor.static_mesh_component.static_mesh.get_path_name(): actor.static_mesh_component.static_mesh for actor in meshes if actor.static_mesh_component.static_mesh}
@@ -1189,7 +2335,9 @@ def _snapshot():
             }
             for actor in meshes if actor.static_mesh_component.static_mesh
         ],
-        "coordinate_frame": {"units": "centimetres", "x": "east", "y": "north", "z": "up"},
+        "native_scene_frame": frame_state, "native_frame": frame_state["native_frame"],
+        "coordinate_frame": {"units": "centimetres", "x": "east", "y": "south", "z": "up"} if frame_state["admitted"] else {"status": "UNADMITTED_MAP_FRAME"},
+        "native_import_receipts": list(_native_import_receipts.values()),
     }
 
 
@@ -1223,7 +2371,7 @@ def _new_map():
         raise RuntimeError(f"Cannot create {MAP}: the editor refused to create the level.")
     sun = _actors().spawn_actor_from_class(unreal.DirectionalLight, unreal.Vector(0, 0, 30000))
     sun.set_actor_label("Shibuya_Sun")
-    sun.set_actor_rotation(unreal.Rotator(-45, -30, 0), False)
+    sun.set_actor_rotation(unreal.Rotator(-45, 30, 0), False)
     sun.light_component.set_editor_property("intensity", 8.0)
     sky = _actors().spawn_actor_from_class(unreal.SkyLight, unreal.Vector(0, 0, 0))
     sky.set_actor_label("Shibuya_SkyLight")
@@ -1302,6 +2450,138 @@ def _material_parameter_state(material):
     return result
 
 
+def _frontage_section_matches(vertices, indices, uvs, source_cm, normals=None, tangents=None):
+    """Retain all exact position/UV seams and triangle incidence; never pick one UV by position."""
+    if len(vertices) > 100000 or len(indices) > 300000 or len(indices) % 3 or len(uvs) not in (0, len(vertices)):
+        raise RuntimeError("Cannot observe data518 frontage: LOD0 section has invalid/beyond-bound vertex/index/UV populations.")
+    wanted = [_support_point_key(point) for point in source_cm]
+    def count_state(values):
+        count = len(values) if values is not None else None
+        return {"status": "OBSERVED" if count == len(vertices) else "UNAVAILABLE" if not count else "COUNT_MISMATCH",
+                "expected_vertices": len(vertices), "actual_values": count}
+    normal_count, tangent_count = count_state(normals), count_state(tangents)
+    def local_frame(index):
+        result = {"normal_local": None, "normal_status": normal_count["status"],
+                  "tangent_x_local": None, "flip_tangent_y": None, "tangent_status": tangent_count["status"]}
+        if normals is not None and index < len(normals):
+            try:
+                result.update(normal_local=_vector(normals[index]), normal_status="OBSERVED")
+            except Exception as error:
+                result.update(normal_status="UNAVAILABLE_ERROR", normal_error={"type": type(error).__name__, "message": str(error)})
+        if tangents is not None and index < len(tangents):
+            try:
+                result.update(tangent_x_local=_vector(tangents[index].tangent_x),
+                              flip_tangent_y=tangents[index].flip_tangent_y, tangent_status="OBSERVED")
+            except Exception as error:
+                result.update(tangent_status="UNAVAILABLE_ERROR", tangent_error={"type": type(error).__name__, "message": str(error)})
+        return result
+    matches = [[] for _ in wanted]
+    membership = {}
+    for index, point in enumerate(vertices):
+        keys = [corner for corner, key in enumerate(wanted) if _support_point_key(_vector(point)) == key]
+        if keys:
+            membership[index] = keys
+            for corner in keys:
+                matches[corner].append({"vertex": index, "position_cm": _vector(point),
+                                        "uv0": [uvs[index].x, uvs[index].y] if uvs else None,
+                                        "local_frame": local_frame(index)})
+    incident, complete = [], []
+    for offset in range(0, len(indices), 3):
+        face = [int(value) for value in indices[offset:offset+3]]
+        if any(value < 0 or value >= len(vertices) for value in face):
+            raise RuntimeError("Cannot observe data518 frontage: section triangle references a missing vertex.")
+        if not any(value in membership for value in face):
+            continue
+        mapped = [membership.get(value, []) for value in face]
+        row = {"triangle": offset // 3, "indices": face, "source_corner_candidates": mapped,
+               "positions_cm": [_vector(vertices[value]) for value in face],
+               "uv0": [[uvs[value].x, uvs[value].y] for value in face] if uvs else None,
+               "local_frames": [local_frame(value) for value in face]}
+        incident.append(row)
+        if all(len(value) == 1 for value in mapped) and sorted(value[0] for value in mapped) == [0, 1, 2]:
+            complete.append(row)
+    return {"corner_matches": matches, "incident_triangles": incident, "complete_position_triangles": complete,
+            "vertex_count": len(vertices), "index_count": len(indices), "uv0_count": len(uvs),
+            "normal_count": normal_count, "tangent_count": tangent_count,
+            "frame_bound": "Raw section-local normal and ProcMeshTangent tangent_x/flip_tangent_y at the actual indexed vertex; no transformed-normal/tangent inference.",
+            "selection_bound": "All exact float32-centimetre corner candidates and all incident triangles, including distinct UV seams and material sections. Position coincidence alone is not a source UV match."}
+
+
+def _frontage_material_observation(material):
+    if material is None:
+        return {"material": None, "effective_uv_transform": {"status": "UNAVAILABLE", "reason": "Native section has no bound material."}}
+    result = {"material": material.get_path_name(), "effective_uv_transform": {
+        "status": "UNRESOLVED_GRAPH",
+        "reason": "Effective UV0-to-texture scale/offset is shader graph/function behavior. This read-only diagnostic observes inherited parameter values and the base-colour input node, but does not evaluate the compiled graph; no identity/default transform is assumed."}}
+    try:
+        result["effective_parameters"] = _material_parameter_state(material)
+        result["used_textures"] = [texture.get_path_name() for texture in unreal.MaterialEditingLibrary.get_material_used_textures(material)]
+        root = material
+        for _ in result["effective_parameters"]["parent_chain"]:
+            root = root.get_editor_property("parent")
+        node = unreal.MaterialEditingLibrary.get_material_property_input_node(root, unreal.MaterialProperty.MP_BASE_COLOR)
+        result["base_color_input"] = {"material": root.get_path_name(), "node": node.get_path_name() if node else None,
+                                      "class": node.get_class().get_name() if node else None}
+    except Exception as error:
+        result["observation_error"] = {"type": type(error).__name__, "message": str(error)}
+    return result
+
+
+def _inspect_data518_frontage():
+    """Observe only the two existing imported data518 actors, their seams and actual section materials."""
+    source = {"path": "data/prepared/buildings/data518.glb", "bytes": 27626908,
+              "sha256": "e037bf65778d307701badf616c09b243e6eaa5c1aca62d482f9e52bd98a06237"}
+    _support_read(source, {})
+    source_eun = [[1.3159749507904053, -0.11907928436994553, 30.31615447998047],
+                  [-15.603093147277832, -0.11843027919530869, 28.283071517944336],
+                  [1.3159821033477783, 52.01192092895508, 30.316404342651367]]
+    source_cm = [[struct.unpack("<f", struct.pack("<f", value))[0] for value in _source_to_native_cm([point[0], point[2], point[1]])] for point in source_eun]
+    prefix = "/Game/City/Tile_032/data518/StaticMeshes/"
+    expected = {prefix + "City.City", prefix + "City_3236dd05d9d071b3b6d961bb25f7fdda.City_3236dd05d9d071b3b6d961bb25f7fdda"}
+    actors = []
+    for actor in _actors().get_all_level_actors():
+        if isinstance(actor, unreal.StaticMeshActor) and actor.actor_has_tag("ShibuyaSource"):
+            component = actor.static_mesh_component
+            mesh = component.static_mesh
+            if mesh and mesh.get_path_name().startswith(prefix):
+                actors.append((actor, component, mesh))
+    if len(actors) != 2 or {mesh.get_path_name() for _, _, mesh in actors} != expected:
+        raise RuntimeError("Cannot observe data518 frontage: require the exact two existing tagged Tile_032/data518 source actors without duplicates.")
+    subsystem = unreal.get_editor_subsystem(unreal.StaticMeshEditorSubsystem)
+    result = {"source": source, "source_mesh": 1, "source_primitive": 0, "source_face": 494,
+              "source_vertex_ids": [1482, 1484, 1483], "source_corners_eun_m": source_eun,
+              "source_uv0": [[.09606940299272537, .8748778700828552], [.06506340950727463, .8748778700828552], [.09606940299272537, .7501221299171448]],
+              "expected_local_corners_cm": source_cm, "actors": [], "saved": False,
+              "bound": "Actual LOD0 section vertex/UV incidence and bound material parameters only. No UV/frame correction, effective shader-graph verdict, image, collision or appearance acceptance."}
+    for actor, component, mesh in sorted(actors, key=lambda row: row[0].get_actor_label()):
+        transform = component.get_world_transform()
+        row = {"actor": actor.get_path_name(), "label": actor.get_actor_label(), "mesh": mesh.get_path_name(),
+               "actor_transform": {"translation_cm": _vector(actor.get_actor_transform().translation),
+                                   "scale": _vector(actor.get_actor_transform().scale3d),
+                                   "rotation_xyzw": [getattr(actor.get_actor_transform().rotation, name) for name in ("x", "y", "z", "w")]},
+               "component_transform": {"translation_cm": _vector(transform.translation), "scale": _vector(transform.scale3d),
+                                       "rotation_xyzw": [getattr(transform.rotation, name) for name in ("x", "y", "z", "w")]},
+               "expected_world_corners_cm": [_vector(transform.transform_location(unreal.Vector(*point))) for point in source_cm], "sections": []}
+        sections = mesh.get_num_sections(0)
+        if not 1 <= sections <= 16:
+            raise RuntimeError("Cannot observe data518 frontage: require1..16 complete LOD0 material sections.")
+        for section in range(sections):
+            vertices, indices, normals, uvs, tangents = unreal.ProceduralMeshLibrary.get_section_from_static_mesh(mesh, 0, section)
+            observed = _frontage_section_matches(vertices, indices, uvs, source_cm, normals, tangents)
+            slot = subsystem.get_lod_material_slot(mesh, 0, section)
+            if slot < 0 or slot >= len(mesh.static_materials):
+                raise RuntimeError("Cannot observe data518 frontage: native section has no valid observed material slot.")
+            material = component.get_material(slot)
+            observed.update(section=section, material_slot=slot, slot_name=str(mesh.static_materials[slot].material_slot_name),
+                            mesh_material=mesh.static_materials[slot].material_interface.get_path_name() if mesh.static_materials[slot].material_interface else None,
+                            material_observation=_frontage_material_observation(material))
+            row["sections"].append(observed)
+        result["actors"].append(row)
+    result["complete_position_triangle_count"] = sum(len(section["complete_position_triangles"]) for actor in result["actors"] for section in actor["sections"])
+    result["correspondence_status"] = "OBSERVED" if result["complete_position_triangle_count"] else "NO_COMPLETE_TRIANGLE"
+    return result
+
+
 def _nanite_material_status(material):
     usage = unreal.MaterialUsage.MATUSAGE_NANITE
     instance = isinstance(material, unreal.MaterialInstanceConstant)
@@ -1354,23 +2634,60 @@ def _prepare_nanite_material(material):
             "vertex_shader_instructions": vertex, "pixel_shader_instructions": pixel, "saved": True}
 
 
+def _inspect_saved_crossing_material(material):
+    """Recognize only the fixed persisted V2 candidate; observe without assigning or saving."""
+    manifest, _ = _crossing_inputs(_CROSSING_MANIFEST)
+    folder = "/Game/AppearanceRepair/CrossingV2/"
+    paths = [folder + name + "." + name for name in ("CrossingMask", "CrossingDetail", "OriginalGraph", "OriginalInstance0", "OriginalInstance1")]
+    assets = [unreal.load_asset(path) for path in paths]
+    if any(asset is None or asset.get_path_name() != path for asset, path in zip(assets, paths)) or material.get_path_name() != paths[-1]:
+        raise RuntimeError("Cannot inspect saved crossing V2: require its exact five saved project assets.")
+    for index, key in enumerate(("mask", "detail")):
+        asset = assets[index]
+        if not isinstance(asset, unreal.Texture2D) or [asset.blueprint_get_size_x(), asset.blueprint_get_size_y()] != manifest[key + "_dimensions"] or asset.get_editor_property("srgb") is not False:
+            raise RuntimeError("Cannot inspect saved crossing V2: original linear texture/dimensions changed: " + key)
+    if not isinstance(assets[2], unreal.Material) or assets[2].get_editor_property("use_material_attributes") is not False or any(not isinstance(asset, unreal.MaterialInstanceConstant) for asset in assets[3:]):
+        raise RuntimeError("Cannot inspect saved crossing V2: original root/instance classes changed.")
+    actual = _material_parameter_state(material)
+    original = _material_parameter_state(unreal.load_asset(_CROSSING_ORIGINAL))
+    if actual["parent_chain"] != [paths[3], paths[2]] or any(actual[key] != original[key] for key in ("texture", "scalar", "vector", "static_switch")):
+        raise RuntimeError("Cannot inspect saved crossing V2: parent root or original atlas/UV/material parameters changed.")
+    used = {texture.get_path_name() for texture in unreal.MaterialEditingLibrary.get_material_used_textures(material)}
+    if not {paths[0], paths[1], original["texture"]["BaseColorTexture"]} <= used:
+        raise RuntimeError("Cannot inspect saved crossing V2: mask/detail or original atlas texture is not used.")
+    for asset in assets[2:]:
+        status = _nanite_material_status(asset);stats = unreal.MaterialEditingLibrary.get_statistics(asset)
+        if not status["has_nanite_usage"] or (isinstance(asset, unreal.MaterialInstanceConstant) and not status["explicit_instance_override"]) or stats.num_vertex_shader_instructions <= 0 or stats.num_pixel_shader_instructions <= 0:
+            raise RuntimeError("Cannot inspect saved crossing V2: own compiled Nanite shader is incomplete: " + asset.get_path_name())
+
+
 def _used_city_materials():
     actors = [actor for actor in _actors().get_all_level_actors() if isinstance(actor, unreal.StaticMeshActor)]
     if len(actors) != 112 or any(not actor.actor_has_tag("ShibuyaSource") for actor in actors):
         raise RuntimeError("Cannot prepare city Nanite materials: require exactly112 original source StaticMeshActors in the loaded city map.")
-    materials, slots = {}, []
+    materials, slots, crossing_slots = {}, [], []
     for actor in actors:
         component = actor.static_mesh_component
         for index in range(component.get_num_materials()):
             material = component.get_material(index)
-            if material is None or not material.get_path_name().startswith(("/Game/City/", "/Game/Surface/")):
+            if material is not None and material.get_path_name() == "/Game/AppearanceRepair/CrossingV2/OriginalInstance1.OriginalInstance1":
+                label = actor.get_actor_label()
+                if label not in _CROSSING_RECEIVERS or index != 0 or component.get_num_materials() != 1 or component.static_mesh.get_path_name() != _CROSSING_RECEIVERS[label]:
+                    raise RuntimeError("Cannot inspect saved crossing V2: candidate is not on its exact receiver slot0: " + label)
+                crossing_slots.append(label)
+            elif material is None or not material.get_path_name().startswith(("/Game/City/", "/Game/Surface/")):
                 raise RuntimeError(f"Cannot prepare city Nanite materials: {actor.get_actor_label()} slot{index} has no admitted project material.")
             materials[material.get_path_name()] = material
             slots.append({"actor": actor.get_actor_label(), "slot": index, "material": material.get_path_name()})
+    if crossing_slots:
+        if len(crossing_slots) != 3 or set(crossing_slots) != set(_CROSSING_RECEIVERS):
+            raise RuntimeError("Cannot inspect saved crossing V2: require all three exact receiver bindings.")
+        _inspect_saved_crossing_material(materials["/Game/AppearanceRepair/CrossingV2/OriginalInstance1.OriginalInstance1"])
     return materials, slots
 
 
 def _import_glb(path, destination, require_textures=True, prepare_nanite=True):
+    path, frame_receipt = _native_import_file(path)
     task = unreal.AssetImportTask()
     task.filename = str(path)
     task.destination_path = destination
@@ -1381,11 +2698,14 @@ def _import_glb(path, destination, require_textures=True, prepare_nanite=True):
     assets = [unreal.load_asset(name) for name in task.imported_object_paths]
     meshes = [asset for asset in assets if isinstance(asset, unreal.StaticMesh)]
     if not meshes:
-        # Interchange reports assets through the registry on some import paths.
-        paths = unreal.EditorAssetLibrary.list_assets(destination, recursive=True, include_folder=False)
-        meshes = [asset for name in paths if isinstance(asset := unreal.load_asset(name), unreal.StaticMesh)]
-    if not meshes:
-        raise RuntimeError(f"Cannot import {path.name}: Interchange produced no static meshes in {destination}.")
+        raise RuntimeError(f"Cannot import {path.name}: the Interchange import task returned no static meshes for {destination}.")
+    for mesh in meshes:
+        unreal.EditorAssetLibrary.set_metadata_tag(mesh, "ShibuyaNativeFrame", _native_actor_tag())
+        unreal.EditorAssetLibrary.set_metadata_tag(mesh, "ShibuyaRawEUNSHA256", frame_receipt["raw_eun_sha256"])
+        unreal.EditorAssetLibrary.set_metadata_tag(mesh, "ShibuyaNativeDerivativeSHA256", frame_receipt["derivative_sha256"])
+    frame_receipt["actual_imported_meshes"] = [{"asset":mesh.get_path_name(), "lod0_vertices":mesh.get_num_vertices(0), "lod0_triangles":mesh.get_num_triangles(0)} for mesh in meshes]
+    frame_receipt["native_import_equivalence"] = "NEW_DERIVATIVE_IMPORTED_FULL_UV_AND_SIGNED_ORACLE_PENDING"
+    _native_import_receipts[destination] = frame_receipt
     expected_images = _glb_image_count(path)
     paths = unreal.EditorAssetLibrary.list_assets(destination, recursive=True, include_folder=False)
     textures = [asset for name in paths if isinstance(asset := unreal.load_asset(name), unreal.Texture)]
@@ -1403,6 +2723,8 @@ def _import_glb(path, destination, require_textures=True, prepare_nanite=True):
         for material in materials.values():
             _prepare_nanite_material(material)
             saved.add(material.get_path_name())
+    if destination == "/Game/Surface/TerrainPhoto":
+        _prepare_gsi_sampling(True)
     # Save only assets actually imported or referenced by these meshes, not old
     # unused packages merely present in the destination directory.
     referenced = [*assets, *meshes]
@@ -1419,9 +2741,431 @@ def _import_glb(path, destination, require_textures=True, prepare_nanite=True):
     return meshes
 
 
+_crossing_trial = None
+_saved_crossing_daylight = None
+_CROSSING_MANIFEST = "data/prepared/appearance/crossing-v2/manifest.json"
+_CROSSING_MANIFEST_SHA = "c3c0f68475bfa239fc9be0fdd69b4195810b7e9525908dc4f2e7b8f584814119"
+_CROSSING_RECEIVERS = {
+    "City_055_data68": "/Game/Surface/Roads/Tile_055/data68/StaticMeshes/data68.data68",
+    "City_058_data72": "/Game/Surface/Roads/Tile_058/data72/StaticMeshes/data72.data72",
+    "City_069_terrain": "/Game/Surface/TerrainPhoto/terrain-photo/StaticMeshes/terrain-photo.terrain-photo"}
+_CROSSING_ORIGINAL = "/Game/Surface/TerrainPhoto/terrain-photo/Materials/Official_GSI_aerial_photograph.Official_GSI_aerial_photograph"
+
+
+def _crossing_read(record, cap):
+    path = _local_file(record["path"])
+    size = path.stat().st_size
+    if type(record.get("bytes")) is not int or size != record["bytes"] or not 0 < size <= cap:
+        raise RuntimeError("Crossing material input size differs or exceeds its bound: " + record["path"])
+    data = path.read_bytes()
+    if len(data) != size or hashlib.sha256(data).hexdigest() != record["sha256"]:
+        raise RuntimeError("Crossing material input digest differs: " + record["path"])
+    return path, data
+
+
+def _crossing_inputs(relative_manifest):
+    if type(relative_manifest) is not str or relative_manifest != _CROSSING_MANIFEST:
+        raise RuntimeError("Crossing material trial requires its one published data/prepared/appearance/crossing-v2/manifest.json input.")
+    path = _local_file(relative_manifest)
+    data = path.read_bytes() if 0 < path.stat().st_size <= 100000 else b""
+    if hashlib.sha256(data).hexdigest() != _CROSSING_MANIFEST_SHA:
+        raise RuntimeError("Crossing material trial requires the exact sealed authored manifest, not an old or relabelled packet.")
+    manifest = json.loads(data)
+    _require_native_frame(manifest, "crossing material manifest")
+    if type(manifest.get("schema_version")) is not int or manifest["schema_version"] != 2 or manifest.get("candidate_id") != "crossing-v2-paving-detail" or manifest["receivers"] != _CROSSING_RECEIVERS or manifest["mask_dimensions"] != [2048, 2048] or manifest["detail_dimensions"] != [512, 512]:
+        raise RuntimeError("Crossing v2 material/channel/receiver/dimension contract differs; old B roughness cannot become paving.")
+    for row in manifest["source_inputs"]:
+        _crossing_read(row, 16 * 1024 * 1024)
+    _crossing_read(manifest["semantic_polygons"], 100000)
+    paths = {}
+    for name, dimensions, color_type in (("mask", (2048, 2048), 2), ("detail", (512, 512), 6)):
+        paths[name], png = _crossing_read(manifest[name], 16 * 1024 * 1024)
+        if len(png) < 33 or png[:8] != b"\x89PNG\r\n\x1a\n" or png[12:16] != b"IHDR" or struct.unpack(">II", png[16:24]) != dimensions or png[24:26] != bytes((8, color_type)):
+            raise RuntimeError("Crossing v2 " + name + " is not its sealed8-bit RGB/RGBA PNG.")
+    return manifest, paths["mask"]
+
+
+def _crossing_bindings():
+    result = {}
+    for actor in _actors().get_all_level_actors():
+        if isinstance(actor, unreal.StaticMeshActor) and actor.actor_has_tag("ShibuyaSource"):
+            component = actor.static_mesh_component
+            result[actor.get_actor_label()] = {"effective": [component.get_material(i).get_path_name() if component.get_material(i) else None for i in range(component.get_num_materials())],
+                "overrides": [v.get_path_name() if v else None for v in component.get_editor_property("override_materials")]}
+    return result
+
+
+def _crossing_receivers():
+    frame = _native_scene_frame(require=True)
+    rows = []
+    for label, path in _CROSSING_RECEIVERS.items():
+        matches = [a for a in _actors().get_all_level_actors() if isinstance(a, unreal.StaticMeshActor) and a.get_actor_label() == label]
+        if len(matches) != 1:
+            raise RuntimeError("Crossing material requires exactly one receiver: " + label)
+        actor = matches[0]
+        component = actor.static_mesh_component
+        mesh = component.static_mesh
+        if mesh is None or mesh.get_path_name() != path or component.get_num_materials() != 1 or component.get_material(0) is None or component.get_material(0).get_path_name() != _CROSSING_ORIGINAL:
+            raise RuntimeError("Crossing material receiver must retain its exact source mesh and one original GSI material slot: " + label)
+        rows.append({"actor": actor, "label": label, "component": component, "mesh": mesh, "material": component.get_material(0),
+                     "overrides": list(component.get_editor_property("override_materials"))})
+    return rows, frame
+
+
+def _crossing_graph(material, texture, detail_texture, manifest):
+    """Private direct root: weighted geographic classes plus separate periodic inferred detail."""
+    library = unreal.MaterialEditingLibrary
+    def node(kind, **properties):
+        value = library.create_material_expression(material, getattr(unreal, kind))
+        if value is None:
+            raise RuntimeError("Cannot create crossing material expression: " + kind)
+        for key, v in properties.items():value.set_editor_property(key, v)
+        return value
+    def connect(source, output, target, name):
+        if library.connect_material_expressions(source, output, target, name) is not True:
+            raise RuntimeError("Cannot connect crossing material expression input: " + name)
+    def binary(kind, a, b):
+        value = node("MaterialExpression" + kind)
+        connect(*a, value, "A");connect(*b, value, "B")
+        return value, ""
+    def scalar(value):return node("MaterialExpressionConstant", r=value), ""
+    def color(value):return node("MaterialExpressionConstant3Vector", constant=unreal.LinearColor(*value, 1.0)), ""
+    attributes = material.get_editor_property("use_material_attributes")
+    if attributes is not False:
+        raise RuntimeError("DID_NOT_RUN: crossing material requires the actual root use_material_attributes=False; observed=" + repr(attributes) + ". No graph outputs or receiver bindings changed.")
+    original = {}
+    for name, prop in (("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR), ("Roughness", unreal.MaterialProperty.MP_ROUGHNESS)):
+        value = library.get_material_property_input_node(material, prop)
+        if value is None:
+            raise RuntimeError("Original connected " + name + " input unavailable before receiver assignment; no assumed graph identity.")
+        original[name] = (value, library.get_material_property_input_node_output_name(material, prop))
+    uv = node("MaterialExpressionTextureCoordinate", coordinate_index=0)
+    origin = node("MaterialExpressionConstant2Vector", r=manifest["uv_origin"][0], g=manifest["uv_origin"][1])
+    offset = binary("Subtract", (uv, ""), (origin, ""))
+    scale = node("MaterialExpressionConstant2Vector", r=manifest["uv_scale"][0], g=manifest["uv_scale"][1])
+    mapped = binary("Multiply", offset, (scale, ""))
+    sample = node("MaterialExpressionTextureSample", texture=texture, sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+    connect(*mapped, sample, "UVs")
+    detail_scale = node("MaterialExpressionConstant2Vector", r=manifest["detail_uv_scale"][0], g=manifest["detail_uv_scale"][1])
+    detail_uv = binary("Multiply", (uv, ""), (detail_scale, ""))
+    detail = node("MaterialExpressionTextureSample", texture=detail_texture, sampler_type=unreal.MaterialSamplerType.SAMPLERTYPE_LINEAR_COLOR)
+    connect(*detail_uv, detail, "UVs")
+    c = manifest["material"]
+    centered_color = binary("Subtract", (detail, "R"), scalar(.5))
+    centered_roughness = binary("Subtract", (detail, "G"), scalar(.5))
+    asphalt_color = binary("Multiply", color(c["asphalt_base_color"]), binary("Add", scalar(1.), binary("Multiply", centered_color, scalar(c["asphalt_color_variation"]))))
+    paving_color = binary("Multiply", color(c["paving_base_color"]), binary("Add", scalar(.9), binary("Multiply", (detail, "A"), scalar(.2))))
+    paint_color = binary("Multiply", color(c["paint_base_color"]), binary("Add", scalar(.95), binary("Multiply", (detail, "R"), scalar(.1))))
+    asphalt_roughness = binary("Add", scalar(c["asphalt_roughness"]), binary("Multiply", centered_roughness, scalar(c["asphalt_roughness_variation"])))
+    paving_roughness = binary("Add", scalar(c["paving_roughness"]), binary("Multiply", centered_roughness, scalar(.1)))
+    coverage = binary("Add", (sample, "R"), (sample, "B"))
+    original_weight = binary("Subtract", scalar(1.), coverage)
+    paint_alpha = binary("Multiply", (sample, "G"), (detail, "B"))
+    result = {}
+    for name, asphalt, paving, paint in (("BaseColor", asphalt_color, paving_color, paint_color), ("Roughness", asphalt_roughness, paving_roughness, scalar(c["paint_roughness"]))):
+        # A single coverage sum avoids original-photo leakage at an asphalt/paving boundary.
+        first = binary("Add", binary("Multiply", original[name], original_weight), binary("Multiply", asphalt, (sample, "R")))
+        base = binary("Add", first, binary("Multiply", paving, (sample, "B")))
+        blend = node("MaterialExpressionLinearInterpolate")
+        connect(*base, blend, "A");connect(*paint, blend, "B");connect(*paint_alpha, blend, "Alpha")
+        result[name] = blend
+    for name, prop in (("BaseColor", unreal.MaterialProperty.MP_BASE_COLOR), ("Roughness", unreal.MaterialProperty.MP_ROUGHNESS)):
+        if library.connect_material_property(result[name], "", prop) is not True:
+            raise RuntimeError("Cannot connect crossing material output: " + name)
+    return {"original_uses_material_attributes": attributes, "changed_properties": ["BaseColor", "Roughness"],
+            "candidate_id": manifest["candidate_id"], "mask_channels": manifest["mask_channels"], "detail_channels": manifest["detail_channels"],
+            "outside_mask": "Original expression and original instance parameters weighted1 at R+B=0; black clamped border. R+B<=1, paintG<=R.",
+            "uv_origin": manifest["uv_origin"], "uv_scale": manifest["uv_scale"], "detail_uv_scale": manifest["detail_uv_scale"], "uv_channel": 0,
+            "other_material_attributes": "Original pass-through; no normal, metallic, emissive or geometry output changed"}
+
+
+def _crossing_prepare_material(original, mask_path, manifest):
+    library = unreal.MaterialEditingLibrary
+    folder = "/Game/AppearanceRepair/CrossingV2"
+    chain, current = [], original
+    while isinstance(current, unreal.MaterialInstanceConstant):
+        if current in chain or len(chain) >= 8:
+            raise RuntimeError("Crossing material cannot clone a cyclic or oversized original parent chain.")
+        chain.append(current);current = current.get_editor_property("parent")
+    if not isinstance(current, unreal.Material):
+        raise RuntimeError("Crossing material requires the actual original Material root, not an assumed graph.")
+    # This fixed prototype supports the unchanged direct-property GSI root only.
+    # Its actual mode is observed here before mask import, asset cloning or receiver bindings.
+    root_attributes = current.get_editor_property("use_material_attributes")
+    if root_attributes is not False:
+        raise RuntimeError("DID_NOT_RUN: crossing material root " + current.get_path_name() + " actual use_material_attributes=" + repr(root_attributes) + "; require literal False for this direct-property trial. No assets imported or receivers changed.")
+    sources = [current, *reversed(chain)]
+    names = ["OriginalGraph", *["OriginalInstance" + str(i) for i in range(len(chain))]]
+    if any(unreal.EditorAssetLibrary.does_asset_exist(folder + "/" + name) for name in ["CrossingMask", "CrossingDetail", *names]):
+        raise RuntimeError("Crossing material private destination is not empty; old assets cannot be reused as current.")
+    tools = unreal.AssetToolsHelpers.get_asset_tools()
+    textures, texture_receipts = {}, {}
+    for key, name, path, dimensions, address, mips, filtering in (
+            ("mask", "CrossingMask", mask_path, (2048, 2048), unreal.TextureAddress.TA_CLAMP, unreal.TextureMipGenSettings.TMGS_NO_MIPMAPS, unreal.TextureFilter.TF_BILINEAR),
+            ("detail", "CrossingDetail", _local_file(manifest["detail"]["path"]), (512, 512), unreal.TextureAddress.TA_WRAP, unreal.TextureMipGenSettings.TMGS_FROM_TEXTURE_GROUP, unreal.TextureFilter.TF_DEFAULT)):
+        task = unreal.AssetImportTask();task.filename = str(path);task.destination_path = folder;task.destination_name = name
+        task.automated = True;task.replace_existing = False;task.save = False
+        tools.import_asset_tasks([task])
+        imported = [unreal.load_asset(p) for p in task.imported_object_paths]
+        if len(imported) != 1 or not isinstance(imported[0], unreal.Texture2D) or imported[0].get_path_name() != folder + "/" + name + "." + name:
+            raise RuntimeError("Crossing " + key + " import must return exactly its new Texture2D; no registry fallback.")
+        value = imported[0]
+        properties = {"srgb": False, "compression_settings": unreal.TextureCompressionSettings.TC_VECTOR_DISPLACEMENTMAP,
+                      "address_x": address, "address_y": address, "mip_gen_settings": mips, "never_stream": True, "filter": filtering}
+        for property_name, expected in properties.items():
+            value.set_editor_property(property_name, expected)
+            if value.get_editor_property(property_name) != expected:
+                raise RuntimeError("Crossing " + key + " texture property readback differs: " + property_name)
+        if (value.blueprint_get_size_x(), value.blueprint_get_size_y()) != dimensions:
+            raise RuntimeError("Actual crossing " + key + " texture dimensions differ.")
+        textures[key] = value
+        texture_receipts[key] = {"texture": value.get_path_name(), "dimensions": list(dimensions), "properties": {k: str(value.get_editor_property(k)) for k in properties}, "source": manifest[key]}
+    clone = None;receipts = [];graph = None
+    for index, (source, name) in enumerate(zip(sources, names)):
+        copied = tools.duplicate_asset(name, folder, source)
+        if copied is None or copied.get_path_name() != folder + "/" + name + "." + name:
+            raise RuntimeError("Crossing material clone failed: " + name)
+        if index == 0:
+            graph = _crossing_graph(copied, textures["mask"], textures["detail"], manifest)
+            library.set_base_material_usage(copied, unreal.MaterialUsage.MATUSAGE_NANITE, True)
+            errors = library.recompile_material(copied)
+            if errors:raise RuntimeError("Crossing root material compilation failed: " + str(errors))
+        else:
+            library.set_material_instance_parent(copied, clone)
+            library.set_material_usage_override(copied, unreal.MaterialUsage.MATUSAGE_NANITE, True, True)
+            library.update_material_instance(copied)
+        clone = copied
+        status = _nanite_material_status(clone)
+        stats = library.get_statistics(clone)
+        if not status["has_nanite_usage"] or (isinstance(clone, unreal.MaterialInstanceConstant) and not status["explicit_instance_override"]) or stats.num_vertex_shader_instructions <= 0 or stats.num_pixel_shader_instructions <= 0:
+            raise RuntimeError("Crossing material has no completed own Nanite-capable shader resource: " + name)
+        receipts.append({"source": source.get_path_name(), "clone": clone.get_path_name(), "usage": status,
+                         "vertex_shader_instructions": stats.num_vertex_shader_instructions, "pixel_shader_instructions": stats.num_pixel_shader_instructions})
+    before = _material_parameter_state(original);after = _material_parameter_state(clone)
+    if {k:v for k,v in before.items() if k != "parent_chain"} != {k:v for k,v in after.items() if k != "parent_chain"}:
+        raise RuntimeError("Cloned crossing material changed original effective texture/scalar/vector/switch parameters.")
+    return clone, {"original_root": current.get_path_name(), "actual_root_uses_material_attributes": root_attributes, "graph": graph, "clones": receipts, "original_parameters": before, "clone_parameters": after,
+                   "textures": texture_receipts, "nominal_RGBA8_texture_bytes_including_detail_mips": 2048*2048*4 + sum((512//(2**i))**2*4 for i in range(10)), "saved": False}
+
+
+def _restore_crossing_material_trial():
+    global _crossing_trial
+    if _crossing_trial is None:
+        return {"changed": False, "restored": True, "saved": False}
+    state = _crossing_trial
+    errors = []
+    for row in state["receivers"]:
+        try:
+            row["component"].set_material(0, row["material"])
+            row["component"].set_editor_property("override_materials", row["overrides"])
+        except Exception as error:errors.append(row["label"] + ": " + str(error))
+    actual = _crossing_bindings()
+    if actual != state["bindings"]:errors.append("Effective or raw component override bindings were not exactly restored.")
+    if _source_actor_state(set()) != state["geometry"]:errors.append("Source actor mesh/transform state changed during material trial.")
+    if _material_parameter_state(state["receivers"][0]["material"]) != state["parameters"]:errors.append("Original GSI material parameters changed.")
+    if errors:
+        raise RuntimeError("Crossing material restoration failed: " + json.dumps(errors))
+    _native_scene_frame(require=True)
+    _crossing_trial = None
+    return {"changed": True, "restored": True, "bindings_before": state["bindings"], "bindings_after": actual,
+            "source_geometry_transforms_conserved": True, "original_material_parameters_conserved": True, "native_frame": _native_frame_record(), "saved": False}
+
+
+def _apply_crossing_material_trial(relative_manifest):
+    global _crossing_trial
+    if _capture or _crossing_trial is not None:
+        raise RuntimeError("Crossing material trial requires no active capture or existing material trial.")
+    manifest, mask_path = _crossing_inputs(relative_manifest)
+    receivers, frame = _crossing_receivers()
+    original = receivers[0]["material"]
+    parameters = _material_parameter_state(original)
+    if parameters["texture"].get("BaseColorTexture") != "/Game/Surface/TerrainPhoto/terrain-photo/Textures/terrain-photo_texture_0.terrain-photo_texture_0" or parameters["scalar"].get("BaseColorTexture_TexCoord") != 0 or parameters["scalar"].get("BaseColorTexture_Rotation") != 0 or parameters["vector"].get("BaseColorTexture_OffsetScale") != [0., 0., 1., 1.] or parameters["vector"].get("BaseColorFactor") != [1., 1., 1., 1.]:
+        raise RuntimeError("Crossing material requires the actual unchanged geographic UV0 GSI photograph mapping.")
+    geometry, bindings = _source_actor_state(set()), _crossing_bindings()
+    # Prepare only new unsaved assets before altering any receiver binding.
+    material, preparation = _crossing_prepare_material(original, mask_path, manifest)
+    state = {"receivers": receivers, "geometry": geometry, "bindings": bindings, "parameters": parameters}
+    _crossing_trial = state
+    try:
+        for row in receivers:row["component"].set_material(0, material)
+        actual = _crossing_bindings()
+        for label, before in bindings.items():
+            if label in _CROSSING_RECEIVERS:
+                if actual[label]["effective"] != [material.get_path_name()]:raise RuntimeError("Crossing material effective binding readback differs: " + label)
+            elif actual[label] != before:raise RuntimeError("Crossing material changed an unrelated source component: " + label)
+        if _source_actor_state(set()) != geometry or _material_parameter_state(original) != parameters:
+            raise RuntimeError("Crossing material changed source geometry/transforms or original material parameters.")
+    except BaseException as error:
+        try:_restore_crossing_material_trial()
+        except Exception as cleanup_error:error.add_note("Crossing material rollback also failed: " + str(cleanup_error))
+        raise
+    return {"applied": True, "saved": False, "native_frame": frame["native_frame"], "receivers": sorted(_CROSSING_RECEIVERS),
+            "bindings_before": bindings, "bindings_applied": actual, "source_geometry_transforms_conserved": True,
+            "original_material_parameters_conserved": True, "preparation": preparation,
+            "mask": manifest["mask"], "authorship": manifest["purpose"], "appearance_status": "UNACCEPTED_PENDING_FIXED_NATIVE_PIXELS"}
+
+
+def _saved_daylight_camera():
+    volumes = [a for a in _actors().get_all_level_actors() if isinstance(a, unreal.PostProcessVolume) and a.get_actor_label() == "Shibuya_Exposure"]
+    if len(volumes) != 1 or volumes[0].get_editor_property("unbound") is not True:
+        raise RuntimeError("Cannot prepare saved crossing daylight: require one unbound Shibuya_Exposure volume.")
+    settings = volumes[0].get_editor_property("settings")
+    policy = _photographic_policy(settings)
+    if policy != _photographic_policy(_exposure(False)):
+        raise RuntimeError("Cannot prepare saved crossing daylight: require original manual f8/125/ISO100/bias0 and unoverridden local exposure.")
+    return {"photographic_policy": policy, "lumen_policy": _lumen_capture_policy(settings)}
+
+
+def _restore_saved_crossing_daylight():
+    global _saved_crossing_daylight
+    state = _saved_crossing_daylight
+    if state is None:return {"changed": False, "saved": False}
+    errors = []
+    for index, row in enumerate(state["lights"]):
+        try:row["component"].set_intensity(row["intensity"])
+        except Exception as error:errors.append(state["original_lights"][index]["actor"] + ": " + str(error))
+    try:
+        if _crossing_trial is state["material_state"]:_restore_crossing_material_trial()
+        elif _crossing_trial is not None or _crossing_bindings() != state["material_state"]["bindings"]:
+            raise RuntimeError("Material trial ownership/bindings changed before saved-daylight rollback.")
+    except Exception as error:errors.append(str(error))
+    try:
+        _, observed = _capture_daylight_lights()
+        if observed != state["original_lights"]:raise RuntimeError("Original Sun/Sky intensities or protected fields did not restore.")
+        state["lights"][1]["component"].recapture_sky()
+    except Exception as error:errors.append(str(error))
+    if errors:raise RuntimeError("Saved crossing daylight rollback failed: " + json.dumps(errors))
+    _saved_crossing_daylight = None
+    return {"changed": True, "saved": False, "original_lights_and_bindings_restored": True,
+            "sky_recapture_requested": True, "original_SH_equivalence_claim": False, "disk_map_rollback": "operator-owned backup if any save was attempted"}
+
+
+def _configure_crossing_daylight(stage):
+    global _saved_crossing_daylight, _crossing_trial
+    if type(stage) is not str or stage not in ("prepare", "save", "restore"):
+        raise RuntimeError("Saved crossing daylight stage must be prepare, save or restore.")
+    if _capture:raise RuntimeError("Saved crossing daylight requires the active capture to be finished first.")
+    if stage == "restore":return _restore_saved_crossing_daylight()
+    if stage == "save" and (_saved_crossing_daylight is None or _crossing_trial is not _saved_crossing_daylight["material_state"]):
+        raise RuntimeError("Cannot save crossing daylight: require its current prepared candidate, not a diagnostic trial or stale state.")
+    if stage == "prepare" and (_saved_crossing_daylight is not None or _crossing_trial is not None):
+        raise RuntimeError("Saved crossing daylight requires no existing material/daylight preparation.")
+    _require_complete_support()
+    _crossing_inputs(_CROSSING_MANIFEST)
+    if stage == "prepare":
+        camera = _saved_daylight_camera()
+        lights, observed = _capture_daylight_lights()
+        if [r["intensity"] for r in lights] not in ([100000.0, 1.0], list(_saved_daylight_values())):
+            raise RuntimeError("Saved crossing daylight requires original100000/1 or authored25000/4 Sun/Sky before preparation.")
+        if not callable(getattr(lights[1]["component"], "recapture_sky", None)):
+            raise RuntimeError("DID_NOT_RUN: existing SkyLight must expose recapture_sky before preparing saved daylight.")
+        applied = _apply_crossing_material_trial(_CROSSING_MANIFEST)
+        _saved_crossing_daylight = {"lights": lights, "original_lights": observed, "camera": camera,
+            "material_state": _crossing_trial, "applied": applied}
+        try:
+            for row, value in zip(lights, _saved_daylight_values()):row["component"].set_intensity(value)
+            lights[1]["component"].recapture_sky()
+            _, after = _capture_daylight_lights()
+            if [r["intensity"] for r in after] != list(_saved_daylight_values()) or [r["protected"] for r in after] != [r["protected"] for r in observed] or _saved_daylight_camera() != camera:
+                raise RuntimeError("Saved daylight changed protected light/camera fields or failed native intensity readback.")
+            return {"prepared": True, "saved": False, "lights": after, "camera": camera, "material_apply": applied,
+                "sky_recapture_requested": True, "retained_SH_equivalence_required": False,
+                "next": "Allow actual native capture frames to advance, finish the capture, then save this same prepared candidate."}
+        except BaseException as error:
+            try:_restore_saved_crossing_daylight()
+            except Exception as cleanup:error.add_note("Saved daylight rollback also failed: " + str(cleanup))
+            raise
+    state = _saved_crossing_daylight
+    try:
+        _, lights = _capture_daylight_lights()
+        if [r["intensity"] for r in lights] != list(_saved_daylight_values()) or [r["protected"] for r in lights] != [r["protected"] for r in state["original_lights"]] or _saved_daylight_camera() != state["camera"]:
+            raise RuntimeError("Cannot save crossing daylight: prepared Sun/Sky or camera changed; prepare the exact candidate again.")
+        material_state, applied = state["material_state"], state["applied"]
+        if _crossing_bindings() != applied["bindings_applied"] or _source_actor_state(set()) != material_state["geometry"] or _material_parameter_state(material_state["receivers"][0]["material"]) != material_state["parameters"]:
+            raise RuntimeError("Cannot save crossing daylight: prepared receiver/source geometry or original material parameters changed.")
+        preparation = applied["preparation"]
+        paths = [preparation["textures"][key]["texture"] for key in ("mask", "detail")] + [r["clone"] for r in preparation["clones"]]
+        expected = ["/Game/AppearanceRepair/CrossingV2/" + name + "." + name for name in ("CrossingMask", "CrossingDetail", "OriginalGraph", "OriginalInstance0", "OriginalInstance1")]
+        if paths != expected:raise RuntimeError("Cannot save crossing daylight: require exactly the two V2 textures, root and two instances.")
+        packages = {}
+        for index, path in enumerate(paths):
+            asset = unreal.load_asset(path)
+            if asset is None or asset.get_path_name() != path:
+                raise RuntimeError("Cannot save crossing daylight: prepared asset missing or changed: " + path)
+            if index < 2:
+                texture = preparation["textures"][("mask", "detail")[index]]
+                if not isinstance(asset, unreal.Texture2D) or [asset.blueprint_get_size_x(), asset.blueprint_get_size_y()] != texture["dimensions"] or any(str(asset.get_editor_property(key)) != value for key, value in texture["properties"].items()):
+                    raise RuntimeError("Cannot save crossing daylight: prepared texture properties changed: " + path)
+            else:
+                if not isinstance(asset, unreal.Material if index == 2 else unreal.MaterialInstanceConstant):
+                    raise RuntimeError("Cannot save crossing daylight: prepared material class changed: " + path)
+                usage = _nanite_material_status(asset);stats = unreal.MaterialEditingLibrary.get_statistics(asset)
+                if not usage["has_nanite_usage"] or (isinstance(asset, unreal.MaterialInstanceConstant) and not usage["explicit_instance_override"]) or stats.num_vertex_shader_instructions <= 0 or stats.num_pixel_shader_instructions <= 0:
+                    raise RuntimeError("Cannot save crossing daylight: own compiled Nanite shader resource is incomplete: " + path)
+            if not unreal.EditorAssetLibrary.save_loaded_asset(asset, False):
+                raise RuntimeError("Cannot save crossing daylight asset " + path + "; make its project package writable.")
+            packages.update(_support_material_packages({"material_path": path, "texture_path": path}))
+        if _crossing_bindings() != applied["bindings_applied"] or _source_actor_state(set()) != material_state["geometry"]:
+            raise RuntimeError("Cannot save crossing daylight map: receiver/geometry changed while saving its five packages.")
+        if not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level():
+            raise RuntimeError("Cannot save crossing daylight map /Game/Maps/Shibuya; operator must restore its checked map backup.")
+        _crossing_trial = None;_saved_crossing_daylight = None
+        return {"saved": True, "map_saved": True, "lights": lights, "camera": state["camera"],
+            "package_sha256": packages, "receivers": sorted(_CROSSING_RECEIVERS), "bindings_saved": applied["bindings_applied"],
+            "source_geometry_transforms_conserved": True, "original_material_parameters_conserved": True,
+            "sky_recapture_requested": True, "retained_SH_equivalence_required": False,
+            "appearance_status": "PENDING_REOPENED_FIXED_SIX_AND_NORMAL_GAME_INSPECTION"}
+    except BaseException as error:
+        try:_restore_saved_crossing_daylight()
+        except Exception as cleanup:error.add_note("Saved daylight rollback also failed: " + str(cleanup))
+        raise
+
+
 @unreal.uclass()
 class ShibuyaCityTools(unreal.ToolsetDefinition):
     """Build and inspect the fresh Shibuya crop in Unreal Engine centimetres."""
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def configure_crossing_daylight(stage: str) -> str:
+        """Prepare, save or restore the one authored V2/Sun25000/Sky4 candidate; save only after preparation."""
+        return json.dumps(_configure_crossing_daylight(stage))
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def apply_crossing_material_trial(relative_manifest: str) -> str:
+        """Apply the sealed inferred physical road/paint material only to three source receivers; no save."""
+        return json.dumps(_apply_crossing_material_trial(relative_manifest))
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def restore_crossing_material_trial() -> str:
+        """Restore exact original effective/raw component material bindings after the fixed trial; no save."""
+        return json.dumps(_restore_crossing_material_trial())
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def inspect_native_frame_json_controls() -> str:
+        """Read finite built-in Unreal JSON/frame admission controls; no scene changes."""
+        return json.dumps(json.loads(unreal.ShibuyaRendererLibrary.inspect_native_frame_json_controls()))
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def inspect_photographic_appearance() -> str:
+        """Observe only the shared GSI sampling policy and saved-scene tone choice."""
+        return json.dumps({"sampling": _gsi_sampling_state()[2], "photographic_tone": _saved_photographic_tone()})
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def prepare_photo_sampling(persist: bool = True) -> str:
+        """Retain the confirmed shared GSI Default/World sampler; save only that texture if requested."""
+        return json.dumps(_prepare_gsi_sampling(persist))
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def set_photographic_tone(enabled: bool, persist: bool = False) -> str:
+        """Set original/bilateral saved-scene policy; persist only after native appearance review."""
+        return json.dumps(_set_saved_photographic_tone(enabled, persist))
 
     @toolset_registry.tool_call
     @staticmethod
@@ -1449,6 +3193,18 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
             raise RuntimeError("Cannot prepare city Nanite materials: source actor geometry, transforms or material slots changed.")
         return json.dumps({"source_actor_count": 112, "distinct_used_material_count": len(results), "slots": slots, "materials": results,
                            "source_actor_state_unchanged": True, "material_slots_unchanged": True, "map_saved": False})
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def inspect_data518_frontage() -> str:
+        """Observe all sourceface494 corner/UV seams, triangle incidence and actual material slots; never save."""
+        return json.dumps(_inspect_data518_frontage())
+
+    @toolset_registry.tool_call
+    @staticmethod
+    def set_sky_distance_trial(candidate: bool) -> str:
+        """Set only fixed transient SkyLight distance150000cm, or restore5cm, and request recapture; never save."""
+        return json.dumps(_set_sky_distance_trial(candidate))
 
     @toolset_registry.tool_call
     @staticmethod
@@ -1491,7 +3247,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
         cameras = []
         for name, xyz in [("crossing", (35, -45, 35)), ("crossing-west", (-70, 20, 65))]:
-            location = unreal.Vector(*(value * 100 for value in xyz))
+            location = unreal.Vector(*_source_to_native_cm(xyz))
             trace = unreal.SystemLibrary.line_trace_single(world, location, unreal.Vector(0, 0, 1500), unreal.TraceTypeQuery.TRACE_TYPE_QUERY1, True, [], unreal.DrawDebugTrace.NONE, True)
             cameras.append({"name": name, "camera_m": xyz, "native_complex_collision_trace": str(trace)})
         atmosphere = []
@@ -1588,8 +3344,9 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                 if not actor:
                     raise RuntimeError(f"Cannot place {mesh.get_path_name()}: static mesh actor creation failed.")
                 actor.set_actor_label(f"City_{index:03d}_{mesh.get_name()}")
-                actor.tags = ["ShibuyaSource"]
+                actor.tags = ["ShibuyaSource", _native_actor_tag()]
             imports.append({"source": entry["path"], "sha256": entry["sha256"], "mesh_count": len(meshes)})
+        _native_scene_frame(require=True)
         unreal.EditorAssetLibrary.save_directory("/Game/City", only_if_is_dirty=False, recursive=True)
         _daylight()
         if not unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).save_current_level():
@@ -1625,6 +3382,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         document = json.loads(payload)
         if type(document.get("schema_version")) is int and document["schema_version"] in (2, 3):
             return json.dumps(_prepare_support_terrain(manifest_path))
+        _native_scene_frame(require=True)
         metadata = document["photo_ground"]
         base_path = _local_file("data/prepared/manifest.json")
         original_path = _local_file("data/prepared/terrain.glb")
@@ -1666,6 +3424,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         def apply():
             global _support_update, _support_completed
             manifest_path = _local_file(relative_manifest)
+            _native_scene_frame(require=True)
             metadata = json.loads(manifest_path.read_text(encoding="utf-8"))
             base_path = _local_file("data/prepared/manifest.json")
             if hashlib.sha256(base_path.read_bytes()).hexdigest() != metadata["base_manifest_sha256"]:
@@ -1781,7 +3540,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
 
     @toolset_registry.tool_call
     @staticmethod
-    def capture_view(relative_output: str, east_m: float, north_m: float, height_m: float, target_east_m: float = 0.0, target_north_m: float = 0.0, target_height_m: float = 15.0, target_gamma: float = 2.2, full_crop_coverage: bool = False, photographic_tone: bool = False, hardware_ray_tracing: bool = False) -> str:
+    def capture_view(relative_output: str, east_m: float, north_m: float, height_m: float, target_east_m: float = 0.0, target_north_m: float = 0.0, target_height_m: float = 15.0, target_gamma: float = 2.2, full_crop_coverage: bool = False, photographic_tone: bool = False, hardware_ray_tracing: bool = False, use_saved_tone: bool = True) -> str:
         """Start one persistent viewpoint; advance and export it in later MCP calls after editor ticks.
 
         Args:
@@ -1794,9 +3553,11 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
             target_height_m: Look-at up coordinate in metres.
             target_gamma: SDR display gamma;1.0 is retained only as a regression control.
             full_crop_coverage: Opt-in2400m reach-only software Lumen scene; local tracing is retained and the process clipmap is restored at finish.
-            photographic_tone: Opt-in bilateral local exposure; preserves the manual physical camera and source lighting.
+            photographic_tone: Explicit bilateral opt-in; normal false inherits the saved choice unless use_saved_tone=false.
             hardware_ray_tracing: Allow this view to use project-enabled ray tracing; global support and actual dispatch still require independent verification.
+            use_saved_tone: Normal captures inherit the saved scene choice; false keeps explicit original A/B controls.
         """
+        photographic_tone = _capture_photographic_tone(photographic_tone, use_saved_tone)
         output = (PROJECT / relative_output).resolve()
         if not output.is_relative_to(PROJECT / "artifacts/unreal") or output.suffix != ".png":
             raise RuntimeError(f"Cannot capture {relative_output!r}: use a .png path below artifacts/unreal.")
@@ -1808,12 +3569,14 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         global _capture
         if _capture:
             raise RuntimeError("Cannot start another capture: export the active capture with finish=true first.")
+        _native_scene_frame(require=True)
         for path in unreal.EditorAssetLibrary.list_assets("/Game/City", recursive=True, include_folder=False) + unreal.EditorAssetLibrary.list_assets("/Game/Surface", recursive=True, include_folder=False):
             texture_asset = unreal.load_asset(path)
             if isinstance(texture_asset, unreal.Texture2D):
                 texture_asset.set_force_mip_levels_to_be_resident(180.0)
-        location = unreal.Vector(east_m * 100, north_m * 100, height_m * 100)
-        target = unreal.Vector(target_east_m * 100, target_north_m * 100, target_height_m * 100)
+        _native_scene_frame(require=True)
+        location = unreal.Vector(*_source_to_native_cm([east_m, north_m, height_m]))
+        target = unreal.Vector(*_source_to_native_cm([target_east_m, target_north_m, target_height_m]))
         actor = _actors().spawn_actor_from_class(unreal.SceneCapture2D, location)
         state = {"actor": actor, "world": world, "photographic_tone": photographic_tone, "hardware_ray_tracing": hardware_ray_tracing}
         try:
@@ -1854,20 +3617,28 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         """Render another frame of the active view after a separate editor tick."""
         if not _capture:
             raise RuntimeError("Cannot advance capture: start a persistent view first.")
-        if _capture["frames"] == 79:
+        phase = _capture.get("diagnostic", _capture)
+        if phase["frames"] == 79:
             # The final actual render emits view-specific native Lumen scene counters.
             unreal.SystemLibrary.execute_console_command(_capture["world"], "r.LumenScene.DumpStats 2")
         _capture["actor"].capture_component2d.capture_scene()
-        _capture["frames"] += 1
-        return json.dumps({"capture_frames": _capture["frames"]})
+        phase["frames"] += 1
+        result = {"capture_frames": _capture["frames"]}
+        if phase is not _capture:
+            result["diagnostic_capture_frames"] = phase["frames"]
+        return json.dumps(result)
 
     @toolset_registry.tool_call
     @staticmethod
-    def inspect_camera_surfaces(east_m: float, north_m: float, height_m: float, target_east_m: float = 0.0, target_north_m: float = 0.0, target_height_m: float = 15.0) -> str:
-        """Read native depth, normal and unlit base color at fixed image pixels; does not save or alter source actors."""
+    def inspect_camera_surfaces(east_m: float, north_m: float, height_m: float, target_east_m: float = 0.0, target_north_m: float = 0.0, target_height_m: float = 15.0, active_capture_stage: str = "", relative_output_prefix: str = "") -> str:
+        """Read immediate samples, or fixed raw buffers from the active original crossing capture; no asset saves."""
+        if active_capture_stage or relative_output_prefix:
+            return json.dumps(_capture_surface_diagnostic(active_capture_stage, relative_output_prefix,
+                              [east_m, north_m, height_m], [target_east_m, target_north_m, target_height_m]))
         world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-        location = unreal.Vector(east_m * 100, north_m * 100, height_m * 100)
-        target = unreal.Vector(target_east_m * 100, target_north_m * 100, target_height_m * 100)
+        _native_scene_frame(require=True)
+        location = unreal.Vector(*_source_to_native_cm([east_m, north_m, height_m]))
+        target = unreal.Vector(*_source_to_native_cm([target_east_m, target_north_m, target_height_m]))
         actor = _actors().spawn_actor_from_class(unreal.SceneCapture2D, location)
         try:
             actor.set_actor_rotation(unreal.MathLibrary.find_look_at_rotation(location, target), False)
@@ -1886,7 +3657,7 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
                     color = unreal.RenderingLibrary.read_render_target_raw_pixel(world, texture, x, y, False)
                     pixels.append({"pixel": [x, y], "rgba": [color.r, color.g, color.b, color.a]})
                 samples.append({"source": name, "pixels": pixels})
-            return json.dumps({"actor_location_cm": _vector(actor.get_actor_location()), "component_location_cm": _vector(component.get_world_location()), "forward": _vector(actor.get_actor_forward_vector()), "right": _vector(actor.get_actor_right_vector()), "up": _vector(actor.get_actor_up_vector()), "fov_horizontal_degrees": component.fov_angle, "target_dimensions": [1280, 720], "capture_samples": samples, "bound": "Immediate native source depth/base color/normals and direct scene HDR; temporal Lumen readiness excluded"})
+            return json.dumps({"native_frame": _native_frame_record(), "source_camera_enu_m": [east_m, north_m, height_m], "source_target_enu_m": [target_east_m, target_north_m, target_height_m], "actor_location_cm": _vector(actor.get_actor_location()), "component_location_cm": _vector(component.get_world_location()), "forward": _vector(actor.get_actor_forward_vector()), "right": _vector(actor.get_actor_right_vector()), "up": _vector(actor.get_actor_up_vector()), "fov_horizontal_degrees": component.fov_angle, "target_dimensions": [1280, 720], "capture_samples": samples, "bound": "Immediate native source depth/base color/normals and direct scene HDR; temporal Lumen readiness excluded"})
         finally:
             _actors().destroy_actor(actor)
 
@@ -1898,6 +3669,8 @@ class ShibuyaCityTools(unreal.ToolsetDefinition):
         if not _capture:
             raise RuntimeError("Cannot export capture: start a persistent view first.")
         try:
+            if _capture.get("diagnostic"):
+                raise RuntimeError("Cannot export final color during a float diagnostic: call inspect_camera_surfaces with active_capture_stage=restore first.")
             output = (PROJECT / relative_output).resolve()
             if not output.is_relative_to(PROJECT / "artifacts/unreal") or output.suffix != ".png":
                 raise RuntimeError(f"Cannot export {relative_output!r}: use a .png path below artifacts/unreal.")

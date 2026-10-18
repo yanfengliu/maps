@@ -18,22 +18,29 @@ from fractions import Fraction
 
 import numpy as np
 import support_surface as geometry
+import support_reconstruction as reconstruction
 
-COORDINATE_MODEL = 'native-float32-centimetres-v1'
+COORDINATE_MODEL = 'native-esu-float32-centimetres-v2'
 OUTPUT_ORDER = 'parent-triangles-minus-deletions-then-patch-faces'
 MAX_NATIVE_STITCH_CM = .1
 
 
 def native_centimetres(points):
+    """Source ENU working operands, quantized equivalently to inverse ESU packing.
+
+    This internal representation is retained for Source1/2 diagnostics and exact
+    source predicates. Serialized native ledger values are ESU and are decoded
+    explicitly at their admission boundary; this helper is not native output.
+    """
     return (np.asarray(points, dtype=np.float64) * 100).astype(np.float32).astype(np.float64)
 
 
 def native_metres(points):
-    """ENU input, exactly the importer's metre -> float32 centimetre conversion."""
+    """Physical ENU working metres after the native float32-cm quantization."""
     return native_centimetres(points) / 100
 
 
-def same_native_triangle(surface, previous, current):
+def same_native_triangle(surface, previous, current, *, resolve_index=False):
     """Resolve two in-process witnesses to one actual admitted consumed face."""
     if surface is None or previous is None or current is None: return None
     if surface.support_manifest.get('schema_version') != 3: return None
@@ -63,10 +70,14 @@ def same_native_triangle(surface, previous, current):
         refs = surface.source3_terrain_refs
         index = bisect.bisect_left(refs, flat, key=lambda row: row['triangle'])
         if index >= len(refs) or refs[index] != ref or ref.get('triangle') != flat: return None
-        return surface.terrain_index.triangles[index]
+        membership = getattr(surface.terrain_index, 'physical_membership', None)
+        if membership is None or membership[index] != 1: return None
+        return (surface.terrain_index,index) if resolve_index else surface.terrain_index.triangles[index]
     if index >= len(surface.road.layer_refs) or surface.road.layer_refs[index] != ref: return None
     if kind == 'inferred' and ref.get('triangle') != flat: return None
-    return surface.road_index.triangles[index]
+    membership = getattr(surface.road_index, 'physical_membership', None)
+    if membership is None or membership[index] != 1: return None
+    return (surface.road_index,index) if resolve_index else surface.road_index.triangles[index]
 
 
 def exact_native_span_grade(triangle, previous, current, maximum):
@@ -83,6 +94,21 @@ def exact_native_span_grade(triangle, previous, current, maximum):
     return None
 
 
+def _selected_native_span_height(surface, record, point):
+    from surface_network import _source3_selector_plane
+    resolved = same_native_triangle(surface,record,record,resolve_index=True)
+    if resolved is None: return None
+    index,ordinal = resolved
+    native = getattr(index,'native_triangles_cm',None)
+    if not isinstance(native,np.ndarray) or native.dtype != np.float32 or native.ndim != 3 or native.shape[1:] != (3,3) or not 0 <= ordinal < len(native): return None
+    points = native[ordinal].astype(np.float64)[[0,2,1]] * np.array([1.,-1.,1.])
+    if not np.isfinite(points).all(): return None
+    plane = _source3_selector_plane(points)
+    # This is the actual binary64-cm query, not an unrounded metre delta.
+    x,y = [Fraction(float(v)*100) for v in point[:2]]
+    return (plane[0]*x+plane[1]*y+plane[2])/100
+
+
 def span_grade(previous, current, maximum, *, surface=None, previous_record=None, current_record=None):
     distance = math.dist(previous[:2], current[:2])
     height = abs(current[2]-previous[2])
@@ -90,20 +116,46 @@ def span_grade(previous, current, maximum, *, surface=None, previous_record=None
         if height: raise ValueError('Source3 zero-length span has unequal support heights')
         return 0.
     grade = height/distance
+    if surface is not None and surface.support_manifest.get('schema_version') == 3:
+        left = _selected_native_span_height(surface,previous_record,previous)
+        right = _selected_native_span_height(surface,current_record,current)
+        if left is None or right is None:
+            if grade > maximum:
+                raise ValueError(f'Source3 span grade {grade} exceeds {maximum} across {distance} m; selected native face authority is unavailable')
+            raise ValueError('Source3 span requires both selected native faces with matching generation/ref/digest/cook authority')
+        # Source distance remains the original binary64 metre span. Each exact
+        # height instead belongs to its own selected face and rounded cm query.
+        delta = right-left
+        dx,dy = [Fraction(float(y))-Fraction(float(x)) for x,y in zip(previous[:2],current[:2])]
+        distance2 = dx*dx+dy*dy
+        try: grade = math.sqrt(float(delta*delta/distance2))
+        except OverflowError: grade = math.inf  # An exact over-limit span still refuses below.
+        if delta*delta > Fraction(float(maximum))**2*distance2:
+            raise ValueError(f'Source3 span grade {grade} exceeds {maximum} across {distance} m')
+        return grade
     if grade > maximum:
-        triangle = same_native_triangle(surface, previous_record, current_record)
-        if triangle is not None:
-            exact_grade = exact_native_span_grade(triangle, previous, current, maximum)
-            if exact_grade is not None: return exact_grade
         raise ValueError(f'Source3 span grade {grade} exceeds {maximum} across {distance} m')
     return grade
 
 
+
 class NativeTriangleIndex(geometry.TriangleIndex):
     """Use already-bound integration precision code; retain existing edge traversal."""
-    def __init__(self, triangles, cell_m=12):
+    def __init__(self, triangles, cell_m=12, *, query_role='physical'):
         from surface_network import native_query_initialize
-        native_query_initialize(self, triangles, cell_m)
+        native_query_initialize(self, triangles, cell_m, query_role=query_role)
+
+    def raw_candidates(self, lo, hi):
+        from surface_network import native_query_raw_candidates
+        return native_query_raw_candidates(self, lo, hi)
+
+    def physical_candidates(self, lo, hi):
+        from surface_network import native_query_physical_candidates
+        return native_query_physical_candidates(self, lo, hi)
+
+    def candidates(self, lo, hi):
+        from surface_network import native_query_candidates
+        return native_query_candidates(self, lo, hi)
 
     def hits(self, east, north):
         from surface_network import native_query_hits
@@ -175,6 +227,11 @@ def require_equal(actual, expected, name):
 def recipe_records(ledger):
     values = [ledger['parent_support_surface'], ledger['parent_derived_terrain'], ledger['terrain_patch']]
     values += [row['replacement'] for row in ledger.get('road_overrides', [])]
+    if 'reconstruction' in ledger:
+        values += ledger['reconstruction']['original_query_artifacts']
+        anchors = [a for f in ledger['patch_faces'] for a in f.get('corner_ancestry', [])]
+        anchors += [a for e in ledger.get('road_overrides', []) for f in e.get('replacement_source_ancestry', []) for a in f['corner_ancestry']]
+        values += [r for a in anchors for r in [a['source_record'], *([a['immutable_raw_geometry_record']] if 'immutable_raw_geometry_record' in a else [])]]
     values += [ledger['recipe']['algorithm'], *ledger['recipe']['source_inputs'], *ledger['recipe']['candidate_inputs']]
     return unique_records(values)
 
@@ -187,8 +244,23 @@ def unique_records(values):
     return list(result.values())
 
 
+
+def require_frame(value, label):
+    # Local import avoids a module initialization cycle with surface_network.
+    import surface_network as api
+    api.require_native_frame(value, 'Source3 '+label)
+
+
+def ledger_native_cm(points, framed):
+    """Encode already packed source working cm without another rounding step."""
+    values = np.asarray(points, dtype=np.float64)
+    return values * np.array([1., -1., 1.]) if framed else values
+
+
 def layout(ledger, parent, patch_count):
     """Classify every output face and every removal; never infer missing labels."""
+    require_frame(ledger, 'edit ledger')
+    require_frame(parent, 'current parent')
     require_equal(ledger.get('schema_version'), 1, 'edit schema')
     require_equal(ledger.get('coordinate_model'), COORDINATE_MODEL, 'coordinate model')
     require_equal(ledger.get('output_order'), OUTPUT_ORDER, 'output order')
@@ -212,13 +284,21 @@ def layout(ledger, parent, patch_count):
     patch = ledger['patch_faces']
     if len(patch) != patch_count or [r['patch_triangle'] for r in patch] != list(range(patch_count)):
         raise ValueError('Source3 patch labels must cover flattened GLB triangles exactly in order')
+    if 'reconstruction' in ledger:
+        reconstruction.require_policy(ledger)
+        if any(f['kind'] not in ('retained-parent-fragment', reconstruction.KIND) for f in patch) and not ledger['reconstruction'].get('legacy_baseline'):
+            raise ValueError('Source3 reconstruction cannot waive the old inferred-road contract without an authenticated legacy prefix')
     for face in patch:
         if face['region_id'] not in region_ids:
             raise ValueError('Source3 patch face names an undeclared region')
         if face['kind'] == 'retained-parent-fragment':
+            if face.get('reconstruction_fragment'): reconstruction.check_anchors(face.get('corner_ancestry'))
             p = integer(face['parent_triangle'], 'fragment.parent_triangle', count)
             if p not in deleted or face['original_terrain_parent'] != parent['terrain_source_triangle_indices'][p]:
                 raise ValueError('Source3 fragment must replace its declared parent and retain original terrain lineage')
+        elif face['kind'] == reconstruction.KIND:
+            reconstruction.require_policy(ledger)
+            reconstruction.check_label(face)
         elif face['kind'] == 'inferred-ground-road':
             if 'parent_triangle' in face or 'original_terrain_parent' in face or not face.get('anchors'):
                 raise ValueError('Source3 inferred face requires source anchors, never original-terrain lineage')
@@ -245,8 +325,8 @@ def source_interpolation(anchor, source, label):
     return original.astype(np.float32).astype(np.float64), weights, original
 
 
-def check_native_stitch(edit, original_cm, replacement_cm, label):
-    for field, expected in (('original_native_cm', original_cm), ('replacement_native_cm', replacement_cm)):
+def check_native_stitch(edit, original_cm, replacement_cm, label, *, framed=False):
+    for field, expected in (('original_native_cm', ledger_native_cm(original_cm, framed)), ('replacement_native_cm', ledger_native_cm(replacement_cm, framed))):
         declared = np.asarray(edit[field], dtype=np.float64)
         if declared.shape != (3,) or not np.isfinite(declared).all() or not np.array_equal(declared, expected):
             raise ValueError(f'Source3 {label} {field} disagrees with actual native geometry')
@@ -255,7 +335,7 @@ def check_native_stitch(edit, original_cm, replacement_cm, label):
         raise ValueError(f'Source3 {label} native stitch {displacement/100} m exceeds 0.001 m')
 
 
-def check_fragment(face, packed, parent):
+def check_fragment(face, packed, parent, *, framed=False):
     """Every moved clipping vertex is explicit; interpolation is independently checked."""
     edits = face['vertex_edits']
     ids = [r['vertex'] for r in edits]
@@ -274,7 +354,7 @@ def check_fragment(face, packed, parent):
         if anchor.get('kind') != 'parent-edge-or-plane-interpolation' or anchor['parent_triangle'] != face['parent_triangle']:
             raise ValueError('Source3 fragment vertex has the wrong parent interpolation anchor')
         original_cm, weights, original = source_interpolation(anchor, parent[:, :3], 'fragment')
-        check_native_stitch(edit, original_cm, actual_cm[i], 'fragment')
+        check_native_stitch(edit, original_cm, actual_cm[i], 'fragment', framed=framed)
         plane_error = max(plane_error, abs(float(actual_cm[i, 2]-original[2]))/100)
         original = weights @ parent
         uv_error = max(uv_error, float(np.max(abs(packed[i, 3:5]-original[3:5]))))
@@ -315,6 +395,13 @@ def admit_new_face_winding(rows, label, *, parent=None, inferred=False):
                 raise ValueError(f'Source3 new face {label} reverses or loses its source face orientation in {model}')
 
 
+    native = (rows[[0, 2, 1], :3] * np.array([100., -100., 100.])).astype(np.float32).astype(np.float64)
+    physical = -np.cross(native[1]-native[0], native[2]-native[0])
+    expected = normals[:, [0, 2, 1]] * np.array([1., -1., 1.])
+    if not np.isfinite(native).all() or not np.any(physical) or np.any(expected@physical <= 0):
+        raise ValueError(f'Source3 new face {label} loses signed physical orientation across the final ESU corner021 boundary')
+
+
 def assemble_terrain(api, ledger, parent):
     parent_doc, parent_parts = primitives(api, record(api, parent['derived_terrain'], 'parent mesh'))
     if len(parent_parts) != 1:
@@ -327,10 +414,15 @@ def assemble_terrain(api, ledger, parent):
         raise ValueError('Source3 parent triangle count differs from its record')
     for face, rows in zip(labels, patch_rows):
         source = parent_rows[face['parent_triangle']] if face['kind'] == 'retained-parent-fragment' else None
-        admit_new_face_winding(rows, f"terrain patch {face['patch_triangle']}", parent=source,
-                               inferred=face['kind'] == 'inferred-ground-road')
+        if face['kind'] == reconstruction.KIND or face.get('reconstruction_fragment'):
+            # Staging reports actual packed states; no role masks or global UP veto.
+            # Parent fragments keep their independent interpolation/stitch checks.
+            reconstruction.face_state(api, rows)
+        else:
+            admit_new_face_winding(rows, f"terrain patch {face['patch_triangle']}", parent=source,
+                                   inferred=face['kind'] == 'inferred-ground-road')
         if face['kind'] == 'retained-parent-fragment':
-            check_fragment(face, rows, parent_rows[face['parent_triangle']])
+            check_fragment(face, rows, parent_rows[face['parent_triangle']], framed=True)
     _, _, attrs, faces = parent_parts[0]
     # Keep all parent attribute bytes; only the declared face-index list changes.
     # Avoid a full-city unique/sort/reconstruction for a local edit.
@@ -399,13 +491,16 @@ def apply_road_overrides(api, parent, ledger, stage=None):
                 _, replacement = primitives(api, record(api, edit['replacement'], 'road replacement'))
                 rows = triangle_rows(replacement)
                 selected = edit['replacement_patch_triangles']
-                if not selected or len(set(selected)) != len(selected):
+                if (not selected and not (edit.get('reconstruction_trim') is True and 'reconstruction' in ledger)) or len(set(selected)) != len(selected):
                     raise ValueError('Source3 road replacement requires unique explicit replacement triangle IDs')
                 selected = [integer(i, 'replacement triangle', len(rows)) for i in selected]
                 rows = rows[selected]
                 source_face = np.concatenate((attrs['POSITION'][:, [0, 2, 1]], attrs['TEXCOORD_0'], attrs['NORMAL']), axis=1)[indices[edit['triangle']]]
                 for triangle_id, triangle in zip(selected, rows):
-                    admit_new_face_winding(triangle, f'road {source}/{mesh}/{primitive} replacement {triangle_id}', parent=source_face)
+                    if edit.get('reconstruction_trim') is True and 'reconstruction' in ledger:
+                        reconstruction.face_state(api, triangle)
+                    else:
+                        admit_new_face_winding(triangle, f'road {source}/{mesh}/{primitive} replacement {triangle_id}', parent=source_face)
                 values = {'POSITION': rows[:, :, [0, 2, 1]].reshape(-1, 3), 'TEXCOORD_0': rows[:, :, 3:5].reshape(-1, 2), 'NORMAL': rows[:, :, 5:8].reshape(-1, 3)}
                 for k in attrs: new_attrs[k].append(values[k])
                 new_indices.append(np.arange(len(rows)*3).reshape(-1, 3)+vertex_count)
@@ -445,18 +540,25 @@ def apply_road_overrides(api, parent, ledger, stage=None):
 
 
 def initialize(surface, api, base, buildings, manifest, support_path, vehicle_source):
+    require_frame(manifest, 'current support')
     parent_payload = record(api, manifest['parent_support_surface'], 'parent support', api.SUPPORT_MANIFEST_LIMIT_BYTES)
     parent = json.loads(parent_payload)
+    require_frame(parent, 'current parent')
     if parent.get('schema_version') != 2:
         raise ValueError('Source3 requires an immutable admitted Source2 parent, not a recursive derived chain')
     if api.ROOT/manifest['parent_support_surface']['path'] == api.OUT/'support-surface-manifest.json':
         raise ValueError('Source3 parent must name an immutable generation, not the active manifest alias')
-    previous = api.Surface(base, buildings, vehicle_source=vehicle_source, support_path=api.ROOT/manifest['parent_support_surface']['path'])
+    probe = getattr(surface, 'network_diagnostic', None)
+    if probe: probe.phase('source3-parent-surface')
+    previous = api.Surface(base, buildings, vehicle_source=vehicle_source, support_path=api.ROOT/manifest['parent_support_surface']['path'],
+                           **({'network_diagnostic': probe} if probe else {}))
+    if probe: probe.phase('source3-assemble-and-admit')
     surface.__dict__.update(previous.__dict__)
     for key in ('frame', 'origin', 'vertical_reference', 'inputs', 'atlas', 'attribution'):
         require_equal(manifest[key], parent[key], key)
     require_equal(manifest['coordinate_model'], COORDINATE_MODEL, 'coordinate model')
     ledger = json.loads(record(api, manifest['surface_edits'], 'surface edits', api.SUPPORT_MANIFEST_LIMIT_BYTES))
+    require_frame(ledger, 'edit ledger')
     require_equal(ledger['parent_support_surface'], manifest['parent_support_surface'], 'parent record')
     for r in recipe_records(ledger): record(api, r, 'edit input')
     _, attrs, indices, retained, labels = assemble_terrain(api, ledger, parent)
@@ -469,7 +571,11 @@ def initialize(surface, api, base, buildings, manifest, support_path, vehicle_so
     require_equal(outputs, manifest.get('derived_roads', []), 'derived road lineage')
     triangles = native_metres(attrs['POSITION'][:, [0, 2, 1]])[indices]
     previous._source3_new_road_refs = refs
+    if probe: probe.phase('source3-local-geometry-admission')
+    if 'reconstruction' in ledger and (manifest.get('staged_reconstruction') is not True or support_path == api.OUT/'support-surface-manifest.json'):
+        raise ValueError('Source3 reconstruction requires an explicit staged new-geometry generation; active publication is not admitted')
     surface.source3_admission = validate_local_geometry(api, ledger, previous, triangles, roads, retained, labels)
+    if probe: probe.phase('source3-native-query-indices')
     provenance = [{'kind': 'terrain', 'triangle': i, 'parent_triangle': int(p), 'original_triangle': parent['terrain_source_triangle_indices'][p]}
                   for i, p in enumerate(retained)]
     provenance.extend({**f, 'kind': 'terrain-fragment' if f['kind'] == 'retained-parent-fragment' else 'inferred',
@@ -484,9 +590,13 @@ def initialize(surface, api, base, buildings, manifest, support_path, vehicle_so
     surface.road.sources = [r['source'] for r in native_roads]
     surface.road_index = NativeTriangleIndex(surface.road.triangles)
     surface.support_manifest = manifest
+    surface.physical_model = api.native_physical_model_record()
+    if manifest.get('physical_query_model', surface.physical_model) != surface.physical_model:
+        raise api.NativeCollisionModelError('Source3 manifest declares an unknown physical query model')
     surface.support_record = api.source_record(support_path)
     surface.derived_record = manifest['derived_terrain']
     surface.source3_ledger = ledger
+    if probe: probe.phase('source3-preservation-readback')
     preservation = json.loads(record(api, manifest['source_preservation'], 'source preservation', 32_000_000))
     if preservation.get('unchanged') is not True or preservation['inputs_before'] != preservation['inputs_after']:
         raise ValueError('Source3 generation input preservation is incomplete')
@@ -495,11 +605,15 @@ def initialize(surface, api, base, buildings, manifest, support_path, vehicle_so
     record(api, manifest['algorithm'], 'geometry snapshot', 2_000_000)
     for r in manifest['configuration_inputs'].values(): record(api, r, 'configuration snapshot', 100_000)
     require_equal(preservation['source3_writer'], manifest['algorithm']['edits'], 'writer snapshot')
+    if 'reconstruction' in ledger:
+        record(api, manifest['algorithm']['reconstruction'], 'reconstruction writer snapshot', 2_000_000)
+        require_equal(preservation['reconstruction_writer'], manifest['algorithm']['reconstruction'], 'reconstruction writer snapshot')
     # Integration/algorithm snapshots are historical data. Actual data inputs
     # remain current and pinned; route-only code edits cannot relabel geometry.
     for r in preservation['inputs_before']:
         if r['path'].startswith('data/'):
             record(api, r, 'preserved source data')
+    if probe: probe.phase('source3-initialization-complete')
 
 
 def witness(surface, api, record_value, point, kind, interval):
@@ -511,6 +625,14 @@ def witness(surface, api, record_value, point, kind, interval):
         ref = result['layer_ref']
         if ref['kind'] in ('road', 'derived-road'):
             result['triangle'] = ref['source_triangle_index']
+    role = ref.get('reconstruction_role')
+    if role is not None:
+        if role not in reconstruction.ROLES:
+            raise ValueError('Source3 loaded reconstruction has an unknown authoring role')
+        if role != 'support-top':
+            raise api.SupportRejection('source3-ineligible-reconstruction-first-blocker',
+                {'point':list(point), 'selected':copy.deepcopy(result), 'reconstruction_role':role,
+                 'lower_hit_fallback':False})
     if ref['kind'] in ('inferred', 'derived-road'):
         if kind == 'vehicle':
             if not isinstance(interval, api.VehicleInterval) or not interval.covers(point):
@@ -529,14 +651,16 @@ def witness(surface, api, record_value, point, kind, interval):
     return result
 
 
-def frozen_vehicle_path(api, row, surface):
-    """Reconstruct source lanes and legal joins; compare the frozen XY traversal."""
+def frozen_vehicle_path(api, row, surface, *, supported_subspan=False):
+    """Full original authority by default; explicit authenticated boundary trim."""
+    if type(supported_subspan) is not bool:
+        raise ValueError('Frozen supported_subspan must be an explicit boolean')
     edges = [{'way_id': r['way_id'], 'from': r['from_osm_node'], 'to': r['to_osm_node'], 'points': r['lane_points']}
              for r in row['source_lane_segments']]
     if not edges: raise ValueError('Frozen vehicle route requires actual directed source lane segments')
     points, contexts = api.vehicle_polyline(edges, closed=row['closed'])
-    for (a, b), context in zip(zip(points, points[1:]), contexts):
-        surface.vehicle_interval(context, a, b, row['width_m'])
+    authorities = [surface.vehicle_interval(context, a, b, row['width_m'])
+                   for (a, b), context in zip(zip(points, points[1:]), contexts)]
     # Walk in order; no nearest-segment oracle that could hide rerouting/backtracking.
     segment = 0
     previous_t = 0.
@@ -552,8 +676,46 @@ def frozen_vehicle_path(api, row, surface):
             segment += 1
             previous_t = 0.
         else: raise ValueError('Frozen vehicle route XY differs from its current legal source traversal')
-    if math.dist(row['points'][0][:2], points[0]) > 1e-5 or math.dist(row['points'][-1][:2], points[-1]) > 1e-5:
-        raise ValueError('Frozen vehicle route omits source traversal endpoints')
+    trimmed = (math.dist(row['points'][0][:2], points[0]) > 1e-5 or
+               math.dist(row['points'][-1][:2], points[-1]) > 1e-5)
+    retained = [list(p) for p in points]
+    if trimmed:
+        flow = row.get('boundary_flow')
+        if row['closed'] or not isinstance(flow, dict):
+            raise ValueError('Frozen vehicle route omits source traversal endpoints without an open boundary flow')
+        if not isinstance(getattr(surface, 'base', None), dict) or flow.get('crop_bounds') != surface.base['bounds']:
+            raise ValueError('Frozen trimmed boundary needs its actual admitted crop')
+        tree = api.osm_tree()
+        nodes = {int(node.attrib['id']): node for node in tree.findall('node')}
+        ways = surface.vehicle_source[1]
+        for name, entry, index, authority in (('entry', True, 0, authorities[0]),
+                                              ('exit', False, -1, authorities[-1])):
+            endpoint = row['points'][index]
+            declared = flow.get(name)
+            if not isinstance(declared, dict) or declared.get('point') != endpoint:
+                raise ValueError('Frozen trimmed boundary point differs from its literal route endpoint')
+            piece = edges[index]
+            actual, extension = api.boundary_source_geometry(piece, entry, endpoint, nodes,
+                                                             ways[piece['way_id']], surface.base)
+            if any(declared.get(key) != value for key, value in actual.items()):
+                raise ValueError('Frozen trimmed boundary continuation/heading/crop differs from original OSM')
+            footprint = declared.get('footprint', {})
+            if footprint.get('length_m') != 4.4 or footprint.get('width_m') != 1.8 or footprint.get('verified') is not True:
+                raise ValueError('Frozen trimmed boundary needs its complete admitted4.4x1.8m footprint')
+            surface.vehicle_subspan(authority, *extension, 1.8)
+            retained[index] = list(endpoint[:2])
+        # Every original join inside this retained span remains mandatory, in
+        # exact source order; clipping cannot silently discard a mapped turn.
+        cursor = 0;previous = None
+        for anchor in retained:
+            if anchor == previous:continue
+            previous = anchor
+            while cursor < len(row['points']) and row['points'][cursor][:2] != anchor:cursor += 1
+            if cursor == len(row['points']):
+                raise ValueError('Frozen trimmed route omits or reorders a retained original join')
+            cursor += 1
+    if supported_subspan:
+        return retained, authorities, edges
     return points, contexts, edges
 
 
@@ -624,11 +786,11 @@ def uncovered_exact(polygon_cm, footprints_cm):
 
 
 def collision_plane(native_cm, label):
-    """UE GLTF swaps Y/Z; StaticMesh collision flips the preserved winding.
+    """Exact plane and historical signed diagnostic normal in source working cm.
 
-    Thus support-facing normal is -cross in ENU, never an upward query flip.
-    Installed UE5.8.3 and all282 retained Source2 native traces calibrate this.
-    Actual future native normal matching remains independently required.
+    Current ESU native buffers must be explicitly inverse-normalized to the raw
+    source corner order before this internal predicate. This source calculation
+    is not fresh native orientation evidence; new signed native rays are required.
     """
     points = np.asarray(native_cm, dtype=float)
     if points.shape != (3, 3) or not np.isfinite(points).all():
@@ -684,6 +846,9 @@ def measure_source_overlap(upper_cm, ground_cm, identity):
 
 def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads, retained, labels):
     """Actual changed-face coverage/anchors/occlusion, distinct from route/body acceptance."""
+    if 'reconstruction' in ledger:
+        return reconstruction.validate(api, __import__(__name__), ledger, labels, parent_surface=parent_surface)
+    probe = getattr(parent_surface, 'network_diagnostic', None)
     raw_cache = dict(getattr(parent_surface.road, 'source_parts', {}))
     def source_part(anchor):
         source = integer(anchor['source'], 'anchor.source', len(parent_surface.road.sources))
@@ -697,7 +862,9 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         raw = part[2]['POSITION'][integer(anchor['vertex'], 'anchor.vertex', len(part[2]['POSITION']))][[0, 2, 1]]
         if not np.array_equal(raw, anchor['raw_enu_m']): raise ValueError('Source3 raw road anchor XYZ differs from its immutable source')
         return native_metres(raw)
-    region_cm = {r['id']: r['native_xy_polygons_cm'] for r in ledger['regions']}
+    framed = 'native_frame' in ledger
+    if framed: require_frame(ledger, 'edit ledger')
+    region_cm = {r['id']: [(np.asarray(p, dtype=float)*([1., -1.] if framed else [1., 1.])).tolist() for p in r['native_xy_polygons_cm']] for r in ledger['regions']}
     regions = {name: [np.asarray(p, dtype=float)/100 for p in polygons] for name, polygons in region_cm.items()}
     region_keys = {name: {tuple(sorted(map(tuple, polygon))) for polygon in polygons} for name, polygons in regions.items()}
     def in_region(triangle, region_id):
@@ -718,6 +885,7 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         if not uncovered_exact(native_centimetres(triangle), relevant): return
         raise ValueError(f'Source3 geometry extends outside declared region {region_id}')
     for edit in ledger['terrain_edits']:
+        if probe: probe.tick(admission='terrain-region',parent_triangle=edit['parent_triangle'])
         in_region(native_metres(parent_surface.terrain_index.triangles[edit['parent_triangle']]), edit['region_id'])
     for i, face in enumerate(labels): in_region(output_triangles[len(retained)+i], face['region_id'])
     road_stitches = collections.defaultdict(list)
@@ -739,7 +907,7 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
             face_id = integer(anchor['triangle'], 'road anchor triangle', len(part[3]))
             original_face = part[2]['POSITION'][part[3][face_id]][:, [0, 2, 1]]
             original_cm, _, _ = source_interpolation(anchor, original_face, 'road')
-            check_native_stitch(entry, original_cm, cm, 'road')
+            check_native_stitch(entry, original_cm, cm, 'road', framed=framed)
             road_stitches[(edit['source'], tuple(original_cm))].append(cm)
         for triangle, _ in relevant: in_region(triangle, edit['region_id'])
     inferred = []
@@ -762,7 +930,7 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
                 raise ValueError('Source3 inferred stitch must retain its exact original raw bank anchor')
             original_cm = native_centimetres(anchors[vertex])
             replacement_cm = native_centimetres(triangle[vertex])
-            check_native_stitch(edit, original_cm, replacement_cm, 'inferred bank')
+            check_native_stitch(edit, original_cm, replacement_cm, 'inferred bank', framed=framed)
             if np.array_equal(original_cm, replacement_cm):
                 raise ValueError('Source3 inferred vertex_edits may name only moved vertices')
             incident = road_stitches[(edit['source_anchor']['source'], tuple(original_cm))]
@@ -773,10 +941,13 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
             raise ValueError('Source3 inferred road face exceeds vehicle grade 0.2 or has zero projected area')
         inferred.append(triangle)
     ground = np.concatenate((roads, np.asarray(inferred).reshape(-1, 3, 3)))
+    if probe: probe.phase('source3-ground-diagnostic-index',ground_triangles=len(ground))
     ground_index = api.support_geometry.TriangleIndex(ground)
     # One index over complete CURRENT consumed terrain serves both coverage
     # and occlusion; original/deleted reference terrain is never a cover.
+    if probe: probe.phase('source3-terrain-diagnostic-index',terrain_triangles=len(output_triangles))
     terrain_index = api.support_geometry.TriangleIndex(output_triangles)
+    if probe: probe.phase('source3-deleted-parent-coverage')
     inferred_ids = {len(retained)+i for i, face in enumerate(labels) if face['kind'] == 'inferred-ground-road'}
     # A deleted parent footprint must still be covered by actual road/fill/fragment
     # geometry. Whole-face removal cannot silently create an exterior hole.
@@ -786,7 +957,8 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
         if face['kind'] == 'retained-parent-fragment':
             fragments[face['parent_triangle']].append(output_triangles[len(retained)+i])
             fragment_ids[face['parent_triangle']].add(len(retained)+i)
-    for parent_id in ledger['deleted_parent_triangles']:
+    for parent_number, parent_id in enumerate(ledger['deleted_parent_triangles']):
+        if probe: probe.tick(deleted_parent_completed=parent_number,deleted_parent_total=len(ledger['deleted_parent_triangles']),parent_triangle=parent_id)
         old = native_metres(parent_surface.terrain_index.triangles[parent_id])
         remaining = [old[:, :2].tolist()]
         candidates = ground_index.candidates(old[:, :2].min(axis=0), old[:, :2].max(axis=0))
@@ -823,7 +995,9 @@ def validate_local_geometry(api, ledger, parent_surface, output_triangles, roads
     overlap_records = []
     zero_projected_pairs = 0
     inferred_labels = [face for face in labels if face['kind'] == 'inferred-ground-road']
-    for t, g in sorted(pairs):
+    if probe: probe.phase('source3-overlap-diagnostics',overlap_pairs_total=len(pairs))
+    for pair_number, (t, g) in enumerate(sorted(pairs)):
+        if probe: probe.tick(overlap_pairs_completed=pair_number)
         upper, lower = native_centimetres(output_triangles[t]), native_centimetres(ground[g])
         # Exact-zero projected geometry has no positive-area overlap/support;
         # original native endpoint exclusions are retained, never given credit.
@@ -848,7 +1022,9 @@ def changed_face_sample(sample_id, xy, reference_z, reference, road_refs, native
     operands = []
     for role, index in (('road', road_index), ('terrain_support', terrain_index)):
         for hit in index.hits(*xy):
-            plane, _ = collision_plane(index.native_triangles_cm[hit['triangle']], 'correspondence source')
+            # Match the Source ENU query using current native ESU/raw-corner inverse.
+            source_cm = index.native_triangles_cm[hit['triangle']].astype(np.float64)[[0, 2, 1]] * np.array([1., -1., 1.])
+            plane, _ = collision_plane(source_cm, 'correspondence source')
             height_cm = plane[0]*query_cm[0]+plane[1]*query_cm[1]+plane[2]
             if not end_cm <= height_cm <= start_cm: continue
             height = float(height_cm/100)
@@ -897,7 +1073,7 @@ def changed_road_samples(roads, road_refs, native_roads, road_index, terrain_ind
     return samples, witnesses
 
 
-def prepare(api, base, edit_path, *, total_seconds):
+def prepare(api, base, edit_path, *, total_seconds, ray_reference_path=None):
     """Normal source producer: parent reuse, explicit edits, readback, atomic switch."""
     started = time.perf_counter()
     def deadline():
@@ -906,10 +1082,31 @@ def prepare(api, base, edit_path, *, total_seconds):
     edit_path = api.admit_path(edit_path, api.ROOT/'data/source', regular=True)
     edit_payload = api.guarded_read(edit_path, api.ROOT/'data/source', api.SUPPORT_MANIFEST_LIMIT_BYTES)
     ledger = json.loads(edit_payload)
-    inputs = recipe_records(ledger)
+    require_frame(ledger, 'edit ledger')
+    if 'reconstruction' in ledger:
+        raise ValueError('New reconstruction geometry requires the explicit staged entry; unchanged-reference preparation remains unchanged')
+    if ray_reference_path is None:
+        raise api.NativeCollisionModelError('Source3 physical prediction requires --support-ray-reference naming the immutable current native-ray file; no source was published')
+    ray_reference_path = api.admit_path(ray_reference_path, api.OUT/'generations', regular=True)
+    ray_reference_record = api.source_record(ray_reference_path)
+    ray_reference = json.loads(record(api, ray_reference_record, 'fixed raw ray reference', 32_000_000))
+    if ray_reference.get('schema_version') != 1 or ray_reference.get('frame') != 'metres-Xeast-Ynorth-Zup' or ray_reference.get('position_tolerance_cm') != .1 or ray_reference.get('normal_dot_min') != .999:
+        raise api.NativeCollisionModelError('Fixed native-ray reference has an unsupported frame/schema/strict tolerance')
+    require_frame(ray_reference, 'fixed native-ray reference')
+    reference_population = api.native_ray_population_contract(ray_reference['samples'])
+    reference_manifest = json.loads(api.guarded_read(api.OUT/'support-surface-manifest.json', api.OUT, api.SUPPORT_MANIFEST_LIMIT_BYTES))
+    require_frame(reference_manifest, 'current reference support')
+    current_rays = json.loads(record(api, reference_manifest['native_ray_samples'], 'current native rays', 32_000_000))
+    require_frame(current_rays, 'current native rays')
+    allowed_reference = (reference_manifest['native_ray_samples'], current_rays.get('fixed_reference_population', {}).get('record'))
+    if ray_reference_record not in allowed_reference:
+        raise api.NativeCollisionModelError('Fixed native-ray reference must be the immutable current ray file or its explicitly bound original reference')
+    require_equal(reference_population, api.native_ray_population_contract(current_rays['samples']), 'fixed current query population')
+    inputs = unique_records([*recipe_records(ledger), ray_reference_record])
     for r in inputs: record(api, r, 'Source3 recipe input')
     parent_payload = record(api, ledger['parent_support_surface'], 'parent manifest', api.SUPPORT_MANIFEST_LIMIT_BYTES)
     parent = json.loads(parent_payload)
+    require_frame(parent, 'current parent')
     if parent.get('schema_version') != 2 or api.ROOT/ledger['parent_support_surface']['path'] == api.OUT/'support-surface-manifest.json':
         raise ValueError('Source3 requires an immutable schema2 parent generation')
     before = api.support_generation_inventory(base)
@@ -924,6 +1121,14 @@ def prepare(api, base, edit_path, *, total_seconds):
         doc, attrs, indices, retained, labels = assemble_terrain(api, ledger, parent)
         output = write_mesh(api, stage, 'terrain-support.glb', attrs, indices, doc['materials'])
         roads, road_refs, native_roads, derived_roads = apply_road_overrides(api, parent, ledger, stage)
+        # This representation correction cannot relabel a new geometry/query
+        # population as the retained failed1040query instrument.
+        require_equal((output['bytes'], output['sha256']),
+                      (reference_manifest['derived_terrain']['bytes'], reference_manifest['derived_terrain']['sha256']),
+                      'fixed-reference terrain geometry')
+        require_equal([(row['actor_label'], row['source']['bytes'], row['source']['sha256']) for row in native_roads],
+                      [(row['actor_label'], row['source']['bytes'], row['source']['sha256']) for row in reference_manifest['native_roads']],
+                      'fixed-reference road geometry')
         parent_surface._source3_new_road_refs = road_refs
         triangles = native_metres(attrs['POSITION'][:, [0, 2, 1]])[indices]
         evidence = validate_local_geometry(api, ledger, parent_surface, triangles, roads, retained, labels)
@@ -932,21 +1137,8 @@ def prepare(api, base, edit_path, *, total_seconds):
         ray_road.triangles, ray_road.layer_refs = roads, road_refs
         road_index = NativeTriangleIndex(roads)
         terrain_index = NativeTriangleIndex(triangles)
-        rays = api.native_ray_samples(ray_road, road_index, terrain_index, native_roads, output, buildings, output_directory=stage)
-        ray_data = json.loads(record(api, rays, 'native rays', 32_000_000))
-        changed_samples, changed_witnesses = changed_road_samples(roads, road_refs, native_roads, road_index, terrain_index, output)
-        ray_data['samples'].extend(changed_samples)
-        ray_data['source3_changed_road_witnesses'] = changed_witnesses
-        for i, face in enumerate(labels):
-            triangle_id = len(retained)+i
-            triangle = triangles[triangle_id]
-            xy = triangle[:, :2].mean(axis=0)
-            reference = {'mesh_role': 'terrain_support', 'source_path': output['path'], 'source_triangle_index': triangle_id,
-                'layer_ref': {'kind': face['kind'], 'triangle': triangle_id, 'region_id': face['region_id']}}
-            sample, detail = changed_face_sample(f'source3-patch-{i}', xy, float(triangle[:, 2].mean()), reference,
-                road_refs, native_roads, road_index, terrain_index, output)
-            ray_data.setdefault('source3_changed_patch_witnesses', []).append({'patch_triangle': i, 'region_id': face['region_id'], **detail})
-            if sample is not None: ray_data['samples'].append(sample)
+        ray_data = api.physical_ray_samples(ray_reference, ray_reference_record, ray_road, road_index, terrain_index, native_roads, output)
+        require_equal(api.native_ray_population_contract(ray_data['samples']), reference_population, 'immutable physical query population')
         api.guarded_write(stage/'support-native-rays.json', api.encoded(ray_data))
         rays = api.source_record(stage/'support-native-rays.json')
         api.guarded_write(stage/'surface-edits.json', edit_payload)
@@ -965,8 +1157,9 @@ def prepare(api, base, edit_path, *, total_seconds):
         preserve_path = api.ROOT/'data/source/provenance'/f'support-input-inventory-{api.sha(preserve_payload)}.json'
         api.guarded_write(preserve_path, preserve_payload, api.ROOT/'data/source/provenance')
         manifest = {k: copy.deepcopy(parent[k]) for k in ('frame', 'origin', 'vertical_reference', 'inputs', 'atlas', 'attribution', 'native_assignment')}
-        manifest.update(schema_version=3, coordinate_model=COORDINATE_MODEL, parent_support_surface=ledger['parent_support_surface'],
+        manifest.update(native_frame=api.native_frame_record(), schema_version=3, coordinate_model=COORDINATE_MODEL, parent_support_surface=ledger['parent_support_surface'],
             surface_edits=api.source_record(stage/'surface-edits.json'), derived_terrain=output, derived_roads=derived_roads,
+            physical_query_model=api.native_physical_model_record(),
             native_roads=native_roads, native_ray_samples=rays, algorithm=algorithm, configuration_inputs=configurations,
             source_preservation=api.source_record(preserve_path), evidence={**evidence, 'elapsed_seconds': time.perf_counter()-started},
             policy='Declared native-coordinate local geometry edits; raw source and immutable Source2 parent retained')

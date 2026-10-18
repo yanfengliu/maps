@@ -1,4 +1,6 @@
 #include "ShibuyaWorld.h"
+#include "NativeFrame.h"
+#include "NativeFrameJson.h"
 #include "RuntimeFiles.h"
 #include "RuntimePath.h"
 #include "ShibuyaRendererLibrary.h"
@@ -150,6 +152,49 @@ void AShibuyaController::RetainContactExamples(const TSharedPtr<FJsonObject>& Sa
     Sample->SetArrayField(TEXT("contact_examples"),Kept);
     Sample->SetStringField(TEXT("retained_examples_bound"),TEXT("Across the entire probe, at most8 failures per contact kind/reason plus1 success per kind. Every sample's aggregate contact and failure counts are retained."));
 }
+void AShibuyaController::RequestProbeCapture(int32 Index)
+{
+    try
+    {
+        PendingCapturePath=Index==0?CaptureOutput:FPaths::GetPath(CaptureOutput)/TEXT("runtime-2.png");
+        const FString Absolute=ReportPath(PendingCapturePath);
+        if(IFileManager::Get().FileExists(*Absolute))throw std::runtime_error("Capture output already exists; a fresh run is required.");
+        UShibuyaRendererLibrary::BeginMainViewCapture(this,ProbeRunId+FString::Printf(TEXT("-%d"),Index));
+        CaptureWaiting=true;CaptureWaitStarted=ProbeTime;
+        CaptureProcessedHandle=FScreenshotRequest::OnScreenshotRequestProcessed().AddUObject(this,&AShibuyaController::CaptureProcessed);
+        FScreenshotRequest::RequestScreenshot(Absolute,true,false);
+    }
+    catch(const std::exception& E){CaptureError=UTF8_TO_TCHAR(E.what());CaptureWaiting=false;UShibuyaRendererLibrary::StopMainViewCapture();}
+}
+void AShibuyaController::CaptureProcessed()
+{
+    FScreenshotRequest::OnScreenshotRequestProcessed().Remove(CaptureProcessedHandle);
+    CaptureProcessedHandle.Reset();CaptureWaiting=false;
+    try
+    {
+        auto Entry=MakeShared<FJsonObject>();TSharedPtr<FJsonObject> View;
+        const FString ViewJSON=UShibuyaRendererLibrary::EndMainViewCapture();
+        if(!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(ViewJSON),View) || !View.IsValid())throw std::runtime_error("Capture has no actual rendered main-view witness.");
+        const int64 Bytes=IFileManager::Get().FileSize(*ReportPath(PendingCapturePath));
+        if(Bytes<=0)throw std::runtime_error("Screenshot request completed without a saved nonempty PNG.");
+        if(View->GetNumberField(TEXT("frame_counter"))!=static_cast<double>(GFrameCounter))throw std::runtime_error("Captured PNG and observed main view have different frame counters.");
+        auto* World=City(GetWorld());
+        if(!World || World->Simulation.paused)throw std::runtime_error("Capture needs the actual unpaused simulation.");
+        Entry->SetStringField(TEXT("path"),PendingCapturePath);Entry->SetStringField(TEXT("run_id"),ProbeRunId);
+        Entry->SetBoolField(TEXT("saved_acknowledged"),true);Entry->SetNumberField(TEXT("saved_bytes"),Bytes);
+        Entry->SetNumberField(TEXT("frame_counter"),static_cast<double>(GFrameCounter));
+        Entry->SetNumberField(TEXT("fixed_steps"),World->Simulation.Steps());Entry->SetNumberField(TEXT("elapsed_s"),ProbeTime);
+        Entry->SetBoolField(TEXT("paused"),World->Simulation.paused);Entry->SetBoolField(TEXT("after_benchmark"),!BenchmarkActive&&ProbeStage>=15);
+        Entry->SetObjectField(TEXT("view"),View);Entry->SetObjectField(TEXT("native_geometry"),World->GeometrySnapshot());
+        CaptureRecords.Add(MakeShared<FJsonValueObject>(Entry));
+    }
+    catch(const std::exception& E){CaptureError=UTF8_TO_TCHAR(E.what());}
+}
+void AShibuyaController::EndPlay(const EEndPlayReason::Type Reason)
+{
+    FScreenshotRequest::OnScreenshotRequestProcessed().Remove(CaptureProcessedHandle);CaptureProcessedHandle.Reset();
+    UShibuyaRendererLibrary::StopMainViewCapture();Super::EndPlay(Reason);
+}
 void AShibuyaController::PlayerTick(float DeltaTime)
 {
     Super::PlayerTick(DeltaTime);
@@ -218,19 +263,27 @@ void AShibuyaController::PlayerTick(float DeltaTime)
         Record(TEXT("benchmark_start"));FrameMilliseconds.Empty();SimulationMilliseconds.Empty();GPUMilliseconds.Empty();BenchmarkActive=true;Next(14);
     }
     else if(ProbeStage==14 && StageTime>BenchmarkSeconds)
-    {BenchmarkActive=false;Record(TEXT("benchmark_end"));if(!CaptureOutput.IsEmpty())FScreenshotRequest::RequestScreenshot(ReportPath(CaptureOutput),true,false);Next(15);}
-    else if(ProbeStage==15 && StageTime>0.5)FinishProbe();
+    {BenchmarkActive=false;Record(TEXT("benchmark_end"));Next(15);if(!CaptureOutput.IsEmpty())RequestProbeCapture(0);}
+    else if(ProbeStage==15)
+    {
+        if(!CaptureError.IsEmpty() || (CaptureWaiting&&ProbeTime-CaptureWaitStarted>5)){if(CaptureError.IsEmpty())CaptureError=TEXT("Screenshot completion timed out after5 seconds.");FinishProbe();}
+        else if(!CaptureWaiting && (CaptureOutput.IsEmpty() || CaptureRecords.Num()==2))FinishProbe();
+        else if(!CaptureWaiting && CaptureRecords.Num()==1 && ProbeTime-CaptureRecords[0]->AsObject()->GetNumberField(TEXT("elapsed_s"))>=0.75)RequestProbeCapture(1);
+    }
 }
 void AShibuyaController::FinishProbe()
 {
     Finished=true;
-    auto Report=MakeShared<FJsonObject>();Report->SetStringField(TEXT("bound"),TEXT("Native standalone game viewport input events, seeded fixed-step runtime motion and route/native collision support; screenshots and GPU performance require a hardware-rendered run."));
+    FScreenshotRequest::OnScreenshotRequestProcessed().Remove(CaptureProcessedHandle);CaptureProcessedHandle.Reset();
+    UShibuyaRendererLibrary::StopMainViewCapture();
+    auto Report=MakeShared<FJsonObject>();Report->SetObjectField(TEXT("native_frame"),Shibuya::NativeFrameJSON());Report->SetStringField(TEXT("bound"),TEXT("Native standalone game viewport input events, seeded fixed-step runtime motion and route/native collision support; screenshots and GPU performance require a hardware-rendered run."));
     Report->SetBoolField(TEXT("inventory_only"),InventoryOnly);Report->SetBoolField(TEXT("negative_input_control"),NegativeInput);Report->SetStringField(TEXT("input_entry"),TEXT("UGameViewportClient::InputKey/InputAxis"));
     AShibuyaWorld* StartupWorld=City(GetWorld());AShibuyaExplorer* StartupPawn=Cast<AShibuyaExplorer>(GetPawn());
     Report->SetStringField(TEXT("startup_readiness"),!StartupWorld?TEXT("world_missing"):!StartupWorld->Ready?TEXT("world_not_ready"):!StartupPawn?TEXT("explorer_pawn_missing"):!StartupPawn->InputComponent?TEXT("pawn_input_component_missing"):TEXT("ready"));
     if(const auto* Mode=GetWorld()->GetAuthGameMode<AShibuyaGameMode>();Mode && Mode->PlayerStartAdmission.IsValid())
         Report->SetObjectField(TEXT("player_start_admission"),Mode->PlayerStartAdmission);
     Report->SetArrayField(TEXT("physics_motion_samples"),PhysicsSamples);
+    Report->SetArrayField(TEXT("captures"),CaptureRecords);Report->SetStringField(TEXT("capture_error"),CaptureError);
     Report->SetObjectField(TEXT("input_routing"),InputRoutingSnapshot());Report->SetArrayField(TEXT("input_event_attempts"),InputEvents);
     Report->SetArrayField(TEXT("snapshots"),Snapshots);Report->SetNumberField(TEXT("frame_samples"),FrameMilliseconds.Num());
     Report->SetNumberField(TEXT("frame_ms_p50"),Quantile(FrameMilliseconds,0.5));Report->SetNumberField(TEXT("frame_ms_p95"),Quantile(FrameMilliseconds,0.95));
@@ -241,6 +294,7 @@ void AShibuyaController::FinishProbe()
     if(GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
     { const auto Size=GEngine->GameViewport->Viewport->GetSizeXY();Report->SetNumberField(TEXT("width"),Size.X);Report->SetNumberField(TEXT("height"),Size.Y); }
     bool Passed=Snapshots.Num()==14;
+    if(!CaptureOutput.IsEmpty())Passed=Passed&&CaptureError.IsEmpty()&&CaptureRecords.Num()==2;
     TMap<FString,TSharedPtr<FJsonObject>> ByStage;
     for(const auto& Value:Snapshots){auto Object=Value->AsObject();ByStage.Add(Object->GetStringField(TEXT("stage")),Object);}
     auto Get=[&](const TCHAR* Stage,const TCHAR* Part)->TSharedPtr<FJsonObject>
@@ -331,7 +385,7 @@ void AShibuyaController::FinishProbe()
         {
             const auto& Agent=World->Simulation.agents[i];const auto& Route=World->Simulation.routes[Agent.route];
             const bool Person=Route.kind==Shibuya::Kind::Pedestrian;const int32 Instance=Person?PersonInstance++:CarInstance++;
-            const FVector Feet(Agent.position.x*100,Agent.position.y*100,Agent.position.z*100);
+            const auto Native=Shibuya::SourceToNativeCM(Agent.position);const FVector Feet(Native.x,Native.y,Native.z);
             FCollisionQueryParams Query(SCENE_QUERY_STAT(ShibuyaAgentSupport),true,World);FHitResult Ground;
             Query.bReturnFaceIndex=true;
             const bool Found=GetWorld()->LineTraceSingleByChannel(Ground,Feet+FVector(0,0,100),Feet-FVector(0,0,120),ECC_Visibility,Query);

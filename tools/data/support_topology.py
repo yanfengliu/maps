@@ -451,8 +451,27 @@ def check_preserved_inputs(before,after,current_inventory,*,historical_code=Fals
         raise ValueError('Schema2 preservation membership/bytes differs from required actual current source inventory')
 
 
+def admit_schema2_frame(manifest,expected_contract):
+    """Current caller supplies its sealed API contract, never candidate metadata."""
+    keys={'frame','native_frame','coordinate_model','physical_query_model'}
+    if type(expected_contract) is not dict or set(expected_contract)!=keys:
+        raise ValueError('Schema2 needs the complete trusted current Source API contract')
+    current_axes={'glb':'metres-Xeast-Yup-Znorth','runtime':'metres-Xeast-Ynorth-Zup','unreal':'centimetres-Xeast-Ysouth-Zup'}
+    if expected_contract['frame']!=current_axes or expected_contract['coordinate_model']!='native-esu-float32-centimetres-v2':
+        raise ValueError('Schema2 caller contract must use the current ESU axis/coordinate model')
+    for name in ('native_frame','physical_query_model'):
+        expected=expected_contract[name];actual=manifest.get(name)
+        for label,record in (('trusted contract',expected),('manifest',actual)):
+            if type(record) is not dict or set(record)!={'schema_version','id','definition_sha256'} or type(record['schema_version']) not in (int,float) or record['schema_version']!=1 or type(record['id']) is not str or not record['id'] or type(record['definition_sha256']) is not str or re.fullmatch('[0-9a-f]{64}',record['definition_sha256']) is None:
+                raise ValueError(f'Schema2 {label} {name} requires literal Number1 and String id/seal in exactly three fields')
+        if actual!=expected:raise ValueError(f'Schema2 manifest {name} differs from the trusted current Source API seal')
+    if type(manifest.get('frame')) is not dict or manifest['frame']!=current_axes or any(type(value) is not str for value in manifest['frame'].values()):
+        raise ValueError('Schema2 manifest requires the exact current ESU GLB/runtime/Unreal axis and unit strings')
+    if type(manifest.get('coordinate_model')) is not str or manifest['coordinate_model']!=expected_contract['coordinate_model']:
+        raise ValueError('Schema2 manifest coordinate_model differs from the trusted current ESU Source API')
+
 def admit_schema2(manifest,preservation,ledger,packed_rows,actual_parents,*,original_parent_count,
-                  actual_vertex_count,actual_bounds,current_inventory,clearance,pinned_original_terrain_record,historical_code=False):
+                  actual_vertex_count,actual_bounds,current_inventory,clearance,pinned_original_terrain_record,expected_contract,historical_code=False):
     """Single typed Source admission of the NEW schema, using actual arrays.
 
     The ledger histogram proves recorded membership; reconstructed counters
@@ -461,8 +480,8 @@ def admit_schema2(manifest,preservation,ledger,packed_rows,actual_parents,*,orig
     """
     import numpy as np
     bound_integer(manifest.get('schema_version'),'manifest.schema_version',2,2)
-    if manifest.get('frame')!={'glb':'metres-Xeast-Yup-Znorth','runtime':'metres-Xeast-Ynorth-Zup','unreal':'centimetres-Xeast-Ynorth-Zup'}:
-        raise ValueError('Schema2 requires the exact unchanged GLB/runtime/Unreal axis and unit strings')
+    admit_schema2_frame(manifest,expected_contract)
+
     if any(k in manifest for k in ('constructor_provenance','reader_revision')):
         raise ValueError('Fresh schema2 cannot contain old generation-history blocks')
     policy=manifest.get('construction_policy');expected=construction_policy(clearance)

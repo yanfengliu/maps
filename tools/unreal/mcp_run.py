@@ -126,9 +126,10 @@ def validate_capture_state(state, camera_m, target_m, target_gamma, capture_fram
     length = math.sqrt(sum(value * value for value in delta))
     if not length:
         reject("requested target equals the camera")
-    forward = [value / length for value in delta]
-    for field, expected_vector, tolerance in (("actual_camera_cm", [value * 100 for value in camera_m], .01),
-                                             ("actual_component_cm", [value * 100 for value in camera_m], .01),
+    forward = [delta[0] / length, -delta[1] / length, delta[2] / length]
+    native_camera_cm = [camera_m[0] * 100, -camera_m[1] * 100, camera_m[2] * 100]
+    for field, expected_vector, tolerance in (("actual_camera_cm", native_camera_cm, .01),
+                                             ("actual_component_cm", native_camera_cm, .01),
                                              ("forward_vector", forward, 1e-5),
                                              ("component_forward_vector", forward, 1e-5)):
         values = state.get(field)
@@ -463,9 +464,133 @@ def stop_owned_tree(process):
     return "graceful_editor_exit"
 
 
+def frame_json_control_plan(engine, project, port):
+    """Fixed read-only compiled JSON controls, with no city map/Source import."""
+    return [str(engine/"Engine/Binaries/Win64/UnrealEditor-Cmd.exe"), str(project/"ShibuyaUnreal.uproject"), "/Engine/Maps/Entry",
+            "-nullrhi", "-RenderOffscreen", "-unattended", "-nosound", "-nosplash", "-nop4", "-stdout", "-FullStdOutLogOutput",
+            "-ModelContextProtocolStartServer", f"-ModelContextProtocolPort={port}", "-DDC=Shibuya", "-ShaderWorkingDir="+str(project/"Intermediate/Shaders")]
+
+
+def verify_frame_json_controls(result):
+    known = {"schema_version":1,"id":"native-centimetres-Xeast-Ysouth-Zup-v2","definition_sha256":"2099342528416aa9dcdceea63e6d2604974341d8248f3b1c7ccf287008759170"}
+    cases = result.get("cases", [])
+    names = {"number-one","number-one-decimal","boolean-true","boolean-false","numeric-string","null-schema","array-schema","object-schema","wrong-number","zero-schema","missing-schema","missing-frame","extra-field","old-frame","wrong-seal","array-frame","boolean-id","number-seal"}
+    marker = result.get("native_frame")
+    if not isinstance(marker, dict) or type(marker.get("schema_version")) is not int or marker != known or result.get("passed") is not True or type(result.get("case_count")) is not int or result["case_count"] != 18 or len(cases) != 18 or {r.get("name") for r in cases} != names:
+        raise RuntimeError("Compiled frame JSON controls require the exact ESU seal and all18 finite cases, with unique names and passed=true.")
+    aliases = 0
+    for row in cases:
+        packet = json.loads(row["input_json"])
+        frame = packet.get("native_frame") if isinstance(packet, dict) else None
+        # Independent Python JSON semantics: actual Unreal Number permits1.0;
+        # Boolean/string numerical coercions are rejected by their JSON types.
+        expected = isinstance(frame,dict) and set(frame)==set(known) and type(frame.get("schema_version")) in (int,float) and frame.get("schema_version")==1 and type(frame.get("id")) is str and type(frame.get("definition_sha256")) is str and frame.get("id")==known["id"] and frame.get("definition_sha256")==known["definition_sha256"]
+        if row.get("parsed") is not True or row.get("passed") is not True or type(row.get("admitted")) is not bool or type(row.get("expected_admitted")) is not bool or row["admitted"] != expected or row["admitted"] != row["expected_admitted"] or row.get("schema_json_type") != row.get("expected_schema_json_type"):
+            raise RuntimeError("Compiled frame JSON control disagrees with its expected actual parser type/admission: "+str(row.get("name")))
+        if row.get("schema_json_type") in ("Boolean", "String") and row.get("coercing_number_conversion_succeeded") is True and row.get("coerced_schema_value") == 1 and row["admitted"] is False:
+            aliases += 1
+    if aliases != 2 or result.get("coercing_alias_witnesses_refused") != 2:
+        raise RuntimeError("Compiled frame JSON controls must observe and refuse both actual Unreal bool/string numerical-coercion aliases.")
+    return result
+
+
+def frame_json_controls(args):
+    """One fixed read-only MCP call, finally-owned launcher, real no-child preflight."""
+    import importlib.util
+    import stat
+    def guard(path, optional=False):
+        for part in [*reversed(path.absolute().parents), path.absolute()]:
+            try: info = part.lstat()
+            except FileNotFoundError:
+                if optional: return False
+                raise
+            if stat.S_ISLNK(info.st_mode) or getattr(info,"st_file_attributes",0)&1024:
+                raise RuntimeError("Frame JSON control refuses linked/reparse path: "+str(part))
+        return True
+    project = PROJECT.absolute()
+    command = frame_json_control_plan(args.engine, project, args.port)
+    guard(Path(command[0]));guard(project/"ShibuyaUnreal.uproject")
+    version_path = args.engine/"Engine/Build/Build.version";guard(version_path)
+    version = json.loads(version_path.read_text())
+    if (version["MajorVersion"],version["MinorVersion"],version["PatchVersion"]) != (5,8,3):raise RuntimeError("Frame JSON controls require Unreal5.8.3.")
+    inputs = [project/"ShibuyaUnreal.uproject", Path(__file__).absolute(), project/"Content/Python/shibuya_tools.py", project/"tools/runtime/run_native.py", version_path]
+    config = project/"Config";guard(config)
+    inputs.extend(sorted(config.glob("*.ini")))
+    for relative in ("Content/Maps/Shibuya.umap","Binaries/Win64/UnrealEditor-ShibuyaRuntime.dll"):
+        if guard(project/relative,optional=True):inputs.append(project/relative)
+    def bindings():
+        return {str(path):file_digest(path) for path in inputs if guard(path)}
+    before = bindings()
+    plan = {"command":command,"action":"frame-json-controls","project_tool":"inspect_native_frame_json_controls","arguments":{},"engine_build":version,"protected_before":before,
+            "headless":True,"rhi":"NullRHI","source_geometry_needed":False,"scene_queries":False,"native_deadline_seconds":60,"cleanup_bound_seconds":25}
+    if args.frame_json_preflight:
+        print(json.dumps({**plan,"status":"DID_NOT_RUN","engine_launched":False,"owned_pids":[],"normal_argv_preflight":True},sort_keys=True),flush=True)
+        return
+    runner_path = project/"tools/runtime/run_native.py";guard(runner_path)
+    spec = importlib.util.spec_from_file_location("frame_json_owned_runner",runner_path)
+    runner = importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+    with socket.socket() as check:check.bind(("127.0.0.1",args.port))
+    parent = project/"artifacts/unreal";guard(parent)
+    evidence = parent/f"frame-json-controls-{time.strftime('%Y%m%d-%H%M%S')}";evidence.mkdir();guard(evidence)
+    client = UnrealMcp(args.port,timeout=5)
+    job,process = runner.OwnedJob(),None
+    report = {**plan,"evidence":str(evidence),"passed":False,"owned_pids":[],"phases":{}}
+    started=time.monotonic();error=None
+    try:
+        with (evidence/"editor.log").open("w",encoding="utf-8") as log:
+            process=runner.launch_owned(command,project,log,job);report["owned_editor_pid"]=process.pid
+            report["owned_pids"]=job.active()
+            deadline=started+60;startup_deadline=min(deadline,started+min(args.startup_timeout,45))
+            while True:
+                try:
+                    code=process.wait(0)
+                    raise RuntimeError(f"Owned JSON-control editor exited{code} before MCP initialization.")
+                except subprocess.TimeoutExpired:pass
+                try:
+                    report["initialize"]=client.initialize(timeout=min(3,max(.1,startup_deadline-time.monotonic())))
+                    break
+                except (OSError,urllib.error.URLError):
+                    if time.monotonic()>=startup_deadline:raise RuntimeError("Frame JSON native MCP startup exceeded its finite deadline.")
+                    time.sleep(.25)
+            report["phases"]["startup_seconds"]=time.monotonic()-started
+            for key,operation in (("tools",lambda:client.request("tools/list")),("toolset_schema",lambda:client.call("describe_toolset",{"toolset_name":PROJECT_TOOLSET})),("native_frame_json_controls",lambda:client.project_tool("inspect_native_frame_json_controls"))):
+                if time.monotonic()>=deadline:raise RuntimeError("Frame JSON controls exceeded60s native deadline.")
+                value=operation();report[key]=tool_value(value) if key!="tools" else value
+            verify_frame_json_controls(report["native_frame_json_controls"])
+            report["phases"]["observation_seconds"]=time.monotonic()-started-report["phases"]["startup_seconds"]
+            report["passed"]=True
+    except BaseException as caught:
+        error=caught;report["error"]=str(caught)
+    finally:
+        cleanup=[]
+        if process:
+            try:client.timeout=3;client.project_tool("shutdown_editor")
+            except Exception as caught:report["graceful_shutdown_response"]=str(caught)
+            try:report["owned_editor_exit_code"]=process.wait(5)
+            except subprocess.TimeoutExpired:pass
+        try:client.close()
+        except Exception as caught:cleanup.append("MCP close: "+str(caught))
+        try:report["terminated_owned_pids"]=job.close();report["owned_job_empty"]=True
+        except Exception as caught:report["owned_job_empty"]=False;cleanup.append("Job cleanup: "+str(caught))
+        if process:
+            try:report["owned_editor_exit_code"]=process.wait(5)
+            except Exception as caught:cleanup.append("Owned editor reap: "+str(caught))
+            finally:process.close()
+        try:report["protected_after"]=bindings();report["protected_unchanged"]=report["protected_after"]==before
+        except Exception as caught:report["protected_unchanged"]=False;cleanup.append("Protected readback: "+str(caught))
+        if not report["protected_unchanged"]:cleanup.append("Protected project/helper/config/map/binary changed.")
+        report["elapsed_seconds"]=time.monotonic()-started
+        report["passed"]=report["passed"] and not cleanup and report.get("owned_editor_exit_code")==0
+        if cleanup:report["cleanup_errors"]=cleanup
+        (evidence/"report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+        print("Evidence: "+str(evidence),flush=True)
+    if error:raise error
+    if not report["passed"]:raise RuntimeError("Frame JSON control finalization failed; inspect "+str(evidence/"report.json"))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["probe", "build", "render", "diagnose", "surface"])
+    parser.add_argument("action", choices=["probe", "build", "render", "diagnose", "surface", "frame-json-controls"])
     parser.add_argument("--engine", type=Path, default=DEFAULT_ENGINE)
     parser.add_argument("--port", type=int, default=18758)
     parser.add_argument("--manifest", help="Project-relative reviewed city manifest for build")
@@ -476,11 +601,18 @@ def main():
     parser.add_argument("--surface-only", action="store_true", help="Apply admitted support terrain/roads/rays and checked map save; leave appearance did-not-run")
     parser.add_argument("--surface-manifest", help="Admitted project-relative GSI photo terrain manifest")
     parser.add_argument("--road-manifest", help="Admitted project-relative shared-atlas photo road manifest")
+    parser.add_argument("--frame-json-preflight", action="store_true", help="No-child normal argv/input binding for the fixed read-only frame-json-controls action")
     args = parser.parse_args()
+    if args.frame_json_preflight and args.action != "frame-json-controls":
+        parser.error("--frame-json-preflight requires frame-json-controls")
+    if args.action == "frame-json-controls":
+        if any((args.manifest,args.surface_manifest,args.road_manifest,args.surface_only,args.explore,args.full_crop_coverage)):
+            parser.error("frame-json-controls accepts no Source/import/render options")
+        return frame_json_controls(args)
     if args.surface_only and args.action != "surface":
         parser.error("--surface-only requires the surface action")
-    if args.full_crop_coverage and args.action not in ("render", "diagnose"):
-        parser.error("--full-crop-coverage requires render or diagnose; it does not alter import/probe policy")
+    if args.full_crop_coverage and args.action not in ("render", "diagnose", "surface"):
+        parser.error("--full-crop-coverage requires render, diagnose or surface; it does not alter import/probe policy")
     version = json.loads((args.engine / "Engine/Build/Build.version").read_text())
     if (version["MajorVersion"], version["MinorVersion"], version["PatchVersion"]) != (5, 8, 3):
         raise RuntimeError(f"Expected Unreal 5.8.3; found Build.version {version}.")
@@ -542,7 +674,7 @@ def main():
                     validation = tool_value(client.project_tool("create_probe_map", {"probe_name": f"Probe_{time.strftime('%Y%m%d_%H%M%S')}_{process.pid}_{iteration}"}))
                     axis = tool_value(client.project_tool("import_axis_probe", {"relative_glb": fixture.relative_to(PROJECT).as_posix()}))
                     meshes = axis["meshes"]
-                    if len(meshes) != 1 or any(abs(actual - expected) > 0.01 for actual, expected in zip(meshes[0]["extent_cm"], [50, 150, 100])):
+                    if len(meshes) != 1 or any(abs(actual - expected) > 0.01 for key, target in (("extent_cm", [50, 150, 100]), ("origin_cm", [50, -150, 100])) for actual, expected in zip(meshes[0][key], target)):
                         raise RuntimeError(f"glTF metre/axis conversion failed: {meshes}")
                     if file_digest(map_file) != city_map_before:
                         raise RuntimeError("Probe changed the saved city map bytes; validation must use its own level.")
@@ -577,7 +709,7 @@ def main():
                     if args.explore:
                         views += [("street-explore", 20, 25, 12, 0, 0, 1), ("sky-up", 0, 0, 2000, 200, 0, 2200)]
                     capture_views(client, evidence, views, args.target_gamma, args.full_crop_coverage, report)
-                    report["camera_surface_samples"] = [tool_value(client.project_tool("inspect_camera_surfaces", {"east_m": float(east), "north_m": float(north), "height_m": float(height)})) for east, north, height in [(35, -45, 35), (-70, 20, 65)]]
+                    report["camera_surface_samples"] = [tool_value(client.project_tool("inspect_camera_surfaces", {"east_m": float(east), "north_m": float(north), "height_m": float(height), "active_capture_stage": "", "relative_output_prefix": ""})) for east, north, height in [(35, -45, 35), (-70, 20, 65)]]
                     if report["capture_readiness_gate"]["status"] != "passed":
                         raise RuntimeError("Native capture readiness gate failed; inspect retained per-view failures and unadmitted native images.")
                     if report["darkness_gate"]["status"] != "passed":

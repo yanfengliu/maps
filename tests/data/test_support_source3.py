@@ -4,6 +4,9 @@ import collections
 import contextlib
 import importlib
 import json
+import itertools
+import math
+import struct
 import sys
 import tempfile
 import types
@@ -170,6 +173,18 @@ class Source3Tests(unittest.TestCase):
             support_manifest={'schema_version':2},terrain_sources=[0,1])
         with self.assertRaisesRegex(api.SupportRejection,'stacked-rendered-support-layer'):api.Surface.check(surface,[.25,.25],'pedestrian')
 
+    def grade_fixture_membership(self, triangle):
+        # Independent scalar binary32 evaluation for this retained fixture only.
+        f = lambda x: struct.unpack('<f', struct.pack('<f', float(x)))[0]
+        points = [[f(v*100) for v in row] for row in triangle]
+        for a,b,c in itertools.permutations(points):
+            u,v = [[f(x-y) for x,y in zip(a,p)] for p in (b,c)]
+            cross = [f(f(u[j]*v[k])-f(u[k]*v[j])) for j,k in ((1,2),(2,0),(0,1))]
+            square = f(f(f(cross[0]*cross[0])+f(cross[1]*cross[1]))+f(cross[2]*cross[2]))
+            self.assertGreater(square,f(1e-8))
+            self.assertGreater(f(math.sqrt(square)),1e-4)
+        return 1
+
     def native_grade_fixture(self):
         # Frozen actual data68.glb face 3861, raw SHA 791592b5717f45fcc8d393a615ec22a4dccb2add467fd464d1ad738c2f3f0b36.
         native_cm = np.array([[14225.8115234375, 812.3246459960938, 141.88304138183594],
@@ -184,8 +199,11 @@ class Source3Tests(unittest.TestCase):
         triangles = np.repeat(triangle[None], 11+3862, axis=0)
         refs = [None]*(len(triangles)-1)+[ref]
         surface = types.SimpleNamespace(support_manifest={'schema_version': 3, 'native_roads': mappings},
+            source3_terrain_refs=[], terrain_index=types.SimpleNamespace(triangles=np.empty((0,3,3)), physical_membership=np.empty(0,dtype=np.int8)),
             support_record={'sha256': 's'*64}, derived_record={'sha256': 'd'*64},
-            road=types.SimpleNamespace(layer_refs=refs), road_index=types.SimpleNamespace(triangles=triangles))
+            road=types.SimpleNamespace(layer_refs=refs), road_index=types.SimpleNamespace(triangles=triangles,
+                physical_membership=np.repeat(self.grade_fixture_membership(triangle),len(triangles)).astype(np.int8),
+                native_triangles_cm=api.source_to_native_cm(triangles[:,[0,2,1]]).astype(np.float32)))
         proof = {'source': 'PLATEAU-road', 'triangle': 3861, 'layer_ref': ref,
             'support_geometry': 'exact-derived-triangle-native-cm', 'support_surface_sha256': 's'*64,
             'derived_terrain_sha256': 'd'*64, 'support_road_sha256': mappings[-1]['source']['sha256'],
@@ -200,7 +218,8 @@ class Source3Tests(unittest.TestCase):
             source3.span_grade(previous, current, .2)
         proof['gradient_enu'] = [900, 900]  # Descriptive gradients cannot authorize the fallback.
         grade = source3.span_grade(previous, current, .2, surface=surface, previous_record=proof, current_record=copy.deepcopy(proof))
-        self.assertAlmostEqual(grade, 0.01905961977714173, places=15)
+        # Actual binary64-cm queries differ from the unrounded metre gradient (Lane53).
+        self.assertAlmostEqual(grade, 0.024396313314741413, places=15)
         self.assertEqual(previous[:2], [150.8789179837405, 3.355502637860143])
         self.assertEqual(current[:2], [150.8789179837405, 3.3555026378601434])
 
@@ -226,6 +245,7 @@ class Source3Tests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'exceeds'):
                 source3.span_grade(a, b, .2, surface=surface, previous_record=road_proof, current_record=terrain_proof)
         surface.road_index.triangles[-1] = [[0, 0, 0], [1, 0, 0], [0, 1, 1]]
+        surface.road_index.native_triangles_cm[-1] = api.source_to_native_cm(surface.road_index.triangles[-1,[0,2,1]]).astype(np.float32)
         with self.assertRaisesRegex(ValueError, 'exceeds'):
             source3.span_grade(previous, current, .2, surface=surface, previous_record=proof, current_record=proof)
         with mock.patch.object(source3, 'same_native_triangle') as resolve:
@@ -259,14 +279,23 @@ class Source3Tests(unittest.TestCase):
         triangle = surface.road_index.triangles[-1].copy()
         terrain_ref = {'kind': 'terrain-fragment', 'triangle': 18, 'parent_triangle': 3}
         surface.source3_terrain_refs = [terrain_ref]
-        surface.terrain_index = types.SimpleNamespace(triangles=np.array([triangle]))
+        surface.terrain_index = types.SimpleNamespace(triangles=np.array([triangle]),
+            physical_membership=np.array([self.grade_fixture_membership(triangle)],dtype=np.int8))
         row = {**proof, 'source': 'GSI-DEM5A', 'triangle': 18, 'layer_ref': terrain_ref}
         self.assertIsNotNone(source3.same_native_triangle(surface, row, row))
         inferred_ref = {'kind': 'inferred', 'triangle': 19, 'patch_triangle': 2}
         surface.road.layer_refs.append(inferred_ref)
         surface.road_index.triangles = np.concatenate((surface.road_index.triangles, triangle[None]))
+        surface.road_index.physical_membership=np.append(surface.road_index.physical_membership,self.grade_fixture_membership(triangle))
         row = {**proof, 'source': 'inferred-ground-road', 'triangle': 19, 'layer_ref': inferred_ref}
         self.assertIsNotNone(source3.same_native_triangle(surface, row, row))
+        # The grade fallback is also a physical consumer; provenance alone cannot
+        # reintroduce an omitted or unknown cook face.
+        for membership in (0,-1):
+            surface.road_index.physical_membership[-1]=membership
+            self.assertIsNone(source3.same_native_triangle(surface,row,row))
+        del surface.road_index.physical_membership
+        self.assertIsNone(source3.same_native_triangle(surface,row,row))
 
     def region_fixture(self):
         # Actual parent491338 and first four native-curb-trim region entries
@@ -453,8 +482,8 @@ class Source3Tests(unittest.TestCase):
             source3.validate_local_geometry(api, ledger, parent, np.empty((0, 3, 3)), road[None], [], [])
 
     def fixture(self):
-        parent = {'derived_terrain': {'triangles': 3}, 'terrain_source_triangle_indices': [5, 8, 13]}
-        ledger = {'schema_version': 1, 'coordinate_model': source3.COORDINATE_MODEL,
+        parent = {'native_frame':api.native_frame_record(), 'derived_terrain': {'triangles': 3}, 'terrain_source_triangle_indices': [5, 8, 13]}
+        ledger = {'native_frame':api.native_frame_record(), 'schema_version': 1, 'coordinate_model': source3.COORDINATE_MODEL,
             'output_order': source3.OUTPUT_ORDER, 'parent_derived_terrain': parent['derived_terrain'],
             'deleted_parent_triangles': [1], 'terrain_edits': [{'parent_triangle': 1, 'region_id': 'gap'}],
             'regions': [{'id': 'gap', 'native_xy_polygons_cm': [[[0, 0], [100, 0], [0, 100]]]}],
@@ -611,7 +640,7 @@ class Source3Tests(unittest.TestCase):
             source3.admit_new_face_winding(degenerate, 'packed-collapsed fill', inferred=True)
 
     @contextlib.contextmanager
-    def reader_fixture(self):
+    def reader_fixture(self, *, include_inferred=True):
         """Real tiny GLBs and files; only the already-admitted Source2 reader is replaced."""
         with tempfile.TemporaryDirectory(prefix='source3-reader-') as temporary:
             root = Path(temporary)
@@ -634,23 +663,32 @@ class Source3Tests(unittest.TestCase):
                 patch = write_mesh('data/source/patch.glb', road_rows)
                 snapshot = write_json('data/source/provenance/code.json', {})
                 inherited = {name: {} for name in ('frame', 'origin', 'vertical_reference', 'inputs', 'atlas', 'attribution')}
+                inherited.update(native_frame=api.native_frame_record(), frame={'glb':'metres-Xeast-Yup-Znorth','runtime':'metres-Xeast-Ynorth-Zup','unreal':'centimetres-Xeast-Ysouth-Zup'})
                 parent = {**inherited, 'schema_version': 2, 'derived_terrain': old_terrain, 'terrain_source_triangle_indices': [7],
                     'native_roads': [{'source': raw_road, 'source_path': raw_road['path'], 'actor_label': 'City_road', 'triangles': 1}]}
                 parent_record = write_json('data/prepared/surface/parent/support-surface-manifest.json', parent)
                 bank = [{'source': 0, 'mesh': 0, 'primitive': 0, 'vertex': i, 'raw_enu_m': road_rows[i, :3].tolist()} for i in range(3)]
                 vertex_anchors = [{'kind': 'source-road-native-stitch', 'patch_triangle': 0, 'vertex': i,
-                    'original_native_cm': source3.native_centimetres(road_rows[i, :3]).tolist(),
-                    'replacement_native_cm': source3.native_centimetres(road_rows[i, :3]).tolist(),
+                    'original_native_cm': (source3.native_centimetres(road_rows[i, :3])*[1,-1,1]).tolist(),
+                    'replacement_native_cm': (source3.native_centimetres(road_rows[i, :3])*[1,-1,1]).tolist(),
                     'source_anchor': {'kind': 'source-road-plane-interpolation', 'source': 0, 'mesh': 0, 'primitive': 0, 'triangle': 0,
                         'barycentric': np.eye(3)[i].tolist()}} for i in range(3)]
-                ledger = {'schema_version': 1, 'coordinate_model': source3.COORDINATE_MODEL, 'output_order': source3.OUTPUT_ORDER,
+                ledger = {'native_frame':api.native_frame_record(), 'schema_version': 1, 'coordinate_model': source3.COORDINATE_MODEL, 'output_order': source3.OUTPUT_ORDER,
                     'parent_support_surface': parent_record, 'parent_derived_terrain': old_terrain, 'terrain_patch': patch,
                     'deleted_parent_triangles': [0], 'terrain_edits': [{'parent_triangle': 0, 'region_id': 'gap'}],
-                    'regions': [{'id': 'gap', 'native_xy_polygons_cm': [[[-100, -100], [400, -100], [-100, 400]]]}],
+                    'regions': [{'id': 'gap', 'native_xy_polygons_cm': [[[-100, 100], [400, 100], [-100, -400]]]}],
                     'patch_faces': [{'patch_triangle': 0, 'kind': 'inferred-ground-road', 'region_id': 'gap', 'anchors': copy.deepcopy(bank)}],
                     'road_overrides': [{'source': 0, 'mesh': 0, 'primitive': 0, 'triangle': 0, 'region_id': 'gap', 'source_record': raw_road,
                         'replacement': patch, 'replacement_patch_triangles': [0], 'anchors': copy.deepcopy(bank), 'replacement_vertex_anchors': vertex_anchors}],
                     'recipe': {'algorithm': snapshot, 'source_inputs': [], 'candidate_inputs': []}}
+                if not include_inferred:
+                    # Lineage success needs one physical first blocker. Bind an
+                    # unchanged parent fragment at0m, below the derived road at
+                    #0.1m, instead of an inferred actor on the same road plane.
+                    ledger['terrain_patch'] = old_terrain
+                    ledger['patch_faces'] = [{'patch_triangle': 0, 'kind': 'retained-parent-fragment',
+                        'region_id': 'gap', 'parent_triangle': 0, 'original_terrain_parent': 7,
+                        'vertex_edits': [], 'maximum_plane_error_m': 0, 'maximum_uv_error': 0}]
                 previous = types.SimpleNamespace(road=types.SimpleNamespace(sources=[raw_road], triangles=road_rows[None, :, :3].astype(float)),
                     terrain_index=source3.NativeTriangleIndex(parent_rows[None, :, :3]),
                     building_bins=collections.defaultdict(list), buildings=[], dem_height=lambda point: .1, vehicle_source=None)
@@ -684,7 +722,7 @@ class Source3Tests(unittest.TestCase):
             moved = f.roads.copy(); moved[0, 0, 0] -= .0005
             moved = source3.native_metres(moved)
             valid = copy.deepcopy(f.ledger)
-            valid['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = source3.native_centimetres(moved[0, 0]).tolist()
+            valid['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = (source3.native_centimetres(moved[0, 0])*[1,-1,1]).tolist()
             self.assertTrue(validate(valid, moved)['changed_face_coverage'])
             for name, mutate, message in (
                 ('outside barycentrics', lambda row: row['source_anchor'].update(barycentric=[-100, 101, 0]), 'barycentrics'),
@@ -695,7 +733,7 @@ class Source3Tests(unittest.TestCase):
             far = moved.copy(); far[0, 0, 0] = -.01
             far = source3.native_metres(far)
             bad = copy.deepcopy(valid)
-            bad['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = source3.native_centimetres(far[0, 0]).tolist()
+            bad['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = (source3.native_centimetres(far[0, 0])*[1,-1,1]).tolist()
             with self.assertRaisesRegex(ValueError, 'exceeds 0.001 m'): validate(bad, far)
 
     def test_fragment_stitches_share_the_original_native_point_and_displacement_bound(self):
@@ -716,10 +754,10 @@ class Source3Tests(unittest.TestCase):
             ledger = copy.deepcopy(f.ledger)
             roads = f.roads.copy(); roads[0, 0, 0] = -.0005; roads = source3.native_metres(roads)
             output = f.output.copy(); output[0, 0] = roads[0, 0]
-            ledger['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = source3.native_centimetres(roads[0, 0]).tolist()
+            ledger['road_overrides'][0]['replacement_vertex_anchors'][0]['replacement_native_cm'] = (source3.native_centimetres(roads[0, 0])*[1,-1,1]).tolist()
             ledger['patch_faces'][0]['vertex_edits'] = [{'vertex': 0, 'kind': 'source-road-native-stitch',
-                'original_native_cm': source3.native_centimetres(f.rows[0, :3]).tolist(),
-                'replacement_native_cm': source3.native_centimetres(output[0, 0]).tolist(),
+                'original_native_cm': (source3.native_centimetres(f.rows[0, :3])*[1,-1,1]).tolist(),
+                'replacement_native_cm': (source3.native_centimetres(output[0, 0])*[1,-1,1]).tolist(),
                 'source_anchor': copy.deepcopy(ledger['patch_faces'][0]['anchors'][0])}]
             def validate(changed, terrain):
                 return source3.validate_local_geometry(api, changed, previous, terrain, roads, f.retained, changed['patch_faces'])
@@ -737,16 +775,39 @@ class Source3Tests(unittest.TestCase):
                 with self.subTest(new_x=new_x), self.assertRaisesRegex(ValueError, message): validate(bad, terrain)
 
     def test_actual_surface_reader_admits_lineage_and_refuses_false_claims(self):
-        with self.reader_fixture() as f:
+        with self.reader_fixture(include_inferred=False) as f:
             surface = f.read()
             self.assertTrue(surface.source3_admission['changed_face_coverage'])
-            self.assertEqual(surface.check([.2, .2], 'pedestrian')[1]['source'], 'derived-ground-road')
+            point, proof = surface.check([.2, .2], 'pedestrian')
+            self.assertEqual(proof['source'], 'derived-ground-road')
+            self.assertEqual(proof['layer_ref']['kind'], 'derived-road')
+            self.assertEqual(point, [.2, .2, .1])
+            self.assertEqual(len(surface.road_index.hits(.2, .2)), 1)
+            self.assertEqual(surface.terrain_index.hits(.2, .2)[0]['height'], 0.)
+        # Keep all original inferred/road/region malformed-ledger assertions on
+        # the original real-GLB fixture; physical overlap cannot waive lineage.
+        with self.reader_fixture() as f:
             for name, mutate, message in (
                 ('inferred anchor', lambda ledger: ledger['patch_faces'][0]['anchors'][0].update(raw_enu_m=[10, 0, .1]), 'raw road anchor XYZ'),
                 ('road lineage', lambda ledger: ledger['road_overrides'][0]['replacement_vertex_anchors'][0].update(original_native_cm=[1000, 0, 10]), 'original_native_cm'),
                 ('declared region', lambda ledger: ledger['regions'][0].update(native_xy_polygons_cm=[[[0, 0], [50, 0], [0, 50]]]), 'outside declared region')):
                 bad = copy.deepcopy(f.ledger); mutate(bad)
                 with self.subTest(name=name), self.assertRaisesRegex(ValueError, message): f.read(bad)
+
+    def test_actual_surface_reader_admits_compatible_distinct_actor_contacts(self):
+        with self.reader_fixture() as f:
+            surface=f.read()
+            self.assertTrue(surface.source3_admission['changed_face_coverage'])
+            self.assertEqual([r['kind'] for r in surface.road.layer_refs],['derived-road','inferred'])
+            for offset in (0.,-.0005,.0005):
+                rows=surface.road.triangles.copy();rows[1,:,2]+=offset
+                surface.road_index=source3.NativeTriangleIndex(rows)
+                hits=surface.road_index.hits(.2,.2)
+                with self.subTest(offset_m=offset):
+                    point,proof=surface.check([.2,.2],'pedestrian')
+                    self.assertEqual(point[2],max(hit['height'] for hit in hits))
+                    self.assertEqual(proof['support_surface_sha256'],surface.support_record['sha256'])
+                    self.assertEqual(len(hits),2)
 
     def test_road_profiles_use_consumed_glb_face_identity_for_unchanged_and_changed_hits(self):
         surface = types.SimpleNamespace(derived_record={'sha256': 'd'*64}, support_record={'sha256': 's'*64},
@@ -825,13 +886,13 @@ class NativeQueryTests(unittest.TestCase):
             with self.subTest(constructor=constructor):
                 index=constructor(triangle[None]);self.assertEqual(index.hits(*xy),[])
                 # Synthetic adjacent face sharing the actual packed B-C edge.
-                packed=index.native_triangles_cm[0].astype(float)
+                packed=index.source_packed_triangles_cm[0].astype(float)
                 adjacent=np.array([packed[1]+packed[2]-packed[0],packed[2],packed[1]])/100
                 both=constructor(np.array([triangle,adjacent]))
                 hits=both.hits(*xy)
                 self.assertEqual([h['triangle'] for h in hits],[1])
                 for face in range(2):
-                    centre=both.native_triangles_cm[face].astype(float).mean(axis=0)/100
+                    centre=both.source_packed_triangles_cm[face].astype(float).mean(axis=0)/100
                     self.assertIn(face,[h['triangle'] for h in both.hits(*centre[:2])])
         # Adjacent fixture is synthetic; no unlisted city neighbor is certified.
 
@@ -895,3 +956,399 @@ class NativeQueryTests(unittest.TestCase):
 
 
 if __name__ == '__main__': unittest.main()
+
+
+class ReconstructionRoleTests(unittest.TestCase):
+    def rec(self): return {'path':'data/source/source.glb','bytes':1,'sha256':'a'*64}
+    def face(self, role='support-top'):
+        return {'patch_triangle':0,'kind':'inferred-ground-reconstruction','reconstruction_role':role,'region_id':'r',
+          'corner_ancestry':[{'source_record':self.rec(),'mesh':0,'primitive':0,'triangle':0,
+            'barycentric_q':[str(int(j==i)) for j in range(3)],'source_enu_uv_q':['0']*5} for i in range(3)]}
+    def ledger(self, face):
+        return {'native_frame':api.native_frame_record(),'schema_version':1,'coordinate_model':source3.COORDINATE_MODEL,
+          'output_order':source3.OUTPUT_ORDER,'parent_derived_terrain':{**self.rec(),'triangles':1},
+          'deleted_parent_triangles':[],'terrain_edits':[],'regions':[{'id':'r','native_xy_polygons_cm':[[[0,0],[0,100],[100,0]]]}],
+          'patch_faces':[face],'reconstruction':{'policy':copy.deepcopy(source3.reconstruction.POLICY),'original_query_artifacts':[self.rec()]}}
+    def test_closed_reconstruction_layout_keeps_old_bank_contract(self):
+        face=self.face();ledger=self.ledger(face)
+        parent={'native_frame':api.native_frame_record(),'derived_terrain':ledger['parent_derived_terrain'],'terrain_source_triangle_indices':[0]}
+        kept,labels=source3.layout(ledger,parent,1);self.assertEqual(labels[0],face);self.assertEqual(kept.tolist(),[0])
+        for change in ({'reconstruction_role':'skip-physical-wall'},{'corner_ancestry':[]},{'kind':'inferred-ground-road','anchors':[1]}):
+            changed=copy.deepcopy(ledger);changed['patch_faces'][0].update(change)
+            with self.subTest(change=change),self.assertRaises(ValueError):source3.layout(changed,parent,1)
+        legacy=copy.deepcopy(ledger);legacy.pop('reconstruction');legacy['patch_faces'][0]={'patch_triangle':0,'kind':'inferred-ground-road','region_id':'r','anchors':[{'raw':1}]}
+        self.assertEqual(source3.layout(legacy,parent,1)[1][0]['kind'],'inferred-ground-road')
+    def test_wall_and_down_states_retained_without_weakening_legacy_winding(self):
+        wall=np.array([[0,0,0],[0,1,0],[0,0,1]],dtype=float)
+        down=np.array([[0,0,0],[1,0,0],[0,1,0]],dtype=float)
+        for role,points,expected in [('physical-sidewall',wall,'vertical'),('support-top',down,'DOWN')]:
+            rows=np.column_stack((points,np.zeros((3,2)),np.repeat([[1.,0.,0.]],3,axis=0)))
+            with self.subTest(role=role):
+                with self.assertRaises(ValueError):source3.admit_new_face_winding(rows,'legacy',inferred=True)
+                state=source3.reconstruction.face_state(api,rows)
+                self.assertEqual(state['cook_state'],1);self.assertEqual(state['orientation'],expected)
+                self.assertEqual(state['support_eligibility'],'NOT_EVALUATED_BEFORE_FIRST_BLOCKER')
+    def test_actual_common_writer_readback_changes_final_packing_order(self):
+        x=-308.9107177816123  # Literal v2 retained core triangle2880 corner2 E operand.
+        rows=np.array([[x,0,0,0,0,0,1,0],[x,1,0,0,1,0,1,0],[x+1,0,0,1,0,0,1,0]],dtype=float)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);stage=root/'data/prepared/staged';stage.mkdir(parents=True)
+            attrs={'POSITION':rows[:,[0,2,1]].astype('<f4'),'TEXCOORD_0':rows[:,3:5].astype('<f4'),'NORMAL':rows[:,5:8].astype('<f4')}
+            ordinary_write=api.guarded_write
+            with mock.patch.object(api,'ROOT',root), mock.patch.object(api,'guarded_write',side_effect=lambda p,b:ordinary_write(p,b,root=root/'data/prepared')):
+                rec=source3.write_mesh(api,stage,'actual.glb',attrs,np.array([[0,1,2]],dtype=np.uint32),[{}])
+                payload=api.guarded_read(root/rec['path'],root/'data');_,parts=source3.primitives(api,payload)
+                decoded=source3.triangle_rows(parts)[0];state=source3.reconstruction.face_state(api,decoded)
+            self.assertEqual(decoded[0,0],float(np.float32(x)))
+            self.assertEqual(state['native_cm'][0][0],float(np.float32(float(np.float32(x))*100)))
+            self.assertNotEqual(state['native_cm'][0][0],float(np.float32(x*100)))
+    def test_ineligible_selected_reconstruction_refuses_without_lower_fallback(self):
+        tri=np.array([[0.,0.,0.],[0.,1.,0.],[1.,0.,0.]])
+        high=tri.copy();high[:,2]=.5
+        for role in ('physical-transition','physical-sidewall'):
+            surface=types.SimpleNamespace(support_manifest={'schema_version':3,'native_roads':[]},
+                road_index=source3.NativeTriangleIndex(np.array([tri,high])),terrain_index=source3.NativeTriangleIndex(np.empty((0,3,3))),
+                road=types.SimpleNamespace(layer_refs=[{'kind':'inferred','triangle':0},{'kind':'inferred','triangle':1,'reconstruction_role':role}]),
+                building_bins={},buildings=[],dem_height=lambda p:0.,
+                derived_record={'sha256':'d'*64},support_record={'sha256':'s'*64})
+            with self.subTest(role=role):
+                with self.assertRaisesRegex(api.SupportRejection,'ineligible-reconstruction-first-blocker') as failed:
+                    api.Surface._check(surface,[.2,.2],'pedestrian')
+                self.assertEqual(failed.exception.witness['selected']['triangle'],1)
+                self.assertEqual(failed.exception.witness['selected']['height'],.5)
+                self.assertFalse(failed.exception.witness['lower_hit_fallback'])
+
+    def test_new_geometry_cannot_use_unchanged_reference_prepare(self):
+        ledger=self.ledger(self.face())
+        with mock.patch.object(api,'admit_path',return_value=ROOT/'data/source/edits.json'), mock.patch.object(api,'guarded_read',return_value=json.dumps(ledger).encode()), mock.patch.object(api,'Surface') as world:
+            with self.assertRaisesRegex(ValueError,'unchanged-reference preparation remains unchanged'):
+                source3.prepare(api,{},ROOT/'data/source/edits.json',total_seconds=1)
+            world.assert_not_called()
+
+    def test_exact_ancestry_uv_region_and_outside_loss_controls(self):
+        rows=np.array([[0,0,0,0,0,0,1,0],[0,4,0,0,1,0,1,0],[4,0,0,1,0,0,1,0]],dtype=float)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);stage=root/'data/prepared/source';stage.mkdir(parents=True)
+            attrs={'POSITION':rows[:,[0,2,1]].astype('<f4'),'TEXCOORD_0':rows[:,3:5].astype('<f4'),'NORMAL':rows[:,5:8].astype('<f4')}
+            ordinary_write=api.guarded_write
+            with mock.patch.object(api,'ROOT',root),mock.patch.object(api,'guarded_write',side_effect=lambda p,b:ordinary_write(p,b,root=root/'data/prepared')):
+                rec=source3.write_mesh(api,stage,'source.glb',attrs,np.array([[0,1,2]],dtype=np.uint32),[{}])
+                face=self.face()
+                for i,a in enumerate(face['corner_ancestry']):a.update(source_record=rec,source_enu_uv_q=[str(Fraction(float(x))) for x in rows[i,:5]])
+                source3.reconstruction.check_ancestry(api,source3,face,rows,{})
+                changed=copy.deepcopy(face);changed['corner_ancestry'][0]['source_enu_uv_q'][3]='1/1000'
+                with self.assertRaisesRegex(ValueError,'immutable source-face ancestry'):source3.reconstruction.check_ancestry(api,source3,changed,rows,{})
+                changed=rows.copy();changed[0,3]=1e-6
+                with self.assertRaisesRegex(ValueError,'actual GLB vertex/UV'):source3.reconstruction.check_ancestry(api,source3,face,changed,{})
+        source3.reconstruction.check_inside(face,[[Fraction(0),Fraction(0)],[Fraction(0),Fraction(4)],[Fraction(4),Fraction(0)]])
+        with self.assertRaisesRegex(ValueError,'outside its declared'):source3.reconstruction.check_inside(face,[[Fraction(0),Fraction(0)],[Fraction(0),Fraction(1)],[Fraction(1),Fraction(0)]])
+        polygon=[[Fraction(2),Fraction(0)],[Fraction(4),Fraction(0)],[Fraction(4),Fraction(4)],[Fraction(2),Fraction(4)]]
+        def frag(points):return {'corner_ancestry':[{'source_enu_uv_q':[str(x),str(y),'0','0','0']} for x,y in points]}
+        pieces=[frag([(0,0),(2,0),(2,4)]),frag([(0,0),(2,4),(0,4)])]
+        original=[[Fraction(0),Fraction(0)],[Fraction(4),Fraction(0)],[Fraction(4),Fraction(4)],[Fraction(0),Fraction(4)]]
+        self.assertEqual(source3.reconstruction.check_outside_partition(source3,original,pieces,polygon),'8')
+        for broken in (pieces[:1],pieces+[pieces[0]]):
+            with self.subTest(broken=broken),self.assertRaises(ValueError):source3.reconstruction.check_outside_partition(source3,original,broken,polygon)
+
+    def test_historical_reencoding_requires_actual_identical_geometry_not_marker_stamping(self):
+        rows=np.array([[0,0,0,0,0,0,1,0],[0,4,0,0,1,0,1,0],[4,0,0,1,0,0,1,0],
+                       [5,0,0,0,0,0,1,0],[5,4,0,0,1,0,1,0],[9,0,0,1,0,0,1,0]],dtype=float)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'data/prepared/surface';out.mkdir(parents=True);provenance=root/'data/source/provenance';provenance.mkdir(parents=True)
+            ordinary_write=api.guarded_write
+            def write(path,payload,root=None):return ordinary_write(path,payload,root=out if root is None else root)
+            with mock.patch.object(api,'ROOT',root),mock.patch.object(api,'OUT',out),mock.patch.object(api,'guarded_write',side_effect=write):
+                def data(name,value):
+                    path=out/name;write(path,api.encoded(value));return api.source_record(path)
+                def mesh(name,value):
+                    attrs={'POSITION':value[:,[0,2,1]].astype('<f4'),'TEXCOORD_0':value[:,3:5].astype('<f4'),'NORMAL':value[:,5:8].astype('<f4')}
+                    return source3.write_mesh(api,out,name,attrs,np.arange(len(value),dtype=np.uint32).reshape(-1,3),[{}])
+                original=mesh('parent.glb',rows);patch=mesh('patch.glb',rows[:3])
+                parent={'schema_version':2,'native_frame':api.native_frame_record(),'derived_terrain':original,'terrain_source_triangle_indices':[0,1],'native_roads':[]}
+                parent_record=data('parent.json',parent)
+                oldparent={k:v for k,v in parent.items() if k!='native_frame'};oldparent_record=data('old-parent.json',oldparent)
+                label={'patch_triangle':0,'kind':'retained-parent-fragment','parent_triangle':0,'original_terrain_parent':0,'region_id':'legacy','vertex_edits':[],'maximum_plane_error_m':0,'maximum_uv_error':0}
+                oldledger={'schema_version':1,'coordinate_model':'native-float32-centimetres-v1','output_order':source3.OUTPUT_ORDER,
+                  'parent_support_surface':oldparent_record,'parent_derived_terrain':original,'terrain_patch':patch,'deleted_parent_triangles':[0],
+                  'terrain_edits':[{'parent_triangle':0,'region_id':'legacy'}],'regions':[{'id':'legacy','native_xy_polygons_cm':[[[0,0],[0,400],[400,0]]]}],'patch_faces':[label],'road_overrides':[]}
+                # Literal failing group from actual ledger9c118d63, regions[31].endpoint_stitches[0].
+                oldledger['regions'][0]['endpoint_stitches']=[{'original_native_cm':[
+                    [-4217.0087890625,248.8402099609375,-3.5649352073669434],
+                    [-4217.00830078125,248.84042358398438,-3.5652616024017334]],
+                    'replacement_native_cm':[-4217.0087890625,248.84030151367188,-3.565098285675049]}]
+                encoded=copy.deepcopy(oldledger);encoded.update(native_frame=api.native_frame_record(),coordinate_model=source3.COORDINATE_MODEL,parent_support_surface=parent_record)
+                doc,attrs,indices,_,_=source3.assemble_terrain(api,encoded,parent)
+                active=source3.write_mesh(api,out,'old-active.glb',attrs,indices,doc['materials'])
+                old_record=data('old-ledger.json',oldledger);manifest=data('old-active.json',{'schema_version':3,'surface_edits':old_record,'parent_support_surface':oldparent_record,'derived_terrain':active,'native_roads':[]})
+                result=source3.reconstruction.rebuild_legacy_baseline(api,parent_record,manifest,out/'generations/baseline')
+                self.assertEqual(result['derived_terrain']['sha256'],active['sha256']);self.assertTrue(result['old_geometry_reproduced'])
+                admitted=json.loads(api.admitted_record(result['ledger'],root/'data'))
+                self.assertEqual(admitted['native_frame'],api.native_frame_record())
+                self.assertEqual(admitted['regions'][0]['native_xy_polygons_cm'],[[[0,0],[0,-400],[400,0]]])
+                group=admitted['regions'][0]['endpoint_stitches'][0]
+                self.assertEqual(group['original_native_cm'],[[-4217.0087890625,-248.8402099609375,-3.5649352073669434],[-4217.00830078125,-248.84042358398438,-3.5652616024017334]])
+                self.assertEqual(group['replacement_native_cm'],[-4217.0087890625,-248.84030151367188,-3.565098285675049])
+                altered=copy.deepcopy(parent);altered['derived_terrain']=mesh('different-parent.glb',rows+np.array([1,0,0,0,0,0,0,0]))
+                altered_record=data('different-parent.json',altered)
+                with self.assertRaisesRegex(ValueError,'geometry differs.*ancestry rebase'):
+                    source3.reconstruction.rebuild_legacy_baseline(api,altered_record,manifest,out/'generations/refused')
+
+    def test_complete_small_composition_serializes_and_stages_without_alias_switch(self):
+        # Three genuine format triangles: new owned face0, authenticated legacy
+        # face1, byte-preserved parent face2. No Surface/world/index initialized.
+        rows=np.array([[0,0,.05,0,0,0,1,0],[0,1,.05,0,1,0,1,0],[1,0,.05,1,0,0,1,0],
+                       [4,0,.05,0,0,0,1,0],[4,1,.05,0,1,0,1,0],[5,0,.05,1,0,0,1,0],
+                       [8,0,.05,0,0,0,1,0],[8,1,.05,0,1,0,1,0],[9,0,.05,1,0,0,1,0]],dtype='<f4').astype(float)
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'data/prepared/surface';out.mkdir(parents=True);provenance=root/'data/source/provenance';provenance.mkdir(parents=True)
+            ordinary_write=api.guarded_write
+            def write(path,payload,root=None):return ordinary_write(path,payload,root=out if root is None else root)
+            with mock.patch.object(api,'ROOT',root),mock.patch.object(api,'OUT',out),mock.patch.object(api,'guarded_write',side_effect=write):
+                def data(name,value):
+                    path=out/name;write(path,api.encoded(value));return api.source_record(path)
+                def mesh(name,value):
+                    return source3.write_mesh(api,out,name,{'POSITION':value[:,[0,2,1]].astype('<f4'),'TEXCOORD_0':value[:,3:5].astype('<f4'),'NORMAL':value[:,5:8].astype('<f4')},np.arange(len(value),dtype=np.uint32).reshape(-1,3),[{}])
+                original=mesh('parent.glb',rows);patch=mesh('legacy-patch.glb',rows[3:6]);code=data('algorithm.json',{'fixture':'producer snapshot scope is not tested here'})
+                (root/'tools/data').mkdir(parents=True)
+                for name in ('support_source3.py','support_reconstruction.py'):
+                    (root/'tools/data'/name).write_bytes(('fixture '+name).encode())
+                parent={'schema_version':2,'native_frame':api.native_frame_record(),'derived_terrain':original,'terrain_source_triangle_indices':[0,1,2],'native_roads':[],
+                    'frame':{},'origin':{},'vertical_reference':{},'inputs':{},'atlas':{},'attribution':[],'native_assignment':{}}
+                parent_record=data('parent.json',parent);old_parent_record=data('old-parent.json',{k:v for k,v in parent.items() if k!='native_frame'})
+                label={'patch_triangle':0,'kind':'retained-parent-fragment','parent_triangle':1,'original_terrain_parent':1,'region_id':'legacy','vertex_edits':[],'maximum_plane_error_m':0,'maximum_uv_error':0}
+                prior={'schema_version':1,'coordinate_model':'native-float32-centimetres-v1','output_order':source3.OUTPUT_ORDER,
+                    'parent_support_surface':old_parent_record,'parent_derived_terrain':original,'terrain_patch':patch,'deleted_parent_triangles':[1],
+                    'terrain_edits':[{'parent_triangle':1,'region_id':'legacy'}],'regions':[{'id':'legacy','native_xy_polygons_cm':[[[400,0],[400,100],[500,0]]]}],
+                    'patch_faces':[label],'road_overrides':[],'recipe':{'algorithm':code,'source_inputs':[original],'candidate_inputs':[patch]}}
+                framed=copy.deepcopy(prior);framed.update(native_frame=api.native_frame_record(),coordinate_model=source3.COORDINATE_MODEL,parent_support_surface=parent_record)
+                doc,attrs,indices,_,_=source3.assemble_terrain(api,framed,parent);active=source3.write_mesh(api,out,'old-active.glb',attrs,indices,doc['materials'])
+                historical=data('historical.json',{'schema_version':3,'surface_edits':data('old-ledger.json',prior),'parent_support_surface':old_parent_record,'derived_terrain':active,'native_roads':[]})
+                baseline=source3.reconstruction.rebuild_legacy_baseline(api,parent_record,historical,out/'generations/baseline')
+                values=rows[:3,:5].tolist();q=[[str(Fraction(float(x))) for x in p] for p in values]
+                packet={'active':[{'id':'terrain0','classification':'reconstruction-ground','vertices':values,'source_record':active,'source_face':{'kind':'terrain','parent_triangle':0,'original_triangle':0}}],
+                    'raw_GSI':[{'id':'original-GSI:0','vertices':values,'source_record':original,'photo_record':original,'classification':'reconstruction-ground','source_face':{'photo_accessor_ref':{'mesh':0,'primitive':0,'triangle':0}}}]}
+                candidate={'region':[[p[0],p[1]] for p in q],'outside_active':[],
+                    'support_core':[{'parent':'original-GSI:0','vertices':q,'parent_barycentric':[['1','0','0'],['0','1','0'],['0','0','1']]}],
+                    'transition_tops':[],'sidewalls':[],
+                    'same_visible_collision_triangles':[{'vertices':q,'classification':'inferred-graded-support-core','source_row_index':0,'source_corner_indices':[0,1,2]}],
+                    'parent_accounting':[{'parent':'terrain0','removed_inside_area_q':'1/2'}]}
+                original_failures=data('original-failed-poses.json',{'staging_fixture':'not a real route proof'})
+                active_alias=out/'support-surface-manifest.json';write(active_alias,b'{"original_alias":true}');before=active_alias.read_bytes()
+                with mock.patch.object(api,'generation_code_record',return_value=code),mock.patch.object(api,'generation_configuration_record',return_value=code),mock.patch.object(api,'support_generation_inventory',return_value=[original]),mock.patch.object(api,'generation_bindings',return_value={'fixture':'snapshot semantics not under test'}):
+                    composed=source3.reconstruction.compose_retained(api,parent_record,baseline,packet,candidate,out/'generations/inputs',retained_inputs=[original_failures],original_query_artifacts=[original_failures])
+                    result=source3.reconstruction.stage_generation(api,{},root/composed['path'],out/'generations/final')
+                self.assertFalse(result['active_alias_written']);self.assertEqual(active_alias.read_bytes(),before)
+                manifest=json.loads(api.admitted_record(result['support_surface'],root/'data'))
+                self.assertTrue(manifest['staged_reconstruction']);self.assertEqual(manifest['parent_support_surface'],parent_record)
+                self.assertEqual(manifest['evidence']['source_exact_outside_partition_m2_q'],{'0':'0'})
+                states=manifest['evidence']['reconstruction_faces'];self.assertEqual(len(states),1)
+                self.assertEqual(states[0]['reconstruction_role'],'support-top');self.assertEqual(states[0]['cook_state'],1)
+                final_ledger=json.loads(api.admitted_record(manifest['surface_edits'],root/'data'))
+                self.assertEqual(final_ledger['patch_faces'][0],framed['patch_faces'][0])
+                self.assertEqual(final_ledger['deleted_parent_triangles'],[0,1])
+                self.assertFalse(manifest['evidence']['physical_role_filter_applied'])
+                inventory=json.loads(api.admitted_record(manifest['source_preservation'],root/'data'))
+                self.assertEqual(inventory['reconstruction_writer'],manifest['algorithm']['reconstruction'])
+                frozen={r['path'] for r in inventory['inputs_before']}
+                self.assertTrue({'tools/data/support_source3.py','tools/data/support_reconstruction.py',composed['path']} <= frozen)
+
+
+class ReconstructionPartitionTests(unittest.TestCase):
+    """Real reader and exact outside math; synthetic IO/decoded two-face input only."""
+    def fixture(self, *, legacy=False, new_fragment=False):
+        def rec(name):return {'path':'data/source/'+name,'bytes':1,'sha256':'a'*64}
+        parent_rec,patch_rec,prior_patch=rec('parent.glb'),rec('patch.glb'),rec('prior-patch.glb')
+        row=np.array([[10,10,0,0,0,0,1,0],[11,10,0,1,0,0,1,0],[10,11,0,0,1,0,1,0]],float)
+        parent_rows=np.array([row,row+np.array([10,0,0,0,0,0,0,0])])
+        fragment={'kind':'retained-parent-fragment','patch_triangle':0,'parent_triangle':1,'original_terrain_parent':1,
+                  'reconstruction_fragment':True,'corner_ancestry':[]}
+        labels=[fragment] if new_fragment else []
+        ledger={'native_frame':api.native_frame_record(),'parent_support_surface':rec('parent.json'),
+            'parent_derived_terrain':parent_rec,'terrain_patch':patch_rec,'deleted_parent_triangles':[0,1] if legacy else [0],
+            'road_overrides':[],'reconstruction':{'policy':copy.deepcopy(source3.reconstruction.POLICY),
+            'original_query_artifacts':[rec('failure.json')],'owned_source_enu_m_q':[['0','0'],['1','0'],['0','1']],
+            'new_deleted_parent_triangles':[0]}}
+        prior={'native_frame':api.native_frame_record(),'parent_support_surface':ledger['parent_support_surface'],
+               'parent_derived_terrain':parent_rec,'terrain_patch':prior_patch,'patch_faces':[],
+               'deleted_parent_triangles':[1],'road_overrides':[]}
+        records={ledger['parent_support_surface']['path']:lambda:json.dumps({'schema_version':2,'native_frame':api.native_frame_record(),'derived_terrain':parent_rec,'native_roads':[]}).encode()}
+        if legacy:
+            prior_rec,baseline_rec,original_rec=rec('prior.json'),rec('baseline.glb'),rec('original.json')
+            ledger['reconstruction']['legacy_baseline']={'ledger':prior_rec,'derived_terrain':baseline_rec,'original_manifest':original_rec}
+            records[prior_rec['path']]=lambda:json.dumps(prior).encode()
+            records[original_rec['path']]=lambda:json.dumps({'derived_terrain':baseline_rec}).encode()
+        def payload(_api,r,*args):return records[r['path']]() if r['path'] in records else r['path'].encode()
+        def primitive(_api,payload):
+            name=payload.decode()
+            rows=parent_rows if name==parent_rec['path'] else (parent_rows[1:2] if new_fragment and name==patch_rec['path'] else np.empty((0,3,8)))
+            flat=rows.reshape(-1,8)
+            return {},[(0,0,{'POSITION':flat[:,[0,2,1]],'TEXCOORD_0':flat[:,3:5],'NORMAL':flat[:,5:8]},np.arange(len(flat)).reshape(-1,3))]
+        return ledger,prior,labels,payload,primitive
+    def validate(self,ledger,labels,payload,primitive):
+        with mock.patch.object(source3,'record',side_effect=payload),mock.patch.object(source3,'primitives',side_effect=primitive):
+            return source3.reconstruction.validate(api,source3,ledger,labels)
+    def test_reader_refuses_omitted_outside_parent(self):
+        ledger,prior,labels,payload,primitive=self.fixture()
+        ledger['reconstruction']['new_deleted_parent_triangles']=[]
+        with self.assertRaisesRegex(ValueError,'deletion partition'):
+            self.validate(ledger,labels,payload,primitive)
+
+    def test_reader_refuses_omitted_outside_parent_and_exact_partition_type_errors(self):
+        ledger,prior,labels,payload,primitive=self.fixture(legacy=True)
+        # Parent0 lies wholly outside ownership. Its deletion cannot be hidden by
+        # omitting it from the auxiliary list checked by the old real validator.
+        for value in ([],[0,1],[0,2],[0,0],['0'],[False],0,{},None):
+            changed=copy.deepcopy(ledger);changed['reconstruction']['new_deleted_parent_triangles']=value
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'deletion partition'):
+                self.validate(changed,labels,payload,primitive)
+        with self.assertRaisesRegex(ValueError,'loses or invents original geometry'):
+            self.validate(ledger,labels,payload,primitive)
+        missing=copy.deepcopy(ledger);del missing['reconstruction']['new_deleted_parent_triangles']
+        with self.assertRaisesRegex(ValueError,'deletion partition'):self.validate(missing,labels,payload,primitive)
+        # An unchanged authenticated legacy-only population has an empty new set.
+        ledger['deleted_parent_triangles']=[1];ledger['reconstruction']['new_deleted_parent_triangles']=[]
+        self.assertEqual(self.validate(ledger,labels,payload,primitive)['source_exact_outside_partition_m2_q'],{})
+    def test_new_fragment_cannot_reuse_authenticated_legacy_removal(self):
+        ledger,prior,labels,payload,primitive=self.fixture(legacy=True,new_fragment=True)
+        ledger['deleted_parent_triangles']=[1];ledger['reconstruction']['new_deleted_parent_triangles']=[]
+        with self.assertRaisesRegex(ValueError,'fragment.*new deletion partition'):
+            self.validate(ledger,labels,payload,primitive)
+    def test_main_road_partition_keeps_exact_legacy_overrides_and_disjoint_explicit_trims(self):
+        ledger,prior,labels,payload,primitive=self.fixture(legacy=True)
+        ledger['deleted_parent_triangles']=[1];ledger['reconstruction']['new_deleted_parent_triangles']=[]
+        old={'source':0,'mesh':0,'primitive':0,'triangle':3,'replacement':{'sha256':'old'}}
+        prior['road_overrides']=[old];ledger['road_overrides']=[copy.deepcopy(old)]
+        self.validate(ledger,labels,payload,primitive)
+        cases=[[],[{**old,'replacement':{'sha256':'changed'}}],[old,{'source':0,'mesh':0,'primitive':0,'triangle':4}],
+               [old,{**old,'reconstruction_trim':True}],[old,{'source':0,'mesh':0,'primitive':0,'triangle':4,'reconstruction_trim':1}]]
+        for roads in cases:
+            changed=copy.deepcopy(ledger);changed['road_overrides']=roads
+            with self.subTest(roads=roads),self.assertRaisesRegex(ValueError,'road override partition'):
+                self.validate(changed,labels,payload,primitive)
+
+
+class LegacyCoordinateEncodingTests(unittest.TestCase):
+    def test_native_grouping_reflection_preserves_non_native_fields_and_signed_zero(self):
+        original={'coordinate_model':'native-float32-centimetres-v1','original_native_cm':[[1,2,3],[4,-0.0,6]],
+                  'replacement_native_cm':[1,-2.5,3],'native_xy_polygons_cm':[[[0,0],[1,0],[1,1],[0,1]]],
+                  'raw_enu_m':[1,2,3],'uv':[[.1,.2],[.3,.4]],'ids':[0,3,8],'nested':{'other':[2,5]}}
+        saved=copy.deepcopy(original);encoded=source3.reconstruction.reencode_legacy_native(original)
+        self.assertEqual(original,saved)
+        self.assertEqual(encoded['original_native_cm'],[[1,-2,3],[4,0.0,6]])
+        self.assertEqual(struct.pack('>d',encoded['original_native_cm'][1][1]),struct.pack('>d',0.0))
+        self.assertEqual(encoded['replacement_native_cm'],[1,2.5,3])
+        self.assertEqual(encoded['native_xy_polygons_cm'],[[[0,0],[1,0],[1,-1],[0,-1]]])
+        for k in ('raw_enu_m','uv','ids','nested','coordinate_model'):self.assertEqual(encoded[k],original[k])
+        self.assertEqual(source3.reconstruction.reencode_legacy_native(encoded),original)
+    def test_malformed_or_nonfinite_native_operands_refuse_without_flattening_or_coercion(self):
+        bad=[[],[1,2],[1,2,3,4],[[1,2,3],[4,5]],[[[1,2,3]]],[1,[2,3,4],5],[1,'2',3],[1,True,3],[1,float('nan'),3],[1,float('inf'),3],[1,10**400,3]]
+        for value in bad:
+            for key in ('original_native_cm','replacement_native_cm'):
+                with self.subTest(value=value,key=key),self.assertRaisesRegex(ValueError,'Historical native'):
+                    source3.reconstruction.reencode_legacy_native({'coordinate_model':'native-float32-centimetres-v1',key:value})
+        for value in ([],[[[0,0],[1,0]]],[[[0,0],[1,0],[1,'1']]],[[[0,0],[1,0],[1,float('nan')]]]):
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'Historical native'):
+                source3.reconstruction.reencode_legacy_native({'coordinate_model':'native-float32-centimetres-v1','native_xy_polygons_cm':value})
+    def test_current_unknown_or_framed_ledger_cannot_be_reflected_again(self):
+        for change in ({'coordinate_model':'unknown'},{'native_frame':api.native_frame_record()},{'native_frame':None}):
+            with self.subTest(change=change),self.assertRaisesRegex(ValueError,'exact old unframed'):
+                source3.reconstruction.reencode_legacy_native({'coordinate_model':'native-float32-centimetres-v1',**change})
+
+
+class ReconstructionAnchorAuthorityTests(unittest.TestCase):
+    def fixture(self):
+        record={'path':'data/prepared/genuine-parent.glb','bytes':40800172,'sha256':'a'*64,'triangles':1,'vertices':3,'bounds_glb_m':[[0,0,0],[1,0,1]]}
+        ledger={'parent_support_surface':{'path':'data/prepared/parent.json','bytes':1,'sha256':'b'*64},'parent_derived_terrain':copy.deepcopy(record)}
+        parent={'schema_version':2,'native_frame':api.native_frame_record(),'derived_terrain':copy.deepcopy(record)}
+        rows=np.array([[0,0,0,0,0,0,1,0],[0,1,0,0,1,0,1,0],[1,0,0,1,0,0,1,0]],float)
+        parts=[(0,0,{'POSITION':rows[:,[0,2,1]],'TEXCOORD_0':rows[:,3:5],'NORMAL':rows[:,5:8]},np.array([[0,1,2]]))]
+        face={'kind':'inferred-ground-reconstruction','reconstruction_role':'support-top','corner_ancestry':[{'source_record':copy.deepcopy(record),'mesh':0,'primitive':0,'triangle':0,'barycentric_q':[str(int(i==j)) for j in range(3)],'source_enu_uv_q':[str(Fraction(float(v))) for v in rows[i,:5]]} for i in range(3)]}
+        def payload(_api,value,name,limit=64*1024*1024):
+            api.support_topology.typed_record(value,name,limit,True)
+            if value==ledger['parent_support_surface']:return json.dumps(parent).encode()
+            raise AssertionError('Decoded authoritative parent must not be reread: '+name)
+        return record,ledger,parent,rows,parts,face,payload
+    def test_authenticated_full_parent_record_reuses_decoded_geometry_without_reread(self):
+        record,ledger,parent,rows,parts,face,payload=self.fixture()
+        with mock.patch.object(source3,'record',side_effect=payload) as io:
+            cache=source3.reconstruction.parent_anchor_cache(api,source3,ledger,parts)
+            source3.reconstruction.check_ancestry(api,source3,face,rows,cache)
+            self.assertEqual(io.call_count,1)
+        self.assertIs(cache[record['path'],record['sha256']][1],parts)
+    def test_every_cached_anchor_requires_full_record_and_actual_parent_authority(self):
+        record,ledger,parent,rows,parts,face,payload=self.fixture()
+        with mock.patch.object(source3,'record',side_effect=payload):
+            cache=source3.reconstruction.parent_anchor_cache(api,source3,ledger,parts)
+            for key,value in [('bytes',40800171),('triangles',2),('vertices',4),('bounds_glb_m',[[0,0,0],[2,0,1]]),('unadmitted_extra',True)]:
+                changed=copy.deepcopy(face);changed['corner_ancestry'][1]['source_record'][key]=value
+                with self.subTest(key=key),self.assertRaisesRegex(ValueError,'full-record mismatch'):
+                    source3.reconstruction.check_ancestry(api,source3,changed,rows,cache)
+            changed=copy.deepcopy(ledger);changed['parent_derived_terrain']['triangles']=2
+            with self.assertRaisesRegex(ValueError,'authority.*full record'):
+                source3.reconstruction.parent_anchor_cache(api,source3,changed,parts)
+    def test_unmatched_raw_anchor_and_raw_geometry_cache_keep_original_cap_and_record_fence(self):
+        record,ledger,parent,rows,parts,face,payload=self.fixture()
+        with mock.patch.object(source3,'record',side_effect=payload):
+            cache=source3.reconstruction.parent_anchor_cache(api,source3,ledger,parts)
+            for changes in ({'path':'data/source/not-parent.glb'},{'sha256':'c'*64},{'path':'data/source/raw.glb','bytes':32000001}):
+                changed=copy.deepcopy(face)
+                for a in changed['corner_ancestry']:a['source_record'].update(changes)
+                with self.subTest(changes=changes),self.assertRaisesRegex(ValueError,'32000000'):
+                    source3.reconstruction.check_ancestry(api,source3,changed,rows,cache)
+            raw={'path':'data/source/raw.glb','bytes':1,'sha256':'d'*64}
+            cache['raw-geometry',raw['path'],raw['sha256']]=(copy.deepcopy(raw),(parts[0][2]['POSITION'],parts[0][3]))
+            changed=copy.deepcopy(face)
+            for a in changed['corner_ancestry']:a['immutable_raw_geometry_record']={**raw,'bytes':2}
+            with self.assertRaisesRegex(ValueError,'GSI geometry cache full-record mismatch'):
+                source3.reconstruction.check_ancestry(api,source3,changed,rows,cache)
+
+
+class LegacyRoadContextTests(unittest.TestCase):
+    @contextlib.contextmanager
+    def fixture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);out=root/'data/prepared/surface';out.mkdir(parents=True)
+            ordinary=api.guarded_write
+            def write(path,payload,root=None):return ordinary(path,payload,root=out if root is None else root)
+            with mock.patch.object(api,'ROOT',root),mock.patch.object(api,'OUT',out),mock.patch.object(api,'guarded_write',side_effect=write):
+                def mesh(name,dx,z):
+                    rows=np.array([[dx,0,z,0,0,0,1,0],[dx,1,z,0,1,0,1,0],[dx+1,0,z,1,0,0,1,0]],float)
+                    return source3.write_mesh(api,out,name,{'POSITION':rows[:,[0,2,1]].astype('<f4'),'TEXCOORD_0':rows[:,3:5].astype('<f4'),'NORMAL':rows[:,5:8].astype('<f4')},np.array([[0,1,2]],np.uint32),[{}])
+                def data(name,value):
+                    path=out/name;write(path,api.encoded(value));return api.source_record(path)
+                raw=[mesh('raw0.glb',0,0),mesh('raw1.glb',2,0)]
+                patches=[mesh('patch0.glb',0,.05),mesh('patch1.glb',2,.1)]
+                parent={'native_roads':[{'source':r,'source_path':r['path'],'actor_label':'Road'+str(i),'triangles':1} for i,r in enumerate(raw)]}
+                prior={'road_overrides':[{'source':i,'mesh':0,'primitive':0,'triangle':0,'region_id':'old','anchors':[{}],'replacement':p,'replacement_patch_triangles':[0]} for i,p in enumerate(patches)]}
+                _,_,native,outputs=source3.apply_road_overrides(api,parent,prior,out/'own-baseline')
+                old=copy.deepcopy(outputs)
+                for row in old:row['record']['path']='data/prepared/historical/'+str(row['source'])+'.glb'
+                historical=data('historical.json',{'derived_roads':old})
+                baseline={'native_roads':native,'derived_roads':[{'source':r['source'],'record':copy.deepcopy(r['record'])} for r in outputs],'original_manifest':historical}
+                yield parent,prior,baseline,out,data,old
+    def test_real_baseline_road_reader_context_closes_old_keyerror_without_mutating_parent(self):
+        with self.fixture() as (parent,prior,baseline,out,data,old):
+            with self.assertRaisesRegex(KeyError,'_source3_derived_roads'):
+                source3.apply_road_overrides(api,parent,prior)
+            parent['_source3_derived_roads']=[{'source':99,'record':{'combined_new_stage':True}}]
+            before=copy.deepcopy((parent,prior,baseline))
+            roads,refs=source3.reconstruction.read_legacy_roads(api,source3,parent,prior,baseline)
+            self.assertEqual(len(roads),2);self.assertEqual(len(refs),2)
+            self.assertEqual((parent,prior,baseline),before)
+            self.assertNotEqual(baseline['derived_roads'][0]['record']['path'],old[0]['record']['path'])
+    def test_incomplete_wrong_swapped_and_changed_baseline_road_mappings_refuse(self):
+        with self.fixture() as (parent,prior,baseline,out,data,old):
+            cases=[]
+            broken=copy.deepcopy(baseline);broken.pop('derived_roads');cases.append(broken)
+            broken=copy.deepcopy(baseline);broken['derived_roads']=[];cases.append(broken)
+            broken=copy.deepcopy(baseline);broken['derived_roads'][1]['source']=0;cases.append(broken)
+            broken=copy.deepcopy(baseline);broken['derived_roads'][0]['record'],broken['derived_roads'][1]['record']=broken['derived_roads'][1]['record'],broken['derived_roads'][0]['record'];cases.append(broken)
+            broken=copy.deepcopy(baseline);broken['derived_roads'][0]['record']['bytes']+=1;cases.append(broken)
+            broken=copy.deepcopy(baseline);broken['derived_roads'][0]['source']=True;cases.append(broken)
+            for i,broken in enumerate(cases):
+                with self.subTest(case=i),self.assertRaisesRegex(ValueError,'Legacy baseline road context'):
+                    source3.reconstruction.read_legacy_roads(api,source3,parent,prior,broken)
+            changed=copy.deepcopy(old);changed[0]['face_map'][0]['original_triangle']=999
+            broken=copy.deepcopy(baseline);broken['original_manifest']=data('wrong-historical-provenance.json',{'derived_roads':changed})
+            with self.assertRaisesRegex(ValueError,'full face-map provenance'):
+                source3.reconstruction.read_legacy_roads(api,source3,parent,prior,broken)

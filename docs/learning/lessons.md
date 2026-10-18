@@ -1,5 +1,7 @@
 # Lessons awaiting retiring gates
 
+2026-10-16 Warm-cache regressions need the same key: review327 finds that Native R06 changes leaf.bin to later/leaf.bin after directory-to-junction replacement, so a refusal on the second path does not exercise the original cached lexical request. Retiring gate: preserve the exact same request and live arm/cache across the mutation, retain actual first/second request equality and cache observations, and make the unequal-request fixture go RED before accepting the real resampling refusal. Static HOLD and a repaired case alone retire no lesson.
+
 ## Continuation additions — reports 274–282, 2026-10-16
 
 Retire none. Preserve every earlier lesson and consumed failure.
@@ -146,3 +148,5 @@ Native mechanism versus pipeline: one mechanism passes with 0.3965882-second hea
 2026-10-16 Keep cost proposals behind measured acceptance: [238](../work/0_unreal-shibuya/reviews/238_native_m10_final_clock_cost_diagnosis_v1.md)-[239](../work/0_unreal-shibuya/reviews/239_native_final_clock_mechanism_decision_v1.md) count1258 source acquisitions and preserve4.0521267s reader headroom versus7.8358689s aggregate final-tool wall, with no exact failing native timestamp or causal split. Retiring gate remains a fresh complete actual mechanism under the original clocks; request-shape/byte equivalence and Runtime's separate cost screen cannot supply Native fit. Preserve every repeated temporal read and final barrier.
 
 2026-10-16 Restore a mutated owner before collecting complete evidence: a finally after return cannot precede evaluation of that return expression. Retiring gate: the actual missing-export control reaches its retained original guard, restores the owner in finally, then captures the complete ordinary inventory with errors/rows/tokens unchanged; no permissive reader or before-mutation snapshot. The check remains pending.
+
+2026-10-17 Prove operator readiness through its actual entry: syntax and builder tests missed a string/Path mismatch before child creation. Retiring gate: a persistent operator preflight uses real normal arguments and bound input records, rejects the reintroduced original guard defect, proves no child/Job/native output on preflight, and reaches the unchanged actual launch only after success. The task-only DNR and717-input preflight proof remain retained; no reusable gate has landed. A private selected-class suite remains a different bound from literal canonical discovery.

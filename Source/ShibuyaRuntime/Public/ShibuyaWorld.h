@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "CitySimulation.h"
 #include "RuntimeReadLimit.h"
+#include <memory>
 #include "ShibuyaWorld.generated.h"
 
 class UCameraComponent;
@@ -16,6 +17,7 @@ class UFloatingPawnMovement;
 class UInstancedStaticMeshComponent;
 class FJsonObject;
 class FJsonValue;
+namespace Shibuya { class VehicleBodySupport; }
 
 UCLASS()
 class SHIBUYARUNTIME_API AShibuyaWorld : public AActor
@@ -44,6 +46,7 @@ public:
     int32 VehicleCount = 0;
     int32 SupportSampleCount = 0;
     uint64 SupportFailures = 0;
+    std::shared_ptr<Shibuya::VehicleBodySupport> VehicleBodySupportData;
     double TickMilliseconds = 0;
     TArray<TSharedPtr<FJsonValue>> NativeBoundaryEvents;
     uint64 NativeBoundaryEventCount = 0;
@@ -110,9 +113,18 @@ class SHIBUYARUNTIME_API AShibuyaController : public APlayerController
 public:
     virtual void BeginPlay() override;
     virtual void PlayerTick(float DeltaTime) override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 private:
     FString CheckOutput;
     FString CaptureOutput;
+    FString PendingCapturePath;
+    FDelegateHandle CaptureProcessedHandle;
+    bool CaptureWaiting = false;
+    FString CaptureError;
+    double CaptureWaitStarted = 0;
+    TArray<TSharedPtr<FJsonValue>> CaptureRecords;
+    void RequestProbeCapture(int32 Index);
+    void CaptureProcessed();
     FString ProbeRunId;
     bool FailReportWrite = false;
     bool Probe = false, NegativeInput = false, Finished = false, InventoryOnly = false;

@@ -27,6 +27,13 @@ struct Point
 };
 inline double Length(const Point& p) { return std::sqrt(p.x*p.x+p.y*p.y+p.z*p.z); }
 inline double Distance2D(const Point& a, const Point& b) { return std::hypot(a.x-b.x, a.y-b.y); }
+// Shared by the actual fixed-step consumer and the bounded local body replay.
+inline double AdvanceVehicleHeading(double heading,const Point& displacement)
+{
+    const double desired=Length(displacement)>1e-9?std::atan2(displacement.y,displacement.x):heading;
+    const double difference=std::remainder(desired-heading,2*3.14159265358979323846);
+    return heading+std::clamp(difference,-3.0*StepSeconds,3.0*StepSeconds);
+}
 inline void RequireBoundaryFootprintStations(const std::vector<Point>& stations,const Point& endpoint,const Point& heading,double declaredCount)
 {
     if(!std::isfinite(declaredCount)||declaredCount!=std::floor(declaredCount)||declaredCount<4||declaredCount>4096||stations.size()!=static_cast<size_t>(declaredCount))
@@ -401,9 +408,7 @@ class Simulation
             }
             const Point displacement=candidate-agent.position;
             const double physicalMovement=Length(displacement);
-            const double desired=physicalMovement>1e-9?std::atan2(displacement.y,displacement.x):agent.heading;
-            const double difference=std::remainder(desired-agent.heading,2*3.14159265358979323846);
-            const double nextHeading=agent.heading+std::clamp(difference,-3.0*StepSeconds,3.0*StepSeconds);
+            const double nextHeading=AdvanceVehicleHeading(agent.heading,displacement);
             bool occupied=false;
             auto collision=[&](size_t other)
             {

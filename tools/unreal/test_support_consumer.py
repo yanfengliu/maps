@@ -20,7 +20,7 @@ HELPER = Path(os.environ.get("SHIBUYA_SUPPORT_HELPER", Path(__file__).parents[2]
 
 def functions():
     tree = ast.parse(HELPER.read_text(encoding="utf-8"))
-    wanted = {"_support_integer", "_support_identity", "_support_read", "_support_glb", "_admit_support_surface", "_support_check_hit", "_abort_support_update", "_require_complete_support", "_local_file"}
+    wanted = {"_native_frame_record", "_require_native_frame", "_source_to_native_cm", "_native_to_source_m", "_source_normal_to_native", "_native_actor_tag", "_native_scene_frame", "_support_oriented_key", "_support_integer", "_support_identity", "_support_read", "_support_glb", "_admit_support_surface", "_support_check_hit", "_abort_support_update", "_require_complete_support", "_local_file"}
     body = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in wanted]
     tools = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "ShibuyaCityTools")
     for node in tools.body:
@@ -29,6 +29,7 @@ def functions():
             body.append(node)
     environment = dict(hashlib=hashlib, json=json, math=math, Path=Path, re=re, stat=stat, struct=struct, _support_update=None, _support_completed=None)
     exec(compile(ast.Module(body=body, type_ignores=[]), str(HELPER), "exec"), environment)
+    environment["_native_scene_frame"] = lambda **kwargs: {"admitted":True}
     return environment
 
 
@@ -127,7 +128,7 @@ class RayTests(unittest.TestCase):
     def setUp(self):
         self.check = functions()["_support_check_hit"]
         self.sample = {"id": "retained-failing-centre", "expected_hit": True, "expected": {"actor_label": "City_053_data66", "native_mesh_path": "/Game/Surface/Roads/road.road", "position_m": [1, 2, 3], "normal_enu": [0, 0, 1]}}
-        self.actual = {"actor_label": "City_053_data66", "mesh_path": "/Game/Surface/Roads/road.road", "position_cm": [100, 200, 300], "normal_enu": [0, 0, 1]}
+        self.actual = {"actor_label": "City_053_data66", "mesh_path": "/Game/Surface/Roads/road.road", "position_cm": [100, -200, 300], "normal_enu": [0, 0, 1]}
 
     def test_actual_source_plane_is_accepted(self):
         self.check(self.sample, self.actual)

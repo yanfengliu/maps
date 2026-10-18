@@ -1,0 +1,3290 @@
+{
+  "bound": "Actual captured4face local pool with explicit local\u2194native IDs; not global first-hit/cooked-face mapping. Actual six query operands and prior/current records retained.",
+  "source_replay": {
+    "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\source3-fresh-network-20261017\\operator-v2\\seam-replay-v1\\replay-result.json",
+    "bytes": 89648,
+    "sha256": "cd3e6ca2490d3967e22f7cdc4f6101d44b3cadf3090850257e9d98d9145006d9"
+  },
+  "code_preimage": {
+    "path": "C:\\Users\\38909\\Documents\\github\\maps\\artifacts\\source3-first-blocker-repair-20261017\\preimages\\tools\\data\\surface_network.py",
+    "bytes": 156179,
+    "sha256": "228856f6b99a6b28dede41bd6038d80b6f73e9f841bce1765f6d870552f0b962"
+  },
+  "support_manifest_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+  "faces": [
+    {
+      "provider": "road",
+      "native_index_triangle": 44875,
+      "physical_membership": 1,
+      "native_f32_cm": [
+        [
+          -9314.4931640625,
+          -46880.734375,
+          1754.192138671875
+        ],
+        [
+          -9184.7783203125,
+          -46363.40234375,
+          1762.2535400390625
+        ],
+        [
+          -8712.6708984375,
+          -46330.66015625,
+          1759.342041015625
+        ]
+      ],
+      "native_vertex_f32_hex": [
+        [
+          "-0x1.2313f20000000p+13",
+          "-0x1.6e41780000000p+15",
+          "0x1.b68c4c0000000p+10"
+        ],
+        [
+          "-0x1.1f063a0000000p+13",
+          "-0x1.6a36ce0000000p+15",
+          "0x1.b8903a0000000p+10"
+        ],
+        [
+          "-0x1.10455e0000000p+13",
+          "-0x1.69f5520000000p+15",
+          "0x1.b7d5e40000000p+10"
+        ]
+      ],
+      "domain_at_operands": {
+        "previous-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-2488517522334829",
+              "denominator": "274877906944",
+              "float": -9053.174007330486
+            },
+            {
+              "numerator": "-6370883139197525",
+              "denominator": "137438953472",
+              "float": -46354.27568571704
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "1173268344275",
+              "denominator": "1125848977657298944",
+              "float": 1.0421187633143948e-06
+            },
+            {
+              "numerator": "174001427206110509",
+              "denominator": "241253352355135488",
+              "float": 0.7212394170173967
+            },
+            {
+              "numerator": "941523432281316881",
+              "denominator": "3377546932971896832",
+              "float": 0.27875954086383997
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "24368548930968009353893043",
+            "denominator": "1383443223745288942387200",
+            "float": 17.61441923507126
+          }
+        },
+        "previous-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195883264921",
+              "denominator": "549755813888",
+              "float": -8955.241143239475
+            },
+            {
+              "numerator": "-6373663193696443",
+              "denominator": "137438953472",
+              "float": -46374.503244416286
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "149608252982729489",
+              "denominator": "2814622444143247360",
+              "float": 0.053153933059135135
+            },
+            {
+              "numerator": "2152195696167373067",
+              "denominator": "4825067047102709760",
+              "float": 0.4460447233494287
+            },
+            {
+              "numerator": "16914800420754602983",
+              "denominator": "33775469329718968320",
+              "float": 0.5008013435914361
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "97414709807955502777202707",
+            "denominator": "5533772894981155769548800",
+            "float": 17.603669622276254
+          }
+        },
+        "previous-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874206074395",
+              "denominator": "549755813888",
+              "float": -9151.106871421498
+            },
+            {
+              "numerator": "-6368103084698607",
+              "denominator": "137438953472",
+              "float": -46334.04812701779
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-74801193320504057",
+              "denominator": "1407311222071623680",
+              "float": -0.053151848821608505
+            },
+            {
+              "numerator": "1602620464025682431",
+              "denominator": "1608355682367569920",
+              "float": 0.9964341106853647
+            },
+            {
+              "numerator": "638556074957244879",
+              "denominator": "11258489776572989440",
+              "float": 0.05671773813624381
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "32511227213262857351313879",
+            "denominator": "1844590964993718589849600",
+            "float": 17.625168847866263
+          }
+        },
+        "current-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-622129372955387",
+              "denominator": "68719476736",
+              "float": -9053.173896323817
+            },
+            {
+              "numerator": "-6370883065331641",
+              "denominator": "137438953472",
+              "float": -46354.275148272
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-6149",
+              "denominator": "804177841183784960",
+              "float": -7.6463186189617e-15
+            },
+            {
+              "numerator": "1740016909727779009",
+              "denominator": "2412533523551354880",
+              "float": 0.7212405103355406
+            },
+            {
+              "numerator": "336258306911797159",
+              "denominator": "1206266761775677440",
+              "float": 0.2787594896644671
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "6962442585500705356806419",
+            "denominator": "395269492498653983539200",
+            "float": 17.614419320571304
+          }
+        },
+        "current-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195822238359",
+              "denominator": "549755813888",
+              "float": -8955.241032232805
+            },
+            {
+              "numerator": "-6373663119830559",
+              "denominator": "137438953472",
+              "float": -46374.502706971245
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "1870066497648091",
+              "denominator": "35182780551790592",
+              "float": 0.05315289094036418
+            },
+            {
+              "numerator": "143480064766714727",
+              "denominator": "321671136473513984",
+              "float": 0.44604581666757254
+            },
+            {
+              "numerator": "1127653246098116975",
+              "denominator": "2251697955314597888",
+              "float": 0.5008012923920633
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "32471570093697780118973467",
+            "denominator": "1844590964993718589849600",
+            "float": 17.6036697077763
+          }
+        },
+        "current-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874145047833",
+              "denominator": "549755813888",
+              "float": -9151.106760414828
+            },
+            {
+              "numerator": "-6368103010832723",
+              "denominator": "137438953472",
+              "float": -46334.04758957275
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-149605319811890323",
+              "denominator": "2814622444143247360",
+              "float": -0.05315289094037946
+            },
+            {
+              "numerator": "4807866667410395131",
+              "denominator": "4825067047102709760",
+              "float": 0.9964352040035085
+            },
+            {
+              "numerator": "1915666495588886279",
+              "denominator": "33775469329718968320",
+              "float": 0.05671768693687093
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "97533682112926409633659331",
+            "denominator": "5533772894981155769548800",
+            "float": 17.62516893336631
+          }
+        }
+      }
+    },
+    {
+      "provider": "terrain",
+      "native_index_triangle": 26184,
+      "physical_membership": 1,
+      "native_f32_cm": [
+        [
+          -9091.7333984375,
+          -46356.95703125,
+          1763.0609130859375
+        ],
+        [
+          -9045.2353515625,
+          -46353.703125,
+          1761.63427734375
+        ],
+        [
+          -9045.2119140625,
+          -46353.72265625,
+          1761.633544921875
+        ]
+      ],
+      "native_vertex_f32_hex": [
+        [
+          "-0x1.1c1dde0000000p+13",
+          "-0x1.6a29ea0000000p+15",
+          "0x1.b8c3e60000000p+10"
+        ],
+        [
+          "-0x1.1aa9e20000000p+13",
+          "-0x1.6a23680000000p+15",
+          "0x1.b868980000000p+10"
+        ],
+        [
+          "-0x1.1aa9b20000000p+13",
+          "-0x1.6a23720000000p+15",
+          "0x1.b8688c0000000p+10"
+        ]
+      ],
+      "domain_at_operands": {
+        "previous-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-2488517522334829",
+              "denominator": "274877906944",
+              "float": -9053.174007330486
+            },
+            {
+              "numerator": "-6370883139197525",
+              "denominator": "137438953472",
+              "float": -46354.27568571704
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "11855111156253",
+              "denominator": "69272990646272",
+              "float": 0.171136124565325
+            },
+            {
+              "numerator": "1734146493925",
+              "denominator": "69272990646272",
+              "float": 0.025033515627758234
+            },
+            {
+              "numerator": "3977409499721",
+              "denominator": "4948070760448",
+              "float": 0.8038303598069167
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "999838080679155436023",
+            "denominator": "56748433937426022400",
+            "float": 17.61877837512895
+          }
+        },
+        "previous-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195883264921",
+              "denominator": "549755813888",
+              "float": -8955.241143239475
+            },
+            {
+              "numerator": "-6373663193696443",
+              "denominator": "137438953472",
+              "float": -46374.503244416286
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-178764276737147",
+              "denominator": "138545981292544",
+              "float": -1.2902884303780768
+            },
+            {
+              "numerator": "-88505796784795035",
+              "denominator": "69272990646272",
+              "float": -1277.637878184462
+            },
+            {
+              "numerator": "25332700546802823",
+              "denominator": "19792283041792",
+              "float": 1279.92816661484
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "1996246536669747811997",
+            "denominator": "113496867874852044800",
+            "float": 17.588560583635843
+          }
+        },
+        "previous-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874206074395",
+              "denominator": "549755813888",
+              "float": -9151.106871421498
+            },
+            {
+              "numerator": "-6368103084698607",
+              "denominator": "137438953472",
+              "float": -46334.04812701779
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "32312103051737",
+              "denominator": "19792283041792",
+              "float": 1.6325606795087269
+            },
+            {
+              "numerator": "12644180725397555",
+              "denominator": "9896141520896",
+              "float": 1277.6879452157175
+            },
+            {
+              "numerator": "-25300881270805055",
+              "denominator": "19792283041792",
+              "float": -1278.3205058952262
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "57231593887053540917",
+            "denominator": "3242767653567201280",
+            "float": 17.64899616662206
+          }
+        },
+        "current-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-622129372955387",
+              "denominator": "68719476736",
+              "float": -9053.173896323817
+            },
+            {
+              "numerator": "-6370883065331641",
+              "denominator": "137438953472",
+              "float": -46354.275148272
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "1481759024905",
+              "denominator": "8659123830784",
+              "float": 0.17112112655523037
+            },
+            {
+              "numerator": "3468292988253",
+              "denominator": "69272990646272",
+              "float": 0.05006703126133403
+            },
+            {
+              "numerator": "7707232208397",
+              "denominator": "9896141520896",
+              "float": 0.7788118421834356
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "499919039467755024491",
+            "denominator": "28374216968713011200",
+            "float": 17.618778344403072
+          }
+        },
+        "current-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195822238359",
+              "denominator": "549755813888",
+              "float": -8955.241032232805
+            },
+            {
+              "numerator": "-6373663119830559",
+              "denominator": "137438953472",
+              "float": -46374.502706971245
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-178766354651173",
+              "denominator": "138545981292544",
+              "float": -1.2903034283881716
+            },
+            {
+              "numerator": "-88504062638300707",
+              "denominator": "69272990646272",
+              "float": -1277.6128446688283
+            },
+            {
+              "numerator": "25332205373220733",
+              "denominator": "19792283041792",
+              "float": 1279.9031480972164
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "399249306636491407583",
+            "denominator": "22699373574970408960",
+            "float": 17.588560552909964
+          }
+        },
+        "current-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874145047833",
+              "denominator": "549755813888",
+              "float": -9151.106760414828
+            },
+            {
+              "numerator": "-6368103010832723",
+              "denominator": "137438953472",
+              "float": -46334.04758957275
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "226182643448133",
+              "denominator": "138545981292544",
+              "float": 1.6325456814986323
+            },
+            {
+              "numerator": "88510999224277213",
+              "denominator": "69272990646272",
+              "float": 1277.712978731351
+            },
+            {
+              "numerator": "-25301376444387145",
+              "denominator": "19792283041792",
+              "float": -1278.3455244128497
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "2003105782559583158013",
+            "denominator": "113496867874852044800",
+            "float": 17.64899613589618
+          }
+        }
+      }
+    },
+    {
+      "provider": "terrain",
+      "native_index_triangle": 26504,
+      "physical_membership": 1,
+      "native_f32_cm": [
+        [
+          -8798.9638671875,
+          -46267.72265625,
+          1752.6224365234375
+        ],
+        [
+          -8964.984375,
+          -46434.15234375,
+          1759.1214599609375
+        ],
+        [
+          -8964.9833984375,
+          -46348.16015625,
+          1759.0732421875
+        ]
+      ],
+      "native_vertex_f32_hex": [
+        [
+          "-0x1.12f7b60000000p+13",
+          "-0x1.6977720000000p+15",
+          "0x1.b627d60000000p+10"
+        ],
+        [
+          "-0x1.1827e00000000p+13",
+          "-0x1.6ac44e0000000p+15",
+          "0x1.b7c7c60000000p+10"
+        ],
+        [
+          "-0x1.1827de0000000p+13",
+          "-0x1.6a18520000000p+15",
+          "0x1.b7c4b00000000p+10"
+        ]
+      ],
+      "domain_at_operands": {
+        "previous-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-2488517522334829",
+              "denominator": "274877906944",
+              "float": -9053.174007330486
+            },
+            {
+              "numerator": "-6370883139197525",
+              "denominator": "137438953472",
+              "float": -46354.27568571704
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-1067310525010923511",
+              "denominator": "2009211183109767168",
+              "float": -0.5312087320552278
+            },
+            {
+              "numerator": "-71289809669971813",
+              "denominator": "167434265259147264",
+              "float": -0.4257778989242891
+            },
+            {
+              "numerator": "3931999424160352435",
+              "denominator": "2009211183109767168",
+              "float": 1.956986630979517
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "3223272920097352386784031",
+            "denominator": "182882866800391251558400",
+            "float": 17.624794364227764
+          }
+        },
+        "previous-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195883264921",
+              "denominator": "549755813888",
+              "float": -8955.241143239475
+            },
+            {
+              "numerator": "-6373663193696443",
+              "denominator": "137438953472",
+              "float": -46374.503244416286
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "117907554207455725",
+              "denominator": "2009211183109767168",
+              "float": 0.058683504849382576
+            },
+            {
+              "numerator": "60483223386728185",
+              "denominator": "167434265259147264",
+              "float": 0.3612356365234736
+            },
+            {
+              "numerator": "1165504948261573223",
+              "denominator": "2009211183109767168",
+              "float": 0.5800808586271439
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "3216383115072951665368931",
+            "denominator": "182882866800391251558400",
+            "float": 17.5871210428011
+          }
+        },
+        "previous-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874206074395",
+              "denominator": "549755813888",
+              "float": -9151.106871421498
+            },
+            {
+              "numerator": "-6368103084698607",
+              "denominator": "137438953472",
+              "float": -46334.04812701779
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-250280956025478083",
+              "denominator": "223245687012196352",
+              "float": -1.1211009689598381
+            },
+            {
+              "numerator": "-67687614242223937",
+              "denominator": "55811421753049088",
+              "float": -1.2127914343720518
+            },
+            {
+              "numerator": "744277100006570183",
+              "denominator": "223245687012196352",
+              "float": 3.3338924033318897
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "3230162725121753108199131",
+            "denominator": "182882866800391251558400",
+            "float": 17.662467685654427
+          }
+        },
+        "current-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-622129372955387",
+              "denominator": "68719476736",
+              "float": -9053.173896323817
+            },
+            {
+              "numerator": "-6370883065331641",
+              "denominator": "137438953472",
+              "float": -46354.275148272
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-1067309181646053527",
+              "denominator": "2009211183109767168",
+              "float": -0.5312080634521057
+            },
+            {
+              "numerator": "-71290751406370049",
+              "denominator": "167434265259147264",
+              "float": -0.42578352343846354
+            },
+            {
+              "numerator": "3932009381632261283",
+              "denominator": "2009211183109767168",
+              "float": 1.9569915868905692
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "3223272911713580488790351",
+            "denominator": "182882866800391251558400",
+            "float": 17.624794318385458
+          }
+        },
+        "current-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195822238359",
+              "denominator": "549755813888",
+              "float": -8955.241032232805
+            },
+            {
+              "numerator": "-6373663119830559",
+              "denominator": "137438953472",
+              "float": -46374.502706971245
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "13100988619147301",
+              "denominator": "223245687012196352",
+              "float": 0.05868417345250468
+            },
+            {
+              "numerator": "20160760550109983",
+              "denominator": "55811421753049088",
+              "float": 0.36123001200929916
+            },
+            {
+              "numerator": "129501656192609119",
+              "denominator": "223245687012196352",
+              "float": 0.5800858145381962
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "3216383106689179767375251",
+            "denominator": "182882866800391251558400",
+            "float": 17.587120996958795
+          }
+        },
+        "current-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874145047833",
+              "denominator": "549755813888",
+              "float": -9151.106760414828
+            },
+            {
+              "numerator": "-6368103010832723",
+              "denominator": "137438953472",
+              "float": -46334.04758957275
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-2252527260864432763",
+              "denominator": "2009211183109767168",
+              "float": -1.1211003003567162
+            },
+            {
+              "numerator": "-203063784463070047",
+              "denominator": "167434265259147264",
+              "float": -1.2127970588862262
+            },
+            {
+              "numerator": "6698503857531040495",
+              "denominator": "2009211183109767168",
+              "float": 3.3338973592429424
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "3230162716737981210205451",
+            "denominator": "182882866800391251558400",
+            "float": 17.66246763981212
+          }
+        }
+      }
+    },
+    {
+      "provider": "road",
+      "native_index_triangle": 44881,
+      "physical_membership": 1,
+      "native_f32_cm": [
+        [
+          -9156.0302734375,
+          -46248.44921875,
+          1764.1669921875
+        ],
+        [
+          -8711.974609375,
+          -46327.55859375,
+          1759.3424072265625
+        ],
+        [
+          -9184.181640625,
+          -46360.6015625,
+          1762.25390625
+        ]
+      ],
+      "native_vertex_f32_hex": [
+        [
+          "-0x1.1e203e0000000p+13",
+          "-0x1.6950e60000000p+15",
+          "0x1.b90ab00000000p+10"
+        ],
+        [
+          "-0x1.103fcc0000000p+13",
+          "-0x1.69ef1e0000000p+15",
+          "0x1.b7d5ea0000000p+10"
+        ],
+        [
+          "-0x1.1f01740000000p+13",
+          "-0x1.6a31340000000p+15",
+          "0x1.b890400000000p+10"
+        ]
+      ],
+      "domain_at_operands": {
+        "previous-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-2488517522334829",
+              "denominator": "274877906944",
+              "float": -9053.174007330486
+            },
+            {
+              "numerator": "-6370883139197525",
+              "denominator": "137438953472",
+              "float": -46354.27568571704
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-305559223049943",
+              "denominator": "11848575403163648",
+              "float": -0.025788688737074388
+            },
+            {
+              "numerator": "6610895764232285",
+              "denominator": "23697150806327296",
+              "float": 0.2789742875952468
+            },
+            {
+              "numerator": "17697373488194897",
+              "denominator": "23697150806327296",
+              "float": 0.7468144011418276
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "341933914822890493094737",
+            "denominator": "19412705940543320883200",
+            "float": 17.61392336906333
+          }
+        },
+        "previous-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195883264921",
+              "denominator": "549755813888",
+              "float": -8955.241143239475
+            },
+            {
+              "numerator": "-6373663193696443",
+              "denominator": "137438953472",
+              "float": -46374.503244416286
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-1988528618574344777",
+              "denominator": "7322419599155134464",
+              "float": -0.2715671495804177
+            },
+            {
+              "numerator": "1834341792639744629",
+              "denominator": "3661209799577567232",
+              "float": 0.5010206715964194
+            },
+            {
+              "numerator": "5642264632449989983",
+              "denominator": "7322419599155134464",
+              "float": 0.7705464779839983
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "52795297574913399232150237",
+            "denominator": "2999263067813943076454400",
+            "float": 17.60275653758976
+          }
+        },
+        "previous-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874206074395",
+              "denominator": "549755813888",
+              "float": -9151.106871421498
+            },
+            {
+              "numerator": "-6368103084698607",
+              "denominator": "137438953472",
+              "float": -46334.04812701779
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "1610857418884615229",
+              "denominator": "7322419599155134464",
+              "float": 0.21998977210626894
+            },
+            {
+              "numerator": "52106249627007859",
+              "denominator": "915302449894391808",
+              "float": 0.05692790359407419
+            },
+            {
+              "numerator": "5294712183254456363",
+              "denominator": "7322419599155134464",
+              "float": 0.7230823242996569
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "6607785263169970391765437",
+            "denominator": "374907883476742884556800",
+            "float": 17.6250902005369
+          }
+        },
+        "current-centre": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-622129372955387",
+              "denominator": "68719476736",
+              "float": -9053.173896323817
+            },
+            {
+              "numerator": "-6370883065331641",
+              "denominator": "137438953472",
+              "float": -46354.275148272
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-47200099739750843",
+              "denominator": "1830604899788783616",
+              "float": -0.025783881461912846
+            },
+            {
+              "numerator": "2042766413949559579",
+              "denominator": "7322419599155134464",
+              "float": 0.27897423608246313
+            },
+            {
+              "numerator": "5468453584164578257",
+              "denominator": "7322419599155134464",
+              "float": 0.7468096453794497
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "105657580240938000247573463",
+            "denominator": "5998526135627886152908800",
+            "float": 17.613923462530426
+          }
+        },
+        "current-edge--1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-4923195822238359",
+              "denominator": "549755813888",
+              "float": -8955.241032232805
+            },
+            {
+              "numerator": "-6373663119830559",
+              "denominator": "137438953472",
+              "float": -46374.502706971245
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "-1988493417688483375",
+              "denominator": "7322419599155134464",
+              "float": -0.27156234230525617
+            },
+            {
+              "numerator": "917170802020318193",
+              "denominator": "1830604899788783616",
+              "float": 0.5010206200836357
+            },
+            {
+              "numerator": "5642229808762345067",
+              "denominator": "7322419599155134464",
+              "float": 0.7705417222216204
+            }
+          ],
+          "contains_exact": false,
+          "height_m": {
+            "numerator": "26397648927622909086400051",
+            "denominator": "1499631533906971538227200",
+            "float": 17.602756631056856
+          }
+        },
+        "current-edge-1.0": {
+          "degenerate_xy": false,
+          "packed_query_cm": [
+            {
+              "numerator": "-5030874145047833",
+              "denominator": "549755813888",
+              "float": -9151.106760414828
+            },
+            {
+              "numerator": "-6368103010832723",
+              "denominator": "137438953472",
+              "float": -46334.04758957275
+            }
+          ],
+          "barycentric": [
+            {
+              "numerator": "536964206590158877",
+              "denominator": "2440806533051711488",
+              "float": 0.2199945793814305
+            },
+            {
+              "numerator": "69474936636307731",
+              "denominator": "1220403266525855744",
+              "float": 0.05692785208129056
+            },
+            {
+              "numerator": "1764892453188937149",
+              "denominator": "2440806533051711488",
+              "float": 0.723077568537279
+            }
+          ],
+          "contains_exact": true,
+          "height_m": {
+            "numerator": "17620760795230727358257787",
+            "denominator": "999754355937981025484800",
+            "float": 17.625090294003996
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "label": "previous-centre",
+      "literal_xy": [
+        -90.53174007330486,
+        -463.5427568571704
+      ],
+      "retained_record": {
+        "point": [
+          -90.53174007330486,
+          -463.5427568571704,
+          17.61441923507126
+        ],
+        "cross_section": [
+          {
+            "offset_m": -1.0,
+            "point": [
+              -89.55241143239475,
+              -463.74503244416286,
+              17.603669622276257
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.603669622276257,
+            "triangle": 1264,
+            "barycentric": [
+              0.053153933059135135,
+              0.44604472334942874,
+              0.5008013435914362
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.59058594089463,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 0,
+            "point": [
+              -90.53174007330486,
+              -463.5427568571704,
+              17.61441923507126
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.61441923507126,
+            "triangle": 1264,
+            "barycentric": [
+              1.0421187633126775e-06,
+              0.7212394170173967,
+              0.27875954086384
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.625291800311594,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 1.0,
+            "point": [
+              -91.51106871421497,
+              -463.3404812701779,
+              17.625090200536896
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1270,
+              "triangle": 1270,
+              "source_triangle_index": 1270
+            },
+            "height": 17.625090200536896,
+            "triangle": 1270,
+            "barycentric": [
+              0.21998977210626894,
+              0.056927903594074195,
+              0.7230823242996569
+            ],
+            "gradient_enu": [
+              -0.007490939156158247,
+              0.018938223181485962
+            ],
+            "normal_enu": [
+              0.0074893861290889156,
+              -0.018934296894990668,
+              0.9997926792573057
+            ],
+            "normal_up_z": 0.9997926792573057,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.659098398337154,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          }
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1264,
+          "triangle": 1264,
+          "source_triangle_index": 1264
+        },
+        "height": 17.61441923507126,
+        "triangle": 1264,
+        "barycentric": [
+          1.0421187633126775e-06,
+          0.7212394170173967,
+          0.27875954086384
+        ],
+        "gradient_enu": [
+          -0.007375998725986708,
+          0.017432088764422635
+        ],
+        "normal_enu": [
+          0.007374677733187457,
+          -0.017428966792119065,
+          0.9998209065852198
+        ],
+        "normal_up_z": 0.9998209065852198,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.625291800311594,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "point_check": [
+        [
+          -90.53174007330486,
+          -463.5427568571704,
+          17.61441923507126
+        ],
+        {
+          "source": "PLATEAU-road",
+          "layer_ref": {
+            "kind": "road",
+            "source": 19,
+            "mesh": 0,
+            "primitive": 0,
+            "original_triangle": 1264,
+            "triangle": 1264,
+            "source_triangle_index": 1264
+          },
+          "height": 17.61441923507126,
+          "triangle": 1264,
+          "barycentric": [
+            1.0421187633126775e-06,
+            0.7212394170173967,
+            0.27875954086384
+          ],
+          "gradient_enu": [
+            -0.007375998725986708,
+            0.017432088764422635
+          ],
+          "normal_enu": [
+            0.007374677733187457,
+            -0.017428966792119065,
+            0.9998209065852198
+          ],
+          "normal_up_z": 0.9998209065852198,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.625291800311594,
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+          "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [
+            {
+              "height": 17.61441923507126,
+              "triangle": 44875,
+              "barycentric": [
+                1.0421187633126775e-06,
+                0.7212394170173967,
+                0.27875954086384
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.61441923507126,
+              "triangle": 44875,
+              "barycentric": [
+                1.0421187633126775e-06,
+                0.7212394170173967,
+                0.27875954086384
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        },
+        "terrain": {
+          "physical": [
+            {
+              "height": 17.61877837512895,
+              "triangle": 26184,
+              "barycentric": [
+                0.171136124565325,
+                0.025033515627758234,
+                0.8038303598069167
+              ],
+              "gradient_enu": [
+                -0.030725658950174765,
+                0.000629209259790283
+              ],
+              "normal_enu": [
+                0.030711159610930263,
+                -0.0006289123379723237,
+                0.9995281032290303
+              ],
+              "normal_up_z": 0.9995281032290303,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.61877837512895,
+              "triangle": 26184,
+              "barycentric": [
+                0.171136124565325,
+                0.025033515627758234,
+                0.8038303598069167
+              ],
+              "gradient_enu": [
+                -0.030725658950174765,
+                0.000629209259790283
+              ],
+              "normal_enu": [
+                0.030711159610930263,
+                -0.0006289123379723237,
+                0.9995281032290303
+              ],
+              "normal_up_z": 0.9995281032290303,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "previous-edge--1.0",
+      "literal_xy": [
+        -89.55241143239475,
+        -463.74503244416286
+      ],
+      "retained_record": {
+        "offset_m": -1.0,
+        "point": [
+          -89.55241143239475,
+          -463.74503244416286,
+          17.603669622276257
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1264,
+          "triangle": 1264,
+          "source_triangle_index": 1264
+        },
+        "height": 17.603669622276257,
+        "triangle": 1264,
+        "barycentric": [
+          0.053153933059135135,
+          0.44604472334942874,
+          0.5008013435914362
+        ],
+        "gradient_enu": [
+          -0.007375998725986708,
+          0.017432088764422635
+        ],
+        "normal_enu": [
+          0.007374677733187457,
+          -0.017428966792119065,
+          0.9998209065852198
+        ],
+        "normal_up_z": 0.9998209065852198,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.59058594089463,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "point_check": [
+        [
+          -89.55241143239475,
+          -463.74503244416286,
+          17.603669622276257
+        ],
+        {
+          "source": "PLATEAU-road",
+          "layer_ref": {
+            "kind": "road",
+            "source": 19,
+            "mesh": 0,
+            "primitive": 0,
+            "original_triangle": 1264,
+            "triangle": 1264,
+            "source_triangle_index": 1264
+          },
+          "height": 17.603669622276257,
+          "triangle": 1264,
+          "barycentric": [
+            0.053153933059135135,
+            0.44604472334942874,
+            0.5008013435914362
+          ],
+          "gradient_enu": [
+            -0.007375998725986708,
+            0.017432088764422635
+          ],
+          "normal_enu": [
+            0.007374677733187457,
+            -0.017428966792119065,
+            0.9998209065852198
+          ],
+          "normal_up_z": 0.9998209065852198,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.59058594089463,
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+          "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [
+            {
+              "height": 17.603669622276257,
+              "triangle": 44875,
+              "barycentric": [
+                0.053153933059135135,
+                0.44604472334942874,
+                0.5008013435914362
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.603669622276257,
+              "triangle": 44875,
+              "barycentric": [
+                0.053153933059135135,
+                0.44604472334942874,
+                0.5008013435914362
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        },
+        "terrain": {
+          "physical": [
+            {
+              "height": 17.5871210428011,
+              "triangle": 26504,
+              "barycentric": [
+                0.058683504849382576,
+                0.36123563652347357,
+                0.5800808586271438
+              ],
+              "gradient_enu": [
+                -0.03858424203386493,
+                -0.0005602845434492384
+              ],
+              "normal_enu": [
+                0.038555546995890255,
+                0.0005598678607465747,
+                0.999256301628279
+              ],
+              "normal_up_z": 0.999256301628279,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.5871210428011,
+              "triangle": 26504,
+              "barycentric": [
+                0.058683504849382576,
+                0.36123563652347357,
+                0.5800808586271438
+              ],
+              "gradient_enu": [
+                -0.03858424203386493,
+                -0.0005602845434492384
+              ],
+              "normal_enu": [
+                0.038555546995890255,
+                0.0005598678607465747,
+                0.999256301628279
+              ],
+              "normal_up_z": 0.999256301628279,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "previous-edge-1.0",
+      "literal_xy": [
+        -91.51106871421497,
+        -463.3404812701779
+      ],
+      "retained_record": {
+        "offset_m": 1.0,
+        "point": [
+          -91.51106871421497,
+          -463.3404812701779,
+          17.625090200536896
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1270,
+          "triangle": 1270,
+          "source_triangle_index": 1270
+        },
+        "height": 17.625090200536896,
+        "triangle": 1270,
+        "barycentric": [
+          0.21998977210626894,
+          0.056927903594074195,
+          0.7230823242996569
+        ],
+        "gradient_enu": [
+          -0.007490939156158247,
+          0.018938223181485962
+        ],
+        "normal_enu": [
+          0.0074893861290889156,
+          -0.018934296894990668,
+          0.9997926792573057
+        ],
+        "normal_up_z": 0.9997926792573057,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.659098398337154,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "point_check": [
+        [
+          -91.51106871421497,
+          -463.3404812701779,
+          17.625090200536896
+        ],
+        {
+          "source": "PLATEAU-road",
+          "layer_ref": {
+            "kind": "road",
+            "source": 19,
+            "mesh": 0,
+            "primitive": 0,
+            "original_triangle": 1270,
+            "triangle": 1270,
+            "source_triangle_index": 1270
+          },
+          "height": 17.625090200536896,
+          "triangle": 1270,
+          "barycentric": [
+            0.21998977210626894,
+            0.056927903594074195,
+            0.7230823242996569
+          ],
+          "gradient_enu": [
+            -0.007490939156158247,
+            0.018938223181485962
+          ],
+          "normal_enu": [
+            0.0074893861290889156,
+            -0.018934296894990668,
+            0.9997926792573057
+          ],
+          "normal_up_z": 0.9997926792573057,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.659098398337154,
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+          "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [
+            {
+              "height": 17.625090200536896,
+              "triangle": 44881,
+              "barycentric": [
+                0.21998977210626894,
+                0.056927903594074195,
+                0.7230823242996569
+              ],
+              "gradient_enu": [
+                -0.007490939156158247,
+                0.018938223181485962
+              ],
+              "normal_enu": [
+                0.0074893861290889156,
+                -0.018934296894990668,
+                0.9997926792573057
+              ],
+              "normal_up_z": 0.9997926792573057,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.625090200536896,
+              "triangle": 44881,
+              "barycentric": [
+                0.21998977210626894,
+                0.056927903594074195,
+                0.7230823242996569
+              ],
+              "gradient_enu": [
+                -0.007490939156158247,
+                0.018938223181485962
+              ],
+              "normal_enu": [
+                0.0074893861290889156,
+                -0.018934296894990668,
+                0.9997926792573057
+              ],
+              "normal_up_z": 0.9997926792573057,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        },
+        "terrain": {
+          "physical": [],
+          "raw": []
+        }
+      }
+    },
+    {
+      "label": "current-centre",
+      "literal_xy": [
+        -90.53173896323817,
+        -463.54275148272
+      ],
+      "retained_record": {
+        "point": [
+          -90.53173896323817,
+          -463.54275148272,
+          17.618778344403072
+        ],
+        "cross_section": [
+          {
+            "offset_m": -1.0,
+            "point": [
+              -89.55241032232806,
+              -463.7450270697125,
+              17.6036697077763
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.6036697077763,
+            "triangle": 1264,
+            "barycentric": [
+              0.05315289094036418,
+              0.4460458166675725,
+              0.5008012923920634
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.590585925888856,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 0,
+            "point": [
+              -90.53173896323817,
+              -463.54275148272,
+              17.618778344403072
+            ],
+            "source": "GSI-DEM5A",
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "layer_ref": {
+              "kind": "terrain",
+              "triangle": 26184,
+              "parent_triangle": 26184,
+              "original_triangle": 2962
+            },
+            "height": 17.618778344403072,
+            "triangle": 26184,
+            "barycentric": [
+              0.17112112655523037,
+              0.05006703126133403,
+              0.7788118421834356
+            ],
+            "gradient_enu": [
+              -0.030725658950174765,
+              0.000629209259790283
+            ],
+            "normal_enu": [
+              0.030711159610930263,
+              -0.0006289123379723237,
+              0.9995281032290303
+            ],
+            "normal_up_z": 0.9995281032290303,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.62529179184716,
+            "vehicle_source_interval": {
+              "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+              "directed_edges": [
+                [
+                  22566960,
+                  748883769,
+                  748883728
+                ]
+              ],
+              "points": [
+                [
+                  -95.57817363035265,
+                  -487.9753489971704
+                ],
+                [
+                  -79.84803459548931,
+                  -411.81699537978034
+                ]
+              ],
+              "width_m": 2.0
+            },
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3"
+          },
+          {
+            "offset_m": 1.0,
+            "point": [
+              -91.51106760414828,
+              -463.34047589572754,
+              17.625090294003993
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1270,
+              "triangle": 1270,
+              "source_triangle_index": 1270
+            },
+            "height": 17.625090294003993,
+            "triangle": 1270,
+            "barycentric": [
+              0.21999457938143047,
+              0.05692785208129056,
+              0.7230775685372789
+            ],
+            "gradient_enu": [
+              -0.007490939156158247,
+              0.018938223181485962
+            ],
+            "normal_enu": [
+              0.0074893861290889156,
+              -0.018934296894990668,
+              0.9997926792573057
+            ],
+            "normal_up_z": 0.9997926792573057,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.659098389226273,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          }
+        ],
+        "source": "GSI-DEM5A",
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "layer_ref": {
+          "kind": "terrain",
+          "triangle": 26184,
+          "parent_triangle": 26184,
+          "original_triangle": 2962
+        },
+        "height": 17.618778344403072,
+        "triangle": 26184,
+        "barycentric": [
+          0.17112112655523037,
+          0.05006703126133403,
+          0.7788118421834356
+        ],
+        "gradient_enu": [
+          -0.030725658950174765,
+          0.000629209259790283
+        ],
+        "normal_enu": [
+          0.030711159610930263,
+          -0.0006289123379723237,
+          0.9995281032290303
+        ],
+        "normal_up_z": 0.9995281032290303,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.62529179184716,
+        "vehicle_source_interval": {
+          "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+          "directed_edges": [
+            [
+              22566960,
+              748883769,
+              748883728
+            ]
+          ],
+          "points": [
+            [
+              -95.57817363035265,
+              -487.9753489971704
+            ],
+            [
+              -79.84803459548931,
+              -411.81699537978034
+            ]
+          ],
+          "width_m": 2.0
+        },
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3"
+      },
+      "point_check": [
+        [
+          -90.53173896323817,
+          -463.54275148272,
+          17.618778344403072
+        ],
+        {
+          "source": "GSI-DEM5A",
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "layer_ref": {
+            "kind": "terrain",
+            "triangle": 26184,
+            "parent_triangle": 26184,
+            "original_triangle": 2962
+          },
+          "height": 17.618778344403072,
+          "triangle": 26184,
+          "barycentric": [
+            0.17112112655523037,
+            0.05006703126133403,
+            0.7788118421834356
+          ],
+          "gradient_enu": [
+            -0.030725658950174765,
+            0.000629209259790283
+          ],
+          "normal_enu": [
+            0.030711159610930263,
+            -0.0006289123379723237,
+            0.9995281032290303
+          ],
+          "normal_up_z": 0.9995281032290303,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.62529179184716,
+          "vehicle_source_interval": {
+            "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+            "directed_edges": [
+              [
+                22566960,
+                748883769,
+                748883728
+              ]
+            ],
+            "points": [
+              [
+                -95.57817363035265,
+                -487.9753489971704
+              ],
+              [
+                -79.84803459548931,
+                -411.81699537978034
+              ]
+            ],
+            "width_m": 2.0
+          },
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [],
+          "raw": []
+        },
+        "terrain": {
+          "physical": [
+            {
+              "height": 17.618778344403072,
+              "triangle": 26184,
+              "barycentric": [
+                0.17112112655523037,
+                0.05006703126133403,
+                0.7788118421834356
+              ],
+              "gradient_enu": [
+                -0.030725658950174765,
+                0.000629209259790283
+              ],
+              "normal_enu": [
+                0.030711159610930263,
+                -0.0006289123379723237,
+                0.9995281032290303
+              ],
+              "normal_up_z": 0.9995281032290303,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.618778344403072,
+              "triangle": 26184,
+              "barycentric": [
+                0.17112112655523037,
+                0.05006703126133403,
+                0.7788118421834356
+              ],
+              "gradient_enu": [
+                -0.030725658950174765,
+                0.000629209259790283
+              ],
+              "normal_enu": [
+                0.030711159610930263,
+                -0.0006289123379723237,
+                0.9995281032290303
+              ],
+              "normal_up_z": 0.9995281032290303,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "current-edge--1.0",
+      "literal_xy": [
+        -89.55241032232806,
+        -463.7450270697125
+      ],
+      "retained_record": {
+        "offset_m": -1.0,
+        "point": [
+          -89.55241032232806,
+          -463.7450270697125,
+          17.6036697077763
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1264,
+          "triangle": 1264,
+          "source_triangle_index": 1264
+        },
+        "height": 17.6036697077763,
+        "triangle": 1264,
+        "barycentric": [
+          0.05315289094036418,
+          0.4460458166675725,
+          0.5008012923920634
+        ],
+        "gradient_enu": [
+          -0.007375998725986708,
+          0.017432088764422635
+        ],
+        "normal_enu": [
+          0.007374677733187457,
+          -0.017428966792119065,
+          0.9998209065852198
+        ],
+        "normal_up_z": 0.9998209065852198,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.590585925888856,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "point_check": [
+        [
+          -89.55241032232806,
+          -463.7450270697125,
+          17.6036697077763
+        ],
+        {
+          "source": "PLATEAU-road",
+          "layer_ref": {
+            "kind": "road",
+            "source": 19,
+            "mesh": 0,
+            "primitive": 0,
+            "original_triangle": 1264,
+            "triangle": 1264,
+            "source_triangle_index": 1264
+          },
+          "height": 17.6036697077763,
+          "triangle": 1264,
+          "barycentric": [
+            0.05315289094036418,
+            0.4460458166675725,
+            0.5008012923920634
+          ],
+          "gradient_enu": [
+            -0.007375998725986708,
+            0.017432088764422635
+          ],
+          "normal_enu": [
+            0.007374677733187457,
+            -0.017428966792119065,
+            0.9998209065852198
+          ],
+          "normal_up_z": 0.9998209065852198,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.590585925888856,
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+          "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [
+            {
+              "height": 17.6036697077763,
+              "triangle": 44875,
+              "barycentric": [
+                0.05315289094036418,
+                0.4460458166675725,
+                0.5008012923920634
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.6036697077763,
+              "triangle": 44875,
+              "barycentric": [
+                0.05315289094036418,
+                0.4460458166675725,
+                0.5008012923920634
+              ],
+              "gradient_enu": [
+                -0.007375998725986708,
+                0.017432088764422635
+              ],
+              "normal_enu": [
+                0.007374677733187457,
+                -0.017428966792119065,
+                0.9998209065852198
+              ],
+              "normal_up_z": 0.9998209065852198,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        },
+        "terrain": {
+          "physical": [
+            {
+              "height": 17.587120996958795,
+              "triangle": 26504,
+              "barycentric": [
+                0.05868417345250468,
+                0.36123001200929916,
+                0.5800858145381961
+              ],
+              "gradient_enu": [
+                -0.03858424203386493,
+                -0.0005602845434492384
+              ],
+              "normal_enu": [
+                0.038555546995890255,
+                0.0005598678607465747,
+                0.999256301628279
+              ],
+              "normal_up_z": 0.999256301628279,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.587120996958795,
+              "triangle": 26504,
+              "barycentric": [
+                0.05868417345250468,
+                0.36123001200929916,
+                0.5800858145381961
+              ],
+              "gradient_enu": [
+                -0.03858424203386493,
+                -0.0005602845434492384
+              ],
+              "normal_enu": [
+                0.038555546995890255,
+                0.0005598678607465747,
+                0.999256301628279
+              ],
+              "normal_up_z": 0.999256301628279,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "current-edge-1.0",
+      "literal_xy": [
+        -91.51106760414828,
+        -463.34047589572754
+      ],
+      "retained_record": {
+        "offset_m": 1.0,
+        "point": [
+          -91.51106760414828,
+          -463.34047589572754,
+          17.625090294003993
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1270,
+          "triangle": 1270,
+          "source_triangle_index": 1270
+        },
+        "height": 17.625090294003993,
+        "triangle": 1270,
+        "barycentric": [
+          0.21999457938143047,
+          0.05692785208129056,
+          0.7230775685372789
+        ],
+        "gradient_enu": [
+          -0.007490939156158247,
+          0.018938223181485962
+        ],
+        "normal_enu": [
+          0.0074893861290889156,
+          -0.018934296894990668,
+          0.9997926792573057
+        ],
+        "normal_up_z": 0.9997926792573057,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.659098389226273,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "point_check": [
+        [
+          -91.51106760414828,
+          -463.34047589572754,
+          17.625090294003993
+        ],
+        {
+          "source": "PLATEAU-road",
+          "layer_ref": {
+            "kind": "road",
+            "source": 19,
+            "mesh": 0,
+            "primitive": 0,
+            "original_triangle": 1270,
+            "triangle": 1270,
+            "source_triangle_index": 1270
+          },
+          "height": 17.625090294003993,
+          "triangle": 1270,
+          "barycentric": [
+            0.21999457938143047,
+            0.05692785208129056,
+            0.7230775685372789
+          ],
+          "gradient_enu": [
+            -0.007490939156158247,
+            0.018938223181485962
+          ],
+          "normal_enu": [
+            0.0074893861290889156,
+            -0.018934296894990668,
+            0.9997926792573057
+          ],
+          "normal_up_z": 0.9997926792573057,
+          "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+          "dem_nearest_m": 17.659098389226273,
+          "support_geometry": "exact-derived-triangle-native-cm",
+          "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+          "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+          "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+        }
+      ],
+      "hits": {
+        "road": {
+          "physical": [
+            {
+              "height": 17.625090294003993,
+              "triangle": 44881,
+              "barycentric": [
+                0.21999457938143047,
+                0.05692785208129056,
+                0.7230775685372789
+              ],
+              "gradient_enu": [
+                -0.007490939156158247,
+                0.018938223181485962
+              ],
+              "normal_enu": [
+                0.0074893861290889156,
+                -0.018934296894990668,
+                0.9997926792573057
+              ],
+              "normal_up_z": 0.9997926792573057,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ],
+          "raw": [
+            {
+              "height": 17.625090294003993,
+              "triangle": 44881,
+              "barycentric": [
+                0.21999457938143047,
+                0.05692785208129056,
+                0.7230775685372789
+              ],
+              "gradient_enu": [
+                -0.007490939156158247,
+                0.018938223181485962
+              ],
+              "normal_enu": [
+                0.0074893861290889156,
+                -0.018934296894990668,
+                0.9997926792573057
+              ],
+              "normal_up_z": 0.9997926792573057,
+              "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1"
+            }
+          ]
+        },
+        "terrain": {
+          "physical": [],
+          "raw": []
+        }
+      }
+    }
+  ],
+  "corridor": {
+    "points": [
+      [
+        -95.57817363035265,
+        -487.9753489971704
+      ],
+      [
+        -79.84803459548931,
+        -411.81699537978034
+      ]
+    ],
+    "width": 2.0,
+    "vehicle_contexts": [
+      [
+        [
+          22566960,
+          748883769,
+          748883728
+        ]
+      ]
+    ]
+  },
+  "actual_interval": {
+    "start": [
+      -95.57817363035265,
+      -487.9753489971704
+    ],
+    "end": [
+      -79.84803459548931,
+      -411.81699537978034
+    ],
+    "width": 2.0,
+    "edges": [
+      [
+        22566960,
+        748883769,
+        748883728
+      ]
+    ]
+  },
+  "old_refusal": {
+    "error": "SupportRejection",
+    "message": "Source3 span grade 794.3138953148319 exceeds 0.2 across 5.4878925793993395e-06 m",
+    "witness": {
+      "previous": {
+        "point": [
+          -90.53174007330486,
+          -463.5427568571704,
+          17.61441923507126
+        ],
+        "cross_section": [
+          {
+            "offset_m": -1.0,
+            "point": [
+              -89.55241143239475,
+              -463.74503244416286,
+              17.603669622276257
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.603669622276257,
+            "triangle": 1264,
+            "barycentric": [
+              0.053153933059135135,
+              0.44604472334942874,
+              0.5008013435914362
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.59058594089463,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 0,
+            "point": [
+              -90.53174007330486,
+              -463.5427568571704,
+              17.61441923507126
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.61441923507126,
+            "triangle": 1264,
+            "barycentric": [
+              1.0421187633126775e-06,
+              0.7212394170173967,
+              0.27875954086384
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.625291800311594,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 1.0,
+            "point": [
+              -91.51106871421497,
+              -463.3404812701779,
+              17.625090200536896
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1270,
+              "triangle": 1270,
+              "source_triangle_index": 1270
+            },
+            "height": 17.625090200536896,
+            "triangle": 1270,
+            "barycentric": [
+              0.21998977210626894,
+              0.056927903594074195,
+              0.7230823242996569
+            ],
+            "gradient_enu": [
+              -0.007490939156158247,
+              0.018938223181485962
+            ],
+            "normal_enu": [
+              0.0074893861290889156,
+              -0.018934296894990668,
+              0.9997926792573057
+            ],
+            "normal_up_z": 0.9997926792573057,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.659098398337154,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          }
+        ],
+        "source": "PLATEAU-road",
+        "layer_ref": {
+          "kind": "road",
+          "source": 19,
+          "mesh": 0,
+          "primitive": 0,
+          "original_triangle": 1264,
+          "triangle": 1264,
+          "source_triangle_index": 1264
+        },
+        "height": 17.61441923507126,
+        "triangle": 1264,
+        "barycentric": [
+          1.0421187633126775e-06,
+          0.7212394170173967,
+          0.27875954086384
+        ],
+        "gradient_enu": [
+          -0.007375998725986708,
+          0.017432088764422635
+        ],
+        "normal_enu": [
+          0.007374677733187457,
+          -0.017428966792119065,
+          0.9998209065852198
+        ],
+        "normal_up_z": 0.9998209065852198,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.625291800311594,
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+        "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "current": {
+        "point": [
+          -90.53173896323817,
+          -463.54275148272,
+          17.618778344403072
+        ],
+        "cross_section": [
+          {
+            "offset_m": -1.0,
+            "point": [
+              -89.55241032232806,
+              -463.7450270697125,
+              17.6036697077763
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1264,
+              "triangle": 1264,
+              "source_triangle_index": 1264
+            },
+            "height": 17.6036697077763,
+            "triangle": 1264,
+            "barycentric": [
+              0.05315289094036418,
+              0.4460458166675725,
+              0.5008012923920634
+            ],
+            "gradient_enu": [
+              -0.007375998725986708,
+              0.017432088764422635
+            ],
+            "normal_enu": [
+              0.007374677733187457,
+              -0.017428966792119065,
+              0.9998209065852198
+            ],
+            "normal_up_z": 0.9998209065852198,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.590585925888856,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          },
+          {
+            "offset_m": 0,
+            "point": [
+              -90.53173896323817,
+              -463.54275148272,
+              17.618778344403072
+            ],
+            "source": "GSI-DEM5A",
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "layer_ref": {
+              "kind": "terrain",
+              "triangle": 26184,
+              "parent_triangle": 26184,
+              "original_triangle": 2962
+            },
+            "height": 17.618778344403072,
+            "triangle": 26184,
+            "barycentric": [
+              0.17112112655523037,
+              0.05006703126133403,
+              0.7788118421834356
+            ],
+            "gradient_enu": [
+              -0.030725658950174765,
+              0.000629209259790283
+            ],
+            "normal_enu": [
+              0.030711159610930263,
+              -0.0006289123379723237,
+              0.9995281032290303
+            ],
+            "normal_up_z": 0.9995281032290303,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.62529179184716,
+            "vehicle_source_interval": {
+              "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+              "directed_edges": [
+                [
+                  22566960,
+                  748883769,
+                  748883728
+                ]
+              ],
+              "points": [
+                [
+                  -95.57817363035265,
+                  -487.9753489971704
+                ],
+                [
+                  -79.84803459548931,
+                  -411.81699537978034
+                ]
+              ],
+              "width_m": 2.0
+            },
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3"
+          },
+          {
+            "offset_m": 1.0,
+            "point": [
+              -91.51106760414828,
+              -463.34047589572754,
+              17.625090294003993
+            ],
+            "source": "PLATEAU-road",
+            "layer_ref": {
+              "kind": "road",
+              "source": 19,
+              "mesh": 0,
+              "primitive": 0,
+              "original_triangle": 1270,
+              "triangle": 1270,
+              "source_triangle_index": 1270
+            },
+            "height": 17.625090294003993,
+            "triangle": 1270,
+            "barycentric": [
+              0.21999457938143047,
+              0.05692785208129056,
+              0.7230775685372789
+            ],
+            "gradient_enu": [
+              -0.007490939156158247,
+              0.018938223181485962
+            ],
+            "normal_enu": [
+              0.0074893861290889156,
+              -0.018934296894990668,
+              0.9997926792573057
+            ],
+            "normal_up_z": 0.9997926792573057,
+            "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+            "dem_nearest_m": 17.659098389226273,
+            "support_geometry": "exact-derived-triangle-native-cm",
+            "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+            "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3",
+            "support_road_sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+          }
+        ],
+        "source": "GSI-DEM5A",
+        "support_geometry": "exact-derived-triangle-native-cm",
+        "layer_ref": {
+          "kind": "terrain",
+          "triangle": 26184,
+          "parent_triangle": 26184,
+          "original_triangle": 2962
+        },
+        "height": 17.618778344403072,
+        "triangle": 26184,
+        "barycentric": [
+          0.17112112655523037,
+          0.05006703126133403,
+          0.7788118421834356
+        ],
+        "gradient_enu": [
+          -0.030725658950174765,
+          0.000629209259790283
+        ],
+        "normal_enu": [
+          0.030711159610930263,
+          -0.0006289123379723237,
+          0.9995281032290303
+        ],
+        "normal_up_z": 0.9995281032290303,
+        "query_coordinate_model": "binary64-cm-query-on-float32-cm-vertices-v1",
+        "dem_nearest_m": 17.62529179184716,
+        "vehicle_source_interval": {
+          "osm_sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+          "directed_edges": [
+            [
+              22566960,
+              748883769,
+              748883728
+            ]
+          ],
+          "points": [
+            [
+              -95.57817363035265,
+              -487.9753489971704
+            ],
+            [
+              -79.84803459548931,
+              -411.81699537978034
+            ]
+          ],
+          "width_m": 2.0
+        },
+        "derived_terrain_sha256": "0fcb0027586dbca0358e64a5259758944351948a88be94d718f70596c09cfcae",
+        "support_surface_sha256": "186209796f3e3e263e3091793de175e4e064f5525111a8b242cc82a671037fb3"
+      },
+      "segment_xy_length_m": 5.4878925793993395e-06
+    }
+  },
+  "actual_vehicle_source": {
+    "way": {
+      "id": 22566960,
+      "nodes": [
+        241895780,
+        13433866852,
+        241895785,
+        241895786,
+        241895787,
+        241895788,
+        748883769,
+        748883728,
+        13433866879,
+        748883761
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "source": "Bing,2007-04",
+        "surface": "asphalt"
+      }
+    },
+    "points": {
+      "748883769": [
+        -93.81538207671446,
+        -488.3394450537569
+      ],
+      "748883728": [
+        -78.08524304185111,
+        -412.18109143636684
+      ]
+    },
+    "osm": {
+      "url": "https://api.openstreetmap.org/api/0.6/map?bbox=139.6945,35.6545,139.7065,35.6645",
+      "path": "data/source/osm/crop.osm",
+      "bytes": 8187120,
+      "sha256": "a3b2c0e679b195792b2a231c9e4854a7c9268cafa592ae0447537592eaea2918",
+      "license": "https://www.openstreetmap.org/copyright",
+      "attribution": "\u00a9 OpenStreetMap contributors. ODbL. Cropped and converted for this simulation."
+    },
+    "bound": "Original admitted XML/frame projected operands, no source index or fresh numerical support query."
+  },
+  "native_roads": [
+    {
+      "source_index": 44,
+      "road_index": 0,
+      "source_path": "data/prepared/surface/roads/data47.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data47.glb",
+        "bytes": 40744,
+        "sha256": "57910f9adf244514687b18e75e9d61f1717deecb7b6602cc61c51943d78a81d9"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data47.glb",
+        "bytes": 31748,
+        "sha256": "dd543a64b02de8f8684d27e2db0b65904cb6e1de9863e71e9ed5a57ca9440d32"
+      },
+      "actor_label": "City_044_data47",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_044/data47/StaticMeshes/data47.data47",
+      "triangles": 365
+    },
+    {
+      "source_index": 45,
+      "road_index": 1,
+      "source_path": "data/prepared/surface/roads/data49.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data49.glb",
+        "bytes": 226204,
+        "sha256": "436541889a3b1aaf2ca77ac3a5ce9e0c86bda3f40cf739413a5686c0f6a176d4"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data49.glb",
+        "bytes": 175996,
+        "sha256": "682a1e1b5840248a0c62c07f9aa31707c7825581f9b360d41e60d905eea45a24"
+      },
+      "actor_label": "City_045_data49",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_045/data49/StaticMeshes/data49.data49",
+      "triangles": 2082
+    },
+    {
+      "source_index": 46,
+      "road_index": 2,
+      "source_path": "data/prepared/surface/roads/data52.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data52.glb",
+        "bytes": 38588,
+        "sha256": "b2ca13f2276081f9206d531240727cdb8d4d334204c744368b1cb09d8250a70a"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data52.glb",
+        "bytes": 30072,
+        "sha256": "96655827993a683753f814584bd7010ee6906a4c6f7c208ad290b90fa0746f5d"
+      },
+      "actor_label": "City_046_data52",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_046/data52/StaticMeshes/data52.data52",
+      "triangles": 345
+    },
+    {
+      "source_index": 47,
+      "road_index": 3,
+      "source_path": "data/prepared/surface/roads/data57.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data57.glb",
+        "bytes": 14164,
+        "sha256": "79e828fc0ef57fc69bb90d567e2b15ae496b8c97811e9e9e377cac36914aad65"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data57.glb",
+        "bytes": 11076,
+        "sha256": "c39f4b9a2ac5d21faa4d52791ce2f775280136588e4c549e1846bbab50a40f7e"
+      },
+      "actor_label": "City_047_data57",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_047/data57/StaticMeshes/data57.data57",
+      "triangles": 119
+    },
+    {
+      "source_index": 48,
+      "road_index": 4,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data58.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data58.glb",
+        "bytes": 110528,
+        "sha256": "cc3736957819d673667024f088563cd8b50dd8d2c864b6a8d9ba30cdef7e3827"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data58.glb",
+        "bytes": 85512,
+        "sha256": "5999006349ffbb40f5ade00a954b0ee873f6eeba7597b64a528b2f019ee4d682"
+      },
+      "actor_label": "City_048_data58",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_048/data58/StaticMeshes/data58.data58",
+      "triangles": 1005
+    },
+    {
+      "source_index": 49,
+      "road_index": 5,
+      "source_path": "data/prepared/surface/roads/data60.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data60.glb",
+        "bytes": 63316,
+        "sha256": "4d0974078295ec85d42ecb391d2be2de217a57dba00c60ffee9d310723fe1919"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data60.glb",
+        "bytes": 49304,
+        "sha256": "9f0bf10d58e2e45d2e4a4d9b6bd43aa36aa07aff7d45ce0d7b63c691e0cae4fb"
+      },
+      "actor_label": "City_049_data60",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_049/data60/StaticMeshes/data60.data60",
+      "triangles": 574
+    },
+    {
+      "source_index": 50,
+      "road_index": 6,
+      "source_path": "data/prepared/surface/roads/data61.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data61.glb",
+        "bytes": 100684,
+        "sha256": "646fe7656ab38977a39315a5f5cc0e641504489d148f62119352d414389c37db"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data61.glb",
+        "bytes": 78368,
+        "sha256": "081fe5719bca67e9978ab1ce9d605bb20f1970b6df82d72b5d4a579c37df205b"
+      },
+      "actor_label": "City_050_data61",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_050/data61/StaticMeshes/data61.data61",
+      "triangles": 920
+    },
+    {
+      "source_index": 51,
+      "road_index": 7,
+      "source_path": "data/prepared/surface/roads/data64.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data64.glb",
+        "bytes": 15360,
+        "sha256": "cd82bbd94f56730cbdbd88177573cf3e531ec7606b5375fa3b5de9a81bb647aa"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data64.glb",
+        "bytes": 12008,
+        "sha256": "0c39c5db4a91d31cc09bf2bbf2f2d19f1c788f3b2824ce9e8559c40e9b208160"
+      },
+      "actor_label": "City_051_data64",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_051/data64/StaticMeshes/data64.data64",
+      "triangles": 130
+    },
+    {
+      "source_index": 52,
+      "road_index": 8,
+      "source_path": "data/prepared/surface/roads/data65.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data65.glb",
+        "bytes": 273596,
+        "sha256": "92f5b4fa214c33a37e5fae11d44608b3f5a5deb255f05f6e37a53e39fb68fbec"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data65.glb",
+        "bytes": 212856,
+        "sha256": "54d6f26e0f9ae261d39670d0081394b8f74a747932ddcc1d3c8ea35df66e4377"
+      },
+      "actor_label": "City_052_data65",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_052/data65/StaticMeshes/data65.data65",
+      "triangles": 2521
+    },
+    {
+      "source_index": 53,
+      "road_index": 9,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data66.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data66.glb",
+        "bytes": 687524,
+        "sha256": "21b7a732898468dd98813fbfe78b10bb7f277087e67a980cd79819d973d09e77"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data66.glb",
+        "bytes": 533912,
+        "sha256": "d49467ce385164d2f735737f224f76171e1d37dc6dbac2b780b8c62364b550ee"
+      },
+      "actor_label": "City_053_data66",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_053/data66/StaticMeshes/data66.data66",
+      "triangles": 6343
+    },
+    {
+      "source_index": 54,
+      "road_index": 10,
+      "source_path": "data/prepared/surface/roads/data67.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data67.glb",
+        "bytes": 463364,
+        "sha256": "651d1981bc62588c75fd7084f74e6cf60f4d8f5fcf7b562b195786362ffd25c6"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data67.glb",
+        "bytes": 360452,
+        "sha256": "07d154b5ba4fb7cbdb399694539666359c80207ad1e9b611c0d4144de1cbf867"
+      },
+      "actor_label": "City_054_data67",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_054/data67/StaticMeshes/data67.data67",
+      "triangles": 4278
+    },
+    {
+      "source_index": 55,
+      "road_index": 11,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data68.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data68.glb",
+        "bytes": 502424,
+        "sha256": "3a6751f6cfc79fbf8d865f9e8bd0bae735cb8b5ffde6d63393e808a6aec9beb7"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data68.glb",
+        "bytes": 390020,
+        "sha256": "791592b5717f45fcc8d393a615ec22a4dccb2add467fd464d1ad738c2f3f0b36"
+      },
+      "actor_label": "City_055_data68",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_055/data68/StaticMeshes/data68.data68",
+      "triangles": 4630
+    },
+    {
+      "source_index": 56,
+      "road_index": 12,
+      "source_path": "data/prepared/surface/roads/data70.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data70.glb",
+        "bytes": 387760,
+        "sha256": "ccda5577f9b7d812ae6b82aeb9c7ab4fbf9c9f31228c9674d354f23f19634443"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data70.glb",
+        "bytes": 301652,
+        "sha256": "442ea5a6a13bd42d9bc4f4169cc6c2e141bfa098b09814a81d191fffa14e8505"
+      },
+      "actor_label": "City_056_data70",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_056/data70/StaticMeshes/data70.data70",
+      "triangles": 3578
+    },
+    {
+      "source_index": 57,
+      "road_index": 13,
+      "source_path": "data/prepared/surface/roads/data71.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data71.glb",
+        "bytes": 271112,
+        "sha256": "7890e419b3bf978e3e50a85b20ae9aee731003a37259d66f5e909a204b89e088"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data71.glb",
+        "bytes": 210924,
+        "sha256": "3b7ea05e1fa13cfe6dc527df174856ac712af86ae881c69c500f64630ee4d2f3"
+      },
+      "actor_label": "City_057_data71",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_057/data71/StaticMeshes/data71.data71",
+      "triangles": 2498
+    },
+    {
+      "source_index": 58,
+      "road_index": 14,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data72.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data72.glb",
+        "bytes": 408692,
+        "sha256": "6499ffccbbd60c2dcdbbcf40265510f648cc9b7f12e2fa9a245648efe50f630a"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data72.glb",
+        "bytes": 317192,
+        "sha256": "f2303d3c89ec4d2e2a48cce237975c1f970920530eb8a57ed997bc0ff106dbe6"
+      },
+      "actor_label": "City_058_data72",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_058/data72/StaticMeshes/data72.data72",
+      "triangles": 3763
+    },
+    {
+      "source_index": 59,
+      "road_index": 15,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data73.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data73.glb",
+        "bytes": 255704,
+        "sha256": "33aef2c50545c563bd701bfd18abe876b05a1493aa452010656896c15eab9922"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data73.glb",
+        "bytes": 198572,
+        "sha256": "7c85cdefc3a222094a33b7acf64efec5e94f5427aa5f1c73d7f236dc403d9469"
+      },
+      "actor_label": "City_059_data73",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_059/data73/StaticMeshes/data73.data73",
+      "triangles": 2351
+    },
+    {
+      "source_index": 60,
+      "road_index": 16,
+      "source_path": "data/prepared/surface/roads/data75.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data75.glb",
+        "bytes": 431932,
+        "sha256": "0fb541a056aef408fb3becacd48a71407b30d307143a8844ba673a35a5cbe999"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data75.glb",
+        "bytes": 336004,
+        "sha256": "34a5116bb0180144947135754f9f9d52f83944bc13469199bf6a0c63b1854173"
+      },
+      "actor_label": "City_060_data75",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_060/data75/StaticMeshes/data75.data75",
+      "triangles": 3987
+    },
+    {
+      "source_index": 61,
+      "road_index": 17,
+      "source_path": "data/prepared/surface/roads/data76.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data76.glb",
+        "bytes": 442084,
+        "sha256": "d00e2871a1a914115c6e47d3bfa67a22f5a51c7b211a7c4009fdb1e5cb560c09"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data76.glb",
+        "bytes": 343904,
+        "sha256": "91620400d155b470de6653f0aa570868b07fe0e3b73b54593bb9508d046d10c3"
+      },
+      "actor_label": "City_061_data76",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_061/data76/StaticMeshes/data76.data76",
+      "triangles": 4081
+    },
+    {
+      "source_index": 62,
+      "road_index": 18,
+      "source_path": "data/prepared/surface/roads/data77.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data77.glb",
+        "bytes": 5768,
+        "sha256": "c7b293f69acc4e93f39f30d3b52e3935e15001552883cebe52468ad3d5a2e491"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data77.glb",
+        "bytes": 4552,
+        "sha256": "35b9375953ddd112bd0eb54ca66078bc2af279983bf7259339fc386aaf3aa2b3"
+      },
+      "actor_label": "City_062_data77",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_062/data77/StaticMeshes/data77.data77",
+      "triangles": 41
+    },
+    {
+      "source_index": 63,
+      "road_index": 19,
+      "source_path": "data/prepared/surface/roads/data80.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data80.glb",
+        "bytes": 297248,
+        "sha256": "2c274d8e9f90b579893e4bbc9a94e6440a2f1cfc851eaac94e86de5a01e3b898"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data80.glb",
+        "bytes": 231252,
+        "sha256": "c146b04d0cc24a90b093eee7b34f1871d4852e53ec5db9f5e2032f1c3e8a26c7"
+      },
+      "actor_label": "City_063_data80",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_063/data80/StaticMeshes/data80.data80",
+      "triangles": 2740
+    },
+    {
+      "source_index": 64,
+      "road_index": 20,
+      "source_path": "data/prepared/surface/roads/data81.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data81.glb",
+        "bytes": 223700,
+        "sha256": "a7435d2617ef8d034969146a0395710dd1235d3dd792f364b1a1774c2673c205"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data81.glb",
+        "bytes": 174044,
+        "sha256": "af73f55573366f170a417692a4ee35420d6657269ac3018a48c4e43e662e33b4"
+      },
+      "actor_label": "City_064_data81",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_064/data81/StaticMeshes/data81.data81",
+      "triangles": 2059
+    },
+    {
+      "source_index": 65,
+      "road_index": 21,
+      "source_path": "data/prepared/surface/roads/data82.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data82.glb",
+        "bytes": 1844,
+        "sha256": "8612b664eddf16fae4e2ad12ad32023cc9b1294d11cf4f2303a2c045dad5e3d6"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data82.glb",
+        "bytes": 1496,
+        "sha256": "2e9663b2b4c6ff1158e6ac7e30c51d1f66863c93952cab33f43673a32eeb6c22"
+      },
+      "actor_label": "City_065_data82",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_065/data82/StaticMeshes/data82.data82",
+      "triangles": 5
+    },
+    {
+      "source_index": 66,
+      "road_index": 22,
+      "source_path": "data/prepared/surface/roads/data86.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data86.glb",
+        "bytes": 57696,
+        "sha256": "bdccc6717bab0910609c1e4633e16642b1b79195102bdde108c74bd218a692f3"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data86.glb",
+        "bytes": 44932,
+        "sha256": "7900208580b1a8133ecf65f47daa77279021f17cc07d96aef8a024a186dc313b"
+      },
+      "actor_label": "City_066_data86",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_066/data86/StaticMeshes/data86.data86",
+      "triangles": 522
+    },
+    {
+      "source_index": 67,
+      "road_index": 23,
+      "source_path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data87.glb",
+      "source": {
+        "path": "data/prepared/surface/generations/generation-9bks7_a5/roads/data87.glb",
+        "bytes": 32992,
+        "sha256": "d73e9e0ffe5e78d031732385f571d3c8b838f2c54a54fee2d4aae92408f58914"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data87.glb",
+        "bytes": 25280,
+        "sha256": "c8f83da91d16b911f11a1272e214d7ec5ad1f411547b40645e81a5db8a6de46f"
+      },
+      "actor_label": "City_067_data87",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_067/data87/StaticMeshes/data87.data87",
+      "triangles": 288
+    },
+    {
+      "source_index": 68,
+      "road_index": 24,
+      "source_path": "data/prepared/surface/roads/data89.glb",
+      "source": {
+        "path": "data/prepared/surface/roads/data89.glb",
+        "bytes": 88592,
+        "sha256": "22bf20009f7259ab2861b08dc5011c2e1b5ea93da657a1e38e3a9586bd81ba93"
+      },
+      "original_source": {
+        "path": "data/prepared/roads/data89.glb",
+        "bytes": 68964,
+        "sha256": "e46cdc60d6166137dc2eadcfc4a28f7b7eee7fd12c28ade8f771a0b58016e01e"
+      },
+      "actor_label": "City_068_data89",
+      "native_mesh_path": "/Game/Surface/Roads/Tile_068/data89/StaticMeshes/data89.data89",
+      "triangles": 808
+    }
+  ],
+  "terrain_refs": [
+    {
+      "kind": "terrain",
+      "triangle": 26184,
+      "parent_triangle": 26184,
+      "original_triangle": 2962
+    },
+    {
+      "kind": "terrain",
+      "triangle": 26504,
+      "parent_triangle": 26504,
+      "original_triangle": 2964
+    }
+  ]
+}
