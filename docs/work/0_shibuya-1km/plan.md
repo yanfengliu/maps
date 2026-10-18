@@ -33,8 +33,8 @@ Docs [1577](reviews/1577_documentation-cleanup-review.md) integrated; structure 
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Native AA pilot | Worker 1569; CPU preparation, GPU withheld | [1591](reviews/1591_moving-aa-component-result-review.md): component PASS, native S0 justified. Adapters `artifacts/taa1593`; unadopted A at `artifacts/taa1582a/worktree`. Readiness review precedes one capture. |
-| Documentation recovery | Worker 1592 implementing; collision consent pending | [1590](reviews/1590_recovery-proposal-review.md): preserve history in place. [Fleet unit 18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md) owns the tool increment; no maps metadata adoption yet. |
+| Native AA | Worker1601: S1 CPU preparation; no GPU lease | [1593](reviews/1593_implementation.md): all96 S0 originals inspected. Fresh baseline/candidate train, held-out and temporal improvement owed; unadopted A at `artifacts/taa1582a/worktree`. |
+| Documentation recovery | Maps cleanup integrated; tool fix69 tests PASS, re-review | [Review463](../1_local-rules-refresh/reviews/463_integration.md), [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md). Fleet188/189 PASS; inherited restaurant census fails. Audits PASS; collision/CLI consent pending. No adoption. |
 
 A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds no accepted moving history. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects source1560 after 192 native originals for material softening. Cleanup PASS; S1/held-out/cost/five gates NOT RUN. Fresh search1582 preserves [1552](reviews/1552_moving-taa-search-contract.md); accepted scene unchanged. Tighten two private centre assertions before fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
