@@ -35,7 +35,7 @@ Docs [1577](reviews/1577_documentation-cleanup-review.md) integrated; structure 
 | --- | --- | --- |
 | Native AA | 1609: held-out CPU prep; no lease | S0/S1 preserve detail ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)). Fresh odd1281×721/DPR1.25 baseline/candidate owed. A unadopted at `artifacts/taa1582a/worktree`. |
 | Documentation recovery | Maps cleanup integrated; tool fix69 tests/local review PASS | [Review463](../1_local-rules-refresh/reviews/463_integration.md), [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md). Fleet188/189 PASS; inherited restaurant census fails. Audits PASS; collision/CLI consent pending. No adoption. |
-| Scene history | 1610: CPU observer prototype; no lease | Reuse1591 pixel observer on real-controls app frames to distinguish previous-frame blending from current-only. Post flags/stills are insufficient. |
+| Scene history | 1610: prepared; readiness GO; no lease | [1597](reviews/1597_integration.md): reuse1591 observer on real-controls app frames to distinguish previous-frame blending from current-only. Post flags/stills are insufficient. |
 
 A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) remains fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects1560 for softening. Ordinary-scene contribution, perceived crawl, held-out, cost/five gates remain owed. Tighten two centre assertions before component-fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
