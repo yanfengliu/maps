@@ -27,23 +27,22 @@ PRIMARY five gates PASS in 719.898 s: 137 files/1,191 tests, 44 frames/3 GPU lif
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
-Docs [1577](reviews/1577_documentation-cleanup-review.md) accepted at `722d84b`; registry/history recovery and old missing links remain OPEN.
+Docs [1577](reviews/1577_documentation-cleanup-review.md) integrated; structure recovery remains OPEN.
 
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Moving-AA proof | Worker 1583 preparing checks; GPU withheld | [1585](reviews/1585_moving-aa-search-review.md) selects A for one adapted component trial under [1582](reviews/1582_moving-aa-second-search-contract.md). Exact observation/oracle review precedes GPU lease; no adoption. `artifacts/taa1582a/worktree`; B is blocked narrowly in [1584](reviews/1584_moving-aa-family-b.md). |
+| Native AA pilot | Worker 1569; CPU preparation, GPU withheld | [1591](reviews/1591_moving-aa-component-result-review.md): component PASS, native S0 justified. Adapters `artifacts/taa1593`; unadopted A at `artifacts/taa1582a/worktree`. Readiness review precedes one capture. |
+| Documentation recovery | Worker 1592 implementing; collision consent pending | [1590](reviews/1590_recovery-proposal-review.md): preserve history in place. [Fleet unit 18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md) owns the tool increment; no maps metadata adoption yet. |
 
-A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds no accepted moving history. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects source1560 after 192 native originals for material softening. Cleanup PASS; S1/held-out/cost/five gates NOT RUN. Fresh search1582 preserves [1552](reviews/1552_moving-taa-search-contract.md); accepted scene unchanged.
+A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds no accepted moving history. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects source1560 after 192 native originals for material softening. Cleanup PASS; S1/held-out/cost/five gates NOT RUN. Fresh search1582 preserves [1552](reviews/1552_moving-taa-search-contract.md); accepted scene unchanged. Tighten two private centre assertions before fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
 [1579](reviews/1579_peripheral-street-inspection.md)/[1580](reviews/1580_peripheral-street-native-review.md): three clear real-controls eastward views, no qualified edit; 22.105/21.607 s gaps exclude continuous acceptance. Capture FAILED at final 15 s review wait; cleanup PASS. [1581](reviews/1581_east-road-tone-diagnosis.md) explains one authored resurfacing wedge; other bands unclassified.
 
-Gallery heartbeat ACTIVE (15 min); private rules remain canonical.
 
-Train `5af00f1`: four cars, current-pose AA, fractional DPR; 1490/1491/1493 retain bounds. Lifetime `59fbb1c` and Coca-Cola1449/1450 retained. Train-only ABBA about 60 Hz; full target OPEN.
+Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59fbb1c` and Coca-Cola1449/1450. Train-only ABBA about 60 Hz does not establish the full target.
 
-Parked diagnosis and peripheral-inspection rationale: [1497](reviews/1497_orchestration-critical-path-review.md), [1533](reviews/1533_next-visual-direction-review.md).
 
 ## Acceptance criteria
 
@@ -124,7 +123,7 @@ Rail 1491/1493 accepts the four-car passage narrowly; gaps, bearings, returns an
 
 Continuous populated/camera/time stability and target FPS remain unqualified. Historical 12 fps/59 of 200 are bounded failures, not current measurements. 398 startup gain does not establish population FPS. Machine-cold startup, port5319/loading/decoder/CPU causes remain unknown. Simulation deferral preserves A7–A10.
 
-Private union 1324 remains UNMET. Its frozen 387/63-part proof constrains that experiment; preserve evidence and obligations. Do not resume it automatically or transfer helper passes. No new launch/admission/report framework or weaker gate is authorized.
+Private union1324 UNMET; its 387/63-part proof constrains that experiment only. Preserve evidence/obligations; no automatic resumption, helper-pass transfer, new framework or weaker gate.
 
 ## Outcome
 
