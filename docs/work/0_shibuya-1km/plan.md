@@ -27,12 +27,13 @@ PRIMARY five gates PASS in 719.898 s: 137 files/1,191 tests, 44 frames/3 GPU lif
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
+Docs [1577](reviews/1577_documentation-cleanup-review.md) accepted at `722d84b`; registry/history recovery and old missing links remain OPEN.
+
 ### Next outcomes
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Documentation cleanup | Worker docs1575; prepared, review pending | `artifacts/docs1575/worktree`; content/link checks, preserved history, independent review, docs-only merge/push and retirement. |
-| Next visible increment | Root; direction pending | After docs checkpoint, fresh ordinary-app critique selects a visible improvement. No automatic TAA repair or further candidate GPU capture. |
+| Peripheral street inspection | Root; PLANNED, not dispatched | [1578](reviews/1578_next-visible-direction.md): ≤60 s eastward dusk Satellite journey through real controls; clear setup, two native viewpoints reproducing one bounded defect before an edit. |
 
 A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds zero accepted moving history; 1549 lacked GPU-mode observation. [1552](reviews/1552_moving-taa-search-contract.md) fixes inputs/checks/disqualifiers. 1574 repaired Node imports. S0 baseline/candidate each captured 96 adjacent frames; owned total runs 53.802/48.472 s, cleanup PASS. Independent1576 inspected all 192 originals: material softening of paving/tactile/stripes/facades/signs; candidate REJECTED for adoption. S1/held-out/cost/five gates NOT RUN; no automatic repair. Accepted scene unchanged.
 
@@ -46,7 +47,7 @@ Train `5af00f1`: four cars, current-pose AA, fractional DPR; 1490/1491/1493 reta
 
 ## Acceptance criteria
 
-A1/A4/A12 PASS on unchanged executable e1097edd/docs-only main4723b7f, via [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md) and [1538](reviews/1538_attribution-completion-review.md). The other11 original criteria remain OPEN. A4 covers the static dusk crossing; revalidate changed dependencies before final acceptance.
+A1/A4/A12 PASS for unchanged executable e1097edd, via [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md) and [1538](reviews/1538_attribution-completion-review.md). The other11 original criteria remain OPEN. A4 covers the static dusk crossing; revalidate changed dependencies before final acceptance.
 
 - A1. Terrain, buildings and roads render end to end across the full AOI, inspected from several angles/zooms at native resolution.
 - A2. The Shibuya valley and Dōgenzaka slope read in the terrain; building footprints neither float nor sink.

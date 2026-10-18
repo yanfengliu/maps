@@ -1,0 +1,13 @@
+# 1568 — GPU observer import correction review
+
+2026-10-18 UTC. Verdict: READY FOR ONE SMALL OWNED RERUN under1564's unchanged controller/root lease/external180s bound. No new GPU execution or A6/native/full-gate acceptance. Root owns the lease and acceptance.
+
+Round1567 receipt SHA-2565b6355278fad9a57392be9d1b73d7b490bd9bfee60c4db7150424688b9eaa259;browser5b81a79e4a3535b51593f03c578542dbc60bb87a1dc270ede02f11dbcde23f2f. All16fixture/13source pins matched before/after;three prior ownership-helper pins and two retained actual GPU artifacts matched. All19preserved1563 files match. Runner/controller/process safety bytes are identical to1564's reviewed versions. No tests rerun,browser/GPU/server/build/source/data/index/Git mutation or owned runtime.
+
+Read actual Vite before/after transform outputs and canonicalURL controls. Before, unanalysable computed imports inject ?import into the direct observer/registry URLs while production dependencies use noquery URLs. Browser ESM therefore creates separate history-class and WeakMap identities. After, the five literal static imports resolve to the exact same noquery history/registry URLs used by production post/history. The THREE/addon module URLs also agree. This corrects hookup rather than substituting an observer implementation.
+
+Independent diff against retained1563 contains only the five import replacements/removal of their ROOT variable and an early stricter guard. In-memory exact comparison confirms the complete tail from const rows= is byte-identical after removing that guard. The wrapper still calls original production history render before read-only mask copies. The guard now rejects a candidate frame immediately when its actual history observer is absent. No fallback data,state/shader mutation,denominator reduction or assertion relaxation appears. All32coded pixels,old-moving RED,actual3x3 body/influence qualification,>=4effect/>=32background,mode edges,reset,physical-dimension and disposal controls remain.
+
+Read retained1566-run2:32/32candidate reprojection matches(max error.00018310546875),e1090/32matches as required RED,then ERROR:Actual mask observation absent before remaining controls. Controller census passed,marker count0,portCLOSED,elapsed4013.811ms;overall exit1 remains correct for failed proof. These partial facts do not establish receiver rejection,reset or native quality. CPU transformedURL equality supports the correction; actual linked observer/registry hookup still needs the rerun.
+
+No material source/protocol finding remains in this focused change. Preserve strict refusal on a new failure. Actual GPU masks/receiver effects,motion quality,cost and final native/lifecycle/five-gate obligations remain unaccepted.

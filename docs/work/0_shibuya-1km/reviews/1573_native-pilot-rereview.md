@@ -1,0 +1,13 @@
+# 1573 — Native baseline S0 pilot re-review
+
+2026-10-18 UTC. Verdict: READY FOR ONE BASELINE S0 PILOT with root lease,external180s supervisor and root's native setup-PNG decision before Start/burst. No native/A6/final-gate acceptance. Root owns release and image review.
+
+Reviewed frozen1572 receipt eb9c7f27b65d461d910dc30fbdcdc86920010af0204b598f08a4e1c0cea2f53a;contract56315637989a472b9980dc90dde18713936bdd7483f3bc5a760c1c96c3f20647. All10frozen paths matched before/after;11contract/13source pins and both six-file built arms match. Controller/helper bytes retain1571's reviewed ownership path. Read actual runner/burst/helpers,lifecycle,diff and five retained CPU controls;no tests rerun,GPU/browser/server/build/source/data/index/Git mutation or owned runtime.
+
+1571F1 is closed in source. Actual RAF copy reports progress through a private exposed binding after each synchronous before/copy/after observation. driveCopies sends real pointer input then waits for increased actual copy count;it no longer spends192unpaced RPCs. Copy96 ends the input loop independently of later PNG encoding. finally releases the pointer and awaits capture settlement. The binding reads progress and does not mutate app,harness,camera or renderer state. Real callback cadence remains a pilot question;strict adjacency/motion checks refuse a bad run.
+
+1571F2 is closed. Every returned PNG and its raw metadata are saved before later validation. The actual public copyObservationRefusals validates live,finite,active/non-accumulating single-frame observations. Every adjacent copied camera must move;frameCount must advance exactly1. Native dimensions,96copies,nonblank pixels and8s copy bounds remain. A validation failure retains returned images and cannot become SUCCESS.
+
+1571F3 is closed. Actual lifecycle close errors preserve resource names;runner propagates rejected settled entries and emits SUCCESS only with captured pixels,no errors/requests,zero pending and fulfilled cleanup. Candidate admission now requires baseline SUCCESS plus separate zero-exit,passed census,empty marker and CLOSED port receipt. Root must supply the matching baseline/controller artifacts in its lease. Loader SHA7937312b98059cfce71efe388095d78e3cd71d488248e07e8df63a276b2a81ad is required by lease and contract pre/post checks.
+
+No material finding remains for this baseline pilot. The five CPU controls establish bounded helper/state behavior;actual96-copy timing,scene visibility,input/callback synchronization,cleanup and native temporal appearance remain unproved until execution and inspection. Keep raw failures and the fixed memory/timing/quality bounds. Candidate,S1,held-out,cost and final acceptance remain separate.
