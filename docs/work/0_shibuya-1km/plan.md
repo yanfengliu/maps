@@ -33,10 +33,11 @@ Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Next visible milestone | Root; uphill source question queued | 1643/1646 qualify one lower road/base view only. Dogen-zaka identity/grade and A2 OPEN. Qualify the intended uphill-road source before another journey; no automatic companion or retune. |
+| Dogen road presentation | Root; diagnosis selected | [1618](reviews/1618_implementation.md):1651 road/bases visible; A2 OPEN. Diagnose mapped-road markings/support before one road increment. NOT_DISPATCHED; no capture/retune. |
+| A11 rebuild | Root; raw inputs missing | [1618](reviews/1618_implementation.md): exact OSM/decorations/reference not recovered. Rebuild/render NOT_RUN; fresh source needs review. |
 | Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
 
-A frozen/UNADOPTED/PARKED at artifacts/taa1582a/worktree: [1603](reviews/1603_design.md), both BLOCKED routes; no oracle/capture. Four [1604](reviews/1604_integration.md) clips: human inspection only, timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
+AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
 Held-out baseline96 originals PASS, right-facade visibility bound ([1602](reviews/1602_implementation.md)); candidate NOT_RUN. S0/S1 detail retained ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)).
 
