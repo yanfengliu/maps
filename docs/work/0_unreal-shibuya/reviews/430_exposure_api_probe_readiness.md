@@ -1,0 +1,19 @@
+# Independent review430 — fixed native exposure API observation
+
+2026-10-17. No blocking finding for one read-only Entry/NullRHI exposure_api observation on these exact integrated bytes. This is probe implementation/operator readiness, not Fusion/GPU or appearance acceptance.
+
+Canonical helper259,320/0ccf7933b764986954e38e3493b45ee622fdc8c379fafb47ad6e342bc9ca872a and test18,724/cd80b4a3862ea10a1c7ccc19c3a983620ab37a5513e4d5cb5c50a0c7892b5c24 match exposure-api-observation-v1/export-map.json3,483/f94bdf790757c2c22a04c280457402d4a83f3665c68a37589d60912462e4cefc. Operator run_api_probe_once.py13,029/9fb59f62aa6027d41755d51f7f83b3c7d5e447c6b7c9e30d89dc734b9a3a88f0 retains the90s whole/70work/20cleanup contract and explicit current DLL19cc2172 argument.
+
+I inspected actual helper/operator/test diffs. Only two existing diagnostic functions change and two fixed read helpers are added; public class/schema/defaults and production validator remain unchanged. The existing exposure_api stage creates one owned transient SceneCapture2D, reads actual method/type/finite enum members, named getter/setter/capture callability, separate getter versus editor-property results and flag-struct construction/copy, then destroys its actor in finally. It calls no setting writer, capture_scene or render-target/image creation. Fixed source camera/target operands are labeled as inputs, not measured city camera or frame acceptance.
+
+Missing names/read failures remain named observations. The normal selected-method guard now reports the precise unavailable binding before mutation; it introduces no alternate setter/getter fallback. Positive read names do not prove writer behavior, merged rendering passes or Fusion execution. Entry/NullRHI is sufficient for this binding question; no GPU or city-source prerequisite is implied.
+
+The operator reuses the existing owned launcher, pins original code/raw/map/package/current-DLL bytes, retains PID/schema/actual observation, and checks conservation after owned cleanup on success and failure. It performs no material/sky/light/save or comparison work. Actor count plus owned-actor destruction is checked independently from process Job cleanup. Missing APIs may be an actionable successful observation; they are never appearance credit.
+
+I inspected canonical-full.json2,116/50c51321615a5f5e40a9c798d9156d6ade5ca6f023e23235b4f05833cdff870f and actual unittest.log53,806/81885b18a02546a279871766b0eea1a117d088b2a8929e7c24b0bf90e5bb7bd6. Literal canonical303 tests conclude Ran303/OK in38.0385425s, subjects held, Jobempty. New controls preserve separate failed getter/property observations, missing-name attribution, copy/read errors, fixed operands, no writer/capture calls and owned-actor cleanup on observation failure. These are mock/static checks, not installed API availability.
+
+Actual normal-preflight.json1,204/2d919534690a688db2a2f6c92e012f701e8125b7fe33444b180d4eedc334fc60 and saved stdout5,840/03a40981f991b4f9b29be3ee7eef7fc341a9d5d88be83d64f1043f3d41cb54b7 bind helper0ccf, operator9fb and explicit DLL19cc. Actual normal no--run command exits0 in.2075903s, STATIC_PREFLIGHT_ONLY, engine/job/native outputs false, Jobempty. No gate was duplicated by this review.
+
+Root should read the actual probe artifact and cleanup/conservation results before choosing a binding repair or later comparison. The failed1715ddbc comparison remains zero selected-mode comparisons; its cleanup frame supplies no photometry. Body C++ currently stopped before body evaluation at raw zero-length route points; that separate worker-owned seam repair receives no acceptance here. Full appearance, Source/body/native controls/capacity and3000/200 at1920x1080/60fps remain open.
+
+Only this new private review was written. No engine/build/Source-index/CPP-replay/GPU/browser/GUI process was launched, and no persistent review-owned process remains.

@@ -1,0 +1,21 @@
+# Vehicle cache v2 — ACCEPT FOCUSED VP1 FIX
+
+Independent re-review accepts the exact VP1 repair under v2 file-map9,201/`8eabdd7fa6b2b86929e5f528fa99faf62edbe9684db35c48d3d3c8caa0ddf246` and two-file patch8,727/`6f010bae09a3e38b1f09522b1f4fe7e7d9c863957311a5991d9c6921a19ae5d1`. This closes the material `VP1-CACHE-BOUNDARY` finding in the prior independent HOLD. The prior report and both original witness outcomes remain immutable. This is focused source/portable-proof acceptance, not overall native acceptance or an execution lease.
+
+The changed support header is29,318/`2b923444bb8ae7bbfa44cffe0c9e4b4e66b5a5f1304c06755d1602fa468a03a1`; the changed permanent support test is12,597/`1f6008c0851ebfeed04dd3f64f865eb9ffd7395c59c758028619e00b5044e14a`. The other ten exported files match v1 exactly. Header changes are12 additions/six deletions; the test adds60 lines and retains all original assertions.
+
+## Finding closure
+
+`VehicleBodySupport::Query:408–416` now initializes eligibility to false and checks only the selected posed first-hit face's own source-qualified regions. It cannot grant eligibility from `wholeDomain`. Preparation derives filtered lines from the very same exact edges that define each admitted region, clears them with the other prepared state, and retains the original exact regions. `FilteredSign` already uses the exact expansion predicate for uncertain signs. No tolerance, candidate reordering, lower-hit fallback or directed-band waiver was added. The footprint certificate remains available to accelerate coverage; it is no longer a substitute for selected-face point eligibility.
+
+The regression has17 cases and102 assertions. It covers corner and edge touches, adjacent float32 heights above and below the ordinary road, nearly coplanar slope, binary64 points immediately inside/outside, admitted directed-band positive controls, actual-world offsets and the preserved DEM-straddle non-reproducer. Each case checks independent expected face/band outcomes as well as comparison with exact qualified-region predicates and disabled-cache parity. It does not rely solely on comparing two calls to the repaired symbol.
+
+The exact new regression against the literal old103268ab header exits1 at `VP1 certified cache cannot replace exact selected-face eligibility`, after all original220 support assertions passed. Its retained LF input is byte-identical to the final CRLF export after line-ending normalization. The old RED is not reclassified as a current failure or discarded. The current exact c0055a8e green receipt3,158/`832ce2049d11c51520781b017514f114c25738b7b5f92582e1b21383f610b86b` records exit0 with6,364 simulation,36 finite-pose,220 original support and102 VP1 assertions. I read both original results and their complete raw logs, verified the pinned snapshots, and checked the current header/test against the green input inventory. I did not repeat the gate.
+
+## Preserved scope and limits
+
+The two-file inverse leaves first-hit selection, actual/original ray windows, fixed ten contacts, dimensions, grade/normal/20cm gap limits,30-query bound, stopped cache reuse and cumulative failure veto unchanged. No loader, constructor, Unreal placement adapter, simulation, source policy, route, population or test gate command changed in v2. The four constructor tests are unchanged inherited evidence; no v2 rerun is claimed.
+
+No new independent semantic test, compiler, engine, UBT, source producer, index, query, full gate or external model lane ran in this re-review. All writes are confined to this fresh review directory. Candidate/v1/preimages/proof bytes remain unchanged, and no canonical or Git path was modified. No task process was launched or retained.
+
+The physical cook-survivor/body-packet interface, coherent real sidecar generation and completeness/readback, native-collision/actual-contact verification, UE loader/adapter compilation, boundary/reset/control behavior and real population performance remain separate pending work. The recorded0.3534ms synthetic200-car/two-face cost is not shipping performance evidence. No future interface was required to accept this focused repair. **ACCEPT FOCUSED VP1 FIX; no material finding remains in the reviewed v2 delta. Overall native acceptance remains open.**

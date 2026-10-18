@@ -1,0 +1,11 @@
+# Focused continuation — private schema guard blocks Fusion trial
+
+2026-10-17. The prior appearance-readiness.md missed a private operator guard defect. Its operator-readiness conclusion is superseded pending this narrow repair; the integrated helper and 294-case static result remain unchanged.
+
+Blocking finding: run_exposure_fusion_once.py at SHA-256 e6b530342f2c7a79fb66fed673889f79ed946a2dfa38e853874c80a5bd1e7813 compares both required and properties against the same eight-name inspect_camera_surfaces set. Actual native inventory has eight properties but only five required: east_m, north_m, height_m, active_capture_stage and relative_output_prefix. The three target coordinates are optional numbers with defaults 0,0,15. Every actual trial call already passes all eight operands correctly. The public helper schema is unchanged; neither the two required strings nor target coordinates should be removed from calls.
+
+Inspected retained native report: artifacts/shibuya-unreal-5.8/worktree/artifacts/unreal/exposure-fusion-20261017-193621/report.json, 20,993 bytes, SHA-256 c2d270630fd0a23b6fd852006620b65ae68c1070fbf762880fc87ab9c181c690. Its actual describe_toolset payload confirms the distinction. Trial ended at this guard, zero arms, 50.859 seconds, editor exit0, descendant47784 terminated and Jobempty. No material apply, selected method, capture/pixel or appearance verdict was produced.
+
+Repair scope is the private operator only: compare properties and required with their distinct exact sets. Add a focused positive replay of the retained actual inventory and causal negatives for the old all-eight-required assumption and a missing required stage/prefix; preserve fixed call operands. Re-pin the repaired operator and exercise its cheap actual normal no-child preflight. A focused re-review of those changed bytes is sufficient. No helper change, broad review round, unchanged 294-test rerun or native retry is authorized by this finding alone; Root controls the later single finite native lease.
+
+This review used only read-only retained artifacts and wrote this private finding. It launched no native, browser, GUI, server, Source/index or persistent process.

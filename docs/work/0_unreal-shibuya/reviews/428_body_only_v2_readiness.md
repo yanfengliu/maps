@@ -1,0 +1,11 @@
+# Focused review — body-onlyv2 ready after arithmetic refresh
+
+2026-10-17. No blocking finding for one bounded body-onlyv2 materialization. This closes the operator-readiness dependency named in body-window-code-review.md; actual packet/C++ fullbody and capacity remain unaccepted.
+
+Inspected native-body-window-20261017/body-only-v2/file-map.json1,320/94eabfa979d0fcfe8424b5080cfd52e777ec3da91d36fc8adb756ad3d6425455, ready.json8,461/f85be046e2ff110f1e74ed35dd751f196eefab910c7d3029b56705e0ce143617 and pin-refresh.json2,683/5837166ba1338bada2d8ba7046105317b139fb9d22d497657063f5862b88504b. The11,851-byte operator remains byte-identicala470248d92a5e32fd1004f78a56c7ff4263dbcbbbfe4ec090c60d3e89c166abc. Independent comparison confirms exactly two frozen-record changes: operator pathv1→v2 with unchanged bytes, and reviewed Source3 source35fed8f4→87d030fa. The other17 records remain identical.
+
+Actual saved normal-preflight.stdout5,565/bf9c40abe833f4661350b774ab9b00393c7d7ebfc21d6e8522a57ff4a5270d8f reports ACTUAL_BODY_ONLY_NORMAL_PREFLIGHT_PASS_NO_CHILD, current19 inputs and no Surface/index/target child. Owner receipt975/b32b27646087a6d611d82a5a1dac532d925b29414b6e0644b7241f9cbc3e5383 records real normal --preflight-only entry, exit0 in1.203849s, stable operator and Jobempty. I inspected the saved stdout and exact delta bytes; no duplicate producer or test run occurred.
+
+The previously inspected method reuses immutable genuine V7PASS1383 geometry/profile, admits one Surface and constructs one new complete1024-bound schema2 sidecar with explicit simulated6.5m/s timing. It does not rerun corridor/writer, change old inputs or publish aliases. Keep150s child/15cleanup/180whole, owned cleanup and read actual retained output. Packet creation is only PREPARED_NOT_CPP_QUALIFIED; real production C++ first-hit/fullbody, lawful capacity/native/controls/population/performance remain separate.
+
+Root retains the execution lease decision. No heavy process was launched by this review and no persistent review-owned process remains.

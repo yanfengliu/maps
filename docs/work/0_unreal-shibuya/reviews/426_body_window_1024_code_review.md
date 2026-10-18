@@ -1,0 +1,17 @@
+# Independent review — complete body-window serialization1024
+
+2026-10-17. No blocking finding in the exact integrated eight-file body-window increment. This accepts the approved serialization/admission policy change only, not actual fullbody support, native contacts or capacity.
+
+I independently matched all eight canonical bytes to native-body-window-20261017/code-file-map.json11,173/83c99a9eb9ed1cbb61b58f224e53fdeea9aab48fbcf85481a51bdccb28c663f7 and read candidate.patch10,673/ca08db4c8600b1a66273f84fd6e09cd8ff1fcca81674393bb49a679973689241. Producer9fd82b78, public body headerceb01a15, native admissiona3181d50, portable C++ replay6eb9a908 and Python bridge51d171e6 coherently admit1..1024 window candidates. The remaining three exports are their tests. Schema2 fields and meaning remain intact; older256-bound consumers reject denser packets. Deployed producer and consumers must remain coherent.
+
+The producer preserves every supplied physical candidate and sorted order; duplicate IDs now refuse instead of silently deduplicating. Native JSON still validates all IDs and duplicates, and the portable bridge retains its complete-pool checks. This is a count allowance only. No selection, eligibility, cook, first physical hit, normal, grade, body or route predicate changes. The12m local window,150000 global face and32MiB packet bounds remain unchanged.
+
+Inspected actual-candidate-operands.json7,299,840/3c9aa7ab8d1eb2b24ded0a5b684645511df0cd8b861f19c25f08290088475b6f:34 retained windows,2689 distinct physical operands, first525/peak756. Its scope is retained commonGLB/native-packed bbox/cook reproduction, not a new Surface/index or body acceptance. New tests exercise1024 positive,1025/empty/duplicate refusal and an omission mutant that goes red against the unchanged complete fixture assertion. This does not certify an arbitrary incomplete index.
+
+I inspected actual canonical logs23 packet tests,14 replay tests and production-header Core assertions, all successful with matching rosters/digests. canonical-checks.json9,499/ce81eab50aa74ef13fc16d7398b191fdf55dcc06f2132a7f1a7f4f97c57a6172 records8.821636s, stable subjects and Jobempty. The actual pwsh7 Core entry exercised existing simulation/pose/coverage/cache/cook/frame/role/endpoint cases plus count boundaries. No duplicate gate was launched by this review.
+
+Both native targets compiled/linked on matching source bytes: build report5,845/487cdb637f7d3b3801bbaddf27144747c840f03e3f76648d32e72117a8aa4c81, Editor12.111436s/Game17.599659s. I independently checked current DLL19cc2172b70007afa95de589a583ec0d6393473c76f04285825a7e20056c1575 and EXEe3730ff3934e8740588d9aae7cf9114f4688d4c37faa2c5b3aa6ea4a6b24adbc. Compile success supplies no actual body or Game claim.
+
+The inspected body-only operator method reuses genuine V7PASS1383 and immutable geometry/profile, creates one separate6.5m/s diagnostic network/source binding and attempts body.prepare after normal Source admission. It does not rerun corridor/writer, promote aliases or execute C++ acceptance. Final operator GO-readiness remains pending refreshed reviewed arithmetic pins and its actual no-child preflight. A complete packet then needs the real production C++ bridge and fullbody verdict; serialization success must not be reported as support.
+
+No new mesh, partition, framework or verification loop is required. I changed only this private authored review, used no engine/build/index/CPP-replay/GPU/browser/GUI lease and left no persistent process.
