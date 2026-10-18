@@ -1,5 +1,7 @@
 # Square cutout geometry search
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Root owns this fixed protocol; source baseline is `fc6dab3`, with restored scene digest `dfee0f12bb2e87c1defa7c41c0400e0df4f98ab829fd346d5d689da0c406873c`.
 
 Required outcome: the canonical AOI ends in coherent, solid authored model sections across terrain and buildings, with no exterior apron, open shells, floating details, shadow residue or normal-pass silhouette; interior source geometry and simulation remain intact.

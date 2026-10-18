@@ -1,5 +1,7 @@
 # Shibuya cutout presentation proposal
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Status: design only; base `fc6dab3`; owner `square_boundary`; no browser or source-data writes. Root owns acceptance, implementation allocation and the canonical plan.
 
 ## Outcome and bound

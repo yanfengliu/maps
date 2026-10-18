@@ -1,5 +1,7 @@
 # Populated crossing search
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Date: 2026-09-29. Owner: root. Base: local main 1e840ac590149c1bae2760ca4e6ef06f521fd6b9. The whole-map goal remains active.
 Outcome: recognizable moving pedestrians and a vehicle in the accepted Satellite crossing composition, with plausible scale and no conspicuous intersection or disappearance in the inspected samples.
 Fixed baseline R0:357 runner SHA6a253297d08d55e5c36b219f5d29028169b4dd493b0c70b90e1bd23d68fa0754 preserves the observed20-second cold start. Keep demand150/20, seed5970698, noon/Satellite, real controls, accepted camera and4.8-second requested30fps clip with five native stills. Root accepts365 conceptually: score a first supported crossing event on the ordinary timeline only after its exact trigger and finite simulation/wall bound are preregistered; neither exists yet, so no longer capture is admitted.

@@ -12,4 +12,6 @@ Two fresh independent read-only owners investigate different mechanisms: client/
 
 2026-10-12. Coordinator writes this fixed reproduction and disqualifier list before the independent search. Two same-reason capture failures are counted.875 is one passive diagnostic adaptation, not a production repair. The goal remains active and the full map incomplete; this search is a bounded blocker within the current sign milestone.
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Root synthesis after independent880/881: actual source/raw-ledger reports are read and48 literal pins checked. Direct tile/loader disposal and server compression/premature completion explanations are unsupported. Two distinct missing observations remain: same-session body retrieval on the failed request, and Chromium transaction/socket cancellation lineage.882 prepares both passive diagnostics in one finite comparison to avoid two separate GPU runs; each result stays separate, and neither may waive cancellation, strict errors, source/body identity or four-image acceptance. Original869/875 and both red runs remain immutable. Independent review and a fresh exact root lease precede any runtime; no production repair or instrument acceptance correction is admitted.

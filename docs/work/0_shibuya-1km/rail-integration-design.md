@@ -1,5 +1,7 @@
 # Rail integration 236c — scope for root agreement
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 ## Exact integration state
 
 The accepted rail170 + observer223 + finish236b increment is 27 code/test/config paths: 19 additions and eight modifications. Its physical-byte digest is `1f6b8bbd7743b07b22f880638b097da2b0ccfb3b79b8fbaec0f6c0fd4a11d4ed`. The full path list and base/main/candidate hashes are in `inventory.json`, SHA `9197b049b323794cc424a84263e251491af68cbcc2b87867acaa3378ec46791d`; exact owned diff SHA `e9d87e193aaf20ab2f29db1d69da5c580f518dc44a24d599f1812f44e388cf7a`. Git blob LF hashes and physical checkout hashes are explicitly separate.

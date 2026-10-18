@@ -1,5 +1,7 @@
 # 909 — Checker bottleneck search
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 **Fixed outcome:** restore trustworthy cost qualification for frozen866 without falsely accepting its performance. PRIMARY main815d9c3d and six uncommitted866 paths remain frozen. User requirements are visible Satellite quality, serious optimization, meaningful verified commits and truthful independent qualification. The original0.25ms observer guard is the current instrument choice; it stays binding unless raw counterevidence establishes a requirement-preserving correction independently reviewed before candidates are rescored.
 
 **Reproduction:** existing903 A1 diagnostic: saved866 baselineA build, actual Start, real Satellite/dusk45m azimuth0/polar1.5, inert30 and tracked30 consecutive raster returns plus every actual drain/completion interval. Private4346, hardware4090/616.64, actual130 response bodies and unchanged source/scene/build identity; full owned cleanup is mandatory. Original886 summary uses complete hook+poll p95<=0.25ms.908 retains rawexit1 with diagnostic complete, trackedmean0.720000ms/p951.300000191ms;900 is the preserved prior diagnostic. Use actual run/caller/observer/summary and existing889 authority, not a recreated baseline or new inventory. Full adoption still requires the17-window ABBA180-row qualification, added mean<=1ms/p95<=2ms for every pair, paired seeded appearance and all five final gates/review/main commit.

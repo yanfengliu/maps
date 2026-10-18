@@ -1,5 +1,7 @@
 # One female local loop using the retained ordered-foot controller
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 The deliverable remains one continuously displayed, full-size seeded female completing forward, transfer, reverse and return transfer without a snap, retirement or actor replacement. The latest prototype proves the lifecycle bookkeeping but rejects the current animation. This design is the smallest next implementation increment; no new global routing, contact solver or population policy is proposed.
 
 ## Existing machinery and actual authored inputs

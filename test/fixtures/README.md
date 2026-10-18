@@ -1,6 +1,6 @@
 # Test fixtures
 
-These are real bytes from public sources, cut down so checks can run without a network or a 1.4 GiB checkout. `npm run data:fetch` regenerates the full originals under `data/`, which is gitignored.
+These promoted source extracts and authored regression witnesses keep their provenance below. Their bounded tests can run without fetching full originals, but the complete unit suite also needs ignored reviewed scene/agent/rail data and retained historical packets. [Setup and cached inputs](../../docs/reference/setup.md#test-prerequisites) lists that restoration contract. `data:fetch` alone does not restore all prerequisites.
 
 These are promoted test inputs; their checks and provenance are named below. Each is below the256KiB promotion threshold.
 
@@ -84,7 +84,7 @@ Thirteen semantic pavement rings from the four Shibuya FY2025 PLATEAU `tran` Cit
 「3D都市モデル（Project PLATEAU）渋谷区（2025年度）」（国土交通省）（https://www.geospatial.jp/ckan/dataset/plateau-13113-shibuya-ku-2025）を加工して作成
 
 MLIT Japan, PDL 1.0 with CC BY 4.0 permitted. Modified: selected raw rings and source identities are represented in JSON; projected comparison coordinates are also recorded. The raw sources and rejected generated meshes remain outside Git.
-# Source-visible emission coordinates
+## Source-visible emission coordinates
 
 `commercial-ground-source.json` preserves the independent1101/1143 whole protected-field and five source-cut observations (15,786 bytes, SHA-256 `90f89f21228dc6a495ae5f5d25cca9a899f70e7e2be356b73f511a1c501c57a0`). PLATEAU / MLIT Japan and Shibuya-ku FY2025, PDL1.0 with CC BY4.0 permitted; processed by local-frame projection, field selection and mapped polygon extraction. The PLATEAU source and processing credits above apply. Its historical absolute path is provenance only. It records the inherited12.493133544921875px² source limitation and does not contain photographic pixels or certify rendered appearance.
 
@@ -120,4 +120,4 @@ Seven lane/turn records and the literal tick650 taxi10/56 state reproduce the sh
 
 R1699-S1 literal fresh counterparts retain the old clear-route entry/exit anchors and four stop-node contexts13782042827/13782042827/13781883297/13782042827. Fresh topology replaces way731814367 with1560867937 and the changed534157302 continuation with1569388267. Selected source connectivity and direct polyline projection supply fixed stop-line geometry; no halt-query or retirement result generated those expectations. The two population routes/body identities come from independent1699 exact-source readback; their exit points/normals derive independently from the canonical projected AOI polygon. OpenStreetMap contributors, ODbL1.0; selected/reprojected network geometry is separately identifiable. Source elevations are draped to PLATEAU terrain; the PLATEAU source and processing credits above apply. No full graph, raw imagery or model blob is promoted.
 
-Every original historical traffic-halt and final-tail scenario remains unchanged against ignored retained `artifacts/local-walk-historical-source/data/network/network.json` (10,239,410B/SHA-256`314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677`) and `data/scene/agents/vehicles.json` below that root (4,128B/`5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01`). Restore exact reviewed copies independently of the active cache; no fetch, skip or fallback. The old fleet is authored generated-vehicle metadata, with unchanged delivered geometry; its recipe digest differs in the reviewed fresh manifest. Source-vintage selection uses exact admitted input bytes, never a production outcome.
+Every original historical traffic-halt and final-tail scenario remains unchanged against the separate literal old network/fleet cache in [setup](../../docs/reference/setup.md#test-prerequisites). Missing/changed historical bytes fail without download, skip or runtime-cache fallback. The old fleet is authored generated-vehicle metadata; its recipe digest differs in the reviewed fresh manifest. Source-vintage selection uses exact admitted input bytes, never a production outcome.

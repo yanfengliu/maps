@@ -1,5 +1,7 @@
 # Railway endpoint search — 2026-09-27
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Owner: root. Status: active reassessment after two endpoint candidates failed the same concealment condition. Product remains unchanged at the source of `0ec3dd0`.
 
 Done condition: a coherent source-aligned railway exterior in the square model, with supported structures, clear retained roads and actor paths, consistent station entrances, and no materially exposed arbitrary interior termination in normal exterior views. This is a visual reconstruction, not a surveyed station interior or railway simulation.

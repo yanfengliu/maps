@@ -1,5 +1,7 @@
 # Facade temporal search — 2026-09-27
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Objective: retain the new Cartographic facade families and material depth, preserve Satellite and all existing geometry/data/simulation, and resolve the unexplained adverse motion result before delivery.
 
 Fixed reproduction: the exact Cartographic dusk azimuth-120 ascent instrument and input settings retained in `artifacts/facade-quality/fade-probe2/{capture.spec.txt,motion.txt,digests-and-poses.json}`. The two arms begin at 220 m and share zoom levels through about 835 m. The candidate-only 1100 m endpoint is not matched evidence. Source candidate SHA-256 is `bbcefaade87d5ff005d57fb4cd4d5ce42eb7b8a15574f699d328167f1750acf3` against base `116ad44`.

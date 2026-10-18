@@ -1,5 +1,7 @@
 # Lessons evidence
 
+Detailed evidence for [queued lessons](lessons.md), bound to the named historical inputs and revisions. These measurements do not describe current project acceptance; use [the Shibuya plan](../work/0_shibuya-1km/plan.md) for that.
+
 ## Bone corrections must match the delivered reference pose
 
 **Anchor:** [Review 6](../work/0_shibuya-1km/reviews/6_implementation.md), accepted F6/F7, 2026-09-12. The reviewed controller is SHA-256 `368d7d6ce7cb913687c43ab3932e6dbafd6b0ce8d4a9407cf82fdde51410503c`; its rendered manifest is `182a0b635a91e9b991b4891fd953b99aa88855937e05c5ac8e48ed3521ecd29b`.

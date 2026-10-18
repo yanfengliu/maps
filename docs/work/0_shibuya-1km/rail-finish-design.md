@@ -1,5 +1,7 @@
 # Rail and portal finish 236 — ready for bounded implementation
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 2026-09-27. Owner: rail_finish236. Workspace: `C:/Users/38909/.codex/worktrees/shibuya-quality/maps`, detached base `0ec3dd03831b605235302212b7d140cb35297071` with preserved rail 170 and observer 223. This is a proposal and read-only inspection, not implemented or accepted appearance. Root must release product editing after the retained-building diagnosis and confirm no overlapping source reader depends on an unfrozen tree.
 
 ## Observed problem and instrument

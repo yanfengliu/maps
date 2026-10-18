@@ -1,5 +1,7 @@
 # Shibuya completion audit — 2026-09-27
 
+Historical audit; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Read-only audit of main `fc6dab33480b1b6687e53b59dd7302dec049f2b4`, with the 2026-09-26 visual-first policy. The primary tracked tree was clean on entry. No browser, GPU, source-data rebuild or product edit ran. Recovery scripts and this report live only in this ignored task directory.
 
 ## Evidence and bounds

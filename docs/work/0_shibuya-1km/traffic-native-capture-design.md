@@ -1,5 +1,7 @@
 # Preparation201 — bounded native traffic design
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Design only. Root approved one continuous two-style flow in principle. No executor has been implemented or launched. Accept this exact design before artifact-only executor preparation; native execution needs a later exclusive lease after200 releases the GPU. Product/harness stay frozen.
 
 ## Exact input and clock

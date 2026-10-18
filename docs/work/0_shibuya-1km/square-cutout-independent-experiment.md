@@ -1,5 +1,7 @@
 # Independent Route B: ground-connected section envelope
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 2026-09-27. Written before reading Route A. Scope: numerical geometry only; runtime source, source data, simulation, browser and GPU untouched. Reproduce from primary checkout with `node artifacts/boundary-independent/probe.mjs` (about two seconds on this machine). The protocol's original eligibility files remain untouched.
 
 ## Result and verdict

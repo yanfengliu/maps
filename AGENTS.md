@@ -98,7 +98,7 @@ What it proves on its own: the app rendered, the input path moved the camera, ea
 
 Seven of the instrument's own checks have been made to go red, with the mutation and the message recorded in [docs/learning/gate-proofs.md](docs/learning/gate-proofs.md): a certificate surviving a failed build, a certificate issued without the hardware lifecycle lane, one issued for frames captured against a scene that changed mid-run, one issued for frames whose harness changed mid-run, a lifecycle lane whose cleanup threw, an appearance lane that fell back to a software rasteriser (reproduced twice — the spec's first-frame predicate and the wrapper's own refusal, each with its exact message), and a frame set drawn on a GPU that is not the one the run pinned. Six more are recorded there as the gate's earlier proofs. Three failure paths are written and reachable but have never been watched to fire — WebGL unavailable, the render loop stopping mid-sweep, and the camera never settling. Treat those three as code, not as evidence.
 
-What it cannot prove is that any of those frames looks right. Open all 44 at their own size and look at them. A contact sheet is not a review, and neither is a thumbnail.
+What it cannot prove is that any of those frames looks right. Inspect native originals under the current [visual review scope](docs/policies/local-rules.md#shibuya-priorities-and-progress), including detailed Satellite review and basic style continuity during the Satellite focus. A contact sheet or thumbnail is not a native review.
 
 ### The harness drives the controls and never sets state
 
@@ -120,7 +120,7 @@ What it cannot prove is that any of those frames looks right. Open all 44 at the
 
 **Where things live.** `src/scene/terrain.ts`, `src/scene/buildings.ts` and `src/scene/roads.ts` are the homes for those three; `src/agents/agents.ts` is the home for pedestrians and vehicles; `src/render/` owns the renderer, the camera rig and the loop. `tools/scene/` is the offline pipeline that feeds the first three, and `src/world/scene-data.ts` says what it writes and where the app finds it.
 
-**The scene is data on disk, not bytes in the bundle.** `npm run data:scene` writes about 148 MB into a gitignored `data/scene/` — the terrain mesh, the road mesh, and 67 building tiles already placed in the world frame — and a Vite plugin serves that directory at `/scene/`. `dist/` is therefore not self-contained, which is the price of not copying 148 MB into it on every build.
+**The scene is data on disk, not bytes in the bundle.** `npm run data:scene` writes derived files into gitignored `data/scene/`, including terrain, roads, pavement data and 67 building tiles in the world frame. A Vite plugin serves that directory at `/scene/`; decoder and external asset mounts are also required. `dist/` is not self-contained. See [setup](docs/reference/setup.md) for preparation and hosting requirements.
 
 **Building texture uses a bounded geographic policy at load.** Atlases are capped at 1024 pixels generally, 2048 within 160 m of the crossing, and native 4096 for one final-detail leaf containing the observed crossing frontage. The source audit requires exactly one native tile and atlas. Current full-source estimates are 561,075,583 texture bytes with mipmaps plus 73,324,734 geometry bytes; these are not measured whole-process GPU allocation. Both styles reuse the capped textures. `src/scene/texture-budget.ts`, `npm run data:textures:verify` and `docs/policies/local-rules.md` carry the policy and evidence.
 
@@ -136,7 +136,7 @@ The fleet canon above, the documents it asks for, and `docs/policies/local-rules
 
 ### Cached source for mapped-tree regression checks
 
-test/vegetation.test.ts checks crown variety against the reviewed cached data/scene/decorations.json (80,890 bytes; SHA-256 f16d044aeefc16704f6bcd10c1e3d03039927d6226b68322631ea3edff1ac918). Restore that reviewed scene cache before the source-dependent unit gate. Missing or changed bytes fail with the restoration/review requirement; the test never downloads or skips source. Fresh decoration data needs source review before changing this pin.
+`test/vegetation.test.ts` checks crown variety against exactly the retained 80,890-byte or reviewed1695 80,952-byte `data/scene/decorations.json` tuple. The test owns both literal SHA-256 pairs. Restore an admitted reviewed input before the source-dependent unit gate; missing or changed bytes fail without downloading or skipping. The fresh tuple does not qualify the moved guardrail's placement or clearance.
 
 ### Retained pedestrian test packets
 

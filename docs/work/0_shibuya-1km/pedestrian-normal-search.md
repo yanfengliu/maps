@@ -1,5 +1,7 @@
 # Pedestrian GPU normal search: fixed question and disqualifiers
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Root opens this bounded search after two compiled hardware attempts fail the same normal bound. Both rejected runs remain rejected. User objective is visually excellent, naturally animated pedestrians in the Shibuya model, using GPU work where applicable and sparse 30 fps visual review. Static/full-population acceptance remains separate.
 
 Fixed reproduction: the retained 17 named events across all three actual female LODs, every selected vertex and every actual influence, against the unchanged 102 CPU geometry buffers and 51 palettes. Current numerical contract is world-position error at most 10 micrometres, joined normal component error at most 1e-5 against CPU normals computed from world-Float32 positions, retained-pavement penetration at most 15 mm and planted drift at most 5 mm. Require lossless ninth-slot permutation positive before omission, material seventh-slot and wrong-frame negatives, finite GPU timings, complete readbacks and actual maximum neighborhoods. GPU-CONTRACT.md and prepared.json in primary artifacts/local-walk245-compensated-20260928 bind the runnable inputs. The two worktree runs are population-startup/maps/artifacts/local-walk241-20260927/gpu241 and gpu241-compensated.

@@ -1,4 +1,6 @@
 # Fixed facade search — 2026-10-11
+
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
 Root owns integration and acceptance; fresh workers own independent bounded routes. Base main is1ff554309d9c319a5309211a1bb0196497e4731d. No public code adoption is authorized by an experiment pass.
 Reproduction: actual753 six native1280x720 originals, three paired noon camera poses, real pointer/wheel controls, frozen scene bytes. Raw recipe/result/frames live under ignored artifacts/authored753. They cover upper/middle wall, shared corner and block context; lower levels, dusk and continuous motion are outside this bound.
 The target is bldg_15c46296-d449-4ea0-8c0a-0d1b6cb9ce73, data519 node0path[1,0]/mesh0/primitive1/batch4. Massing, roof, source metadata/buffers and unrelated source appearance remain authoritative; authored details require disclosure.

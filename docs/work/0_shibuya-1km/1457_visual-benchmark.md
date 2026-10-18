@@ -1,5 +1,7 @@
 # 1457 — next visual milestone benchmark
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 2026-10-17, root. Full deliverable requirements and all14 OPEN criteria in plan.md remain binding. Current executable is9e4508; mainbbe952f adds docs only. Previous1452/1455 failed artifacts and their prospective bars remain unchanged; this search cannot rescore them.
 
 Before a new implementation, freeze its feature-appropriate ordinary-app framing and the existing block/dusk regression views, source/runtime/build identities, actual controls and declared motion samples. A coherent, substantial visible improvement must be clear in its full native view; close/block/aerial context and noon/dusk must remain believable. Static samples do not prove continuous motion. Existing five gates and independent integrated review follow a promising prototype, before adoption. No new capture framework.

@@ -1,5 +1,7 @@
 # 1457 — false successes to reject
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 2026-10-17, root. Fix these before selecting the next candidate.
 
 - A crop/thumbnail or arbitrary zoom is the only persuasive evidence; the ordinary full view has no useful change.

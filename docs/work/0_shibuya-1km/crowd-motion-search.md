@@ -1,5 +1,7 @@
 # Pedestrian movement contract search
 
+Historical experiment; no active assignment. [The plan](plan.md) owns current status; [local rules](../../policies/local-rules.md) own current verification.
+
 Owner: root orchestrator. Status: independent171 accepted the three disclosed component families; the selected166 reference remains only an artifact prototype.175 refused on zero-arc inversion;182 repairs that transition but times out incomplete with repeated zero selections. Fresh independent183 is diagnosing the exact witness before another mechanism is chosen. No runtime repair is accepted. The user's outcome is a moving Shibuya model with high visual quality. Reviews151/152/154 retain the observed failures and two rejected connector prototypes.
 
 The fixed evidence is the sealed first-loss and material-jump traces plus the two-actor prototype in the crowd-admission worktree. Review154's existing command is `node artifacts/crowd-offset-continuity-20260927/trimmed.mjs`; it must never be rerun into its sealed outputs. Benchmark owner157 must preserve those bytes and publish one bounded command, immutable inputs, output schema and checker before competing approaches are dispatched or scored.
