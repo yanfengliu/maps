@@ -1,25 +1,28 @@
-# Current Unreal Shibuya graphics experiment
+# Current Unreal Shibuya graphics comparison
 
-Updated2026-10-17. Root is the orchestrator. Read this board before resuming.
+Updated 2026-10-17. Root is the orchestrator. Read this board before resuming.
 
-## Owner scope and outcome
+## Owner scope and final result
 
-The owner clarified: "You don't need to re-solve the simulation problem that default branch is solving" and "I just wanted the unreal branch to see if graphics are easier using unreal mcp." This supersedes the earlier broad goal text. Do not resurrect Source grade, body clearance, route capacity, Source3 publication/import, population/performance or simulation as graphics prerequisites.
+The owner authorized a fair graphics-only comparison, matching cameras, subagents, one bounded Unreal MCP candidate and side-by-side results. That increment is complete. [Result](matched-comparison-result.md) and independent [448](reviews/448_matched_native_visual_review.md) record the actual qualified verdict: Unreal MCP CAN render the matched views, with stronger relief on some shared buildings, but no decisive overall visual upgrade or easier-workflow advantage. Source/content/tone differences prevent a universal renderer winner.
 
-The bounded graphics/MCP experiment is concluded: no demonstrated graphics or workflow advantage. See [result](graphics-experiment-result.md). This does not accept photorealism or dark crossing views. No further render, polish or gate is queued. Preserve main, byte-exact instruction files and unfinished local work.
+No further native, tuning, verification or simulation work is queued. Simulation, Source grade/body/capacity, population/performance and Source3 remain stopped. Preserve main, byte-exact instruction files, unrelated unfinished work and the existing experimental worktree.
 
 ## Actual final evidence
 
-- Unreal5.8.3 built-in HTTP MCP actually saved five material packages/map, reopened in a fresh process, observed112 effective slots and captured all six fixed views. This used custom ShibuyaCityTools and external Python ownership glue; account for that effort when assessing ease.
-- Corrected operator04c2/helperb087 native report1f24d1b7 completed111.422seconds: readiness6/6PASS, darknessFAIL on crossing/block/crop, aggregate exit1, no timeout. Both editors exit0/JobsEmpty; owned residual25444 cleaned. All six originals restored/readback; current map32b89836. The failed candidate map has only a descriptor, not a retained byte copy.
-- Root and producer individually inspected all six1280x720 originals and reject appearance: darker road/readable markings, but dark blue facades, blurred photo-ground/material edges and coarse source geometry remain. Earlier transient facade gain did not survive fresh sky capture. Available default crossing images look more finished; content/camera differences prevent an engine-wide claim.
-- Narrow saved-material recognition repair integrated as helperb087caa9/testc0d7ebcc; literal canonical349PASS43.738seconds,33subjectsheld/Jobempty, actual normal preflightPASS. Independent review443 finds no material code issue. Unit/readiness success does not pass appearance.
-- Private gallery52/11batches is verified, newest first, one image per row with concise explanations. HTML839632d7/JSONb3040378/MD e69cfe32. All52 image hashes checked; latest six explicitly rejected. Gallery/images remain ignored, inspection only, never Git/published.
+- Two original1280x720 noon crossing/approach pairs use camera contract8d59c024. Default EPSG6677/absolute-height camera+target+up were transformed through ECEF into Unreal ENU; raw axes copying would miss15.26184m height and grid convergence. Actual native HFOV85.56558990478516, near100cm,8km visibility, perspective/no custom projection, unit scale, maximum location error0.0007141cm and basis error6.862e-8 pass. Depth encoding, source geoid44.261mm/epoch/LOD/content/UI/sky/tone differences remain disclosed.
+- Final native report artifacts/unreal/matched-graphics-20261017-230053/report.json94464788 is complete:56.078seconds/natural0, no timeout/errors/restoration errors,31 protected records held and owned Jobempty/PID58488 absent. Two setup failures remain36.937+14.359seconds; three launches/same one candidate total107.374seconds under cumulative270. Preparation time is additional, not a comparative construction benchmark.
+- One native daylight-cubemap/Sun25klux candidate, one initial SH gain choice and one preview, then the same fixed exposure/WB6500/camera contract for both finals. No canonical helper/renderer edit, new asset import, saved-project mutation, C++ build or unchanged349-test rerun. Stock property tools plus existing custom capture/observer and external operator were required; no generic ease advantage is claimed.
+- Root and independent reviewer each inspected all four final originals. Unreal shows some better building contrast/relief; blurred near ground, cool cast, dark foreground and horizon remain. Default streets are more complete from authored paving/paint/storefront/sign/vegetation/rail content, which is not attributed to engine quality.
 
-## Owners, branch and retained work
+## Private presentation and resources
 
-Graphics worker and reviewer completed their bounded assignments. Sole engine/GPU lease FREE. All owned native/test/browser resources are closed; the user's existing gallery browser remains untouched. The completed unreal-shibuya-visual-progress heartbeat was deleted; do not continue merely because the older goal text names simulation.
+artifacts/visual-gallery/comparison-threejs-unreal.html is complete: default left/Unreal right, crossing+approach, equal-scale fit and original1280x720 mode. Pageb8f359c9/topindex0f447744; existing52 gallery records/JSONb3040378 remain unchanged. Headless static QA3fabdecc/owned receipt af1f3277 passed original hashes, desktop/phone layouts, contained pan, controls and browser/Job cleanup; Root inspected rendered layouts. A top link keeps latest work visible. All gallery/images/raw evidence remain ignored, inspection only, never Git/published. The Codex open request was queued for the comparison page; it remains available for user inspection.
 
-Branch codex/shibuya-unreal-5.8 is intentionally retained with ignored gallery/source/evidence. Documentation checkpoint records this result; executable experiment delta is uncommitted and must not be represented as a released or fully verified implementation. Main is untouched. No C++ rebuild or Source/physics gate is needed for this concluded assessment.
+All workers completed bounded handoffs. Engine/GPU lease FREE, no owned native/browser/server processes remain. Static QA TEMP was removed. The user's existing browser is untouched. No heartbeat is active for this finite increment. Do not restart because of the old broad simulation goal.
 
-SourceV4 c61739cd, body272ddfce/ecf60b84 and Source3 publisher/capsule drafts remain stopped/preserved; none is a graphics dependency. Stopped handoffs under artifacts/lawful-capacity-preparation-20261017, body-replay-cost-repair-20261017 and source3-native-import-20261017 retain technical details. Resume only with a new owner-directed increment.
+## Branch and preserved work
+
+Use codex/shibuya-unreal-5.8 as a graphics experiment; current evidence does not justify a duplicate city implementation. This milestone commits authored documentation/reviews only. Earlier executable delta stays local/uncommitted; main and instruction files are unchanged. Retain ignored baseline/camera/native/QA evidence under parent artifacts/matched-graphics-comparison-20261017 and project artifacts/unreal/matched-graphics-20261017-230053 for inspection/reproduction. Current map remains32b89836.
+
+Prior Source/body/capacity drafts and rejected graphics experiments remain preserved historical work, not dependencies. Any later change requires a new owner-directed increment. No further action is needed for this comparison.

@@ -1,0 +1,15 @@
+# Matched graphics comparison — minimal fairness contract
+
+2026-10-17. Root's new owner-authorized graphics-only increment supersedes the concluded unmatched experiment. Independent fairness review; initial contract, not a visual verdict. Root reduced the initial three-view proposal to TWO exact existing noon heroes to avoid a new default GPU/build. No extra baseline capture is required.
+
+Freeze crossing position[31.74009652165533,18.383185089605462,31.74009652165534] and approach[149.03227388550673,78.27739622612386,149.03227388550675], both targeting[0,15.2,0] in default X-east/Y-up/Z-south metres. Use vertical FOV55degrees, aspect16:9,1280x720, upY, near1m/far8000m. UE mapping is100*[x,z,y] centimetres, upZ, with horizontal FOV=2atan(tan(55degrees/2)*16/9). Verify actual returned camera/projection and landmark framing; nominal FOV labels alone are insufficient. Do not reuse the old15m target or crop/resize one side.
+
+Use one fixed global UE daytime candidate across both views. Allow at most two logged cheap crossing preview adjustments in one owned UE session, then freeze one two-view set. Record sun/daytime intent, fixed exposure/tone/white balance and source/LOD/material differences. Equal numerical exposure values across renderers do not establish equal photographic response. No per-view autoexposure, post-hoc brightening or selective winner frames. The reference binds its actual hero/certificate/dist bytes, not an unverified HEAD revision. No default code/assets enter UE.
+
+Prefer an existing common-content control plus labeled decorated default reference. If none exists, use unobstructed shared regions and an explicit content-difference inventory. Do not generate a new control merely to satisfy this proposal. Extra default props, vegetation, paint, agents or different source/LOD prevent an unqualified full-frame or engine-wide quality claim; missing content is not a rendering advantage. Agents and simulation are outside this experiment.
+
+Inspect paired originals at native pixels and a same-scale side-by-side. Compare shared road/marking readability, facade color/detail/shading, shadow/highlight readability, texture blur/seams and visual coherence. Record which side looks better by attribute/view, allowing mixed or indeterminate results; use no arbitrary metric winner. Do not reward brightness alone or conceal a material regression in the other view.
+
+Report visible quality separately from workflow ease. Count actual MCP adjustments, elapsed interaction, failures and custom ShibuyaCityTools/external Python glue. Existing default captures establish a product reference, not the time needed to recreate that result now. The done-condition is one honestly matched, labeled comparison with a bounded conclusion, which may be no advantage. It is not photorealism, simulation, Source3, body/capacity, a44-frame/full-six gate or a new verification framework.
+
+Pending: baseline byte/content provenance and final UE operator/camera evidence, then original image paths from Root. No engine, test, browser, build, canonical edit or Git action was launched by this reviewer.

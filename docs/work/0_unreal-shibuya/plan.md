@@ -4,7 +4,7 @@ Current mission, owners and todos: [current.md](current.md). This file retains d
 
 Owner scope correction,2026-10-17: the Unreal branch tests graphics ease through MCP. The default branch owns simulation. The Source/body/capacity/native-physics milestones below are stopped historical work and are not graphics prerequisites; follow current.md.
 
-Status: bounded graphics/MCP experiment concluded; appearance rejected. See graphics-experiment-result.md.
+Status: graphics-only matched-view follow-up concluded; no decisive graphics/ease upgrade. See matched-comparison-result.md; the earlier rejected saved-state experiment remains in graphics-experiment-result.md.
 Owner: Orchestrator in the current Codex chat
 Created: 2026-10-11
 Updated: 2026-10-17
