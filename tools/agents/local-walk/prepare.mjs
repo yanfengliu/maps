@@ -4,7 +4,7 @@ import {loadRig} from './rig-data.mjs';
 import {createContext} from './context.ts';
 import {createStaticObstacles} from './static-obstacles.ts';
 import {createUnusedOutput,ownedDataPath,projectPath,readPinned,sha256,sourcePath} from './paths.mjs';
-import {FEMALE_SOURCE_INPUT,BAKER_INPUT,FEMALE_INPUTS,REFERENCE_INPUTS,NETWORK_INPUT} from './input-contract.mjs';
+import {FEMALE_SOURCE_INPUT,BAKER_INPUT,FEMALE_INPUTS,REFERENCE_INPUTS} from './input-contract.mjs';
 import {assertInputProfile,inputProfile} from './profile.mjs';
 export function bindOwnerProvenance(project,profile='historical') {
   return inputProfile(profile).ownerInputs.map(owner=>({path:sourcePath(owner.path),sha256:sha256(readPinned(project,owner))}));
@@ -46,7 +46,7 @@ export async function preparePacket(project,preparationRelative,outputRelative,p
   for(const row of obstacles.inputs)records.push(row);
   const triangles=context.hero.nearby([[-41,10],[-28,10],[-28,24],[-41,24]]);
   save('context.json',{scale:context.scale,origin:context.origin,legs:context.legs,triangles,obstacles,authority:context.network.junctions.map(j=>({id:j.id,areas:j.conflictAreas??[{position:j.position,radiusM:j.radiusM}]})),networkEdges:context.route.edges,route:context.route.edgeIds});
-  bind(NETWORK_INPUT.path,NETWORK_INPUT.sha256,NETWORK_INPUT.bytes);
+  const networkInput=inputProfile(profile).networkInput;bind(networkInput.path,networkInput.sha256,networkInput.bytes);
   const pavement=context.hero.inputs.find(row=>row.path==='data/scene/pavements.mesh');bind(pavement.path,pavement.sha256);
   const female=FEMALE_INPUTS.find(row=>row.path==='data/scene/agents/commuter-female.json');bind(female.path,female.sha256,female.bytes);
   const files=pending.map(({name,sha256})=>({name,sha256}));

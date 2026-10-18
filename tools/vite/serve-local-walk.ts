@@ -1,6 +1,7 @@
 /** The five verified packet buffers shared by normal and explicit capture builds. */
 import type { Connect, Plugin } from "vite";
-import { LOCAL_WALK_FILES, readLocalWalkPacket } from "../agents/local-walk/packet.ts";
+import { createHash } from "node:crypto";
+import { readLocalWalkPacket } from "../agents/local-walk/packet.ts";
 
 export function localWalkServer(packetDirectory: string): { plugin: Plugin; binding: { url: string; sha256: string } } {
   const files = new Map([...readLocalWalkPacket(packetDirectory)].map(([name, bytes]) => [`/local-walk/${name}`, bytes]));
@@ -17,7 +18,7 @@ export function localWalkServer(packetDirectory: string): { plugin: Plugin; bind
     response.end(bytes);
   };
   return {
-    binding: { url: "/local-walk/manifest.json", sha256: LOCAL_WALK_FILES[0][2] },
+    binding: { url: "/local-walk/manifest.json", sha256: createHash("sha256").update(files.get("/local-walk/manifest.json")!).digest("hex") },
     plugin: {
       name: "maps:prepared-local-walk",
       configureServer(server) { server.middlewares.use(middleware); },

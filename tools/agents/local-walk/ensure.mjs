@@ -3,14 +3,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parsePreparationArguments, runPreparation } from './command.mjs';
-import { CURRENT_776_PROFILE, assertInputProfile } from './profile.mjs';
+import { CURRENT_776_PROFILE, FRESH_1695_PROFILE, assertInputProfile } from './profile.mjs';
 import { FEMALE_SOURCE_INPUT, BAKER_INPUT, FEMALE_INPUTS } from './input-contract.mjs';
 import { ownedDataPath, readPinned } from './paths.mjs';
-import { LOCAL_WALK_PACKET_DIRECTORY, readLocalWalkPacket } from './packet.ts';
+import { LOCAL_WALK_PACKET_DIRECTORY, LOCAL_WALK_FILES, FRESH_LOCAL_WALK_FILES, readLocalWalkPacket } from './packet.ts';
 
 export async function ensureLocalWalk(options) {
-  if (options.profile !== CURRENT_776_PROFILE.id) {
-    throw Error(`Default walker preparation requires --profile ${CURRENT_776_PROFILE.id}; received ${String(options.profile)}. Run npm run data:local-walk.`);
+  if (options.profile !== CURRENT_776_PROFILE.id && options.profile !== FRESH_1695_PROFILE.id) {
+    throw Error(`Default walker preparation requires --profile ${CURRENT_776_PROFILE.id} or ${FRESH_1695_PROFILE.id}; received ${String(options.profile)}. Run npm run data:local-walk.`);
   }
   const project = path.resolve(options.project);
   const directory = ownedDataPath(project, LOCAL_WALK_PACKET_DIRECTORY);
@@ -20,14 +20,15 @@ export async function ensureLocalWalk(options) {
   } catch (error) {
     throw Error(`Default walker cached prerequisite is unavailable or differs: ${String(error)}. Restore the exact reviewed scene/network, commuter-female source and delivered LOD cache described in README.md, then run npm run data:local-walk.`);
   }
+  const expectedManifest = (options.profile === FRESH_1695_PROFILE.id ? FRESH_LOCAL_WALK_FILES : LOCAL_WALK_FILES)[0][2];
   if (fs.existsSync(directory)) {
-    const files = readLocalWalkPacket(directory);
+    const files = readLocalWalkPacket(directory, expectedManifest);
     return { status: 'verified-existing', directory, files: files.size, bytes: [...files.values()].reduce((sum, bytes) => sum + bytes.length, 0), productionReady: false };
   }
   // The unchanged producer refuses an existing reference directory, linked
   // output ancestors and missing Blender before extraction. It never installs a blob.
   await runPreparation(options);
-  const files = readLocalWalkPacket(directory);
+  const files = readLocalWalkPacket(directory, expectedManifest);
   return { status: 'prepared', directory, files: files.size, bytes: [...files.values()].reduce((sum, bytes) => sum + bytes.length, 0), productionReady: false };
 }
 

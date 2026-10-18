@@ -2,7 +2,7 @@ import {loadOwnedHero,weights,height} from "./grounding.ts";
 import {sampleRoute} from "../../../src/agents/population/routes.ts";
 import {createRetainedRoute} from "./route.ts";
 export function createContext(project:string,profile="historical") {
-const hero=loadOwnedHero(project,profile),{network,route,scale}=createRetainedRoute(project);
+const hero=loadOwnedHero(project,profile),{network,route,scale}=createRetainedRoute(project,profile);
 const edges=route.edges;
 const discrepancySamples:any[]=[];
 function floorAt(x:number,z:number){const floors=hero.nearby([[x-.6,z-.6],[x+.6,z-.6],[x+.6,z+.6],[x-.6,z+.6]]),hits=floors.filter((t:any)=>Math.min(...weights(t,{x,z}))>=-1e-10);let selected=hits,seam=false;

@@ -2,9 +2,9 @@
 import {placeOnCorridor,populationActorRng} from '../../../src/agents/population/routes.ts';
 import {createRouteVisits} from '../../../src/network/halts.ts';
 import {readPinned} from './paths.mjs';
-import {NETWORK_INPUT} from './input-contract.mjs';
-export function createRetainedRoute(project:string) {
-const network=JSON.parse(readPinned(project,NETWORK_INPUT).toString()),slot=0,generation=1,seed=5970698;
+import {inputProfile} from './profile.mjs';
+export function createRetainedRoute(project:string,profile="historical") {
+const network=JSON.parse(readPinned(project,inputProfile(profile).networkInput).toString()),slot=0,generation=1,seed=5970698;
 const rng=populationActorRng(seed,'pedestrian',slot,generation);rng();
 const scale=Math.fround(.92+rng()*.16),variant=Math.floor(rng()*3);
 if(variant!==2||scale!==1.0391258001327515)throw Error('Normal actor stream differs from the accepted241 actor.');

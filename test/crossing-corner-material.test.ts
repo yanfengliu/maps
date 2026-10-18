@@ -142,7 +142,7 @@ it("grounds the source-aligned surround above preserved pavement, clear of walki
     const planar=points.map(local),lo=Math.min(...planar.map(p=>p[0])),hi=Math.max(...planar.map(p=>p[0]));
     expect(Math.min(...planar.map(p=>p[1]))).toBeCloseTo(.01,4);expect(Math.max(...planar.map(p=>p[1]))).toBeCloseTo(.35,4);
     expect(Math.max(...points.map(p=>p.y))).toBeLessThan(19);
-    const networkBytes=readFileSync(new URL("../data/network/network.json",import.meta.url));expect(sha(networkBytes)).toBe("314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677");
+    const networkBytes=readFileSync(new URL("../data/network/network.json",import.meta.url));expect([[10239410, "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"], [10301111, "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f"]], "Restore reviewed OLD or fresh1695 data/network/network.json; changed source needs review.").toContainEqual([networkBytes.length, sha(networkBytes)]);
     const network=JSON.parse(networkBytes.toString()) as NetworkData;
     // Intersect every polyline segment with the surround rectangle expanded by
     // 0.4 m. This overstates its occupied volume and needs no sampling interval.

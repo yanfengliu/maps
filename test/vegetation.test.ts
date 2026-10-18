@@ -104,7 +104,11 @@ describe("authored mapped tree crowns", () => {
     let bytes: Buffer;
     try { bytes = readFileSync(new URL("../data/scene/decorations.json", import.meta.url)); }
     catch (cause) { throw new Error(`Tree row regression requires the reviewed cached data/scene/decorations.json (SHA-256 ${expectedSha256}); restore that scene cache before this test. It never downloads source data.`, { cause }); }
-    expect(createHash("sha256").update(bytes).digest("hex"), "Tree row regression requires the reviewed decorations bytes; changed source needs review before changing this pin.").toBe(expectedSha256);
+    // Crown variety only; the moved guardrail still requires native clearance review.
+    expect([
+      { bytes: 80890, sha256: expectedSha256 },
+      { bytes: 80952, sha256: "afcf87518922f383a50dc63c1b014e35ad8ffc989154db7fc813b7aefb2ab3bc" },
+    ], "Restore an exact retained or reviewed1695 decoration input; arbitrary source changes remain refused.").toContainEqual({ bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
     const mapped = JSON.parse(bytes.toString("utf8")) as DecorationData;
     const rows = new Map<number, DecorationData["trees"]>();
     for (const tree of mapped.trees.filter((record) => record.rowPlacement)) {

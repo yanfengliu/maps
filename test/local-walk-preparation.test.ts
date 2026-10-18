@@ -14,12 +14,14 @@ import { ensureLocalWalk } from "../tools/agents/local-walk/ensure.mjs";
 
 const stages = vi.hoisted(() => ({ prepare: vi.fn(), profile: vi.fn(), input: vi.fn() }));
 vi.mock("../tools/agents/local-walk/command.mjs", () => ({ runPreparation: stages.prepare, parsePreparationArguments: vi.fn() }));
-vi.mock("../tools/agents/local-walk/profile.mjs", () => ({ CURRENT_776_PROFILE: { id: "current-776-bounded-generation" }, assertInputProfile: stages.profile }));
+vi.mock("../tools/agents/local-walk/profile.mjs", () => ({ CURRENT_776_PROFILE: { id: "current-776-bounded-generation" }, FRESH_1695_PROFILE: { id: "fresh-1695-bounded-generation" }, assertInputProfile: stages.profile }));
 vi.mock("../tools/agents/local-walk/paths.mjs", async () => ({ ...await vi.importActual("../tools/agents/local-walk/paths.mjs"), readPinned: stages.input }));
 
 const source = path.resolve(LOCAL_WALK_PACKET_DIRECTORY);
 // A missing preparation is a failed prerequisite, not a skipped test or download.
 const originals = readLocalWalkPacket(source);
+const sourceManifestSha = JSON.parse(originals.get("manifest.json")!.toString()).sourceInputs.some((row: { sha256: string }) => row.sha256 === "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f") ? "801ce9a8f1b8400e3abe7aa0af779a0b30353467e7a5aa89a1aca98e5ff4dc98" : LOCAL_WALK_FILES[0][2];
+const sourceProfile = sourceManifestSha === LOCAL_WALK_FILES[0][2] ? "current-776-bounded-generation" : "fresh-1695-bounded-generation";
 const owned: { root: string; parent: string }[] = [];
 function fixture(withPacket = true, parent = tmpdir()): string {
   const root = fs.realpathSync.native(fs.mkdtempSync(path.join(parent, "maps-local-walk-")));
@@ -146,7 +148,7 @@ describe("shared verified walker service", () => {
       const result = response(handler, `/local-walk/${name}?fresh=1`);
       expect(result.status).toBe(200); expect(Buffer.isBuffer(result.body)).toBe(true); expect((result.body as Buffer).equals(bytes)).toBe(true); expect(result.headers.get("Cache-Control")).toBe("no-store");
     }
-    expect(service.binding).toEqual({ url: "/local-walk/manifest.json", sha256: LOCAL_WALK_FILES[0][2] });
+    expect(service.binding).toEqual({ url: "/local-walk/manifest.json", sha256: sourceManifestSha });
   });
   it.each(["preparation-receipt.json", "../manifest.json", "%2e%2e%2fmanifest.json", "nested/manifest.json"])("refuses foreign packet route %s", name => {
     expect(response(middleware(localWalkServer(source).plugin), `/local-walk/${name}`).status).toBe(404);
@@ -163,11 +165,19 @@ describe("shared verified walker service", () => {
 });
 
 describe("cached walker preparation entry", () => {
-  const options = (project: string) => ({ project, profile: "current-776-bounded-generation" });
+  const options = (project: string) => ({ project, profile: sourceProfile });
+  it("refuses a recognized packet from the other selected source profile", async () => {
+    const root = fixture();
+    const other = sourceProfile === "fresh-1695-bounded-generation" ? "current-776-bounded-generation" : "fresh-1695-bounded-generation";
+    await expect(ensureLocalWalk({ project: root, profile: other })).rejects.toThrow("manifest.json");
+    expect(stages.prepare).not.toHaveBeenCalled();
+    expect(readLocalWalkPacket(path.join(root, LOCAL_WALK_PACKET_DIRECTORY)).get("manifest.json")).toEqual(originals.get("manifest.json"));
+  });
+
   it("verifies an exact existing packet without writing or calling the producer", async () => {
     const root = fixture(), directory = path.join(root, LOCAL_WALK_PACKET_DIRECTORY), before = LOCAL_WALK_FILES.map(([name]) => fs.statSync(path.join(directory, name)).mtimeMs);
     expect(await ensureLocalWalk(options(root))).toMatchObject({ status: "verified-existing", files: 5, productionReady: false });
-    expect(stages.profile).toHaveBeenCalledWith(root, "current-776-bounded-generation"); expect(stages.input).toHaveBeenCalledTimes(12); expect(stages.prepare).not.toHaveBeenCalled();
+    expect(stages.profile).toHaveBeenCalledWith(root, sourceProfile); expect(stages.input).toHaveBeenCalledTimes(12); expect(stages.prepare).not.toHaveBeenCalled();
     expect(LOCAL_WALK_FILES.map(([name]) => fs.statSync(path.join(directory, name)).mtimeMs)).toEqual(before);
   });
   it("refuses a missing cached prerequisite before any producer or output write", async () => {

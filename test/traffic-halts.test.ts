@@ -11,6 +11,8 @@ import { RouteLibrary, vehicleRouteFootprint, vehicleRoutePose, vehicleScale, ty
 import { RefusalCounts } from "../src/agents/population/status.ts";
 import type { Junction, LaneEdge, NetworkData } from "../src/world/network-data.ts";
 import type { VehicleAssetManifest } from "../src/world/agent-assets.ts";
+import { historicalTrafficInputs, currentTrafficHardware } from "./traffic-vintage-inputs.ts";
+import { REVIEWED_SIGNAL_IDS, REVIEWED_STOP_IDS } from "./shibuya-source-fixture.ts";
 import { BOUNDARY_SOURCE_NETWORK, BOUNDARY_SOURCE_ROUTES } from "./network-boundary-source-fixture.ts";
 
 interface FrozenWitnesses {
@@ -20,9 +22,25 @@ interface FrozenWitnesses {
   stops:{ids:string[];passage:{entryIndex:number;lastConflictIndex:number;controls:{routeIndex:number;distanceM:number;nodeIds:number[];rule:string}[]};progressAfterEntry:number;remainingAuthorityFrontM:number}[];
 }
 const frozen=JSON.parse(readFileSync(new URL("./fixtures/traffic-halt-routes.json",import.meta.url),"utf8")) as FrozenWitnesses;
-function pinned<T>(path:string,sha:string):T {const bytes=readFileSync(new URL(`../${path}`,import.meta.url));expect(createHash("sha256").update(bytes).digest("hex"),`Restore the reviewed ${path}; changed source requires review.`).toBe(sha);return JSON.parse(bytes.toString()) as T;}
-const network=pinned<NetworkData>("data/network/network.json",frozen.provenance.networkSha256);
-const fleet=pinned<VehicleAssetManifest>("data/scene/agents/vehicles.json",frozen.provenance.fleetSha256);
+// Literal reviewed OLD / fresh1695 inputs; route/body expectations below stay unchanged.
+const reviewedSourcePins: Record<string, readonly (readonly [number, string])[]> = {
+  "data/network/network.json": [[10239410, "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"], [10301111, "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f"]],
+  "data/scene/agents/vehicles.json": [[4128, "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"], [4128, "83569d3bf6a41bbe6ae37edcc6bcad212615f4c69e76ca1b6714d8001f6deb9f"]],
+};
+function pinned<T>(path: string, originalSha256: string): T {
+  const pins = reviewedSourcePins[path];
+  if (!pins || originalSha256 !== pins[0]![1]) throw Error(`Unreviewed fixture source identity for ${path}; restore the original reviewed route fixture.`);
+  const bytes = readFileSync(new URL(`../${path}`, import.meta.url));
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (!pins.some(([size, digest]) => bytes.length === size && sha256 === digest)) throw Error(`Unreviewed ${path}: ${bytes.length} bytes / ${sha256}; restore reviewed OLD or fresh1695 source bytes.`);
+  return JSON.parse(bytes.toString()) as T;
+}
+const currentNetwork=pinned<NetworkData>("data/network/network.json",frozen.provenance.networkSha256);
+const currentFleet=pinned<VehicleAssetManifest>("data/scene/agents/vehicles.json",frozen.provenance.fleetSha256);
+const {network,fleet}=historicalTrafficInputs();
+const currentFresh=currentNetwork.provenance.osmSha256==="162fbdec3baa5ed5c07eed33fa8ae20568dbd74d8f1f36a3490dccfbbd2d32b0";
+const freshScenarios=JSON.parse(readFileSync(new URL("./fixtures/traffic-source-vintages.json",import.meta.url),"utf8")) as FrozenWitnesses & {body:{classId:string;scale:number;radiusM:number}};
+const currentScenarios=currentFresh?freshScenarios:frozen;
 const dt=.25;
 const bodyFor=(variant=0):VehicleRouteBody=>({asset:fleet.vehicles[variant]!,scale:vehicleScale(()=>1,fleet.vehicles[variant]!),laneIndex:0,frame:"population-upright"});
 /** Logical factory route only: deliberately usable for negative complete-validator fixtures. */
@@ -182,5 +200,43 @@ describe("authority identity, freshness and release windows",()=>{
   const prefix=createBoundaryEntryPassage(n,"vehicle",ids,vehicleRouteFootprint(base,0,body))!;expect(prefix.lastConflictIndex).toBe(-1);
   const route=Object.freeze({...base,boundaryEntryPassage:prefix}),a=new JunctionAdmissions(n);grant(a,request(route,prefix,vehicleRouteFootprint(route,0,body)));
   const expected=route.passages[0]!;expect(query(a,route,0,radius).admission!.passage).toBe(expected);
+ });
+});
+
+// Current-vintage counterparts run in addition to every historical case above.
+describe("current exact source halt counterparts",()=>{
+ it("keeps the literal complete clear route and actual body/frame requirements",()=>{
+  const asset=currentFleet.vehicles[0]!,body:VehicleRouteBody={asset,scale:vehicleScale(()=>1,asset),laneIndex:0,frame:"population-upright"},radius=vehicleEnvelope(asset,body.scale).diameter/2;
+  const ids=currentScenarios.clearRoute.ids,library=new RouteLibrary(currentNetwork,new RefusalCounts()),walk=vi.spyOn(library as unknown as {walk:(...args:unknown[])=>string[]|null},"walk").mockReturnValue([...ids]);
+  try {const request={footprintRadiusM:radius,maxEdges:120,vehicleBody:body};
+   const route=library.route("vehicle",0,1,ids[0]!,request);expect(route?.edgeIds).toEqual(ids);expect(currentNetwork.portals.vehicleExit).toContain(ids.at(-1));
+   for(let i=1;i<ids.length;i++)expect(currentNetwork.lanes.find(e=>e.id===ids[i-1])!.nextIds).toContain(ids[i]);
+   if(currentFresh){expect(body.asset.id).toBe(freshScenarios.body.classId);expect(body.scale).toBe(freshScenarios.body.scale);expect(radius).toBe(freshScenarios.body.radiusM);expect(route!.totalLengthM).toBe((freshScenarios.clearRoute as typeof freshScenarios.clearRoute & {totalM:number}).totalM);}
+   expect(library.route("vehicle",0,1,ids[0]!,{...request,vehicleBody:{...body,frame:"unknown" as VehicleRouteBody["frame"]}})).toBeNull();
+   expect(library.planFrom(library.vehicleGraph,"vehicle",ids[0]!,5970698,{footprintRadiusM:radius,maxEdges:120}).reason).toMatch(/actual asset, scale and core body frame/);
+  }finally{walk.mockRestore();}
+ });
+ it("retains every original control identity/kind and only the exact fresh empty-applicability exception",()=>{
+  const controls=currentNetwork.physical.trafficControls,expected=[...REVIEWED_SIGNAL_IDS.map(id=>[id,"traffic_signals"]),...REVIEWED_STOP_IDS.map(id=>[id,"stop"]),...(currentFresh?[[728435717,"stop"]]:[])].map(row=>JSON.stringify(row)).sort();
+  expect(controls.map(c=>JSON.stringify([c.sourceNodeId,c.kind])).sort()).toEqual(expected);
+  expect(controls.filter(c=>c.kind==="traffic_signals")).toHaveLength(78);expect(controls.filter(c=>c.kind==="stop")).toHaveLength(currentFresh?42:41);
+  const hardware=currentTrafficHardware();expect(hardware.records).toHaveLength(controls.length);expect(hardware.inputs.network).toBe(currentFresh?"1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f":"314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677");
+  if(currentFresh){const c=controls.find(c=>c.sourceNodeId===728435717)!;
+   expect(c).toEqual({id:"osm:node:728435717:stop",sourceNodeId:728435717,kind:"stop",direction:"forward",position:{x:226.59930697600066,y:15.107587770987186,z:196.13809874963044},travelDirection:null,sourceTags:{direction:"forward",highway:"stop"},sourceWayIds:[58777418],controllerId:"junction:walk:1569138624:0:0:ground0",approachEdgeIds:[],entryEdgeIds:[]});
+   expect(currentNetwork.lanes.some(e=>e.sourceWayId===58777433||e.sourceControlNodeIds.includes(728435717))).toBe(false);
+   expect(hardware.records.find(r=>r.sourceNodeId===728435717)).toMatchObject({sourceId:c.id,status:"unplaced",reason:"No source-associated travel direction for authored hardware orientation.",base:null,head:null,direction:null});
+  }
+ });
+ for(const [i,witness] of currentScenarios.stops.entries())it(`retains mapped stop context ${i+1} through real entry and measured line dwell`,()=>{
+  const asset=currentFleet.vehicles[0]!,body:VehicleRouteBody={asset,scale:vehicleScale(()=>1,asset),laneIndex:0,frame:"population-upright"},radius=vehicleEnvelope(asset,body.scale).diameter/2,route=logical(currentNetwork,witness.ids,radius),a=new JunctionAdmissions(currentNetwork);
+  const p=route.passages.find(p=>p.entryIndex===witness.passage.entryIndex)!;expect(p.lastConflictIndex).toBe(witness.passage.lastConflictIndex);expect(p.controls).toEqual(witness.passage.controls);expect(p.controls[0]!.nodeIds).toEqual([[13782042827],[13782042827],[13781883297],[13782042827]][i]);
+  let completed=0;for(const prior of route.passages){if(prior===p)break;completePrior(a,route,prior,body);completed++;}expect(completed>0).toBe(i!==2);
+  const hold=p.starts[p.entryIndex]!-radius,control=p.controls[0]!,line=p.starts[control.routeIndex]!+control.distanceM;
+  expect(query(a,route,hold-.01,radius).control?.control).toBe(control);grant(a,request(route,p,vehicleRouteFootprint(route,hold,body)));expect(query(a,route,hold+.01,radius).control?.control).toBe(control);
+  a.observe("v",observation(route,witness.progressAfterEntry,body));expect(a.haltStateFor("v",route,1).held!.entered).toBe(true);
+  const during=query(a,route,witness.progressAfterEntry,radius);expect(during.control?.control).toBe(control);expect(during.control!.distanceM-witness.progressAfterEntry).toBeCloseTo(witness.remainingAuthorityFrontM,10);
+  a.resolve(dt,[request(route,p,vehicleRouteFootprint(route,witness.progressAfterEntry,body),control.routeIndex,1)]);expect(a.haltStateFor("v",route,1).held!.unclearedControls).toContain(control);
+  expect(()=>a.observe("v",observation(route,line-radius+.01,body))).toThrow(/mapped stop/);expect(query(a,route,line-radius+.01,radius).refusal).toMatch(/mapped stop/);
+  clearControl(a,route,p,control,body);expect(query(a,route,line-radius,radius).control?.control).not.toBe(control);expect(()=>a.observe("v",observation(route,line-radius+.01,body))).not.toThrow();
  });
 });

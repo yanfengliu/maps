@@ -13,15 +13,24 @@ import { createPopulation } from '../src/agents/population/tick.ts';
 import { populationSettings } from '../src/agents/population/config.ts';
 import { JunctionAdmissions, type AdmissionRequest } from '../src/network/admissions.ts';
 import { createRouteVisits } from '../src/network/halts.ts';
+import { historicalTrafficInputs } from './traffic-vintage-inputs.ts';
 import { boundaryProgress } from '../src/network/boundaries.ts';
 import { footprintOccupies, projectVehicleFootprint, vehicleEnvelope } from '../src/network/footprints.ts';
 import type { NetworkData, LaneEdge, WorldPoint } from '../src/world/network-data.ts';
 import type { VehicleAssetManifest } from '../src/world/agent-assets.ts';
 const witness=JSON.parse(readFileSync(new URL('./fixtures/vehicle-final-tail.json',import.meta.url),'utf8')) as {inputs:{network:string;fleet:string};classId:string;scale:number;edgeIds:string[];owner:string;entryIndex:number;lastConflictIndex:number;firstEntryM:number;oldReleaseM:number;reentryM:number;totalLengthM:number};
-function pinned<T>(path:string,digest:string):T {
- const bytes=readFileSync(new URL(`../${path}`,import.meta.url));
- expect(createHash('sha256').update(bytes).digest('hex'),`Restore reviewed ${path}; changed source needs review.`).toBe(digest);
- return JSON.parse(bytes.toString()) as T;
+// Literal reviewed OLD / fresh1695 inputs; route/body expectations below stay unchanged.
+const reviewedSourcePins: Record<string, readonly (readonly [number, string])[]> = {
+  "data/network/network.json": [[10239410, "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"], [10301111, "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f"]],
+  "data/scene/agents/vehicles.json": [[4128, "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"], [4128, "83569d3bf6a41bbe6ae37edcc6bcad212615f4c69e76ca1b6714d8001f6deb9f"]],
+};
+function pinned<T>(path: string, originalSha256: string): T {
+  const pins = reviewedSourcePins[path];
+  if (!pins || originalSha256 !== pins[0]![1]) throw Error(`Unreviewed fixture source identity for ${path}; restore the original reviewed route fixture.`);
+  const bytes = readFileSync(new URL(`../${path}`, import.meta.url));
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (!pins.some(([size, digest]) => bytes.length === size && sha256 === digest)) throw Error(`Unreviewed ${path}: ${bytes.length} bytes / ${sha256}; restore reviewed OLD or fresh1695 source bytes.`);
+  return JSON.parse(bytes.toString()) as T;
 }
 const network=pinned<NetworkData>('data/network/network.json',witness.inputs.network),fleet=pinned<VehicleAssetManifest>('data/scene/agents/vehicles.json',witness.inputs.fleet);
 const body:VehicleRouteBody={asset:fleet.vehicles.find(v=>v.id===witness.classId)!,scale:witness.scale,laneIndex:0,frame:'population-upright'};
@@ -60,6 +69,7 @@ describe('final vehicle visit physical tail',()=>{
   expect(a.commitmentFor('tail')).toBeNull();expect(a.occupied(owner.id)).toBe(false);
  });
  it('retires the actual formerly failing slot through its bound outward envelope without an in-place retirement',()=>{
+  const {network,fleet}=historicalTrafficInputs();
   const a=new JunctionAdmissions(network),p=createPopulation({network,fleet,admissions:a,settings:populationSettings({pedestrians:60,vehicles:12,seed:0x5b1b0a})});
   try {
    for(let tick=1;tick<=2100;tick++){
@@ -98,4 +108,24 @@ describe('final vehicle visit physical tail',()=>{
   expect(a.resolve(.25,[{actorId:'tail',kind:'vehicle',passage:p,entryEdgeId:'two',routeIdentity:route,generation:1,footprint:vehicleRouteFootprint(route,35,body),stoppedSeconds:1,yieldSatisfied:true,receivingSpace:true}])).toEqual(['tail']);
   observe(a,route,42);expect(observe(a,route,release.distanceM+1)).toBe(true);expect(a.commitmentFor('tail')).toBeNull();
  });
+});
+
+it('retires the current-vintage slot only after its actual body clears the literal AOI side',()=>{
+ const fixtures=JSON.parse(readFileSync(new URL('./fixtures/traffic-source-vintages.json',import.meta.url),'utf8')) as {population:Record<'old'|'fresh',{edgeIds:string[];classId:string;scale:number;routeLengthM:number;exit:Parameters<typeof boundaryProgress>[0]}>};
+ const selected=fixtures.population[network.provenance.osmSha256==='162fbdec3baa5ed5c07eed33fa8ae20568dbd74d8f1f36a3490dccfbbd2d32b0'?'fresh':'old'];
+ const a=new JunctionAdmissions(network),p=createPopulation({network,fleet,admissions:a,settings:populationSettings({pedestrians:60,vehicles:12,seed:0x5b1b0a})});
+ let activeTicks=0,contactTicks=0,enteredContactTicks=0,straddlingTicks=0,retirements=0,priorActive=false,scale=0,variant=0;
+ const halfspace=(footprint:ReturnType<typeof projectVehicleFootprint>)=>footprint.hull!.map(v=>(v.x-selected.exit.position.x)*selected.exit.outward.x+(v.z-selected.exit.position.z)*selected.exit.outward.z);
+ try {for(let tick=1;tick<=2100;tick++){
+  p.update(1/60,tick/60);const actor=p.diagnostics().vehicles[11]!;
+  if(actor.active){activeTicks++;const route=p.vehicleRoute(11)!;expect(route.edgeIds).toEqual(selected.edgeIds);expect(route.totalLengthM).toBe(selected.routeLengthM);expect(fleet.vehicles[actor.variant]!.id).toBe(selected.classId);expect(actor.footprint!.vehicle!.scale).toBe(selected.scale);scale=actor.footprint!.vehicle!.scale;variant=actor.variant;
+   const touched=network.junctions.filter(j=>footprintOccupies(j,actor.footprint!));if(touched.length){contactTicks++;expect(touched.some(j=>j.id===a.commitmentFor('vehicle:11')?.junctionId)).toBe(true);if(a.commitmentFor('vehicle:11')?.entered)enteredContactTicks++;}
+   if(actor.egressing&&Math.min(...halfspace(actor.footprint!))<=1e-5)straddlingTicks++;
+  }
+  if(priorActive&&!actor.active){retirements++;const poses=p.poses.vehicles.current,index=33,asset=fleet.vehicles[variant]!,footprint=projectVehicleFootprint(asset,{x:poses.position[index]!,y:poses.position[index+1]!,z:poses.position[index+2]!},poses.yaw[11]!,{x:0,y:1,z:0},scale);
+   expect(Math.min(...halfspace(footprint))).toBeGreaterThan(1e-5);expect(boundaryProgress(selected.exit,footprint).fullyOutside).toBe(true);expect(network.junctions.filter(j=>footprintOccupies(j,footprint))).toEqual([]);expect(actor.egressOffsetM).toBeGreaterThan(2);expect(actor.egressOffsetM).toBeLessThan(7.5);expect(a.commitmentFor('vehicle:11')).toBeNull();
+  }
+  priorActive=actor.active;
+ }expect(activeTicks).toBeGreaterThan(0);expect(contactTicks).toBeGreaterThan(0);expect(enteredContactTicks).toBeGreaterThan(0);expect(straddlingTicks).toBeGreaterThan(0);expect(retirements).toBe(1);expect(p.status().authorityViolations).toBe(0);expect(p.status().retiredInPlace).toBe(0);
+ }finally{p.dispose();}
 });

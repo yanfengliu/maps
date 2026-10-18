@@ -91,13 +91,14 @@ it("shares one finish through real style application and disposes every owned re
 });
 
 it("retains the cached16-feature267-segment population and bounded actual support", async () => {
-  const inputs = await Promise.all([
-    ["data/network/network.json", "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"],
-    ["data/scene/roads.mesh", "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc"],
-    ["data/scene/pavements.mesh", "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6"],
-  ].map(async ([file, digest]) => {
-    const bytes = await readFile(file!).catch(cause => { throw new Error(`Tactile regression requires reviewed cached ${file}; restore the recorded scene/network cache before npm test. No download or skip is performed.`, { cause }); });
-    expect(createHash("sha256").update(bytes).digest("hex"), file).toBe(digest); return bytes;
+  const sourcePins = [
+    { file: "data/network/network.json", pins: [[10239410, "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"], [10301111, "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f"]] },
+    { file: "data/scene/roads.mesh", pins: [[6509676, "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc"]] },
+    { file: "data/scene/pavements.mesh", pins: [[13071300, "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6"]] },
+  ];
+  const inputs = await Promise.all(sourcePins.map(async ({ file, pins }) => {
+    const bytes = await readFile(file).catch(cause => { throw new Error(`Tactile regression requires reviewed cached ${file}; restore the recorded scene/network cache before npm test. No download or skip is performed.`, { cause }); });
+    expect(pins, `Restore reviewed OLD or fresh1695 ${file}; changed source needs review.`).toContainEqual([bytes.length, createHash("sha256").update(bytes).digest("hex")]); return bytes;
   }));
   const network = JSON.parse(inputs[0]!.toString()) as NetworkData;
   const support = createPaintSupport(decodeMesh(inputs[1]!), decodeMesh(inputs[2]!));

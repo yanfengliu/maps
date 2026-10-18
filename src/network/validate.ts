@@ -122,14 +122,40 @@ export function validateNetwork(input: unknown): asserts input is NetworkData {
   }
 }
 
+/** Exact reviewed Shibuya OSM vintages, not an admission rule for arbitrary new extracts.
+ * Identity/kind lists were recorded from reviewed 9923a9ae… source coverage; fresh
+ * 162fbdec… retains every old identity plus one bridge-to-surface stop. */
+export function validateShibuyaSourceControls(data: Pick<NetworkData, "provenance" | "physical" | "diagnostics" | "lanes">): void {
+  const hash=data.provenance.osmSha256;
+  const fresh=hash==="162fbdec3baa5ed5c07eed33fa8ae20568dbd74d8f1f36a3490dccfbbd2d32b0";
+  const fail=(reason:string):never=>{throw new Error(`Shibuya network: source ${hash}: ${reason}; review the changed source before updating this named coverage gate.`);};
+  if(!fresh&&hash!=="9923a9ae93afbc73f82332bb5a03f06f76ed587cbc143541158d4c192b4b8671")fail("OSM digest is not a reviewed Shibuya vintage");
+  if(data.provenance.osmTimestamp!==(fresh?"2026-10-18T13:27:51Z":"2026-09-07T03:23:56Z"))fail("OSM timestamp differs from the reviewed vintage");
+  const signals=[158030029,241864242,250652228,250652233,252674261,252674320,252683741,256000458,309701920,356644261,517547743,597689467,598417899,664495203,728435743,1681663501,1685220983,1685221014,2171167535,2253585427,2393500044,2850364789,2863969785,2866947424,2879100419,3790205548,5091218456,5091218473,5787345704,6219685050,6219685051,6219685052,6219685053,7234698633,7234698639,7234698646,8007279067,9522025505,9522025506,9522025507,9522025508,9581039286,9698257844,9790667170,9790667171,9790667172,10157692127,10178958375,10178958379,10178958380,10178958381,10204485207,10204485208,10219242885,10577113262,10577113263,10605619817,10605619818,10605619819,10605619820,10605648333,10605648334,10605648336,10605648337,11681901176,11681901177,11681901178,11690747988,12314025584,12314075790,13016446512,13016446513,13016446515,13038536248,13038536249,13038536250,13038536251,13038536252];
+  const stops=[1496233582,1519695413,2138385706,5133172807,5925771442,8007279066,8500468685,8500468686,8661077849,8661077850,8755672096,8755672097,9150799886,9150799887,9150799888,9150799890,9150799891,9150799892,9150799894,9699515141,10204485205,10219242893,10808053787,11687249280,12192494040,12192494041,12323845981,13031660191,13042424433,13302752089,13302752096,13302752097,13302752098,13321918907,13781883297,13782042806,13782042808,13782042814,13782042827,13825011001,13825011003];
+  if(fresh)stops.push(728435717);
+  const expected=[...signals.map(id=>`osm:node:${id}:traffic_signals`),...stops.map(id=>`osm:node:${id}:stop`)].sort();
+  const controls=data.physical.trafficControls;
+  const actual=controls.map(c=>c.id===`osm:node:${c.sourceNodeId}:${c.kind}`?c.id:"invalid:"+c.id).sort();
+  if(data.diagnostics.surfaceSignalNodes!==78||JSON.stringify(actual)!==JSON.stringify(expected))fail(`expected exact 78-signal/${fresh?42:41}-stop identity/kind coverage, received ${controls.length} controls`);
+  for(const [id,x,z] of (fresh?[[252683741,146.03168477095642,-446.12311132013565],[3790205548,154.83138527512347,-445.8007276650387]]:[[252683741,145.7555541692691,-456.29685896807496],[3790205548,154.72727792212754,-455.9853396521212]])){
+    const c=controls.find(c=>c.sourceNodeId===id)!;
+    if(c.position.x!==x||c.position.z!==z)fail(`signal node/${id} differs from its reviewed X/Z position`);
+  }
+  for(const control of controls){
+    if(fresh&&control.sourceNodeId===728435717){
+      if(control.kind!=="stop"||control.direction!=="forward"||control.position.x!==226.59930697600066||control.position.z!==196.13809874963044||JSON.stringify(Object.entries(control.sourceTags).sort())!==JSON.stringify([["direction","forward"],["highway","stop"]])||JSON.stringify(control.sourceWayIds)!=="[58777418]"||control.controllerId!=="junction:walk:1569138624:0:0:ground0"||control.approachEdgeIds.length||control.entryEdgeIds.length||control.travelDirection!==null)fail("stop node/728435717 must retain its reviewed source facts and empty incoming applicability/null direction");
+    }else if(!control.approachEdgeIds.length||!control.entryEdgeIds.length)fail(`control node/${control.sourceNodeId} lost its applicable approach or shared-union admission boundary`);
+  }
+  if(fresh&&data.lanes.some(lane=>lane.sourceWayId===58777433||lane.sourceControlNodeIds.includes(728435717)))fail("excluded bridge way/58777433 or false outgoing stop node/728435717 ownership was admitted");
+}
+
 /** Named current-source requirements. Fixtures cannot stand in for this whole-data check. */
 export function validateShibuyaNetwork(data: NetworkData): void {
   validateNetwork(data);
   const fail = (message:string):never => { throw new Error(`Shibuya network: ${message}`); };
   if (data.lanes.length < 500 || data.walks.length < 500) fail(`only ${data.lanes.length} lanes and ${data.walks.length} walks were built; inspect source filtering and AOI clipping.`);
-  const controls=data.physical.trafficControls;
-  if(controls.filter(c=>c.kind==="traffic_signals").length!==data.diagnostics.surfaceSignalNodes||data.diagnostics.surfaceSignalNodes!==78||controls.filter(c=>c.kind==="stop").length!==41)fail("the pinned extract must retain all 78 surface signal nodes and 41 stop nodes; audit any changed source before updating this coverage gate.");
-  if(controls.some(c=>!c.approachEdgeIds.length||!c.entryEdgeIds.length))fail("a mapped control lost its applicable approach or shared-union admission boundary.");
+  validateShibuyaSourceControls(data);
   for(const id of [1335178883,977916824,1335178868])if(data.physical.crossings.find(c=>c.sourceWayId===id)?.markings!=="none")fail(`source crossing way/${id} must retain explicit no-markings metadata.`);
   for(const id of [664532520,1335178880])if(!data.walks.some(w=>w.sourceWayId===id)||data.physical.tactilePaths.find(p=>p.sourceWayId===id)?.extent!=="path")fail(`source tactile way/${id} must retain its movement path and separate source-note extent.`);
   if (data.portals.vehicleEntry.length < 8 || data.portals.vehicleExit.length < 8 || data.portals.pedestrian.length < 8) fail("too few real AOI portals; do not replace boundary demand with interior teleports.");

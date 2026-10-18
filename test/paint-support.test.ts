@@ -16,6 +16,17 @@ import { decodeMesh, type MeshData } from "../src/world/mesh.js";
 import type { NetworkData } from "../src/world/network-data.js";
 import { surfaceSampler } from "../src/world/surface-sampler.js";
 
+// Finite source vintages only. These checks cover paint support, not moved-rail clearance.
+function reviewedNetworkPin(bytes: Buffer): string {
+  const pins = [
+    { bytes: 10239410, sha256: "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677" },
+    { bytes: 10301111, sha256: "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f" },
+  ];
+  const digest = createHash("sha256").update(bytes).digest("hex"), pin = pins.find(pin => pin.bytes === bytes.length && pin.sha256 === digest);
+  if (!pin) throw new Error("Paint regression network has " + bytes.length + " bytes / SHA-256 " + digest + "; restore the exact retained314fac84 or reviewed1695 1e558138 input. No source is fetched or skipped.");
+  return pin.sha256;
+}
+
 function planes(heights: number[]): MeshData {
   const positions = new Float32Array(heights.flatMap(y => [-10, y, -10, -10, y, 10, 10, y, 10, 10, y, -10]));
   const indices = new Uint32Array(heights.flatMap((_, i) => [0, 1, 2, 0, 2, 3].map(v => i * 4 + v)));
@@ -88,7 +99,7 @@ it("rejects the actual legacy highest-layer callback at the source crossing", as
   const paths = ["data/network/network.json", "data/scene/roads.mesh", "data/scene/pavements.mesh", "data/scene/terrain.mesh"];
   const inputs = await Promise.all(paths.map(path => readFile(path).catch(cause => { throw new Error(`Paint regression requires ${path}; restore the recorded cached data with data:fetch, data:scene and data:network before npm test.`, { cause }); })));
   expect(inputs.map(bytes => createHash("sha256").update(bytes).digest("hex"))).toEqual([
-    "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677",
+    reviewedNetworkPin(inputs[0]!),
     "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc",
     "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6",
     "c39d49edd405e266373e0b48e0202967a01f546e7d11d2dffd5497c14d692773",
@@ -110,21 +121,23 @@ it("rejects the actual legacy highest-layer callback at the source crossing", as
 });
 
 it("censuses all actual zebra and continuous tactile triangles without upper-layer jumps", async () => {
-  const pins = [
+  const pins: [string, string][] = [
     ["data/network/network.json", "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"],
     ["data/scene/roads.mesh", "0d429c3145be6c7b96fdff6001e49fbdad07db0d0bb4cf966785668bf8fedabc"],
     ["data/scene/pavements.mesh", "841ad72df38036a666085496ddc01a8f381085a4e2d6315ae1426265580cb9f6"],
-  ] as const;
+  ];
   const inputs = await Promise.all(pins.map(async ([path, pin]) => {
     const bytes = await readFile(path).catch(cause => { throw new Error(`Paint regression requires cached ${path}; run npm run data:fetch, npm run data:scene and npm run data:network using the recorded source before npm test. No input is fetched or skipped by this test.`, { cause }); });
     const digest = createHash("sha256").update(bytes).digest("hex");
-    if (digest !== pin) throw new Error(`Paint regression input ${path} changed from its Review10 pin (${pin} to ${digest}); review the new source and update this standing regression deliberately.`);
+    const expected = path === "data/network/network.json" ? reviewedNetworkPin(bytes) : pin;
+    if (digest !== expected) throw new Error(`Paint regression input ${path} changed from its Review10 pin (${pin} to ${digest}); review the new source and update this standing regression deliberately.`);
     return bytes;
   }));
+  pins[0]![1] = reviewedNetworkPin(inputs[0]!);
   const network = JSON.parse(inputs[0]!.toString()) as NetworkData;
   const support = createPaintSupport(decodeMesh(inputs[1]!), decodeMesh(inputs[2]!));
   const seams = JSON.parse(await readFile("test/fixtures/paint-road-seams.json", "utf8")) as { roadsSha256: string; probes: { x: number; z: number; expectedY: number; edges: { mesh: string; triangle: number; edge: number }[]; gapWidthM: number }[] };
-  expect(seams.roadsSha256).toBe(pins[1][1]); expect((seams as { pavementsSha256?: string }).pavementsSha256).toBe(pins[2][1]); expect(seams.probes).toHaveLength(11);
+  expect(seams.roadsSha256).toBe(pins[1]![1]); expect((seams as { pavementsSha256?: string }).pavementsSha256).toBe(pins[2]![1]); expect(seams.probes).toHaveLength(11);
   for (const probe of seams.probes) {
     expect(support(probe.x, probe.z, probe.expectedY)).toBeDefined();
     const use = support.seamUses!.find(s => s.x === probe.x && s.z === probe.z)!;

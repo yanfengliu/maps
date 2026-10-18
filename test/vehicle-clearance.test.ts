@@ -26,9 +26,17 @@ const fixture = JSON.parse(readFileSync(new URL("./fixtures/vehicle-clearance.js
   entry: { actors: WitnessActor[] };
   turn: { request: AdmissionRequest; actors: (WitnessActor & { route: { edgeIds: string[] } })[] };
 };
-function pinned<T>(file: string, sha: string): T {
-  const bytes = readFileSync(new URL(`../${file}`, import.meta.url));
-  expect(createHash("sha256").update(bytes).digest("hex"), `Restore reviewed ${file}; changed source needs review.`).toBe(sha);
+// Literal reviewed OLD / fresh1695 inputs; route/body expectations below stay unchanged.
+const reviewedSourcePins: Record<string, readonly (readonly [number, string])[]> = {
+  "data/network/network.json": [[10239410, "314fac843392de12c8264cbf6b1647935d2b7e9d7194a3c29835e46445537677"], [10301111, "1e558138fe8d6df9dfbf9df76d05c868d776fc9fbd8e018999e611d86a63d15f"]],
+  "data/scene/agents/vehicles.json": [[4128, "5b29efc7977949db1611273c8fb294b3ab23a1a55c8f42316cad9b5309c94a01"], [4128, "83569d3bf6a41bbe6ae37edcc6bcad212615f4c69e76ca1b6714d8001f6deb9f"]],
+};
+function pinned<T>(path: string, originalSha256: string): T {
+  const pins = reviewedSourcePins[path];
+  if (!pins || originalSha256 !== pins[0]![1]) throw Error(`Unreviewed fixture source identity for ${path}; restore the original reviewed route fixture.`);
+  const bytes = readFileSync(new URL(`../${path}`, import.meta.url));
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (!pins.some(([size, digest]) => bytes.length === size && sha256 === digest)) throw Error(`Unreviewed ${path}: ${bytes.length} bytes / ${sha256}; restore reviewed OLD or fresh1695 source bytes.`);
   return JSON.parse(bytes.toString()) as T;
 }
 const network = pinned<NetworkData>("data/network/network.json", fixture.provenance.networkSha256);

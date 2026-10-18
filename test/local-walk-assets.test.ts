@@ -17,6 +17,7 @@ vi.mock('../src/agents/population/local-walk-support.js', () => ({ createLocalFl
 afterEach(() => vi.unstubAllGlobals());
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 const packetDirectory = resolve('artifacts/pedestrian-corner331-20260928/packet');
+const historicalRoot = resolve('artifacts/local-walk-historical-source');
 const packetSha = '37ed690eeb9d6be25f9211b710e204cf50dccecff259f44b78fb1692efa0be15';
 // Independent approved packet/capture registry. Do not derive expected URLs with the code under test.
 const expected = [
@@ -40,6 +41,20 @@ describe('retained native walker asset-load contract', () => {
       expect(digest(bytes)).toBe(row.sha256);
       return ['/local-walk/' + row.name, bytes] as const;
     })]);
+    // These three historical bytes belong to this retained packet, independently
+    // of the fresh ordinary runtime cache. Missing fixtures fail before listen.
+    const historicalInputs = expected.slice(2, 5);
+    for (const pin of historicalInputs) {
+      let bytes: Buffer;
+      try { bytes = readFileSync(resolve(historicalRoot, 'data' + pin.url)); }
+      catch (cause) { throw new Error('Historical walker fixture requires artifacts/local-walk-historical-source/data' + pin.url + '; restore the exact three retained inputs described in README.md. Never fetch or repin the retained packet.', { cause }); }
+      expect({ bytes: bytes.length, sha256: digest(bytes) }).toEqual({ bytes: pin.bytes, sha256: pin.sha256 });
+    }
+    let historicalMiddleware: Connect.NextHandleFunction | undefined;
+    const historicalPlugin = serveSceneData(historicalRoot), historicalHook = historicalPlugin.configurePreviewServer;
+    if (typeof historicalHook !== 'function') throw Error('Expected historical production preview data hook');
+    await historicalHook.call({} as never, { middlewares: { use(fn: Connect.NextHandleFunction) { historicalMiddleware = fn; } } } as PreviewServer);
+    if (!historicalMiddleware) throw Error('Historical production data middleware did not register');
     let sceneMiddleware: Connect.NextHandleFunction | undefined;
     const plugin = serveSceneData(process.cwd());
     const hook = plugin.configurePreviewServer;
@@ -49,7 +64,8 @@ describe('retained native walker asset-load contract', () => {
     const server = createServer((request, response) => {
       const bytes = privateFiles.get(request.url ?? '');
       if (bytes) { response.setHeader('content-type', 'application/json'); response.end(bytes); return; }
-      sceneMiddleware!(request, response, () => { response.statusCode = 404; response.end('Unbound test route'); });
+      const source = historicalInputs.some(pin => pin.url === request.url) ? historicalMiddleware! : sceneMiddleware!;
+      source(request, response, () => { response.statusCode = 404; response.end('Unbound test route'); });
     });
     const observed: { url: string; status: number; bytes: number; sha256: string }[] = [];
     const nativeFetch = globalThis.fetch;
@@ -68,7 +84,7 @@ describe('retained native walker asset-load contract', () => {
       vi.resetModules();
       vi.stubGlobal('__MAPS_LOCAL_WALK__', { url: '/local-walk/manifest.json', sha256: packetSha });
       const { createLocalWalker } = await import('../src/agents/local-walk-prototype.js');
-      const network = JSON.parse(readFileSync(resolve('data/network/network.json'), 'utf8')) as NetworkData;
+      const network = JSON.parse(readFileSync(resolve(historicalRoot, 'data/network/network.json'), 'utf8')) as NetworkData;
       await expect(createLocalWalker({ renderer: null as never, camera: null as never, loop: null as never, document: null as never, network, style: worldStyle('satellite'), ready: () => false })).rejects.toBe(boundary);
       expect(observed.filter(row => expected.some(pin => pin.url === row.url))).toEqual(expected.map(row => ({ ...row, status: 200 })));
       expect(observed).toHaveLength(12); // packet + four sidecars + six live inputs + female manifest

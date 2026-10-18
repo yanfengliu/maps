@@ -234,6 +234,7 @@ export function buildVehicleFrame(
   const vehicles = table.poses.vehicles;
   const byEdge = new Map<string, number[]>();
   const routeOf = new Map<number, PlannedRoute>();
+  let maximumHalfLengthM = 0;
   for (const state of table.vehicles) {
     const slot = state.slot;
     if (!vehicles.active[slot]) continue;
@@ -242,6 +243,7 @@ export function buildVehicleFrame(
     const edgeId = route.edgeIds[state.routeIndex];
     if (!edgeId) continue;
     routeOf.set(slot, route);
+    maximumHalfLengthM = Math.max(maximumHalfLengthM, (footprints[slot]?.lengthM ?? 0) / 2);
     const bucket = byEdge.get(edgeId) ?? [];
     bucket.push(slot);
     byEdge.set(edgeId, bucket);
@@ -357,22 +359,35 @@ export function buildVehicleFrame(
       lane.set(key, record);
     }
   }
-  // A leader on the next occurrence of the same route is still a leader.
+  // Short connectors can put a nearby leader several occurrences ahead. Read
+  // only this actor's finite plan, within its body/headway/braking distance;
+  // keep the immediate-next occurrence covered even when that edge is long.
   for (const state of table.vehicles) {
     const slot = state.slot;
     if (ahead[slot] || !vehicles.active[slot]) continue;
     const route = table.vehicleRoutes[slot];
-    if (!route || state.routeIndex + 1 >= route.edges.length) continue;
     const ownBox = envelope(slot);
-    for (const other of byEdge.get(route.edgeIds[state.routeIndex + 1]!) ?? []) {
-      // Only a body on the same route can be ahead on the next occurrence; a
-      // different route's distance along that edge says nothing about this one.
-      if (routeOf.get(other) !== route) continue;
-      const otherBox = envelope(other);
-      if (!ownBox || !otherBox) continue;
-      const gap = route.edges[state.routeIndex]!.lengthM - state.travelledM + table.vehicles[other]!.travelledM - ownBox.halfLengthM - otherBox.halfLengthM;
-      const existing = ahead[slot];
-      if (!existing || gap < existing.gapM) ahead[slot] = bodyLeader(gap, table.vehicles[other]!.speedMps);
+    if (!route || !ownBox) continue;
+    const { standstillClearanceM, headwaySeconds, comfortableBrakingMps2 } = VEHICLE_DYNAMICS.idm;
+    const lookaheadM = ownBox.halfLengthM + maximumHalfLengthM + standstillClearanceM
+      + state.speedMps * headwaySeconds + state.speedMps ** 2 / (2 * comfortableBrakingMps2);
+    const visited = new Set([route.edgeIds[state.routeIndex]!]);
+    for (let occurrence = state.routeIndex + 1; occurrence < route.edges.length; occurrence += 1) {
+      if (occurrence > state.routeIndex + 1 && route.starts[occurrence]! - state.travelledM > lookaheadM) break;
+      const edgeId = route.edgeIds[occurrence]!;
+      if (visited.has(edgeId)) continue;
+      visited.add(edgeId);
+      for (const other of byEdge.get(edgeId) ?? []) {
+        if (other === slot) continue;
+        // A repeated edge on a shared plan must refer to this exact visit.
+        // Different plans have incomparable route distances; clearance uses
+        // their actual collision centres and lateral envelopes instead.
+        if (routeOf.get(other) === route && table.vehicles[other]!.routeIndex !== occurrence) continue;
+        const gap = clearance(other, slot);
+        if (gap === null) continue;
+        const existing = ahead[slot];
+        if (!existing || gap < existing.gapM) ahead[slot] = bodyLeader(gap, table.vehicles[other]!.speedMps);
+      }
     }
   }
   const candidates: number[] = [];
