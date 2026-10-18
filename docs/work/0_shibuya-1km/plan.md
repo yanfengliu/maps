@@ -21,9 +21,9 @@ Root owns priorities, contracts, this sole status record, acceptance and integra
 
 ### Current adoption and evidence
 
-Adopted `59fbb1ce7fedaaa9e43d6747fb35994790d093b5`: lifetime-only GPU-eviction/logical-release fix; no intended appearance change. [1463](reviews/1463_lifetime-primary-gates.md)/[1460 PASS](reviews/1460_lifetime-integrated-review.md). Prior Coca-Cola gain remains1449/1450.
+Adopted `5af00f1c18a3fb306fa9fd70c705febc4f364b37`: authored four-car train passage and current-pose spatial antialiasing, including fractional-DPR sizing. [1491 PASS](reviews/1491_train-grid-integrated-review.md)/[1493 PASS](reviews/1493_cartographic-native-review.md). Lifetime59fbb1c and Coca-Cola1449/1450 gains remain.
 
-PRIMARY five PASS: build4.813s/types11.104s/unit134files,1174tests95.36s(outer96.465)/audit3.774s(two moderate)/visual370.279s;run5addbb3d1eb59de0,44frames/3hardware lifecycles,RTX4090/616.64. Failed inside-checkout TEMP attempt/correction retained in1463. Root24/reviewer7 native originals PASS; no GPU-return rendering/allocation,motion,population/FPS acceptance. Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows; artifacts/lifetime1463/remote-gates.json.
+PRIMARY five PASS429.011s:build5.498/types8.794/unit136files,1187tests84.53s(outer87.396)/visual323.173/audit4.150(two existing moderate). Run cd4c31e67246bd8f:44frames/3hardware lifecycles,RTX4090/616.64;all46current originals reviewed natively. [1490](reviews/1490_train-grid-primary-gates.md). Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows on5af00f1; artifacts/train1473/remote-gates.json.
 
 Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older157-file certificates do not transfer. Preserve user-owned facade-emission.test.ts, AGENTS.md and991 snapshot.
 
@@ -41,10 +41,12 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Moving train passage | train1473_resume IMPLEMENTING;WT artifacts/train1473/worktree@8bb2200 | Source/sightline viability PASS;root inspected2 baseline originals. One connected4-car candidate→native→PRIMARY five gates/independent review. Partial code recovered;no accepted product gain. |
-| Private visuals | gallery1473_refresh COMPLETE;heartbeat ACTIVE | 35 images/23,310,783B;32 app/diagnostic+3 references,including2 train baselines. Prior bytes immutable;ignored,Never Git;15min. |
+| Train milestone closeout | root CODE INTEGRATED;retirement approval needed | Main5af00f1 pushed;all13 pins/code blobs match reviewed35826fff.1494 automatic review refused exact WT/3 copied reports/branch removal;nothing deleted. Retained WT:artifacts/train1473/worktree. |
+| Private visuals | gallery COMPLETE;heartbeat ACTIVE | 147 images/133,719,146B;144 app/diagnostic+3 references,46 current accepted frames. Prior101 immutable;ignored,Never Git;15min. |
 
-Road/head/central/default-population PARKED;no head telemetry/baker fix. No global blocker. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
+Verification audit complete: rejected FXAA/SMAA used110.56s/132.784s targeted captures and no full bundles. Selected final bundle ran once429.011s;native reviews overlapped lifecycle checks. ABBA train-only pacing held~60Hz;GPU time/headroom and full population remain OPEN.
+
+Road/head/central/default-population PARKED;no head telemetry/baker fix. Next visible-priority review is queued after closeout; preserved STOPs and full35/14 govern it. This is the sole dispatch queue. Final acceptance needs matching evidence and independent integrated review on main; local milestones close no criterion.
 
 ## Acceptance criteria
 

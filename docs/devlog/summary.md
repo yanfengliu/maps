@@ -1,5 +1,7 @@
 # Devlog Summary
 
+- 2026-10-17 — Added an authored four-car train passage and current-pose spatial antialiasing, preserving crossing detail during motion and correcting fractional-DPR sizing. Main5af00f1; five gates/1187tests/44frames/3GPUlifecycles and independent native reviews pass. Scoped1080p ABBA pacing is stable; full population/performance remain open. Verification uses targeted rejection before one final bundle. Private147-image gallery never enters Git; exact worktree retirement awaits direct approval after automatic-review refusal. [1495](../work/0_shibuya-1km/reviews/1495_train-milestone-integration.md).
+
 - 2026-10-17: Commercial facade groups and custom normals now survive GPU-only tile eviction until their parsed model is released. A pinned data518 regression exercises two unload/return cycles and exactly-once logical cleanup. The separate recessed-photo window trial was rejected for its framed-photo appearance and is preserved without adoption.
 
 - 2026-10-17: The original photographed Coca-Cola panel above TSUTAYA now lights at dusk through the existing source-bound emission path. Its white script stays readable, adjacent glazing and roof stay dark, and noon remains visually normal. A narrow non-letter border remains unlit; no mesh, texture or light was added. Full-map quality, continuous motion and population/FPS remain open.
