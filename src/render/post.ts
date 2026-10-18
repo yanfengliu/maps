@@ -22,8 +22,8 @@
  * three.js's `TAARenderPass` accumulates jittered samples only while the app
  * reports a static scene. The app must include camera, tiles and animated actors
  * in that decision; a camera-only test would freeze or smear moving crowds.
- * Moving geometry takes two current-frame spatial samples into a multisampled
- * target. Motion quality still needs actual time-sequence inspection; this is not its proof.
+ * Moving geometry takes two current-frame draws into a 2x spatial raster grid
+ * with a multisampled target (eight shader sites per output pixel). Motion quality still needs actual time-sequence inspection; this is not its proof.
  *
  * What is given up by not taking `postprocessing` is its merged effect pass. That
  * is a real advantage and it is smaller than it sounds here: the two expensive
@@ -33,7 +33,7 @@
  * ## The chain, in order
  *
  * 1. **`TAARenderPass`** draws the scene. While the camera or the tileset is
- *    moving it takes two spatial scene samples; once still it accumulates 32
+ *    moving it takes two 2x-resolution spatial scene draws; once still it accumulates 32
  *    jittered samples one per frame and then stops rendering the scene at all,
  *    which makes a settled frame cheaper than a moving one rather than dearer.
  * 2. **`GTAOPass`** — ground-truth ambient occlusion. It is what separates a wall
@@ -89,9 +89,6 @@ const AO_BLEND = 0.62;
  */
 const AO_RADIUS_M = 1.4;
 
-/** Resolution the bloom mip chain starts at, before its own halving. */
-const BLOOM_RESOLUTION = new Vector2(1280, 720);
-
 export interface PostStatus {
   /** False when the chain could not be built and the renderer is drawing direct. */
   active: boolean;
@@ -109,7 +106,9 @@ export interface PostStatus {
   taaSamples: number;
   /** Actual TAA/SSAA level; absent when drawing directly without the chain. */
   readonly taaSampleLevel?: number;
-  /** Render targets the chain holds, and roughly what they weigh. */
+  /** CPU target configuration observed after the last render; requested MSAA is not a driver allocation measurement. */
+  readonly sceneSampleTarget?: { width: number; height: number; requestedSamples: number; halfFloat: boolean; depthBuffer: boolean };
+  /** Format estimate only; excludes resolved depth renderbuffers, driver padding and other GPU allocations. */
   bufferBytes: number;
 }
 
@@ -144,6 +143,43 @@ export interface PostChain {
  */
 type Accumulating = TAARenderPass & { accumulateIndex: number; _sampleRenderTarget: WebGLRenderTarget | null; _holdRenderTarget: WebGLRenderTarget | null };
 
+/**
+ * A fixed 2x2 spatial raster grid while moving. The two inherited jitter draws
+ * run at twice the native dimensions and resolve into native composer targets.
+ * This changes shader evaluations as well as geometric coverage. It uses only
+ * the current pose and adds 4x colour pixel work over the two native C1 draws.
+ * The still branch remains the installed native 32-sample temporal path.
+ */
+function requireGridDimensions(width: number, height: number, limit: number): void {
+  const targetWidth = width * 2, targetHeight = height * 2;
+  if (!Number.isInteger(targetWidth) || !Number.isInteger(targetHeight) || targetWidth <= 0 || targetHeight <= 0 || targetWidth > limit || targetHeight > limit) {
+    throw new Error(`The current-pose grid requires a ${targetWidth}x${targetHeight} physical scene target, exceeding or invalid for the ${limit}px texture/renderbuffer limit. Use a supported display size before rendering; the scene is not silently reduced.`);
+  }
+}
+
+class CurrentPoseGridTAARenderPass extends TAARenderPass {
+  declare _sampleRenderTarget: WebGLRenderTarget | null;
+  declare accumulateIndex: number;
+  declare _holdRenderTarget: WebGLRenderTarget | null;
+  private readonly targetLimit: number;
+
+  constructor(scene: Scene, camera: PerspectiveCamera, targetLimit: number) {
+    super(scene, camera);
+    this.targetLimit = targetLimit;
+  }
+
+  override render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void {
+    const target = this._sampleRenderTarget;
+    if (!target) throw new Error("The current-pose grid has no scene sample target; restore post-chain target construction before rendering.");
+    requireGridDimensions(readBuffer.width, readBuffer.height, this.targetLimit);
+    const scale = this.accumulate ? 1 : 2;
+    target.setSize(readBuffer.width * scale, readBuffer.height * scale);
+    // SSAA reads this argument's dimensions for its projection offsets. Its
+    // colour destination remains writeBuffer, so AO/bloom/output stay native.
+    super.render(renderer, writeBuffer, this.accumulate ? readBuffer : target, deltaTime, maskActive);
+  }
+}
+
 export interface PostOptions {
   renderer: WebGLRenderer;
   scene: Scene;
@@ -171,19 +207,31 @@ export function createPostChain(options: PostOptions): PostChain {
   let taa: Accumulating;
   let gtao: GTAOPass;
   let bloom: UnrealBloomPass;
+  let targetLimit: number;
+  let physicalWidth: number;
+  let physicalHeight: number;
   const partialDisposers: (() => void)[] = [];
   try {
+    const gl = renderer.getContext();
+    targetLimit = Math.min(renderer.capabilities.maxTextureSize, gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number);
+    if (!Number.isFinite(targetLimit) || targetLimit <= 0) throw new Error("The physical scene target limit is unavailable; restore a valid WebGL2 context before rendering the current-pose grid.");
+    // Match WebGLRenderer.setSize: the drawing buffer floors CSS pixels times DPR.
+    physicalWidth = Math.floor(options.width * renderer.getPixelRatio());
+    physicalHeight = Math.floor(options.height * renderer.getPixelRatio());
+    requireGridDimensions(physicalWidth, physicalHeight, targetLimit);
     composer = new EffectComposer(renderer);
     partialDisposers.push(() => composer.dispose());
     // TAA draws moving geometry into its own sample target and accumulating
     // geometry into the composer. Both paths need multisampling.
     composer.renderTarget1.samples = 4;
     composer.renderTarget2.samples = 4;
-    composer.setSize(options.width, options.height);
+    // All pass sizes below are already physical integers; never apply DPR twice.
+    composer.setPixelRatio(1);
+    composer.setSize(physicalWidth, physicalHeight);
 
-    taa = new TAARenderPass(scene, camera) as Accumulating;
+    taa = new CurrentPoseGridTAARenderPass(scene, camera, targetLimit) as Accumulating;
     partialDisposers.push(() => taa.dispose());
-    taa._sampleRenderTarget = new WebGLRenderTarget(options.width, options.height, { type: HalfFloatType, samples: 4 });
+    taa._sampleRenderTarget = new WebGLRenderTarget(physicalWidth, physicalHeight, { type: HalfFloatType, samples: 4 });
     taa._sampleRenderTarget.texture.name = "maps:TAA-multisampled-scene";
     // One extra jittered sample a frame. Higher converges sooner and costs that
     // many scene renders on every frame until it does, on a rasteriser that is
@@ -192,7 +240,7 @@ export function createPostChain(options: PostOptions): PostChain {
     taa.accumulate = false;
     composer.addPass(taa);
 
-    gtao = new GTAOPass(scene, camera, options.width, options.height);
+    gtao = new GTAOPass(scene, camera, physicalWidth, physicalHeight);
     partialDisposers.push(() => gtao.dispose());
     installAgentNormals(gtao, mesh => getAgentNormalMaterial(mesh) ?? getRailFacadeNormalMaterial(mesh) ?? getUpperWindowNormalMaterial(mesh) ?? getPeripheralFrontageNormalMaterial(mesh) ?? getCommercialCornerNormalMaterial(mesh) ?? getCrossingFrontageNormalMaterial(mesh));
     gtao.output = GTAOPass.OUTPUT.Default;
@@ -209,7 +257,7 @@ export function createPostChain(options: PostOptions): PostChain {
     composer.addPass(gtao);
 
     bloom = new UnrealBloomPass(
-      BLOOM_RESOLUTION,
+      new Vector2(physicalWidth, physicalHeight),
       lighting.bloom.strength,
       lighting.bloom.radius,
       lighting.bloom.threshold,
@@ -231,8 +279,6 @@ export function createPostChain(options: PostOptions): PostChain {
     );
   }
 
-  let width = options.width;
-  let height = options.height;
   let still = false;
   let current = lighting;
 
@@ -250,7 +296,7 @@ export function createPostChain(options: PostOptions): PostChain {
 
   return {
     render(): void {
-      // Moving samples use only this frame. Still history keeps one sample per frame.
+      // Moving uses eight spatial shader sites through a 2x grid and two fresh draws. Still history keeps one native sample per frame.
       taa.sampleLevel = still ? 0 : 1;
       if (taa.accumulate !== still) {
         taa.accumulate = still;
@@ -259,14 +305,17 @@ export function createPostChain(options: PostOptions): PostChain {
       composer.render();
     },
     setSize(nextWidth: number, nextHeight: number): void {
-      width = nextWidth;
-      height = nextHeight;
-      composer.setSize(nextWidth, nextHeight);
-      gtao.setSize(nextWidth, nextHeight);
+      const nextPhysicalWidth = Math.floor(nextWidth * renderer.getPixelRatio());
+      const nextPhysicalHeight = Math.floor(nextHeight * renderer.getPixelRatio());
+      requireGridDimensions(nextPhysicalWidth, nextPhysicalHeight, targetLimit);
+      physicalWidth = nextPhysicalWidth;
+      physicalHeight = nextPhysicalHeight;
+      composer.setSize(physicalWidth, physicalHeight);
+      bloom.resolution.set(physicalWidth, physicalHeight);
       taa.accumulateIndex = -1;
       // Upstream TAA inherits SSAA.setSize, which only resizes its sample
       // target. Its hold image otherwise keeps the old viewport dimensions.
-      taa._holdRenderTarget?.setSize(nextWidth * renderer.getPixelRatio(), nextHeight * renderer.getPixelRatio());
+      taa._holdRenderTarget?.setSize(physicalWidth, physicalHeight);
     },
     apply,
     setStill(value: boolean): void {
@@ -291,7 +340,12 @@ export function createPostChain(options: PostOptions): PostChain {
         taaAccumulating: taa.accumulate,
         taaSamples: Math.max(0, taa.accumulateIndex),
         taaSampleLevel: taa.sampleLevel,
-        bufferBytes: estimateBufferBytes(width, height, renderer.getPixelRatio()),
+        ...(taa._sampleRenderTarget ? { sceneSampleTarget: {
+          width: taa._sampleRenderTarget.width, height: taa._sampleRenderTarget.height,
+          requestedSamples: taa._sampleRenderTarget.samples, halfFloat: taa._sampleRenderTarget.texture.type === HalfFloatType,
+          depthBuffer: taa._sampleRenderTarget.depthBuffer,
+        } } : {}),
+        bufferBytes: estimateBufferBytes(physicalWidth, physicalHeight, 1, taa.accumulate ? 1 : 2),
       };
     },
     dispose(): void {
@@ -349,13 +403,13 @@ function fallbackChain(
  * SSAA/TAA sample target, the unsampled hold target, three AO targets and bloom.
  * Driver alignment and allocation overhead remain outside this estimate.
  */
-export function estimateBufferBytes(width: number, height: number, pixelRatio: number): number {
+export function estimateBufferBytes(width: number, height: number, pixelRatio: number, sceneSampleScale = 1): number {
   const pixels = width * pixelRatio * height * pixelRatio;
   const halfFloatRgba = pixels * 8;
   const depth = pixels * 4;
   const multisampled = halfFloatRgba + 4 * (halfFloatRgba + depth);
   const composerPingPong = 2 * multisampled;
-  const temporal = multisampled + halfFloatRgba + depth;
+  const temporal = sceneSampleScale ** 2 * multisampled + halfFloatRgba + depth;
   const occlusion = 3 * (halfFloatRgba + depth);
 
   let bloom = 0;
