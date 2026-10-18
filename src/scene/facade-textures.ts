@@ -69,6 +69,7 @@ import { addCommercialCorner, prepareCommercialCorner } from "./commercial-corne
 import { addPeripheralFrontage, preparePeripheralFrontage } from "./peripheral-frontage.js";
 import { addUpperWindows, prepareUpperWindows, upperWindowSourceForUrl } from "./upper-windows.js";
 import { addRailFacades, prepareRailFacades, railFacadeSourceForUrl } from "./rail-facades.js";
+import { addRoofService, prepareRoofService, roofServiceSourceForUrl } from "./roof-service.js";
 import { addPeripheralMountedLight, peripheralLightSourceForUrl, preparePeripheralMountedLight } from "./peripheral-mounted-light.js";
 
 /** Every material property that can hold a texture we care about. */
@@ -178,7 +179,7 @@ export class FacadeTexturePlugin {
 
   /** Reuse the normal tile request; retain verified digests, never tile buffers. */
   fetchData(url: string, options: RequestInit): Promise<ArrayBuffer | Response> | null {
-    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url) ?? upperWindowSourceForUrl(url) ?? railFacadeSourceForUrl(url);
+    const source = emissionSourceForUrl(url) ?? peripheralLightSourceForUrl(url) ?? upperWindowSourceForUrl(url) ?? railFacadeSourceForUrl(url) ?? roofServiceSourceForUrl(url);
     if (!source) return null;
     return (async () => {
       const response = await fetch(url, options);
@@ -223,6 +224,7 @@ export class FacadeTexturePlugin {
       preparePeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
       prepareRailFacades(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
+      await prepareRoofService(scene, tileUri, this.verifiedEmissionTiles.get(tileUri));
     }
     const replacements = new Map<Texture, Texture>();
     const materials = collectMaterials(scene);
@@ -287,6 +289,7 @@ export class FacadeTexturePlugin {
       addPeripheralFrontage(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addUpperWindows(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
       addRailFacades(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), this.options, lifetime);
+      addRoofService(scene, tileUri, this.verifiedEmissionTiles.get(tileUri), lifetime);
     }
   }
 
