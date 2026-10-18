@@ -1,0 +1,15 @@
+# 1553 — Installed/prior-art moving TAA
+
+2026-10-18 UTC. Independent owner; base b0bc935c248ce0bdfeb7932ea55093589cbec0fd, executable e1097edd. Fixed acceptance/disqualifiers: [1552](1552_moving-taa-search-contract.md). No other route/proposal read.
+
+Independent mechanism, recorded before inherited proposals: adapt an existing velocity/depth reprojection resolve to the current WebGL2 composer, retaining the accepted current-pose scene input and resolving after AO/bloom, before Output. Investigation finds no directly reusable implementation meeting1552; this route is BLOCKED within this first pass, not impossible.
+
+Installed three r180 TAARenderPass has no reprojection. Its TRAANode instead depends on three/webgpu+TSL and exposes updateBefore, not Pass.render. Its current depth selects the velocity sample; history is color-clamped without a previous-depth validity test. A literal disocclusion counterexample with current gray .25, obsolete history1 and neighborhood[0,1] resolves103/108=.953704 rather than .25. This is source algebra, not GPU evidence. [Pinned source](https://raw.githubusercontent.com/mrdoob/three.js/r180/examples/jsm/tsl/display/TRAANode.js).
+
+realism-effects main061daeaefb7773d8a1a8e10fa95a184fbcda1fb7 and advertised v2c3f64f3fdf8b5e5b9982634a46e7577084007b55 both require postprocessing/three^0.151.3 and import WebGLMultipleRenderTargets, absent from installed r180. [Main](https://raw.githubusercontent.com/0beqz/realism-effects/061daeaefb7773d8a1a8e10fa95a184fbcda1fb7/src/temporal-reproject/TemporalReprojectPass.js), [v2](https://raw.githubusercontent.com/0beqz/realism-effects/c3f64f3fdf8b5e5b9982634a46e7577084007b55/src/temporal-reproject/TemporalReprojectPass.js).
+
+Their velocity shader resets transformed=position and lacks current/previous instance transforms and our GPU walker/VAT deformation. Actual material construction plus perspective algebra gives zero reported velocity against62.3538px for a1m instance shift at10m depth/1280px width; a .5m GPU deformation misses31.1769px. Installed VelocityShader also lacks instance matrices. Renaming APIs leaves this original history-validity problem unsolved.
+
+OWNWT artifacts/taa1553/counterexamples.mjs and counterexamples.json retain7/7 CPU checks, exact prior-art source copies/digests and explicit bounds. Node24.12.0; focused check5.6423ms wall; CPU reports0us at available resolution. Observed wall05:08:28–05:12:13=225s; initial overhead/total cost UNKNOWN. Existing post-chain/flicker instruments identified first; no GPU lane run. No production/dependency changes, build, browser, server or full gates. Final task-marker Node/browser census0.
+
+S0/S1/held-out and production GPU contribution/rejection remain UNPROVED. Next discriminator is a supported WebGL2 resolve with previous-depth/eligibility rejection through actual instance and GPU-deformed coverage, then1552's independent expected-pixel GPU controls and native sequences. No acceptance transfer, reduced coverage or dependency/renderer replacement is proposed.
