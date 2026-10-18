@@ -41,13 +41,13 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Aged scene/observer pace | 1521 DISPATCHED;1522 review | 1519young:no far-observer penalty;oldfarwait degrades. One600s B/C pair:180s wall age+20s measure each;observer absent/present throughout. By03:00UTC;no code/fourth flow arm. |
+| History/traffic acceptance | 1524 CPU/1525source PASS;1526 RUNNING | Preserve all events;native aging must improve. One750s fourth qualification on changed source;then five gates/review/main,else PARK. No fifth arm. |
 
-Traffic1499 PARK: [1511](reviews/1511_traffic-integration.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate3. Source/CPU600 PASS;20/24,bus refusals/queues. Native18+0+6:third arm proves stop/turn,zero exits;1516/1517 PARK. Five gates NOT RUN;unmerged/UNADOPTED. PRIMARY restored exactly;no fourth flow arm.
+Traffic1499 PARK: [1511](reviews/1511_traffic-integration.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate3. Candidate3 source/CPU600 PASS;20/24,bus refusals/queues. Native18+0+6:third arm proves stop/turn,zero exits;1516/1517 PARK. Five gates NOT RUN;unmerged/UNADOPTED. PRIMARY restored exactly;fourth only with1524 source fix.
 
 Train cleanup COMPLETE:direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;reports/traffic1499 preserved.1495 retains denial/preflight/receipt.
 
-Gallery COMPLETE/heartbeat ACTIVE:183images/167,471,639B;180 app/diagnostic+3references,46accepted/24candidate/6pace.Prior177 immutable;ignored,Never Git;15min support.
+Gallery COMPLETE/heartbeat ACTIVE:191images/174,564,565B;188 app/diagnostic+3references,46accepted/30candidate/8pace.Prior185 immutable;ignored,Never Git;15min support.
 
 One429.011s bundle;FXAA/SMAA targeted110.56/132.784s. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
 
@@ -120,7 +120,7 @@ Whole-AOI quality remains open: close/block/aerial views, peripheral blocks, noo
 
 Facades still need convincing depth/glazing, floor rhythm, de-light and variation across representative buildings. Every road remains in scope. The historical 32-object remainder is seven carriageways (five expressways), three intersections and 22 semantically unknown LOD1 objects, not 32 proven paint omissions. No published paint overlaps the 27 non-expressway objects; expressways need separate layer work. Source/layer/LOD binding, lane semantics and nine-stratum/held-out native coverage remain open. Distributed mounted dusk lighting needs source selection, supported occupancy, density/sightlines and a same-run refusal histogram. Wet/ground/tree/base contact and crossed-paint authenticity remain open. Unadopted 413/420 and rejected facade/tree/ground/lighting branches are parked; exact source exceptions remain in the historical progress record.
 
-Default rail acceptance is narrow: exterior gaps/bearings/returns, actors under spans, temporal coverage and a recognizable supported train passage remain open. Vehicles need joined wheel/body contact, bus/portal/class coverage, spacing and visible governed signal behavior; the old fixture has no governed entry. One ordinary walker is accepted, not a full crowd. Supported full-source eligibility, animated soles, avoidance, no sliding/interpenetration and broader default flow remain open. The 150-pedestrian/20-vehicle seed 5970698, 600 s contract remains red/unqualified before untuned seed 42/native event evidence. Motion/contact experiments stay parked.
+Rail1491/1493 accepts the four-car passage narrowly; exterior gaps/bearings/returns, actors under spans and broad temporal coverage remain open. Vehicles need joined wheel/body contact, bus/portal/class coverage, spacing and visible governed signal behavior; the old fixture has no governed entry. One ordinary walker is accepted, not a full crowd. Supported full-source eligibility, animated soles, avoidance, no sliding/interpenetration and broader default flow remain open. The 150-pedestrian/20-vehicle seed 5970698, 600 s contract remains red/unqualified before untuned seed 42/native event evidence. Motion/contact experiments stay parked.
 
 Continuous populated/camera/time stability remains unqualified by sparse stills. Historical ~12 fps and 59/200 vehicles are bounded failures, not current measurements or a reduced target. [398](reviews/398_gpu-delight-startup-comparison.md)'s startup gain is not population FPS; machine-cold startup, port-5319/loading/decoder causes and custom HTTP certification remain unknown/unestablished. Simulation research deferral does not delete A7–A10.
 
