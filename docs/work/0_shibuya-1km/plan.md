@@ -21,9 +21,9 @@ Root owns priorities/contracts/status/integration; workers implement/check. Read
 
 ### Current adoption and evidence
 
-Adopted executable `e1097edd4f0d65f41e6d6c157def4d51fa877318`: walking callbacks clone current motion without historical payloads; history/poses/ownership/rollback retained. Old RED/restored GREEN; [1531 PASS](reviews/1531_walk-history-final-review.md).
+Adopted executable `f4960e2bf95b7813443b803eb15876215785ef59`: continuous asphalt replaces repair stamps; coupled grain/relief/roughness, unchanged geometry/source paint. [1622](reviews/1622_implementation.md), [1623](reviews/1623_integration.md).
 
-PRIMARY five gates PASS719.898s:137 files/1,191 tests,44 frames/3 GPU lifecycles, RTX4090/616.64, run `7f403f3841a95a62`. Native:22 Satellite, basic style continuity and7 Start/aged originals. [1530](reviews/1530_walk-history-main-native.md):26.668 render iterations/s,0.651566 simulation/wall; recovery/60fps unestablished. CI unavailable:0 checks/statuses/workflows/runs; `artifacts/walk-history1528/remote-gates.json`.
+PRIMARY five gates PASS 339.483s:137 files/1,193 tests,44 frames/3 GPU lifecycles, RTX4090/616.64, run `bb081deed726da61`; audit2 moderate/no high. Root/independent22 native Satellite and basic style continuity PASS. Observer scope bug interrupted unit; fix proven, unfinished gates resumed. Pushed-code CI unavailable:0 checks/statuses/workflows/runs. Population/60fps unestablished.
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
@@ -33,8 +33,8 @@ Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Dogen road presentation | Root; bounded source STOP | [1620](reviews/1620_implementation.md): paint absent; no qualified907042282 interval. A2/A5 OPEN; no prototype/retune. |
-| A11 rebuild | Root; scene stage observed | [1620](reviews/1620_implementation.md):75/77 outputs byte-equal; published-only paint differs. Network/authored-paint/decor sources and render comparison OPEN. |
+| Next visual milestone | Root; ordinary inspection next | Road finish integrated/reviewed. Choose one visible improvement from the ordinary app. Middle paint blocked ([1620](reviews/1620_implementation.md)). |
+| A11 rebuild | Root; fresh-source HOLD | 1672: stop lacks an approach; lane changes and walk gap need decisions. Preserve fresh input; no guard/pin update. Full A11 OPEN. |
 | Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
 
 AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
@@ -43,7 +43,7 @@ Held-out baseline96 originals PASS, right-facade visibility bound ([1602](review
 
 A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md):1560 softened. Ordinary contribution/crawl/held-out/cost/five gates owed. Tighten two centre assertions before fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
-East peripheral/road-tone remain unaccepted: [1579](reviews/1579_peripheral-street-inspection.md), [1581](reviews/1581_east-road-tone-diagnosis.md) retain sampling gaps, failed capture and source limits.
+Road finish accepted within [1623](reviews/1623_integration.md). [1579](reviews/1579_peripheral-street-inspection.md)/[1581](reviews/1581_east-road-tone-diagnosis.md) retain historical limits; full peripheral streets remain OPEN.
 
 
 Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59fbb1c` and Coca-Cola1449/1450. Train-only ABBA about 60 Hz does not establish the full target.
@@ -51,7 +51,7 @@ Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59f
 
 ## Acceptance criteria
 
-A1/A4/A12 PASS for unchanged executable e1097edd, via [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md) and [1538](reviews/1538_attribution-completion-review.md). The other11 original criteria remain OPEN. A4 covers the static dusk crossing; revalidate changed dependencies before final acceptance.
+A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](reviews/1542_dusk-crossing-acceptance.md), [1538](reviews/1538_attribution-completion-review.md); affected render/crossing/attribution rechecked on f4960e2 in [1623](reviews/1623_integration.md). The other11 criteria remain OPEN; no motion/population/performance acceptance.
 
 - A1. Terrain, buildings and roads render end to end across the full AOI, inspected from several angles/zooms at native resolution.
 - A2. The Shibuya valley and Dōgenzaka slope read in the terrain; building footprints neither float nor sink.
