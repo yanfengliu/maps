@@ -35,24 +35,23 @@ Windows:1457 bounds,1458 STOP/rejected1461,1464 NO QUALIFIED SET;bounded,not imp
 
 Profile COMPLETE/CPU unavailable/follow-up PARKED;65 historical WTs inventoried/removal PARKED. Preserve first.
 
-1466 boot≠population acceptance;1467 worldcauseUNKNOWN.1469/1470 finite Near rotationPASS;failedselector/evidence preserved,cleanupclosed.
-
 [1472](reviews/1472_western-road-source-stop.md)/reference1472:NO QUALIFIED PAINT SET.2019GSI cannot resolve paint/curbs or≥80m;intentUNKNOWN. No prototype;STOP.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| A2 terrain/contact | root;PREPARED | 1540/1541 assessment complete; qualify a noon real-controls uphill view toward(-300,200), exposing road grade and frontage bases before any repair. |
+| Moving TAA: prior art | 1553;SEARCH PREPARED | Independently test installed/prior-art reuse against1552;return a bounded viable route or concrete gap. |
+| Moving TAA: local route | 1554;SEARCH PREPARED | Independently construct a local production-path prototype against1552;preserve accepted detail/resources. |
 
 
-Peripheral1534/1535:no safe fix qualified from3NE views,target283.75m. HTTP-body instrumentFAIL:3cache evictions,URLsUNKNOWN;120hashesPASS/322pinsunchanged. No retry;A12 separate.
-
-UI1537 verifies realwheel/GSIbottom;overall instrumentFAIL:Draco ERR_ABORTED. Targeted UIbindings/native controls pass,cleanupclosed;1538 accepts onlyA12.
+1534/1537 instrumentFAILs retained:3body evictions/Draco abort;1535 no safe fix.1538 separately accepts UI-onlyA12;no full-scene transfer.
 
 Traffic1499 PARK:[1527](reviews/1527_fixed-history-native-review.md);artifacts/traffic1499/worktree,codex/traffic1499,candidate4aa2a023d. Four arms,last4opaque;visibleexitUNMET,no fifth. CPU600:20/24,bus refusals/queues. Gates NOT RUN;unmerged/UNADOPTED.
 
-Train1473/walking1528 retirements COMPLETE;1495 and artifacts/walk-history1528/retirement.json retain receipts. Traffic WT preserved.
+A2OPEN:1543 uphill setup obscured street/bases;stopped before wait,no retry.1545 data468 source floor sits16.17–16.67m above terrain;no support in two leaves,intent/nativeUNKNOWN. No safe lowering/masking. [1546](reviews/1546_visual-direction-review.md) adopted:finish bounded A2 questions,then ordinary journey;no expanded census/framework.
 
-A2 remainsOPEN: [1540](reviews/1540_terrain-contact-source-review.md) checks do not prove complete footprint contact; [1541](reviews/1541_terrain-contact-native-review.md) all22 native views qualify no defect, but obscure relief/bases. One purposeful noon uphill view is next; no source fix justified.
+1544 confirms1543 refusal.1547/1548 accept elevatedcontrols only.1549/1550 four native Start/W/A views stay clear at3.11–3.19m;no repair needed. Gaps25.946/1.957/26.204s do not establish continuousA13. All capture resources closed;exact TEMP removed.
+
+[1551](reviews/1551_moving-taa-gap.md): moving branch has zero cross-frame history;1549 did not observe actual GPU mode. A6OPEN. [1552](reviews/1552_moving-taa-search-contract.md) fixes inputs/done checks/disqualifiers before independent search;no96-frame run yet.
 
 Gallery: newestfirst,one image/row,plain captions,no categories;ignored,Never Git;15min heartbeat ACTIVE. Private manifest owns image inventory.
 
