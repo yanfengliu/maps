@@ -21,9 +21,9 @@ Root owns priorities,contracts,status/integration;workers own implementation/che
 
 ### Current adoption and evidence
 
-Adopted `5af00f1c18a3fb306fa9fd70c705febc4f364b37`: authored four-car train passage and current-pose spatial antialiasing, including fractional-DPR sizing. [1491 PASS](reviews/1491_train-grid-integrated-review.md)/[1493 PASS](reviews/1493_cartographic-native-review.md). Lifetime59fbb1c and Coca-Cola1449/1450 gains remain.
+Adopted main `e1097edd4f0d65f41e6d6c157def4d51fa877318`: walking callbacks clone current motion without historical payloads; complete history,poses,ownership/rollback remain. Literal-old control RED/restored GREEN; [1531 PASS](reviews/1531_walk-history-final-review.md).
 
-PRIMARY five PASS429.011s:136files/1187tests,44frames/3hardware lifecycles,RTX4090/616.64;all46current originals reviewed. [1490](reviews/1490_train-grid-primary-gates.md),run cd4c31e67246bd8f. Remote CI UNAVAILABLE:zero checks/statuses/runs/workflows on5af00f1;artifacts/train1473/remote-gates.json.
+PRIMARY five PASS719.898s:137files/1191tests,44frames/3GPUlifecycles,RTX4090/616.64,run7f403f3841a95a62.22Satellite/basicstyle+7ordinary Start/aged originals inspected. [1530](reviews/1530_walk-history-main-native.md):26.668renderiterations/s,.651566sim/wall; recovery/60fps NOT established. CI unavailable:0checks/statuses/workflows/runs;artifacts/walk-history1528/remote-gates.json.
 
 Runtime cache:156files/364,187,965B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older157-file certificates do not transfer. Preserve user-owned facade-emission.test.ts, AGENTS.md and991 snapshot.
 
@@ -41,17 +41,17 @@ Profile COMPLETE/CPU UNAVAILABLE/follow-up PARKED. Historical65 worktrees:invent
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Walking fix to main | 1528/1529PASS;3gatesPASS;1530RUNNING | Three-file port;real Start/aged native,all five gates,integrated review,merge/push/retire. Traffic parked. |
+| Next visible improvement | root;PREPARED | Ordinary peripheral/block exploration:held-out seed,three real-input street/block/elevated stops outside parked frontages. Choose one supported reversible issue. |
 
 Traffic1499 PARK: [1527](reviews/1527_fixed-history-native-review.md);artifacts/traffic1499/worktree,codex/traffic1499,base0681715/candidate4aa2a023d. Four arms:18/0/6/16frames;last4opaque,visible exit UNMET;no fifth. Candidate3 CPU600 bounds20/24,bus refusals/queues. Traffic gates NOT RUN;unmerged/UNADOPTED. PRIMARY walking port only.
 
-Train cleanup COMPLETE:direct “Approve retirement”→normal WT/branch removal on9c7822e. WT absent/unregistered,codex/train1473 deleted;reports/traffic1499 preserved.1495 retains denial/preflight/receipt.
+Train1473 retirement COMPLETE on9c7822e;1495 retains approval/receipt. Walking1528 WT/branch retired after push;artifacts/walk-history1528/retirement.json. Traffic WT preserved.
 
-Gallery COMPLETE/heartbeat ACTIVE:201images/180,657,714B;198 app/diagnostic+3references,46accepted/40candidate/8pace.Prior191 immutable;ignored,Never Git;15min support.
+Gallery:208images/186,847,324B;prior201 bytes preserved. Newestfirst,one image/row,no categories;ignored,Never Git;15min heartbeat ACTIVE.
 
-One429.011s bundle;FXAA/SMAA targeted110.56/132.784s. ABBA train-only~60Hz;GPU headroom/population OPEN;multi-day elapsed unmeasured.
+Train5af00f1 four-car/current-poseAA/fractionalDPR remains;1490/1491/1493 preserve bounds. Lifetime59fbb1c/Coca-Cola1449/1450 remain. Train-only ABBA~60Hz;fulltarget OPEN.
 
-[1497 adopted](reviews/1497_orchestration-critical-path-review.md):cleanup independent;helper debt only for material production blockers. Future review keeps automated44,native Satellite,basic style-switch/shared regressions;detailed Cartographic deferred,gates unchanged. Road/head/central STOPs preserved;generic crowd/head/anatomy/motion research PARKED;no head/baker fix. Sole queue;full35/14 OPEN,matching evidence/independent integrated main review required.
+[1497 adopted](reviews/1497_orchestration-critical-path-review.md): helper debt only for material blockers;automated44/nativeSatellite/basicstyle retained,detailedCartographic deferred. Road/head/central STOPs and generic motion research PARKED. [1533](reviews/1533_next-visual-direction-review.md): inspect a peripheral block;do not repeat stopped facade/traffic diagnosis.
 
 ## Acceptance criteria
 

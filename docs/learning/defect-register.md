@@ -644,7 +644,7 @@ The owner reports prolonged verification and asks for its bottleneck to be fixed
 
 Source investigation1523 identifies complete historical foot-event payloads repeatedly cloned/frozen in fixed-step and interpolation callbacks, including accepted main.1524 separates bounded motion from immutable event prefixes, materializes complete diagnostics on demand and preserves controller bytes, pose/history values, rollback and input ownership.1525 independently accepts the exact three-file change. The defect-class check test/local-walk-history.test.ts observes204,800 historical payload copies with the literal old gait, restores the candidate exactly and passes with the focused51-test bundle. Typecheck was tool-observed; no log was retained.
 
-Native recovery and final five-gate/main adoption remain pending in1526. No source, population, FPS or deliverable acceptance follows from the private control alone; complete diagnostic reads intentionally retain prefix-proportional cost.
+Independent main port1528/1529 lands on pushed main e1097edd with the public history regression and its literal-old RED/restored GREEN; the lesson is retired in the landing merge. Final1531 accepts all five gates,137files/1191tests,44 certified frames/three hardware lifecycles and seven real-Start/style/aged originals. Actual ordinary main1530 remains26.668 render iterations/s and0.651566 simulation/wall; no matched baseline,main recovery,60fps,population or deliverable acceptance is established. Complete diagnostic reads intentionally remain prefix-proportional. Traffic stays parked after its fourth arm; its visible exit remains unmet.
 
 ## 2026-10-18 UTC — timed exit capture had no visible road
 
