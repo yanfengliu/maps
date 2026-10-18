@@ -21,9 +21,9 @@ Root owns priorities/contracts/status/integration; workers implement/check. Read
 
 ### Current adoption and evidence
 
-Adopted executable `e1097edd4f0d65f41e6d6c157def4d51fa877318`: walking callbacks clone current motion without historical payloads; complete history/poses/ownership/rollback retained. Old control RED/restored GREEN; [1531 PASS](reviews/1531_walk-history-final-review.md).
+Adopted executable `e1097edd4f0d65f41e6d6c157def4d51fa877318`: walking callbacks clone current motion without historical payloads; history/poses/ownership/rollback retained. Old RED/restored GREEN; [1531 PASS](reviews/1531_walk-history-final-review.md).
 
-PRIMARY five gates PASS in 719.898 s: 137 files/1,191 tests, 44 frames/3 GPU lifecycles, RTX 4090/616.64, run `7f403f3841a95a62`. Native inspection: 22 Satellite originals, basic style continuity and 7 Start/aged originals. [1530](reviews/1530_walk-history-main-native.md) measures 26.668 render iterations/s and 0.651566 simulation/wall; recovery and 60 fps are not established. CI unavailable: 0 checks/statuses/workflows/runs; `artifacts/walk-history1528/remote-gates.json`.
+PRIMARY five gates PASS719.898s:137 files/1,191 tests,44 frames/3 GPU lifecycles, RTX4090/616.64, run `7f403f3841a95a62`. Native:22 Satellite, basic style continuity and7 Start/aged originals. [1530](reviews/1530_walk-history-main-native.md):26.668 render iterations/s,0.651566 simulation/wall; recovery/60fps unestablished. CI unavailable:0 checks/statuses/workflows/runs; `artifacts/walk-history1528/remote-gates.json`.
 
 Runtime: 156 files/364,187,965 B, SHA-256 `288997c50656c4adc6300b42beaa52903247b6c55e8cf22beb314954f4f32e62`; older 157-file certificates do not transfer. Preserve user-owned `facade-emission.test.ts`, `AGENTS.md` and the 991 snapshot.
 
@@ -33,16 +33,16 @@ Docs cleanup is pushed; full structural recovery remains REFUSED.
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Next visible milestone | curb1635 prototype DISPATCHED; no GPU | [1609](reviews/1609_implementation.md):1633 source qualified. Owner curb1633_source_question; resolve ownership, then one coherent non-crossing profile in existing offline path; native pilot before expensive gates. |
+| Next visible milestone | Root; uphill source question queued | 1643/1646 qualify one lower road/base view only. Dogen-zaka identity/grade and A2 OPEN. Qualify the intended uphill-road source before another journey; no automatic companion or retune. |
 | Documentation recovery | Root; cleanup pushed, census1612 accepted | [1599](reviews/1599_integration.md): source/size PASS; protected991 REFUSED. [Fleet18](../../../../fleet/docs/work/18_maps-document-recovery/plan.md):188/189. Collision/private-CLI/protected991 relocation approvals pending; fresh census before application. |
 
-A stays frozen/unadopted/parked at artifacts/taa1582a/worktree: [1603](reviews/1603_design.md) preserves both BLOCKED routes; no automatic oracle/capture. [1604](reviews/1604_integration.md): four clips ready for human inspection, timed review DID_NOT_RUN and perceived benefit NOT_ESTABLISHED.
+A frozen/UNADOPTED/PARKED at artifacts/taa1582a/worktree: [1603](reviews/1603_design.md), both BLOCKED routes; no oracle/capture. Four [1604](reviews/1604_integration.md) clips: human inspection only, timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
 
-Held-out baseline: all96 originals reviewed PASS; right-facade visibility bound retained ([1602](reviews/1602_implementation.md)). Candidate held-out NOT_RUN. S0/S1 still-detail preservation remains accepted ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)).
+Held-out baseline96 originals PASS, right-facade visibility bound ([1602](reviews/1602_implementation.md)); candidate NOT_RUN. S0/S1 detail retained ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)).
 
-A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) remains fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects1560 for softening. Ordinary-scene contribution, perceived crawl, held-out, cost/five gates remain owed. Tighten two centre assertions before component-fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
+A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md):1560 softened. Ordinary contribution/crawl/held-out/cost/five gates owed. Tighten two centre assertions before fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
-East peripheral journey and road-tone interpretation remain bounded and unaccepted; retain [1579](reviews/1579_peripheral-street-inspection.md) and [1581](reviews/1581_east-road-tone-diagnosis.md) for sampling gaps, failed capture and source limits.
+East peripheral/road-tone remain unaccepted: [1579](reviews/1579_peripheral-street-inspection.md), [1581](reviews/1581_east-road-tone-diagnosis.md) retain sampling gaps, failed capture and source limits.
 
 
 Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59fbb1c` and Coca-Cola1449/1450. Train-only ABBA about 60 Hz does not establish the full target.
@@ -111,13 +111,15 @@ These are the 35 stable identities across phases 0–10; never renumber. Item 35
 
 ### Cross-map bounds and parked dependencies
 
+Curb1635 PARK/UNADOPTED: [1615](reviews/1615_implementation.md), [1616 REDIRECT](reviews/1616_integration.md). Retain artifacts/curb1635/worktree, patch/freeze and active evidence. Three strict seam FAIL, stale Start and actual corridor-edge-paint startup refusal OPEN. Candidate0 pixels/benefit NOT_ESTABLISHED/no paired native review; five final gates NOT_RUN. No further repair/capture.
+
 Rejected1560 stays unmerged at `artifacts/taa1554/worktree`, branch `codex/moving-taa1554-local`, base `b0bc935`. [1570](reviews/1570_moving-taa-gpu-result-review.md) is component evidence only. Retain `artifacts/taa1554/round1560-freeze.json` and `artifacts/taa1558/prerequisite-copy.receipt.json`.
 
-Parked sources: facade STOP 1445/1452/1455, confirmed 1456; 1454 TSUTAYA 128×512, other imagery UNKNOWN. Windows 1458 STOP/1461/1464 NO QUALIFIED SET; worktree retired; bounded, not impossible. Profile CPU unavailable; 65-worktree removal PARKED. [1472](reviews/1472_western-road-source-stop.md): 2019 GSI cannot resolve paint/curbs or ≥80 m; no prototype.
+Parked sources: facade STOP1445/1452/1455, confirmed1456; TSUTAYA1454 128×512, other imagery UNKNOWN. Windows1458 STOP/1461/1464 NO QUALIFIED SET; WT retired, bounded not impossible. CPU profile unavailable;65-WT removal PARKED. [1472](reviews/1472_western-road-source-stop.md):2019 GSI cannot resolve paint/curbs or≥80m; no prototype.
 
 Traffic1499 PARK: [1527](reviews/1527_fixed-history-native-review.md); `artifacts/traffic1499/worktree`, `codex/traffic1499`, candidate `4aa2a023d`. Four arms, last four opaque; visible exit UNMET, no fifth. CPU 600 s: 20/24, bus refusals/queues. Gates NOT RUN; unmerged and UNADOPTED.
 
-A2 OPEN: 1543/1544 uphill setup obscured road/bases; stopped before waiting, no retry. 1545 data468 source floor is 16.17–16.67 m above terrain; two leaves lack support; intent/native UNKNOWN, no safe edit. 1546: bounded source questions then ordinary journey, no expanded census.
+A2 OPEN:1543/1544 uphill setup hid road/bases; stopped before waiting, no retry.1545 data468 floor16.17–16.67m above terrain; two unsupported leaves, intent/native UNKNOWN, no safe edit.1546: bounded source questions then ordinary journey; no expanded census.
 
 Whole-AOI close/block/aerial, peripheral, noon/dusk and held-out quality remain OPEN. Retain seeds/poses/native digests/sampling gaps; inspect Satellite and basic style continuity. Flythrough/building clearance OPEN;445 proves route coverage only.
 
@@ -125,12 +127,12 @@ Facades still need depth, glazing, floor rhythm, de-light and variation. Every r
 
 Rail 1491/1493 accepts the four-car passage narrowly; gaps, bearings, returns and actors under spans remain OPEN. Vehicles need wheel/body contact, bus/portal/class coverage, spacing and visible governed behavior. One walker is accepted; full-source eligibility, animated soles, avoidance and no sliding/interpenetration remain OPEN. The 150 pedestrian/20 vehicle seed 5970698/600 s contract is red; untuned 42/native evidence remains owed. Motion/contact experiments stay parked.
 
-Continuous populated/camera/time stability and target FPS remain unqualified. Historical12fps/59 of200 are bounded failures, not current measurements;398 startup gain is not population FPS. Machine-cold startup/port5319/loading/decoder/CPU causes UNKNOWN. Simulation deferral preserves A7–A10.
+Continuous populated/camera/time stability and target FPS unqualified. Historical12fps/59 of200 are bounded failures, not current;398 startup gain is not population FPS. Machine-cold startup/port5319/loading/decoder/CPU causes UNKNOWN. Simulation deferral preserves A7–A10.
 
-Private union1324 UNMET; its 387/63-part proof constrains that experiment only. Preserve evidence/obligations; no automatic resumption, helper-pass transfer, new framework or weaker gate.
+Union1324 UNMET;387/63-part proof binds only that experiment. Retain evidence/obligations; no automatic resumption, helper-pass transfer, new framework or weaker gate.
 
 ## Outcome
 
 Active; the full deliverable is incomplete.
 
-Recover exact old `plan.md`/`progress.md` from [e483cd5](https://github.com/yanfengliu/maps/tree/e483cd5dfa58ee89876fba268c55c619daca9d5f/docs/work/0_shibuya-1km) with `git show <commit>:<path>`; [1418](reviews/1418_orchestration-context-implementation.md) records sizes/digests. Authored reviews retain history, not a current queue.
+Recover old plan.md/progress.md: `git show e483cd5dfa58ee89876fba268c55c619daca9d5f:<path>`. [1418](reviews/1418_orchestration-context-implementation.md): sizes/digests. Reviews retain history.
