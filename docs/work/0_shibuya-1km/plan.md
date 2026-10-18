@@ -3,7 +3,7 @@
 Status: active
 Owner: root orchestrator
 Created: 2026-09-06
-Updated: 2026-10-17
+Updated: 2026-10-18
 
 ## Problem and outcome
 
@@ -33,17 +33,17 @@ Docs [1577](reviews/1577_documentation-cleanup-review.md) accepted at `722d84b`;
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Peripheral street inspection | Root; PLANNED, not dispatched | [1578](reviews/1578_next-visible-direction.md): ≤60 s eastward dusk Satellite journey through real controls; clear setup, two native viewpoints reproducing one bounded defect before an edit. |
+| Moving-AA proof | Worker 1583 preparing checks; GPU withheld | [1585](reviews/1585_moving-aa-search-review.md) selects A for one adapted component trial under [1582](reviews/1582_moving-aa-second-search-contract.md). Exact observation/oracle review precedes GPU lease; no adoption. `artifacts/taa1582a/worktree`; B is blocked narrowly in [1584](reviews/1584_moving-aa-family-b.md). |
 
-A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds zero accepted moving history; 1549 lacked GPU-mode observation. [1552](reviews/1552_moving-taa-search-contract.md) fixes inputs/checks/disqualifiers. 1574 repaired Node imports. S0 baseline/candidate each captured 96 adjacent frames; owned total runs 53.802/48.472 s, cleanup PASS. Independent1576 inspected all 192 originals: material softening of paving/tactile/stripes/facades/signs; candidate REJECTED for adoption. S1/held-out/cost/five gates NOT RUN; no automatic repair. Accepted scene unchanged.
+A6 OPEN: [1551](reviews/1551_moving-taa-gap.md) finds no accepted moving history. [1576](reviews/1576_moving-taa-native-pilot-review.md) rejects source1560 after 192 native originals for material softening. Cleanup PASS; S1/held-out/cost/five gates NOT RUN. Fresh search1582 preserves [1552](reviews/1552_moving-taa-search-contract.md); accepted scene unchanged.
 
-1547/1548 cover elevated views only. 1549/1550: four native Start/W/A street views, 3.11–3.19 m clearance, no repair; gaps of 25.946/1.957/26.204 s exclude continuous A13 acceptance. Owned capture resources closed.
+[1579](reviews/1579_peripheral-street-inspection.md)/[1580](reviews/1580_peripheral-street-native-review.md): three clear real-controls eastward views, no qualified edit; 22.105/21.607 s gaps exclude continuous acceptance. Capture FAILED at final 15 s review wait; cleanup PASS. [1581](reviews/1581_east-road-tone-diagnosis.md) explains one authored resurfacing wedge; other bands unclassified.
 
 Gallery heartbeat ACTIVE (15 min); private rules remain canonical.
 
 Train `5af00f1`: four cars, current-pose AA, fractional DPR; 1490/1491/1493 retain bounds. Lifetime `59fbb1c` and Coca-Cola1449/1450 retained. Train-only ABBA about 60 Hz; full target OPEN.
 
-[1497](reviews/1497_orchestration-critical-path-review.md): blocker-only helpers; road/head/central stops and generic motion research PARKED. [1533](reviews/1533_next-visual-direction-review.md): peripheral blocks; do not repeat facade/traffic diagnosis.
+Parked diagnosis and peripheral-inspection rationale: [1497](reviews/1497_orchestration-critical-path-review.md), [1533](reviews/1533_next-visual-direction-review.md).
 
 ## Acceptance criteria
 
@@ -108,7 +108,7 @@ These are the 35 stable identities across phases 0–10; never renumber. Item 35
 
 ### Cross-map bounds and parked dependencies
 
-TAA1560 frozen/unadopted: `artifacts/taa1554/worktree`, branch `codex/moving-taa1554-local`, base `b0bc935`; 25 focused CPU/type checks, old-mode-edge RED/restored GREEN. [1570](reviews/1570_moving-taa-gpu-result-review.md): 20 independently recomputed RTX 4090 component controls PASS, run 7.487 s; cleanup PASS, fresh marker-port zero; no native quality/cost/A6 acceptance. 1553 blocked/retired. 1558: 156 runtime files/9 packets; `artifacts/taa1558/prerequisite-copy.receipt.json`.
+Rejected TAA1560 remains unmerged at `artifacts/taa1554/worktree`, branch `codex/moving-taa1554-local`, base `b0bc935`; 25 CPU/type checks. [1570](reviews/1570_moving-taa-gpu-result-review.md): 20 RTX 4090 component controls independently PASS, 7.487 s owned run, cleanup PASS; no quality/cost/A6 acceptance. Recovery: `artifacts/taa1554/round1560-freeze.json`, `artifacts/taa1558/prerequisite-copy.receipt.json`.
 
 Parked sources: facade STOP 1445/1452/1455, confirmed 1456; 1454 TSUTAYA 128×512, other imagery UNKNOWN. Windows 1458 STOP/1461/1464 NO QUALIFIED SET; worktree retired; bounded, not impossible. Profile CPU unavailable; 65-worktree removal PARKED. [1472](reviews/1472_western-road-source-stop.md): 2019 GSI cannot resolve paint/curbs or ≥80 m; no prototype.
 
