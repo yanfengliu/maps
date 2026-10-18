@@ -1,0 +1,17 @@
+# Unreal MCP graphics experiment result
+
+2026-10-17. The owner clarified that this branch should test whether graphics are easier using Unreal MCP; the default branch owns simulation. The bounded experiment is concluded with no demonstrated graphics or workflow advantage. This is not acceptance of photorealism, dark-view fixes or the stopped simulation work.
+
+Unreal5.8.3 built-in HTTP MCP on localhost18739 actually saved lighting and five crossing material packages, reopened the map in a fresh process, observed112 effective material slots and captured six fixed1280x720 views. Calls used tools/call → call_tool → custom ShibuyaCityTools. A custom Python toolset, native renderer observer and external process/file operator were required; this does not establish stock-tool simplicity.
+
+The saved candidate used Sun25000lux/Sky4 and fresh sky capture. Its darker asphalt and white markings read clearly, but facades remain dark and blue; blurry aerial ground, abrupt material edges, coarse building photographs, black surroundings and edge gaps remain. The earlier transient facade improvement did not survive fresh sky capture. Root and producer independently inspected every final original and rejected appearance.
+
+Actual native report artifacts/unreal/daylight-persistent-v1-20261017-222413/report.json2673909/SHA-2561f24d1b7b034d5fc2267f5f12023b0854c0375cc999cc011980ccc4f17203235 records readiness6/6PASS, darknessFAIL for crossing/block/crop, aggregate exit1 in111.422seconds, no timeout and empty owned Jobs. Both editors exited0; owned residual25444 was cleaned. All six original files were restored and read back, including original map32b898364d670e2353a6dcf6b5400566bdb30e54e5e1ad62023ad798cfc1b433. The failed candidate map was not separately preserved; its descriptor and six actual images remain evidence, not an adopted saved result.
+
+The fresh-process material recognition defect was repaired narrowly. Literal canonical349 helper tests pass43.738seconds; report de297ffe85fe7be88ed3b682d4702d5559449398f427e3ffa325ae463cd98928 records33 held subjects and clean owned closure. Independent [443](reviews/443_graphics_reopen_recognition_review.md) finds no material code issue. These checks establish tool behavior, not appearance.
+
+Read-only comparison with existing default-branch noon/dusk crossing images found more finished paving, streetscape and facade treatment there. The noon image SHA-256 is41346416a09d445267852f743990ea8702beebb7b78181ed3874c41eb12dcf0d. Different content and cameras prevent attributing quality to the engines. No default implementation or assets were imported into Unreal. Much of this branch's effort was caused by orchestration scope expansion into simulation, so elapsed effort is not a clean engine benchmark.
+
+The private gallery contains52 images, including the six rejected reopened views at the top, newest work first and one image per row. It remains ignored and must never enter Git. Native images, original preimages, failed candidate packages and unfinished work are intentionally retained locally. All task-owned processes are closed; the user's gallery browser is untouched.
+
+This is a documentation checkpoint on codex/shibuya-unreal-5.8. Experimental executable changes remain local and uncommitted; no production or main-branch integration is claimed. Simulation/Source/body/capacity work is stopped. Further graphics work requires a new owner-directed increment rather than an unattended polish or verification loop.
