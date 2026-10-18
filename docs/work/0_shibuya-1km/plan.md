@@ -7,7 +7,7 @@ Updated: 2026-10-18
 
 ## Problem and outcome
 
-Build the approved 1 km Shibuya square as a believable world with moving pedestrians and vehicles. User resumed; tracker BLOCKED; Satellite quality is the priority. Full quality/population/performance OPEN.
+Build a believable1km Shibuya world with moving pedestrians/vehicles. User resumed;tracker BLOCKED. Satellite priority;full quality/population/performance OPEN.
 
 ## Scope
 
@@ -17,15 +17,15 @@ Non-goals: map viewer, navigation/routing, survey reconstruction, second locatio
 
 ## Approach
 
-Root owns priorities/contracts/status/integration; workers implement/check. Read before delegation; ≤3 outcomes; reassess after two failures.
+Root owns priorities/contracts/status/integration;workers implement/check.≤3 outcomes;reassess after two failures.
 
 ### Current adoption and evidence
 
-Adopted source `e1de28244694e7ecedbd75ea045ff49e80026ca3` (source3729868): fresh inputs/profile, historical/fresh fixtures, short-connector leader fix and14 raw byte rules. Roof80a2730/asphaltf4960e2 retained. Source1708/native1711 GO; evidence: artifacts/source1709-final/. Roof history: [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
+Adopted source `e1de28244694e7ecedbd75ea045ff49e80026ca3`: fresh inputs/profile, historical/fresh fixtures, short-connector leader fix and14 raw byte rules. Roof80a2730/asphaltf4960e2 retained. Source1708/native1711 GO; artifacts/source1709-final/; [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
 
-PRIMARY five gates PASS340.506s (wrapper374.879s):141files/1,231tests,44frames/3GPUlifecycles,RTX4090/616.64,run `bfe2ff3fc92d452c`; audit2moderate/nohigh. Root/independent22Satellite+2basic return originals GO; interior/occluded views do not prove A13. Pushed CI unavailable:0checks/statuses/workflows/runs. Population/60fps unestablished.
+PRIMARY5 gates PASS340.506s(wrapper374.879s):141files/1,231tests,44frames/3GPUlifecycles,RTX4090/616.64,runbfe2ff3fc92d452c;audit2moderate/nohigh. Root/independent22Satellite+2basic returns GO;occlusion/interiors do not prove A13. CI unavailable:0checks/statuses/workflows/runs. Population/60fps unestablished.
 
-Runtime156files/364,250,437B; served-scene digest `cec9aaf0cce77360e5bcc99c4fe8567473bd180d0796ba65fff5b161de542184`. A11 PASS: clean e1de282 regenerated89 servedfiles;67 externalassets unchanged. Five hardware originals/root+independent GO: [1632](reviews/1632_integration.md). Four runtime buildfiles exact;two debugmaps CRLF-only. Source1709 gates used copied prerequisites. Retain facade-emission, literal AGENTS/seven LF files and991.
+Runtime156files/364,250,437B, digest in [1632](reviews/1632_integration.md). A11 PASS: clean e1de282 regenerated89 servedfiles;67 externalassets unchanged;five hardware originals/root+independent GO. Four runtime buildfiles exact;two debugmaps CRLF-only. Source1709 gates used copied prerequisites. Retain facade-emission, literal AGENTS/seven LF files and991.
 
 Fleet recovery stopped after5 attempts: missing-witness provenance, replay binding and old-test regression. Full gates/actual Maps census NOTRUN; no sixth repair. Evidence: artifacts/fleet1706/attempt5-handoff.md.
 
@@ -33,18 +33,21 @@ Fleet recovery stopped after5 attempts: missing-witness provenance, replay bindi
 
 | Next outcome | Owner/status | Dependency and done condition |
 | --- | --- | --- |
-| Satellite milestone | 1723 reference check | Qualify one exact-building reference; no implementation. [1639](reviews/1639_design.md). Tracker: artifacts/session-handoff1702/successor-state.json;2/10. Gallery260/private. |
+| Satellite frontage | 1727 mapping | One finite source-chart map with preserved photography and supported interfaces, or named STOP. No implementation. |
+| Peripheral streets | 1728 ordinary journey | Real controls;≤6 native frames/90s camera journey. Inspect current road/base quality, select≤1 next question;cleanup owned resources. |
 
-AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED, no oracle/capture. [1604](reviews/1604_integration.md): 4 clips human-only; timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
+1719/1720 STOPs: [1639](reviews/1639_design.md).1723/1725:0assemblies;missing preservation/interfaces, not exact dates/dimensions. artifacts/session-handoff1702/successor-state.json;2/10;gallery260/private.
 
-Held-out baseline96 originals PASS, right-facade visibility bound ([1602](reviews/1602_implementation.md)); candidate NOT_RUN. S0/S1 detail retained ([1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md)).
+AA A PARKED/UNADOPTED: artifacts/taa1582a/worktree; [1603](reviews/1603_design.md): both routes BLOCKED/no oracle/capture. [1604](reviews/1604_integration.md):4 human-only clips;timed review DID_NOT_RUN/benefit NOT_ESTABLISHED.
+
+Held-out96 originals PASS, right-facade visibility bound [1602](reviews/1602_implementation.md);candidate NOT_RUN. S0/S1: [1593](reviews/1593_implementation.md), [1596](reviews/1596_implementation.md).
 
 A6 OPEN; [1552](reviews/1552_moving-taa-search-contract.md) fixed. [1576](reviews/1576_moving-taa-native-pilot-review.md):1560 softened. Ordinary contribution/crawl/held-out/cost/five gates owed. Tighten two centre assertions before fixture reuse ([1591](reviews/1591_moving-aa-component-result-review.md)).
 
 Road finish accepted within [1623](reviews/1623_integration.md). [1579](reviews/1579_peripheral-street-inspection.md)/[1581](reviews/1581_east-road-tone-diagnosis.md) retain historical limits; full peripheral streets remain OPEN.
 
 
-Retain train `5af00f1` (four cars/current-pose AA/fractional DPR), lifetime `59fbb1c` and Coca-Cola1449/1450. Train-only ABBA about 60 Hz does not establish the full target.
+Retain train5af00f1(four cars/current-pose AA/fractional DPR),lifetime59fbb1c,Coca-Cola1449/1450. Train-only ABBA≈60Hz is not full-target evidence.
 
 
 ## Acceptance criteria
@@ -68,7 +71,7 @@ A1/A4/A12 bounded PASS: [1539](reviews/1539_aoi-render-acceptance.md), [1542](re
 
 ## Implementation steps
 
-These are the 35 stable identities across phases 0–10; never renumber. Item 35 was appended to Phase 4. F = integrated foundation, requiring final recheck; O = partial/open, including narrowly accepted capabilities. Neither means final deliverable acceptance.
+35 stable identities;never renumber.35 appended to Phase4. F=integrated foundation, final recheck owed;O=partial/open, including bounded acceptance. Neither is final acceptance.
 
 | Item | Phase | Identity | Bound |
 | --- | --- | --- | --- |
@@ -134,4 +137,4 @@ Union1324 UNMET;387/63-part proof binds only that experiment. Retain evidence/ob
 
 Active; the full deliverable is incomplete.
 
-Recover old plan.md/progress.md: `git show e483cd5dfa58ee89876fba268c55c619daca9d5f:<path>`. [1418](reviews/1418_orchestration-context-implementation.md): sizes/digests. Reviews retain history.
+Old plan/progress: `git show e483cd5dfa58ee89876fba268c55c619daca9d5f:<path>`;[1418](reviews/1418_orchestration-context-implementation.md) sizes/digests.
