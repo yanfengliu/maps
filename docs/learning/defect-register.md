@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-10-18 — local walking did not put the owner in first person
+
+Observed symptom: the owner clarified that the local walk is for them to experience in first person, controlling both walking and looking.
+
+Investigation and cause: `local-walk-prototype.ts` gives Start walking to an automated singleton, while `camera.ts` remains an orbit camera with a 25 m minimum distance. Neither action supplies a user-controlled eye-level walk.
+
+How it is checked: pushed main `b00bb20` adds manual input ownership, street support and retained off-view collision. The installed-renderer regression covers visibility changes, backwards wall approach and logical disposal; a visibility-only mutant fails before exact restoration passes. All five gates pass (142 files/1,244 tests and 44 GPU frames/three lifecycles). The production dusk/noon check verifies actual clicks/keys/drag, eye height, movement/look, focus/style preservation, exit/reentry and active cleanup; six native originals and independent review pass. [1650](../work/0_shibuya-1km/reviews/1650_first-person-walk-integration.md) retains finite coverage and actor/furniture/whole-AOI collision limits.
+
 ## 2026-10-17 — historical documentation looked like current instructions
 
 Observed symptom: the owner reported redundant, outdated and incorrectly organized docs. README lacked an entry route to the current plan and runtime prerequisites; dated handoffs/registers still presented pause, priority or prototype instructions as current; one handoff used a removed plan anchor, and a later devlog entry appeared after the oldest entries.
@@ -673,3 +681,7 @@ Independent main port1528/1529 lands on pushed main e1097edd with the public his
 The fourth changed-source traffic arm completes within557.045 supervised wall seconds after the history-copy fix. Its aged quiet scene recovers to60.014 returned render iterations/s and1.00024 simulation/wall pace, and the six input/style plus six crossing originals pass their finite visual checks. All four scheduled boundary originals are nevertheless identical opaque surfaces; the camera sits near(195.111,28.102,-480) looking at(152,15.2,-480). The occluding surface type is not established. Advancing clocks and retirement0→1 do not show an exit.
 
 The process fault is admitting an unqualified event view before a long wait.1527 independently inspects all four originals and refuses visible-exit acceptance. Root parks traffic without a fifth arm, preserves all evidence and ports only the independently useful walking fix to main. Local rules now require native-size visibility prequalification for every planned event camera; its actual regression gate remains owed in lessons. No full traffic or population acceptance follows.
+
+## 2026-10-18 — long initial loading
+
+The owner reported that initial loading is really long. Investigation identified unused coarse ancestor and sibling preparation despite the existing final-leaf-only display contract. Pushed main `b00bb20` disables both eager paths, preserving 44 final leaves, source data, texture/cache limits and readiness/error contracts. Actual installed-traversal fixtures cover held 43/full 44 readiness, off-frustum siblings and missing-leaf refusal; each old flag independently goes RED, exact restoration GREEN. Three unprofiled comparisons establish earlier leaf preparation and 26.63% less decoded cache, with overlapping full-visible polling intervals and no exact first-visible speedup claim. Shared five gates and independent native review pass. [1649](../work/0_shibuya-1km/reviews/1649_initial-loading-source-review.md), [1650](../work/0_shibuya-1km/reviews/1650_first-person-walk-integration.md).

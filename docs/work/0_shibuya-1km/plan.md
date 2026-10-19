@@ -23,9 +23,9 @@ Root owns priorities/contracts/status/integration; workers own bounded work. At 
 
 ### Adopted source and verification
 
-Executable e1de28244694e7ecedbd75ea045ff49e80026ca3; newer checkpoints change documentation only. Accepted bounds: [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
+Executable `b00bb203020fc64324af88089bdd6eea1c0993ba`: manual first-person walking and unused coarse-tile preparation removal are on pushed main. [1650](reviews/1650_first-person-walk-integration.md) records the combined gate and native acceptance; earlier roof/source bounds remain in [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
 
-Five primary gates PASS340.506s; wrapper/cleanup374.879s:141 files/1,231 tests,44 frames/three GPU lifecycles,RTX4090/616.64,run bfe2ff3fc92d452c; audit two moderate/no high. Root/independent22 Satellite/two basic returns GO. CI unavailable: zero checks/statuses/workflows/runs. Population/60fps unmeasured.
+Five primary gates PASS: 142 files/1,244 tests, 44 frames/three GPU lifecycles,RTX4090/616.64,run `6cada51854bd129a`; audit two moderate/no high. Root/independent 22 Satellite/two basic returns/six first-person originals GO. Real-input dusk/noon walking, looking, focus/style preservation, exit/reentry and active cleanup PASS. CI unavailable: zero checks/statuses/workflows. Population/60fps unmeasured.
 
 A11 PASS ([1632](reviews/1632_integration.md)): clean e1de282 regenerated89 served files;67 external assets exact. Runtime156 files/364,250,437B; five originals/root+independent GO. Four build files exact; two debug maps CRLF-only. Source1709 gates used copied prerequisites.
 
@@ -59,7 +59,7 @@ Traffic1499 stays unadopted at artifacts/traffic1499/worktree: opaque exit, no f
 
 A2 remains open: hidden road/bases and unsupported data468 floors; intent/native unknown, no safe edit. Only bounded source questions then ordinary journey ([1546](reviews/1546_visual-direction-review.md)); no expanded census.
 
-Populated/camera/time stability and FPS are unqualified. Historical12fps/59 of200 and398 startup gain are not current population FPS. Cold-start/loading/decoder/CPU causes remain unknown; A7–A10 bind.
+Populated/camera/time stability and FPS are unqualified. Historical12fps/59 of200 and398 startup gain are not current population FPS. Startup now omits 23 unused coarse models while retaining 44 final leaves: earlier leaf preparation and 26.63% less decoded cache are measured; exact first-visible speedup is not. [1649](reviews/1649_initial-loading-source-review.md), [1650](reviews/1650_first-person-walk-integration.md). Remaining loading/decoder/CPU costs and A7–A10 stay open.
 
 Union1324 remains unmet; its proof cannot transfer. No automatic resumption, new framework or weaker gate. Fleet stopped after five attempts: provenance, replay binding and old-test regression; full gates/actual Maps census not run, no sixth repair. Retain artifacts/fleet1706/attempt5-handoff.md. CPU profiling and inherited cleanup remain parked; preserve others' work.
 
