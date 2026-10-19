@@ -16,7 +16,7 @@ Vite configuration requires both admitted rail and walker packets even for a cit
 
 | Option | Behavior |
 | --- | --- |
-| No query | Satellite, dusk, seed 5970698, zero generic pedestrians/vehicles. With the admitted packet, one local walker starts held until **Start walking** is enabled and pressed. |
+| No query | Satellite, dusk, seed 5970698, zero generic pedestrians/vehicles. **Start walking** enters a manual first-person camera. With the admitted packet, **Run pedestrian prototype** separately releases one held actor. |
 | `?style=satellite` or `cartographic` | Selects the initial registry style. The World style control changes it without reloading or resetting progress and updates the URL. |
 | `?time=` | `dawn`, `morning`, `noon`, `afternoon`, `golden`, `dusk`, `night`; unknown names refuse. These are fixed lighting presets, not a live time control. |
 | `?seed=` | Overrides deterministic world/population seed. The default local walker requires 5970698; other seeds do not select it automatically. |
@@ -25,7 +25,7 @@ Vite configuration requires both admitted rail and walker packets even for a cit
 | `?pedestrians=N&vehicles=M` | Non-negative whole counts; an omitted count uses its generic default. Cannot accompany `agents=0`. |
 | `?local-walk=1` | Explicitly requests the admitted singleton at seed 5970698 with zero generic actors. Missing packet, another value/seed or a nonzero generic population refuses. |
 
-Combine options with `&`, for example `?agents=0&time=noon`. Explicit generic population/count options suppress automatic singleton selection. Use the real Start button to release the held walker; camera orbit/pan does not steer or follow it. The population/performance target remains 3,000/200 at 60 fps and 1920×1080.
+Combine options with `&`, for example `?agents=0&time=noon`. Explicit generic population/count options suppress automatic singleton selection. **Start walking** enters first person at the crossing: WASD or arrows move relative to where you look; left or middle drag looks around; **Overview** or Escape restores the previous overview. Walking follows supported street surfaces and stops at unsupported steps, the square's boundary and loaded building fronts. Actor and street-furniture collision are outside this walking check. Click the canvas after using a UI control to resume keyboard movement. **Run pedestrian prototype** independently releases the held actor. The population/performance target remains 3,000/200 at 60 fps and 1920×1080.
 
 ## Produce or restore data
 

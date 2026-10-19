@@ -10,7 +10,8 @@ The repository alone is insufficient for the complete scene: map outputs, the ad
 
 ## Explore
 
-- Drag with the left or middle mouse button to orbit; right-drag to pan; wheel to zoom. Held WASD pans along the ground relative to the view. Click the canvas after using UI controls to return keyboard focus.
+- In the overview, drag with the left or middle mouse button to orbit; right-drag to pan; wheel to zoom. Held WASD pans along the ground relative to the view. Click the canvas after using UI controls to return keyboard focus.
+- Press **Start walking** to enter first person. WASD or arrow keys walk; left or middle drag looks around. **Overview** or Escape returns to the previous overview.
 - **World style** switches Satellite/Cartographic while preserving the camera and simulation. Satellite is the current detailed quality focus.
 - For a city-only view use `?agents=0`. `?time=noon` changes lighting; `?style=cartographic` selects the other style. [Query options and preparation](docs/reference/setup.md#startup-and-query-options) describe explicit population requests and their limits.
 
@@ -18,7 +19,7 @@ The required 3,000 animated pedestrians, 200 vehicles and 60 fps at 1920×1080 r
 
 ## Cached local walker
 
-Ordinary startup uses Satellite at dusk, seed 5970698, zero generic actors and one held local walker when its packet is prepared. Press **Start walking** when enabled. The camera remains independent of the walker. [Preparation and limits](docs/reference/setup.md#cached-local-walker).
+Ordinary startup uses Satellite at dusk, seed 5970698 and zero generic actors. **Start walking** puts you in control at eye level near the crossing. The separately named **Run pedestrian prototype** animates the admitted singleton when its packet is prepared. [Preparation and limits](docs/reference/setup.md#cached-local-walker).
 
 ## Documentation
 

@@ -9,11 +9,9 @@ import { installCameraKeyboard } from "./camera-keyboard.js";
 /**
  * The camera and the controls the user actually drives.
  *
- * Everything that moves this camera goes through `OrbitControls`. Nothing else
- * in the app writes `camera.position`, and neither does the visual harness — it
- * synthesises pointer and wheel events on the canvas, the same input path a
- * person uses. A harness that assigns the pose instead skips that path entirely
- * and is blind to every defect living in it.
+ * Overview uses `OrbitControls`; the first-person input controller owns the
+ * camera while walking. The read-only visual harness drives their real inputs
+ * and never assigns the pose.
  */
 export interface CameraRig {
   camera: PerspectiveCamera;
@@ -48,7 +46,7 @@ export function createCameraRig(canvas: HTMLCanvasElement): CameraRig {
   );
 
   // The starting pose is set here, once, before the controls exist. After this
-  // line the controls own the camera.
+  // line the active user-input controller owns the camera.
   //
   // The target is the crossing at ground level, not at y = 0. Scene Y is metres
   // above Tokyo Bay mean sea level and the ground at the crossing is 15.2 m, so

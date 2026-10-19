@@ -9,6 +9,7 @@ vi.mock("../src/scene/aoi-cutout.js", () => ({ clipCityRoot: vi.fn() }));
 vi.mock("../src/harness/rail-still-snapshot.js", () => ({ createRailStillObserver: () => ({}) }));
 vi.mock("../src/harness/rail-camera-clearance.js", () => ({ createRailCameraObserver: () => ({}) }));
 vi.mock("../src/render/renderer.js", () => ({ createRenderer: () => ({ dispose: vi.fn() }), rendererFailure: () => pending.shaderFailure, resizeRendererToDisplay: vi.fn() }));
+vi.mock("../src/render/first-person-walk.js", () => ({ createWalkGround: () => ({}), createFirstPersonWalk: () => ({ active: false, status: () => null, update: vi.fn(), dispose: vi.fn() }) }));
 vi.mock("../src/render/camera.js", () => ({ createCameraRig: () => ({ camera: new PerspectiveCamera(), controls: { update: vi.fn(), dispose: vi.fn() } }) }));
 vi.mock("../src/render/post.js", () => ({ createPostChain: () => ({ render: pending.draw, dispose: vi.fn(), apply: vi.fn(), invalidate: vi.fn(), setSize: vi.fn(), setStill: pending.setStill }) }));
 vi.mock("../src/scene/sky.js", () => ({ createSky: () => ({ mesh: new Mesh(new BufferGeometry(), new MeshBasicMaterial()) }), bakeEnvironment: () => ({ texture: null, dispose: vi.fn() }) }));

@@ -28,6 +28,54 @@ const empty = (): RailTrialData => ({ manifest: { tiles: [] }, replacements: [],
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("rail caller startup", () => {
+  it.each([false, true])("loads final leaves without requesting coarse fallbacks; leaf failure=%s", async failLeaf => {
+    const leafUris = Array.from({ length: 44 }, (_, index) => `leaf-${index}.b3dm`);
+    const west = [0, 0, -200, 20, 0, 0, 0, 40, 0, 0, 0, 40];
+    const east = [500, 0, -200, 20, 0, 0, 0, 40, 0, 0, 0, 40];
+    const box = [250, 0, -200, 300, 0, 0, 0, 100, 0, 0, 0, 100];
+    const node = (uri: string, error: number, children: object[] = [], bounds = box) => ({ content: { uri }, geometricError: error, refine: "REPLACE", boundingVolume: { box: bounds }, children });
+    const coarseUris = ["coarse-root.b3dm", "coarse-west.b3dm", "coarse-east.b3dm"];
+    const source = { asset: { version: "1.0" }, geometricError: 100, root: node(coarseUris[0]!, 100, [
+      node(coarseUris[1]!, 10, leafUris.slice(0, 22).map(uri => node(uri, 0, [], west)), west),
+      node(coarseUris[2]!, 10, leafUris.slice(22).map(uri => node(uri, 0, [], east)), east),
+    ]) };
+    let release!: () => void;
+    const held = new Promise<void>(resolve => { release = resolve; });
+    const requests: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const name = new URL(url, "http://fixture").pathname.split("/").pop()!; requests.push(name);
+      if (name === "tileset.json") return new Response(JSON.stringify(source));
+      if (name === leafUris[43]) { await held; if (failLeaf) return new Response("missing final leaf", { status: 404 }); }
+      return new Response(new TextEncoder().encode("b3dm"));
+    }));
+    vi.spyOn(B3DMLoader.prototype, "parse").mockImplementation(async () => ({ scene: new Group() }) as any);
+    const b = buildings(), tiles = renderer(b);
+    let ready = false, failure: unknown;
+    const done = b.ready.then(() => { ready = true; }, error => { failure = error; });
+    try {
+      expect(tiles.errorTarget).toBe(0);
+      for (let i = 0; i < 500 && b.status().cutout!.preparedLeaves < 43 && !failure; i++) { b.update(); await new Promise(resolve => setTimeout(resolve, 0)); }
+      expect(failure).toBeUndefined(); expect(ready).toBe(false); expect(b.displayReady()).toBe(false);
+      expect(b.status().cutout!.preparedLeaves).toBe(43);
+      expect(requests.filter(uri => coarseUris.includes(uri))).toEqual([]);
+      release();
+      for (let i = 0; i < 500 && !ready && !failure; i++) { b.update(); await new Promise(resolve => setTimeout(resolve, 0)); }
+      await done;
+      // Exercise ordinary camera culling after whole-scene warmup ends. The east
+      // branch is outside this camera and must not queue its coarse sibling.
+      for (let i = 0; i < 4; i++) { b.update(); await new Promise(resolve => setTimeout(resolve, 0)); }
+      expect(requests.filter(uri => coarseUris.includes(uri))).toEqual([]);
+      expect(requests.filter(uri => leafUris.includes(uri)).sort()).toEqual([...leafUris].sort());
+      expect(tiles.root.content.uri).toBe("coarse-root.b3dm"); // hierarchy/source metadata stays intact
+      if (failLeaf) { expect(String(failure)).toMatch(/leaf-43.b3dm.*failed|failed.*leaf-43.b3dm/); expect(b.displayReady()).toBe(false); }
+      else {
+        expect(failure).toBeUndefined(); expect(ready).toBe(true); expect(b.displayReady()).toBe(true); expect(b.status().loaded).toBe(44);
+        const visible = b.status().cutout!.visibleTileUris; expect(visible.length).toBeGreaterThan(0);
+        expect(visible.every(uri => leafUris.slice(0, 22).includes(uri))).toBe(true);
+      }
+    } finally { release(); b.dispose(); }
+  });
+
   it("preserves root/nested JSON Responses and reaches the actual ready barrier through update", async () => {
     const manifest = JSON.parse(fs.readFileSync("data/rail/manifest.json", "utf8"));
     const data = { ...empty(), manifest };

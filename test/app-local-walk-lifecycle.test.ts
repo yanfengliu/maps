@@ -6,11 +6,12 @@ import type { LocalWalker, LocalWalkStatus } from "../src/agents/local-walk-prot
 import type { WorldStyle } from "../src/world/styles.js";
 import { createApp, type App } from "../src/app.js";
 
-const pending = vi.hoisted(() => ({ factory: vi.fn() }));
+const pending = vi.hoisted(() => ({ factory: vi.fn(), walking: vi.fn(), disposeWalking: vi.fn() }));
 vi.mock("../src/agents/local-walk-prototype.js", () => ({ createLocalWalker: pending.factory }));
 vi.mock("../src/scene/aoi-cutout.js", () => ({ clipCityRoot: vi.fn() }));
 vi.mock("../src/harness/bridge.js", () => ({ installBridge: vi.fn() }));
 vi.mock("../src/render/renderer.js", () => ({ createRenderer: () => ({ dispose: vi.fn() }), rendererFailure: () => null, resizeRendererToDisplay: vi.fn() }));
+vi.mock("../src/render/first-person-walk.js", () => ({ createWalkGround: () => ({}), createFirstPersonWalk: pending.walking }));
 vi.mock("../src/render/camera.js", () => ({ createCameraRig: () => ({ camera: new PerspectiveCamera(), controls: { update: vi.fn(), dispose: vi.fn() } }) }));
 vi.mock("../src/render/post.js", () => ({ createPostChain: () => ({ render: vi.fn(), dispose: vi.fn(), apply: vi.fn(), invalidate: vi.fn(), setSize: vi.fn(), setStill: vi.fn() }) }));
 vi.mock("../src/scene/sky.js", () => ({ createSky: () => ({ mesh: new Mesh(new BufferGeometry(), new MeshBasicMaterial()) }), bakeEnvironment: () => ({ texture: null, dispose: vi.fn() }) }));
@@ -33,6 +34,8 @@ vi.mock("../src/agents/render/assets.js", () => ({ loadManifest: vi.fn() }));
 const apps: App[] = [];
 beforeEach(() => {
   pending.factory.mockReset();
+  pending.walking.mockReset(); pending.disposeWalking.mockReset();
+  pending.walking.mockReturnValue({ active: false, status: () => null, update: vi.fn(), dispose: pending.disposeWalking });
   vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
@@ -68,6 +71,7 @@ describe("local walker async app mount", () => {
     expect(held.setStyle).not.toHaveBeenCalled();
     held.resolve(held.walker);
     await app.ready;
+    expect(pending.walking).toHaveBeenCalledTimes(1);
     expect(held.setStyle.mock.calls.map(([style]) => style.id)).toEqual([latest]);
     expect(held.mountParents).toEqual([null]);
     expect(held.root.parent?.name).toBe("city:complete-cutout");
@@ -94,6 +98,7 @@ describe("local walker async app mount", () => {
     expect(held.dispose).toHaveBeenCalledTimes(1);
     expect(held.setStyle).not.toHaveBeenCalled();
     expect(held.root.parent).toBeNull();
+    expect(pending.walking).not.toHaveBeenCalled();
     expect(held.walker.status()).toBe(held.identity);
   });
 });

@@ -170,8 +170,31 @@ export interface BuildingsStatus {
   drawnBounds: { min: [number, number, number]; max: [number, number, number] } | null;
 }
 
+/** Retained final-leaf CPU scenes, independent of the renderer's visible group.
+ * References stay owned by TilesRenderer and expire on its load/dispose revision. */
+export interface BuildingWalkCollision {
+  readonly revision: number;
+  forEachModel(callback: (model: Object3D) => void): void;
+}
+
+export function createBuildingWalkCollision(
+  tiles: Pick<TilesRenderer, "forEachLoadedModel">,
+  admitted: (tile: Tile) => boolean,
+  revision: () => number,
+): BuildingWalkCollision {
+  return {
+    get revision() { return revision(); },
+    forEachModel(callback) {
+      tiles.forEachLoadedModel((scene, tile) => {
+        if (!tile.children?.length && admitted(tile)) callback(scene);
+      });
+    },
+  };
+}
+
 export interface Buildings {
   root: Group;
+  walkCollision: BuildingWalkCollision;
   /** Called once per frame with the camera that is about to draw. */
   update(): void;
   /**
@@ -238,6 +261,9 @@ export function createBuildings(
   draco.setDecoderPath("/draco/");
 
   const tiles = new TilesRenderer(SCENE_FILES.buildingsTileset);
+  // The complete cutout reveals only final leaves; coarse fallbacks cannot appear.
+  tiles.loadAncestors = false;
+  tiles.loadSiblings = false;
   const cutout = new FinalLeafReadiness();
   const sectionMaterials = new Map<Tile, MeshStandardMaterial[]>();
   const connectorCounts = new Map<Tile, number>();
@@ -408,6 +434,7 @@ export function createBuildings(
 
   return {
     root: group,
+    walkCollision: createBuildingWalkCollision(tiles, tile => !disposed && cutout.prepared.has(tile) && hasLiveContent(tile), () => revision),
     facadeSamples(rays = [-0.82, -0.28, 0.18, 0.65].map((x) => ({ x, y: 0.48 }))): FacadeSample[] {
       if (rays.length > 64 || rays.some((ray) => !Number.isFinite(ray.x) || !Number.isFinite(ray.y) || Math.abs(ray.x) > 1 || Math.abs(ray.y) > 1)) throw new Error("Facade observations need at most 64 finite screen rays with x/y between -1 and 1.");
       const visible: Object3D[] = []; group.traverseVisible((object) => { if ((object as Mesh).isMesh) visible.push(object); });

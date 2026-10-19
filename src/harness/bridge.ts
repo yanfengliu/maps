@@ -112,6 +112,8 @@ export interface LightingStatus extends LightingState {
  * cannot advance a phase, hold a clearance or admit an actor.
  */
 export interface HarnessBridge {
+  /** Manual walking mode and look direction; camera() retains the overview pivot. */
+  firstPerson?(): import("../render/first-person-walk.js").FirstPersonStatus | null;
   trains?(): TrainStatus | null;
   localWalk?(): LocalWalkStatus | null;
   cameraClearance?(): RailCameraClearance;
@@ -141,6 +143,7 @@ declare global {
 }
 
 export interface BridgeSources {
+  firstPerson?: (() => import("../render/first-person-walk.js").FirstPersonStatus | null) | undefined;
   trains?: (() => TrainStatus | null) | undefined;
   localWalk?: (() => LocalWalkStatus | null) | undefined;
   cameraClearance?: (() => RailCameraClearance) | undefined;
@@ -179,6 +182,7 @@ export interface BridgeSources {
  */
 export function installBridge(sources: BridgeSources): HarnessBridge {
   const bridge: HarnessBridge = {
+    ...(sources.firstPerson ? { firstPerson: () => structuredClone(sources.firstPerson!()) } : {}),
     ...(sources.trains ? { trains: () => structuredClone(sources.trains!()) } : {}),
     ...(sources.localWalk ? { localWalk: () => structuredClone(sources.localWalk!()) } : {}),
     ...(sources.cameraClearance ? { cameraClearance: sources.cameraClearance } : {}),

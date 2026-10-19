@@ -3,13 +3,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BufferGeometry, Group, Mesh, MeshBasicMaterial, PerspectiveCamera } from "three";
 import { createApp, type App } from "../src/app.js";
-const state = vi.hoisted(() => ({ ready: false, moving: false, failure: null as null | { message: string }, load: vi.fn(), factory: vi.fn(), bridge: vi.fn(), still: vi.fn(), dispose: vi.fn(), style: vi.fn() }));
+const state = vi.hoisted(() => ({ ready: false, moving: false, walking: false, walkUpdate: vi.fn(), walkDispose: vi.fn(), overviewUpdate: vi.fn(), failure: null as null | { message: string }, load: vi.fn(), factory: vi.fn(), bridge: vi.fn(), still: vi.fn(), dispose: vi.fn(), style: vi.fn() }));
 vi.mock("../src/harness/bridge.js", () => ({ installBridge: state.bridge }));
 vi.mock("../src/harness/rail-still-snapshot.js", () => ({ createRailStillObserver: () => ({}) }));
 vi.mock("../src/harness/rail-camera-clearance.js", () => ({ createRailCameraObserver: () => ({}) }));
 vi.mock("../src/scene/aoi-cutout.js", () => ({ clipCityRoot: vi.fn() }));
 vi.mock("../src/render/renderer.js", () => ({ createRenderer: () => ({ dispose: vi.fn() }), rendererFailure: () => state.failure, resizeRendererToDisplay: vi.fn() }));
-vi.mock("../src/render/camera.js", () => ({ createCameraRig: () => ({ camera: new PerspectiveCamera(), controls: { update: vi.fn(), dispose: vi.fn() } }) }));
+vi.mock("../src/render/first-person-walk.js", () => ({ createWalkGround: () => ({}), createFirstPersonWalk: () => ({ get active() { return state.walking; }, status: () => null, update: state.walkUpdate, dispose: state.walkDispose }) }));
+vi.mock("../src/render/camera.js", () => ({ createCameraRig: () => ({ camera: new PerspectiveCamera(), controls: { update: state.overviewUpdate, dispose: vi.fn() } }) }));
 vi.mock("../src/render/post.js", () => ({ createPostChain: () => ({ render: vi.fn(), dispose: vi.fn(), apply: vi.fn(), invalidate: vi.fn(), setSize: vi.fn(), setStill: state.still }) }));
 vi.mock("../src/scene/sky.js", () => ({ createSky: () => ({ mesh: new Mesh(new BufferGeometry(), new MeshBasicMaterial()) }), bakeEnvironment: () => ({ texture: null, dispose: vi.fn() }) }));
 vi.mock("../src/scene/lighting.js", () => ({ createLighting: () => ({ root: new Group() }) }));
@@ -29,7 +30,7 @@ vi.mock("../src/agents/render/agents.js", () => ({ createAgentRenderer: vi.fn() 
 vi.mock("../src/agents/render/assets.js", () => ({ loadManifest: vi.fn() }));
 const apps: App[] = [];
 beforeEach(() => {
-  vi.clearAllMocks(); state.ready = false; state.moving = false; state.failure = null;
+  vi.clearAllMocks(); state.ready = false; state.moving = false; state.walking = false; state.failure = null;
   state.load.mockResolvedValue({ literal: "pinned packet" });
   state.factory.mockReturnValue({ root: new Group(), setStyle: state.style, dispose: state.dispose, trains: { moving: () => state.moving, status: () => ({ station: 123, simulatedSeconds: 17 }) } });
   vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1)); vi.stubGlobal("cancelAnimationFrame", vi.fn()); vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
@@ -38,6 +39,16 @@ afterEach(() => { apps.splice(0).forEach(app => app.dispose()); vi.unstubAllGlob
 function canvas(): HTMLCanvasElement { return { clientWidth: 1280, clientHeight: 720, addEventListener: vi.fn(), ownerDocument: { createElement: () => ({ style: {}, setAttribute: vi.fn(), remove: vi.fn() }), body: { append: vi.fn() } } } as unknown as HTMLCanvasElement; }
 
 describe("ordinary app train integration", () => {
+  it("steps only the active camera controller and disposes walking once", async () => {
+    const app = createApp(canvas()); apps.push(app); await app.ready;
+    state.ready = true; app.loop.advance(performance.now() + 20);
+    expect(state.overviewUpdate).toHaveBeenCalledTimes(1); expect(state.walkUpdate).toHaveBeenCalledTimes(1);
+    state.overviewUpdate.mockClear(); state.walkUpdate.mockClear(); state.walking = true;
+    app.loop.advance(performance.now() + 40);
+    expect(state.walkUpdate).toHaveBeenCalledTimes(1); expect(state.overviewUpdate).not.toHaveBeenCalled();
+    state.walking = false; app.loop.advance(performance.now() + 60); expect(state.overviewUpdate).toHaveBeenCalledTimes(1);
+    app.dispose(); app.dispose(); expect(state.walkDispose).toHaveBeenCalledTimes(1);
+  });
   it("uses the shared loop, readiness and movement, preserving progress across styles and error visibility", async () => {
     const app = createApp(canvas()); apps.push(app); await app.ready;
     const bridge = state.bridge.mock.calls[0]![0], options = state.factory.mock.calls[0]![2];

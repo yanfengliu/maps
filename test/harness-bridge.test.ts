@@ -61,7 +61,7 @@ const MEMBERS = [
   "population",
   "signals",
 ] as const;
-const OPTIONAL_MEMBERS = ["trains", "localWalk", "cameraClearance", "railStillState", "railStillSnapshot"] as const;
+const OPTIONAL_MEMBERS = ["trains", "localWalk", "firstPerson", "cameraClearance", "railStillState", "railStillSnapshot"] as const;
 
 type MissingFromList = Exclude<keyof HarnessBridge, (typeof MEMBERS)[number] | (typeof OPTIONAL_MEMBERS)[number]>;
 const everyDeclaredMemberIsListed: MissingFromList extends never ? true : never = true;
@@ -131,6 +131,13 @@ function expectPublishesEveryMember(bridge: HarnessBridge, install: string, opti
 }
 
 describe("the harness bridge contract", () => {
+  it("publishes detached manual-walking observations only with their source", () => {
+    const value = { active: true, yaw: 0.25, pitch: -0.1, eyeHeightM: 1.7, supportY: 15.4 };
+    const bridge = installed(sources({ firstPerson: () => value }));
+    expectPublishesEveryMember(bridge, "first-person bridge", ["firstPerson"]);
+    const copy = bridge.firstPerson!()!; copy.yaw = 99;
+    expect(bridge.firstPerson!()).toEqual(value); expect(Object.isFrozen(bridge)).toBe(true);
+  });
   it("publishes detached train readings only when the production source exists", () => {
     const value = { track: 146060273, cars: [{ centre: [1, 2, 3] }] } as unknown as NonNullable<ReturnType<NonNullable<BridgeSources["trains"]>>>;
     const bridge = installed(sources({ trains: () => value }));

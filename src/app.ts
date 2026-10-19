@@ -39,6 +39,7 @@ import type { PopulationSettings } from "./agents/population/config.js";
 import { VEHICLE_ASSET_URL, type VehicleAssetManifest } from "./world/agent-assets.js";
 import { installBridge } from "./harness/bridge.js";
 import { createCameraRig } from "./render/camera.js";
+import { createFirstPersonWalk, createWalkGround, type FirstPersonWalk } from "./render/first-person-walk.js";
 import { RenderLoop } from "./render/loop.js";
 import { createPostChain, type PostChain } from "./render/post.js";
 import { createRenderer, rendererFailure, resizeRendererToDisplay } from "./render/renderer.js";
@@ -162,6 +163,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   clipCityRoot(signage.root); city.add(signage.root);
 
   const { camera, controls } = createCameraRig(canvas);
+  let walking: FirstPersonWalk | null = null;
 
   const post: PostChain = createPostChain({
     renderer,
@@ -182,11 +184,10 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     },
   });
 
-  // Damping is a per-frame effect, so it runs on the frame step. This is also
-  // the only place `controls.update` is called: the camera moves because input
-  // reached the controls, never because something assigned a pose.
+  // Exactly one user-input controller owns the camera in each mode.
   loop.onFrame((delta) => {
-    controls.update(delta);
+    walking?.update(delta);
+    if (!walking?.active) controls.update(delta);
   });
 
   const agents = createAgents(loop, options.population ?? { pedestrians: 0, vehicles: 0 });
@@ -355,6 +356,11 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
     styleConsumers.push(terrain.setStyle, roads.setStyle);
     terrain.setStyle(style);
     roads.setStyle(style);
+    walking = createFirstPersonWalk({ canvas, camera, controls,
+      ground: createWalkGround({ terrainAt: terrain.heightAt, streetAt: roads.heightAt, buildings: buildings.walkCollision }),
+      ready: () => !disposed && sceneLoaded && city.visible && !contextLost && sceneFailure() === null && buildings.displayReady(),
+      invalidate: () => post.invalidate(),
+    });
 
     // The tileset root being up is not the same as the buildings being on
     // screen: the traversal decides what to load from the camera, and it has not
@@ -382,6 +388,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
   observer.observe(canvas);
 
   installBridge({
+    firstPerson: () => walking?.status() ?? null,
     ...(options.localWalk ? { localWalk: () => localWalker?.status() ?? null } : {}),
     ...(RAIL_TRIAL_BINDING ? { trains: () => railScene?.trains?.status() ?? null } : {}),
     ...(RAIL_TRIAL_BINDING ? createRailStillObserver(city, camera, () => ({ frame: loop.frameCount, revision: buildings.status().revision, population: agents.status(), ready: sceneLoaded && buildings.displayReady() })) : {}),
@@ -443,6 +450,7 @@ export function createApp(canvas: HTMLCanvasElement, options: AppOptions = {}): 
       loop.stop();
       observer.disconnect();
       agents.dispose();
+      walking?.dispose();
       controls.dispose();
       for (const dispose of disposers) dispose();
       renderer.dispose();

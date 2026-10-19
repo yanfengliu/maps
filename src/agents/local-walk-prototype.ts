@@ -46,9 +46,9 @@ export async function createLocalWalker(options:{renderer:WebGLRenderer;camera:C
   const admission=new LocalSupportAdmission(context,rigs,engine);admission.observe(owner.current(),true);
   const draw=new LocalWalkDraw(options.renderer,engine,context);await draw.load(rigs,manifest,options.style);
   let disposed=false,started=false,startFrame:number|null=null,tick=0,frame:LocalGaitFrame|null=null,refusal:string|null=null,lastEvent=0;
-  const button=options.document.createElement('button');button.id='local-walk-start';button.type='button';button.textContent='Preparing local walk…';button.disabled=true;
-  Object.assign(button.style,{position:'fixed',left:'16px',top:'70px',minHeight:'44px',padding:'10px 16px',zIndex:'30',font:'14px system-ui'});options.document.body.append(button);
-  const start=()=>{if(disposed||started||refusal||!options.ready()||draw.status().drawSerial===0)return;started=true;startFrame=options.loop.frameCount;button.disabled=true;button.textContent='Local walk running';};button.addEventListener('click',start);
+  const button=options.document.createElement('button');button.id='local-walk-start';button.type='button';button.textContent='Preparing pedestrian prototype…';button.disabled=true;
+  Object.assign(button.style,{position:'fixed',left:'16px',top:'210px',minHeight:'44px',padding:'10px 16px',zIndex:'30',font:'14px system-ui'});options.document.body.append(button);
+  const start=()=>{if(disposed||started||refusal||!options.ready()||draw.status().drawSerial===0)return;started=true;startFrame=options.loop.frameCount;button.disabled=true;button.textContent='Pedestrian prototype running';};button.addEventListener('click',start);
   const stopFixed=options.loop.onFixedStep(dt=>{
     if(disposed||!started||refusal||!options.ready())return;
     const saved=admission.checkpoint();
@@ -59,12 +59,12 @@ export async function createLocalWalker(options:{renderer:WebGLRenderer;camera:C
       try{const event=localGaitEventCount(candidate.current)!==lastEvent;admission.observe(candidate.sample(.5,1),event);admission.observe(candidate.current,event);return {ok:true};}catch(error){return {ok:false,reason:String(error)};}
     }});tick++;if(frame.refused){admission.restore(saved);refusal=frame.refused;}else lastEvent=localGaitEventCount(frame.current);
     }catch(error){admission.restore(saved);refusal=String(error);}
-    if(refusal){button.textContent='Local walk held: '+refusal;button.disabled=true;}
+    if(refusal){button.textContent='Pedestrian prototype held: '+refusal;button.disabled=true;}
   });
   const stopFrame=options.loop.onFrame((_dt,_elapsed,alpha)=>{
     if(disposed)return;
     const visible=options.ready();
-    if(!started&&!refusal){button.disabled=!visible||draw.status().drawSerial===0;button.textContent=button.disabled?'Preparing local walk…':'Start walking';}
+    if(!started&&!refusal){button.disabled=!visible||draw.status().drawSerial===0;button.textContent=button.disabled?'Preparing pedestrian prototype…':'Run pedestrian prototype';}
     const sample=frame?frame.sample(started&&visible&&!refusal?alpha:1,1):owner.current();draw.update(sample,options.camera);
   });
   return {root:draw.root,setStyle:style=>draw.setStyle(style),moving:()=>started&&!refusal,
