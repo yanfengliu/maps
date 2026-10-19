@@ -1,7 +1,8 @@
-/** Bound: real camera input ownership and native-geometry street support on CPU
+/** Bound: real camera input ownership, walking speed and bounded movement sweeps,
+ * and native-geometry street support on CPU
  * event targets. Browser delivery, whole-scene coverage and pixels are separate. */
-import { describe, expect, it } from "vitest";
-import { BoxGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, Vector3 } from "three";
+import { describe, expect, it, vi } from "vitest";
+import { BoxGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, PlaneGeometry, Ray, Vector3 } from "three";
 import { TilesRenderer } from "3d-tiles-renderer";
 import type { Tile } from "3d-tiles-renderer/core";
 import { createCameraRig } from "../src/render/camera.js";
@@ -79,9 +80,10 @@ describe("first-person walking input", () => {
       f.tick(); expect(f.walk.active).toBe(false); expect(f.camera.position.distanceTo(initial)).toBeLessThan(1e-9);
       expect(f.button.textContent).toBe("Start walking");
       f.enter(); expect(f.walk.active).toBe(true); expect(f.controls.enabled).toBe(false);
+      expect(f.panel.children[1]!.textContent).toContain("Hold Shift to move faster");
       expect(f.camera.position.toArray()).toEqual([0, 17.1, 0]); expect(f.camera.near).toBe(0.08);
       f.canvas.key("keydown", "KeyW"); for (let i = 0; i < 60; i++) f.tick();
-      expect(Math.hypot(f.camera.position.x, f.camera.position.z)).toBeCloseTo(1.4, 8);
+      expect(Math.hypot(f.camera.position.x, f.camera.position.z)).toBeCloseTo(2.8, 8);
       expect(f.camera.position.y).toBeCloseTo(17.1, 8);
       f.canvas.key("keydown", "Escape");
       expect(f.walk.active).toBe(false); expect(f.controls.enabled).toBe(true); expect(f.button.textContent).toBe("Start walking");
@@ -90,13 +92,32 @@ describe("first-person walking input", () => {
     } finally { f.dispose(); }
   });
 
-  it("normalizes diagonals and aliases, and integrates the same walk at 30 and 60 fps", () => {
+  it("normalizes diagonals and aliases at both speeds, and integrates the same walk at 30 and 60 fps", () => {
     const distance = (keys: string[], fps: number): number => {
       const f = fixture();
       try { f.enter(); for (const key of keys) f.canvas.key("keydown", key); for (let i = 0; i < fps; i++) f.tick(1 / fps); return Math.hypot(f.camera.position.x, f.camera.position.z); }
       finally { f.dispose(); }
     };
-    for (const keys of [["KeyW"], ["KeyW", "KeyD"], ["KeyW", "ArrowUp"]]) for (const fps of [30, 60]) expect(distance(keys, fps)).toBeCloseTo(1.4, 8);
+    for (const keys of [["KeyW"], ["KeyW", "KeyD"], ["KeyW", "ArrowUp"]]) for (const fps of [30, 60]) {
+      expect(distance(keys, fps)).toBeCloseTo(2.8, 8);
+      expect(distance([...keys, "ShiftLeft"], fps)).toBeCloseTo(8.4, 8);
+    }
+  });
+
+  it("moves faster only while either Shift key is held and returns to normal speed on release", () => {
+    const f = fixture();
+    const step = (): number => {
+      const before = f.camera.position.clone(); f.tick(0.1); return f.camera.position.distanceTo(before);
+    };
+    try {
+      f.enter(); f.canvas.key("keydown", "KeyW"); expect(step()).toBeCloseTo(0.28, 8);
+      f.canvas.key("keydown", "ShiftLeft"); expect(step()).toBeCloseTo(0.84, 8);
+      f.canvas.key("keydown", "ShiftRight"); f.canvas.key("keyup", "ShiftLeft"); expect(step()).toBeCloseTo(0.84, 8);
+      f.canvas.key("keyup", "ShiftRight"); expect(step()).toBeCloseTo(0.28, 8);
+      f.canvas.key("keyup", "KeyW"); f.canvas.key("keydown", "ShiftRight"); expect(step()).toBe(0);
+      f.button.dispatchEvent(new Event("click")); f.enter();
+      f.canvas.key("keydown", "KeyW"); expect(step()).toBeCloseTo(0.28, 8);
+    } finally { f.dispose(); }
   });
 
   it("looks through drag input and walks relative to yaw without flying when looking up", () => {
@@ -108,23 +129,28 @@ describe("first-person walking input", () => {
       f.canvas.key("keydown", "ArrowUp"); for (let i = 0; i < 60; i++) f.tick();
       expect(f.camera.position.y).toBeCloseTo(17.1, 8);
       const horizontal = new Vector3(look.x, 0, look.z).normalize();
-      expect(f.camera.position.clone().setY(0).distanceTo(horizontal.multiplyScalar(1.4))).toBeLessThan(1e-8);
+      expect(f.camera.position.clone().setY(0).distanceTo(horizontal.multiplyScalar(2.8))).toBeLessThan(1e-8);
       expect(f.canvas.captures.size).toBe(0);
     } finally { f.dispose(); }
   });
 
-  it("clears held movement and drag on focus changes, blur and visibility loss", () => {
+  it("clears held movement, faster speed and drag on focus changes, blur and visibility loss", () => {
     const f = fixture();
     try {
       f.enter();
       for (const loseFocus of [() => { f.canvas.ownerDocument.activeElement = f.button; f.canvas.ownerDocument.dispatchEvent(new Event("focusin")); }, () => f.canvas.ownerDocument.defaultView.dispatchEvent(new Event("blur")), () => { f.canvas.ownerDocument.hidden = true; f.canvas.ownerDocument.dispatchEvent(new Event("visibilitychange")); }]) {
-        f.canvas.key("keydown", "KeyW"); f.canvas.pointer("pointerdown", 20, 20);
+        f.canvas.key("keydown", "KeyW"); f.canvas.key("keydown", "ShiftLeft"); f.canvas.pointer("pointerdown", 20, 20);
         const before = f.camera.position.clone(); loseFocus();
         expect(f.canvas.captures.size).toBe(0); f.canvas.ownerDocument.hidden = false; f.canvas.focus(); f.tick();
         expect(f.camera.position.distanceTo(before)).toBe(0);
+        f.canvas.key("keydown", "KeyW"); f.tick(0.1);
+        expect(f.camera.position.distanceTo(before)).toBeCloseTo(0.28, 8); f.canvas.key("keyup", "KeyW");
       }
-      f.canvas.key("keydown", "KeyW", { ctrlKey: true }); f.tick(); expect(f.camera.position.x).toBe(0);
-      f.setReady(false); f.canvas.key("keydown", "KeyW"); f.tick(); f.setReady(true); f.tick(); expect(f.camera.position.x).toBe(0);
+      const before = f.camera.position.clone();
+      f.canvas.key("keydown", "KeyW", { ctrlKey: true }); f.tick(); expect(f.camera.position.distanceTo(before)).toBe(0);
+      f.setReady(false); f.canvas.key("keydown", "KeyW"); f.canvas.key("keydown", "ShiftRight"); f.tick(); f.setReady(true); f.tick();
+      expect(f.camera.position.distanceTo(before)).toBe(0);
+      f.canvas.key("keydown", "KeyW"); f.tick(0.1); expect(f.camera.position.distanceTo(before)).toBeCloseTo(0.28, 8);
     } finally { f.dispose(); }
   });
 
@@ -134,10 +160,22 @@ describe("first-person walking input", () => {
       f.enter(); f.canvas.key("keydown", "KeyW");
       for (const delta of [Number.NaN, Number.POSITIVE_INFINITY, 0, -1]) f.tick(delta);
       expect(f.camera.position.x).toBe(0);
-      f.tick(20); expect(Math.hypot(f.camera.position.x, f.camera.position.z)).toBeCloseTo(0.14, 8);
+      f.tick(20); expect(Math.hypot(f.camera.position.x, f.camera.position.z)).toBeCloseTo(0.28, 8);
       for (let i = 0; i < 120; i++) f.tick();
       expect(f.camera.position.x).toBeGreaterThan(0.25); expect(f.camera.position.x).toBeLessThanOrEqual(0.3);
       expect(f.camera.position.y).toBeCloseTo(17.1 + f.camera.position.x * 0.1, 8);
+    } finally { f.dispose(); }
+  });
+
+  it("keeps fast diagonal collision substeps within 0.12 m even after a large time jump", () => {
+    const sweeps: number[] = [];
+    const f = fixture({ heightAt: () => 15.4, blocked: (from, to) => { sweeps.push(Math.hypot(to.x - from.x, to.z - from.z)); return false; } });
+    try {
+      f.enter(); sweeps.length = 0;
+      f.canvas.key("keydown", "KeyW"); f.canvas.key("keydown", "KeyD"); f.canvas.key("keydown", "ShiftLeft"); f.tick(20);
+      expect(Math.hypot(f.camera.position.x, f.camera.position.z)).toBeCloseTo(0.84, 8);
+      expect(sweeps.length).toBeGreaterThanOrEqual(7); expect(Math.max(...sweeps)).toBeLessThanOrEqual(0.12 + 1e-12);
+      expect(sweeps.reduce((sum, distance) => sum + distance, 0)).toBeCloseTo(0.84, 8);
     } finally { f.dispose(); }
   });
 
@@ -154,6 +192,19 @@ describe("first-person walking input", () => {
 });
 
 describe("actual street support and native building collision", () => {
+  it("uses bounded triangle queries through the street collision caller on a dense wall", () => {
+    // A source-like 20,000-triangle frontage shares one nearby world AABB.
+    // Count actual Three triangle tests, independently of the helper's internals.
+    const geometry = new PlaneGeometry(20, 3, 100, 100), material = new MeshBasicMaterial({ side: DoubleSide });
+    const wall = new Mesh(geometry, material); wall.rotation.y = Math.PI / 2; wall.position.set(1, 16.7, 0);
+    const ground = createWalkGround({ terrainAt: () => 15.2, streetAt: () => 15.2, buildings: { revision: 1, forEachModel(callback) { callback(wall); } } });
+    const triangle = vi.spyOn(Ray.prototype, "intersectTriangle");
+    try {
+      expect(ground.blocked(new Vector3(0.65, 15.2, 0.21), new Vector3(0.77, 15.2, 0.21))).toBe(true);
+      expect(triangle.mock.calls.length).toBeGreaterThan(0); expect(triangle.mock.calls.length).toBeLessThan(100);
+    } finally { triangle.mockRestore(); geometry.dispose(); material.dispose(); }
+  });
+
   it("requires finite terrain and street support, rejects elevated decks, abrupt steps and the projected AOI edge", () => {
     let terrain: number | undefined = 15.2, street: number | undefined = 15.4;
     const ground = createWalkGround({ terrainAt: () => terrain, streetAt: () => street, buildings: { revision: 1, forEachModel() {} } });
@@ -210,7 +261,7 @@ describe("actual street support and native building collision", () => {
       viewer.setTileActive(leaf, false); expect(model.parent).toBeNull(); expect(source.revision).toBe(retainedRevision);
       expect(ground.blocked(from, to)).toBe(true);
       // Real controls move backwards towards a model absent from the draw group.
-      f.enter(); expect(f.walk.active).toBe(true); f.canvas.key("keydown", "KeyS");
+      f.enter(); expect(f.walk.active).toBe(true); f.canvas.key("keydown", "KeyS"); f.canvas.key("keydown", "ShiftLeft"); f.tick(20);
       for (let i = 0; i < 120; i++) f.tick();
       expect(f.camera.position.z).toBeGreaterThan(0.2); expect(f.camera.position.z).toBeLessThan(0.4);
       expect(model.position.toArray()).toEqual([0, 0, 0.65]); expect([...geometry.attributes.position!.array]).toEqual(positions);

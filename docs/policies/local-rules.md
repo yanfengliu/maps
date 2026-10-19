@@ -32,7 +32,7 @@ The population/performance target in [AGENTS.md](../../AGENTS.md#invariants--bou
 
 In overview, held WASD pans along the ground relative to the view. Middle-button drag rotates; preserve left-button rotation, right-button pan and wheel zoom. Suppress movement while a UI control or editor has focus.
 
-Start walking gives the user control in first person: eye-level WASD/arrow movement over supported streets and left/middle drag to look. Overview or Escape restores the overview. Exactly one input controller owns the camera at a time; the harness remains read-only. The separately named pedestrian prototype does not steer the user's camera.
+Start walking gives the user control in first person: eye-level WASD/arrow movement at 2.8 m/s over supported streets, held Shift at 8.4 m/s and left/middle drag to look. Overview or Escape restores the overview. Exactly one input controller owns the camera at a time; the harness remains read-only. The separately named pedestrian prototype does not steer the user's camera.
 
 Before implementation, freeze the ordinary-app framing, fixed block/dusk regressions, source/runtime/build inputs, actual controls and sampled frame times. Require a coherent, substantial visible improvement in the full native view while preserving believable close/block/aerial context and noon/dusk surroundings. Compare fixed baselines across azimuth, elevation and zoom, then explore seeded randomized poses. Record each seed and actual pose, report surprises and state sampling/coverage bounds. Inspect original images at native resolution.
 

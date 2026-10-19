@@ -2,12 +2,16 @@ import { Box3, Mesh, Raycaster, Vector3, type PerspectiveCamera } from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { BuildingWalkCollision } from "../scene/buildings.js";
 import { AOI_CORNERS_WORLD } from "../world/aoi.js";
+import { createWalkCollision } from "./walk-collision.js";
 
 export const WALK_EYE_HEIGHT_M = 1.7;
-const WALK_SPEED_MPS = 1.4;
+const WALK_SPEED_MPS = 2.8;
+const FAST_WALK_SPEED_MPS = 8.4;
 const BODY_RADIUS_M = 0.28;
 const MAX_STEP_M = 0.35;
 const MOVE_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
+const FAST_WALK_KEYS = new Set(["ShiftLeft", "ShiftRight"]);
+const WALK_HELP = "WASD or arrows to walk · Hold Shift to move faster · Drag to look · Esc for overview";
 
 export interface WalkGround {
   heightAt(x: number, z: number, previousY?: number): number | undefined;
@@ -25,6 +29,7 @@ export function createWalkGround(options: {
   const origin = new Vector3(), direction = new Vector3(), sweep = new Box3();
   let revision = Number.NaN;
   let meshes: { mesh: Mesh; bounds: Box3 }[] = [];
+  let collision = createWalkCollision([]);
   const refresh = (): void => {
     const next = options.buildings.revision;
     if (next === revision) return;
@@ -40,6 +45,7 @@ export function createWalkGround(options: {
         if (object.geometry.boundingBox) meshes.push({ mesh: object, bounds: object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld) });
       });
     });
+    collision = createWalkCollision(meshes.map(item => item.mesh));
   };
   return {
     heightAt(x, z, previousY) {
@@ -72,7 +78,7 @@ export function createWalkGround(options: {
         origin.set(i === 0 && distance > 0 ? from.x : to.x, Math.max(from.y, to.y) + height, i === 0 && distance > 0 ? from.z : to.z);
         direction.set(Math.sin(angle), 0, Math.cos(angle));
         ray.set(origin, direction); ray.near = 0; ray.far = BODY_RADIUS_M + (i === 0 ? distance : 0);
-        if (ray.intersectObjects(nearby, false).length) return true;
+        if (collision.intersects(ray, nearby)) return true;
       }
       return false;
     },
@@ -102,7 +108,7 @@ export function createFirstPersonWalk(options: {
   Object.assign(panel.style, { position: "fixed", left: "16px", top: "70px", zIndex: "30", maxWidth: "min(430px, calc(100vw - 32px))", font: "14px/1.4 system-ui", color: "#fff" });
   const button = document.createElement("button"); button.type = "button"; button.id = "walk-toggle"; button.textContent = "Start walking"; button.disabled = true;
   Object.assign(button.style, { minHeight: "44px", padding: "10px 16px", cursor: "pointer" });
-  const help = document.createElement("div"); help.id = "walk-help"; help.hidden = true; help.textContent = "WASD or arrows to walk · Drag to look · Esc for overview";
+  const help = document.createElement("div"); help.id = "walk-help"; help.hidden = true; help.textContent = WALK_HELP;
   Object.assign(help.style, { marginTop: "8px", padding: "8px 10px", borderRadius: "6px", background: "#17202be8" });
   help.setAttribute("role", "status"); button.setAttribute("aria-describedby", help.id);
   panel.append(button, help); document.body.append(panel);
@@ -142,14 +148,14 @@ export function createFirstPersonWalk(options: {
     overview = { position: camera.position.clone(), target: controls.target.clone(), near: camera.near, enabled };
     feet.set(0, y, 0); yaw = -Math.PI / 4; pitch = 0;
     active = true; camera.near = 0.08; camera.updateProjectionMatrix(); pose();
-    button.textContent = "Overview"; help.hidden = false; help.textContent = "WASD or arrows to walk · Drag to look · Esc for overview";
+    button.textContent = "Overview"; help.hidden = false; help.textContent = WALK_HELP;
     canvas.focus({ preventScroll: true }); options.invalidate();
   };
   const toggle = (): void => { if (active) exit(); else enter(); };
   const keydown = (event: KeyboardEvent): void => {
     if (!active) return;
     if (event.code === "Escape") { event.preventDefault(); exit(); return; }
-    if (!MOVE_KEYS.has(event.code) || event.defaultPrevented) return;
+    if ((!MOVE_KEYS.has(event.code) && !FAST_WALK_KEYS.has(event.code)) || event.defaultPrevented) return;
     if (!focusAllowsWalk() || document.hidden || event.altKey || event.ctrlKey || event.metaKey) { clear(); return; }
     held.add(event.code); event.preventDefault();
   };
@@ -186,7 +192,8 @@ export function createFirstPersonWalk(options: {
       const right = Number(held.has("KeyD") || held.has("ArrowRight")) - Number(held.has("KeyA") || held.has("ArrowLeft"));
       const length = Math.hypot(forward, right);
       if (!length) return;
-      const distance = WALK_SPEED_MPS * Math.min(delta, 0.1), steps = Math.ceil(distance / 0.12);
+      const speed = held.has("ShiftLeft") || held.has("ShiftRight") ? FAST_WALK_SPEED_MPS : WALK_SPEED_MPS;
+      const distance = speed * Math.min(delta, 0.1), steps = Math.ceil(distance / 0.12);
       const dx = (-Math.sin(yaw) * forward + Math.cos(yaw) * right) * distance / length / steps;
       const dz = (-Math.cos(yaw) * forward - Math.sin(yaw) * right) * distance / length / steps;
       for (let i = 0; i < steps; i++) {
