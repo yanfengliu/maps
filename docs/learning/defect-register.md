@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-10-18 — walking speed and walking FPS
+
+Observed symptom: “Need to be able to walk faster. Also improve FPS.”
+
+Investigation and cause: first-person movement was fixed at 1.4 m/s. Each short body sweep repeatedly scanned whole nearby building-tile meshes. The ordinary 1080p RTX 4090 baseline measured 43.991 FPS while walking; doubling speed alone measured 29.755 FPS. A CPU profile attributed most sampled work to triangle intersection and vertex access.
+
+Correction and checks: normal walking is 2.8 m/s with held Shift at 8.4 m/s. A lazy local triangle BVH rejects empty regions before the original Three triangle test, preserving geometry, winding, groups, ranges, transforms, layers and near/far limits; unsupported/custom cases retain original raycasts. Literal speed/contact fixtures and 1,200 seeded oracle comparisons pass. The actual street-collision caller regression goes RED at 20,000 triangle tests with its old full-scan call and GREEN below 100 after restoration. Final ordinary route samples hold 60.002 FPS at normal speed and 60.003 FPS boosted; these finite 12 s/6 s windows do not qualify populated, cold/streaming or whole-city performance. Final gates and independent native acceptance are recorded in [the integration report](../work/1_walk-speed-fps/integration.md).
+
 ## 2026-10-18 — local walking did not put the owner in first person
 
 Observed symptom: the owner clarified that the local walk is for them to experience in first person, controlling both walking and looking.

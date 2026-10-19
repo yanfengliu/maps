@@ -23,9 +23,9 @@ Root owns priorities/contracts/status/integration; workers own bounded work. At 
 
 ### Adopted source and verification
 
-Executable `b00bb203020fc64324af88089bdd6eea1c0993ba`: manual first-person walking and unused coarse-tile preparation removal are on pushed main. [1650](reviews/1650_first-person-walk-integration.md) records the combined gate and native acceptance; earlier roof/source bounds remain in [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md).
+Executable `883d31ac72818d1518ed9cbb51c493ba3d8a2728`: normal walking is 2.8 m/s, held Shift 8.4 m/s; exact triangle broad phase removes repeated whole-tile collision scans. Pushed main, five gates and independent source/native review pass. [Integration](../1_walk-speed-fps/integration.md) bounds the same-speed 29.755→60.002 FPS route gain on RTX 4090/1080p; boost also holds 60.003. Earlier walking/loading [1650](reviews/1650_first-person-walk-integration.md) and roof/source [1624](reviews/1624_implementation.md), [1625](reviews/1625_integration.md) bounds remain.
 
-Five primary gates PASS: 142 files/1,244 tests, 44 frames/three GPU lifecycles,RTX4090/616.64,run `6cada51854bd129a`; audit two moderate/no high. Root/independent 22 Satellite/two basic returns/six first-person originals GO. Real-input dusk/noon walking, looking, focus/style preservation, exit/reentry and active cleanup PASS. CI unavailable: zero checks/statuses/workflows. Population/60fps unmeasured.
+Five primary gates PASS: 143 files/1,255 tests, 44 frames/three GPU lifecycles, RTX 4090/616.64, run `9892577b97482379`; audit two moderate/no high. Root/independent 22 Satellite/two basic returns/six first-person originals GO. Real-input dusk/noon normal/Shift/release, looking, focus/style preservation, exit/reentry and active cleanup PASS. CI unavailable: zero checks/statuses/workflows. Populated/whole-AOI 60 fps unmeasured.
 
 A11 PASS ([1632](reviews/1632_integration.md)): clean e1de282 regenerated89 served files;67 external assets exact. Runtime156 files/364,250,437B; five originals/root+independent GO. Four build files exact; two debug maps CRLF-only. Source1709 gates used copied prerequisites.
 
@@ -59,7 +59,7 @@ Traffic1499 stays unadopted at artifacts/traffic1499/worktree: opaque exit, no f
 
 A2 remains open: hidden road/bases and unsupported data468 floors; intent/native unknown, no safe edit. Only bounded source questions then ordinary journey ([1546](reviews/1546_visual-direction-review.md)); no expanded census.
 
-Populated/camera/time stability and FPS are unqualified. Historical12fps/59 of200 and398 startup gain are not current population FPS. Startup now omits 23 unused coarse models while retaining 44 final leaves: earlier leaf preparation and 26.63% less decoded cache are measured; exact first-visible speedup is not. [1649](reviews/1649_initial-loading-source-review.md), [1650](reviews/1650_first-person-walk-integration.md). Remaining loading/decoder/CPU costs and A7–A10 stay open.
+Populated/camera/time stability and whole-AOI FPS remain unqualified; the finite manual crossing samples above qualify only their recorded routes. Historical12fps/59 of200 and398 startup gain are not current population FPS. Startup now omits 23 unused coarse models while retaining 44 final leaves: earlier leaf preparation and 26.63% less decoded cache are measured; exact first-visible speedup is not. [1649](reviews/1649_initial-loading-source-review.md), [1650](reviews/1650_first-person-walk-integration.md). Remaining loading/decoder/CPU costs and A7–A10 stay open.
 
 Union1324 remains unmet; its proof cannot transfer. No automatic resumption, new framework or weaker gate. Fleet stopped after five attempts: provenance, replay binding and old-test regression; full gates/actual Maps census not run, no sixth repair. Retain artifacts/fleet1706/attempt5-handoff.md. CPU profiling and inherited cleanup remain parked; preserve others' work.
 
