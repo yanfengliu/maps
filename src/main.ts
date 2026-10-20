@@ -7,6 +7,7 @@ import './styles.css';
 import { createStyle } from './style.ts';
 import { BAY_BOUNDS, PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
 import { campusIllustration, icon } from './icons.ts';
+import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -67,6 +68,9 @@ let loadTimeout: ReturnType<typeof setTimeout> | undefined;
 let pins: maplibregl.Marker[] = [];
 let cleaned = false;
 let campusEventsBound = false;
+let buildingDetails: BuildingDetailsLayer | undefined;
+const renderTimes: number[] = [];
+const motionRenderTimes: number[] = [];
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
@@ -146,7 +150,7 @@ function showBuilding(properties: Record<string, unknown>): void {
   el('explore-content').hidden = true;
   const height = Number(properties.height);
   const source = properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">Heights and simple roof forms convey campus massing. This is an exploratory model.</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
+  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">Roof forms and façade accents are stylized estimates; mapped footprints and height sources are shown above.</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   el('building-campus').addEventListener('click', () => goTo(PLACES[0]));
 }
@@ -162,6 +166,7 @@ function updateSelection(): void {
   if (!map?.getLayer('stanford-buildings')) return;
   map.setPaintProperty('stanford-buildings', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#e5ad64', ['get','color']]);
   map.setPaintProperty('stanford-roofs', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#c56c3e', ['get','roofColor']]);
+  buildingDetails?.setSelected(selectedId);
 }
 
 function closeSearch(): void {
@@ -262,7 +267,7 @@ async function loadCampus(): Promise<void> {
       const p = feature.properties;
       if (!p || typeof p.id !== 'string' || !Number.isFinite(p.height) || p.height <= 0 || !Number.isFinite(p.base) || p.base < 0 || p.base >= p.height || !['Polygon','MultiPolygon'].includes(feature.geometry?.type)) throw new Error('Campus footprint has invalid geometry or height');
     }
-    campusData = candidate;
+    campusData = prepareBuildingDetails(candidate);
     campusBoundary = boundary as GeoJSON.FeatureCollection;
     if (!campusBoundary || !['Feature','FeatureCollection'].includes(campusBoundary.type)) throw new Error('Campus boundary is missing');
     allPlaces = [...PLACES, ...buildingPlaces(candidate.features)];
@@ -275,9 +280,22 @@ async function loadCampus(): Promise<void> {
   }
 }
 
+function addBuildingDetailLayer(): void {
+  if (!map || !campusData || map.getLayer('stanford-architectural-details')) return;
+  buildingDetails = createBuildingDetailsLayer(campusData, message => showError(`Stanford building detail could not render. Retry to rebuild the campus layer. ${message}`, reloadRegionalMap));
+  map.addLayer(buildingDetails, 'road-label');
+  buildingDetails.setSelected(selectedId);
+}
+
 function addCampusLayers(): void {
   if (!map || !campusData || !campusBoundary) return;
-  if (map.getSource('stanford')) { (map.getSource('stanford') as GeoJSONSource).setData(campusData); return; }
+  if (map.getSource('stanford')) {
+    (map.getSource('stanford') as GeoJSONSource).setData(campusData);
+    // MapLibre restores standard layers after a lost context; custom layers
+    // must be attached again even when their source already exists.
+    addBuildingDetailLayer();
+    return;
+  }
   map.addSource('stanford-campus', { type: 'geojson', data: campusBoundary });
   map.addLayer({ id: 'campus-ground', type: 'fill', source: 'stanford-campus', minzoom: 12.5,
     paint: { 'fill-color': '#e8e7d6', 'fill-opacity': 0.26 } }, 'regional-buildings-flat');
@@ -285,9 +303,10 @@ function addCampusLayers(): void {
     paint: { 'line-color': '#b49a7f', 'line-width': 1, 'line-dasharray': [3,3], 'line-opacity': 0.5 } }, 'road-label');
   map.addSource('stanford', { type: 'geojson', data: campusData });
   map.addLayer({ id: 'stanford-buildings', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
-    paint: { 'fill-extrusion-color': ['get','color'], 'fill-extrusion-height': ['get','height'], 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
+    paint: { 'fill-extrusion-color': ['get','color'], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
   map.addLayer({ id: 'stanford-roofs', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
-    paint: { 'fill-extrusion-color': ['get','roofColor'], 'fill-extrusion-height': ['+', ['get','height'], 0.6], 'fill-extrusion-base': ['get','height'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
+    paint: { 'fill-extrusion-color': ['get','roofColor'], 'fill-extrusion-height': ['+', ['get','detailWallHeight'], 0.05], 'fill-extrusion-base': ['get','detailWallHeight'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
+  addBuildingDetailLayer();
   map.addLayer({ id: 'stanford-names', type: 'symbol', source: 'stanford', minzoom: 16,
     filter: ['all', ['has','name'], ['!=', ['get','name'], null]],
     layout: { 'text-field': ['get','name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-max-width': 10, 'text-padding': 8, 'text-offset': [0,0.8] },
@@ -381,6 +400,15 @@ function startMap(): void {
       }
     });
     map.on('move', updateCameraUi);
+    map.on('render', () => {
+      const time = performance.now();
+      renderTimes.push(time);
+      if (renderTimes.length > 1800) renderTimes.shift();
+      if (map?.isMoving()) {
+        motionRenderTimes.push(time);
+        if (motionRenderTimes.length > 1800) motionRenderTimes.shift();
+      }
+    });
     map.on('error', event => {
       const message = event.error?.message ?? '';
       if (/WebGL|context|shader/i.test(message)) {
@@ -425,6 +453,8 @@ Object.defineProperty(window, '__bayMap', {
     },
     get selectedBuilding() { return selectedId; },
     get sources() { return Object.freeze({ campus: sourceReady, tiles: tilesReady, successfulRegionalTiles }); },
+    get rendering() { return Object.freeze({ frames: Object.freeze([...renderTimes]), motionFrames: Object.freeze([...motionRenderTimes]), pixelRatio: map?.getPixelRatio() ?? 0 }); },
+    get details() { return buildingDetails?.stats ?? null; },
     get errors() { return failed ? Object.freeze([el('error-message').textContent]) : Object.freeze([]); },
   }),
 });
@@ -434,6 +464,7 @@ function cleanup(): void {
   if (loadTimeout) clearTimeout(loadTimeout);
   pins.forEach(pin => pin.remove()); pins = [];
   map?.remove(); map = undefined;
+  buildingDetails = undefined;
 }
 window.addEventListener('pagehide', cleanup, { once: true });
 startMap();
