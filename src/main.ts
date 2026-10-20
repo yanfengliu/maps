@@ -93,6 +93,7 @@ function panelPadding(): { top: number; bottom: number; left: number; right: num
 
 function overview(animate = true): void {
   if (!map) return;
+  if (window.innerWidth <= 760) setSidebarCompact(true);
   map.fitBounds(BAY_BOUNDS, { padding: panelPadding(), absolutePadding: true, pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0, maxZoom: 10 });
   el('view-name').textContent = 'SAN FRANCISCO BAY AREA';
   closeDetails();
