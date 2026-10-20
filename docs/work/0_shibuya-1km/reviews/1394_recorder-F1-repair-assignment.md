@@ -1,7 +1,0 @@
-# 1394 — Recorder failure-state correction
-
-Independent1394 finds F1 in frozen runtime-support.mjs8851/76512220ff5f6ed138f46f51f0295f0b93afb76f07384f9110c4c17a234f0c96: event spread/serialization/Buffer allocation occurs before the append catch, and closed is set before native close returns. A serialization or close failure can therefore leave misleading terminal state. This is a source finding; no actual qualification failure is claimed.
-
-Root assigns existing owner1391 a distinct minimal runtime-support-v2.mjs, preserving v1. Cover the whole append attempt, latch the exact first thrown value/reference including falsy values, and distinguish close attempted from close returned. Do not claim native closure after a failure or blindly retry a possibly released descriptor. Preserve the original subject error separately from recorder/oracle errors. This is substantive repair attempt1 of the default five-attempt limit.
-
-Prepare an explicit bounded instrument-companion proposal covering prewrite failure and failed-close state through the real recorder/cleanup. Companions must be separately declared outside unchanged11-group/20287-unit P counts, with exact ownership and first-error retention. No hidden or reordered P cases. Root fixes the companion contract and obtains focused source review before any execution. The [1394 source review assignment](1394_private-area-numeric-support-review-assignment.md) otherwise continues on frozen inputs. No parser/import/JS/native/Git permission.

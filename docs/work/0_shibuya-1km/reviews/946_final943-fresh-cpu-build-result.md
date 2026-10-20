@@ -1,9 +1,0 @@
-# 946 — Final943 fresh CPU build result
-
-2026-10-12. **Both fresh A/B CPU builds and positive owned cleanup pass.** Root's exact71,387-byte seal was dispatched once through unchanged corrected936 owner, leased PS7 and literal Windows Node PATH under scoped escalation. Outer exit0 after9.4984388s; inner cleanup exit0. No retry, runtime, browser, server, GPU, source/helper install or shared write ran.
-
-Actual A transforms153 modules and has six members totaling6605734 bytes; its override ledger loads only the two current PRIMARY integrations. B transforms154 and has six totaling6634101; its ledger loads exactly final943 runtime3. Every actual member was rehashed, both six-member populations and all five override digests matched the sealed source inputs and assembly. B binds facade-ribs SHA2008918ef5cf4fb263c783aa56eede255f01b4e631f96382c5a7e05fcc7ea213. Build size is not measured draw/GPU cost.
-
-The build records complete/preflight verified, esbuild.stop called, no PRIMARY writes and unchanged inherited inputs. All313 post-run literal input rows were rehashed; main85de62ac and both baseline new-path absences remain. Actual process cleanup/census are available with exit0 and all six live categories empty. Retained Node33244/esbuild47752 identities have confirmed exits; omitted conhost is absent from omittedLive. Marker/private4346 arrays are empty. The exact owned system TEMP and run temporary cache are absent. No user5319/shared process was touched. Raw stdout retains both builds; stderr retains the experimental transform-types and existing >500kB chunk warnings.
-
-Ignored946 receipt binds the exact outer invocation, source/build/assembly/load/member pins, raw logs, available cleanup/census and preservation checks. Root owns CPU acceptance and a separate947 all-false runtime preparation/seal. No candidate startup, pixels, appearance, cost, native lifecycle, full gates or adoption is qualified.

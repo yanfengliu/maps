@@ -1,5 +1,0 @@
-# 968 — focused 970 README repair addendum
-
-2026-10-13. ADMIT the 970 documentation repair; review 968's P3 line-ending finding is closed. The current README is 11,019B/SHA `2471c136130f1987b14fa020b0af65ea0b627dabfd231ef972c97ad98a37ff22`, contains only LF, and Git reports `i/lf w/lf attr/-text` with exactly six additions and zero deletions. Its content equals the historical 965 README after CRLF-to-LF conversion; the six-line provenance tail remains exact. PLATEAU processing, separate OSM provenance, five physical pins and finite support/performance limits are preserved.
-
-The actual 970 report/receipt pins match. Historical 965 freeze/README and all five live/frozen runtime/test/fixture pairs still match their original pins. Only this addendum and `artifacts/corridor968-source-review/readme-repair-addendum-receipt.json` were written. Receipt: 1,942B/SHA `5a855963ebf059e38d72c7f7913c378ad8b4d7acb7fc5db7651f24a43f26d082`. No runtime, test, gate, primary or Git write occurred; the 965 runtime and 971 helper verdicts are unchanged.

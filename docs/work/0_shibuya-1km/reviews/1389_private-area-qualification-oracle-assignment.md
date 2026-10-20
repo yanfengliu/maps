@@ -1,9 +1,0 @@
-# 1389 — Independent actual-private arithmetic oracles
-
-Root delegates a source-only expected-case/oracle plan to existing owner1384 in1110, base0ab58a1a83e19db312bb18a2ffa8a90742029835. Own only data/commercial-work/1389 and authored review1389. The selected [1387 source increment](1387_eligible-area-selection.md) is independently authored in1111; do not read its unfinished candidate or write a competing harness.
-
-Bind the actual unchanged1374 lexical Q/project/incumbent and the [1386 direction review](1386_mechanism-direction-review.md), not literalX. Declare exact inputs, independent canonical fractions/formulae, IDs/subobservations, genuine fallback read/error chronology and falsifiers. Retain all3214 polygons/all3 axes and independent answer digest307a998fb58625296716b2abb711b14988f02db9f2377d8c71a906e3529730bb.
-
-Cover empty/singleton/reversed/concave/self-crossing/cancellation/signed/nondividing/zero cases, coprime and eligible-wide intermediates, large-n cancellation, real65535/65536/65537 point-budget boundaries, primitive/invalid/coercing axes, live/revoked Proxies, own/inherited/accessor/hole/undefined/type/extra/custom array shapes, nonmutation and first-error restoration. Prove legacy zero-denominator JS behavior from source or mark it unknown; Python refusal is no JS result. Fixed counterexpectations must detect reads before eligibility and altered fallback.
-
-Own raw/hash/JSON/Fraction arithmetic is allowed. No JS parser/import/subject/control/constructor/profile/native/Git/browser/server or existing-source write. Return a frozen plan and exact artifacts; no execution or candidate admission. Root later owns case reconciliation, a separate executable qualification assignment and every runtime lease. All291 legacy controls and complete proof/both durable endpoints<=10000ms remain required.

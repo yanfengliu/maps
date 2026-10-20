@@ -1,5 +1,0 @@
-# 924 — parked source recovery
-
-Restored six PRIMARY facade-emission candidate files and two FRONTAGE harness bridge files to the exact raw bytes of committed main 815d9c3d792eb5d548c1cec323144342b284419b after archiving and verifying a recovery copy of each current file. Both HEADs, critical main refs, raw Git indices, frozen candidate copies, and all changed paths outside these eight remained unchanged.
-
-The current candidate and accepted bridge bytes are archived under `artifacts/checkpoint924/recovery-1b7a0ae6967348ac8ad12b5c0539514d/`. The ignored receipt records exact current, archived, and committed-main byte lengths and SHA-256 values for all eight paths, along with before/after HEAD, refs, raw-index pins, and unrelated changed-path sets. Frozen candidate copies, build outputs, scene data, certificates, and other evidence remain preserved. No index, ref, commit, or history operation was performed. An initial pre-write guard failure caused no source or archive writes and is preserved in the receipt.

@@ -1,9 +1,0 @@
-# 596 — Startup mechanism decision
-
-Bound: read-only interpretation of 594; no new timing experiment. Network/roads return at 740.8/880.1 ms, before building readiness at 6619.2. Joining costs 0.5 ms; validated hardware awaits 123.4 ms. The synchronous street constructor spans 1098.6 ms; its internal cost split is unmeasured. The later 2017 ms scene-loaded→render-return gap is a CPU endpoint, not GPU completion.
-
-That constructor tessellates supported zebra/tactile paint using 0.25 m grid, vertex, edge and centroid queries; computes normals/bounds; constructs pole/head/lens/stop-sign instances, materials and a canvas texture. Cached inputs contain 84 zebra sources, 16 path-extent tactile sources and 119 hardware records (24 placed). App ownership registers street disposal, style updates and frame-driven signal colours. Roads owns the immutable support meshes and seam evidence. Hardware validation binds network and road/pavement digests.
-
-Admit one private pilot: move only deterministic supported paint/tactile preparation offline. Reuse `MAPSMSH1` arrays and a digest-bound placement/seam receipt following the existing hardware recipe; no network or mesh schema bump. Keep runtime hardware, materials, signal updates and disposal. Existing `markings.mesh` deliberately excludes these OSM stripes. New derived cache files and their validation are a bounded data contract, requiring explicit integration review.
-
-Verification must independently compare frozen-constructor geometry bytes, ordered placement/seam evidence and counts; reject missing/stale/corrupt inputs and make a wrong cached output red. Measure complete constructor/startup, load bytes and ownership/style/failure/lifetime parity before adoption. Reject unequal support, changed rendering/contracts, or negligible total gain. Moving the synchronous call into tile warmup blocks that thread; retain the full 44-leaf reveal.

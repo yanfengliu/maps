@@ -1,9 +1,0 @@
-# 686 — actual683 style identity refusal
-
-Actual683 (root49d3e5/session90140, final9d58a8) exits1 after four baseline noon/dusk originals, before any candidate original. Raw errors are empty and the legacy strict request predicate passes. The corrected consumption predicate refuses at the pointer-selected Cartographic state, before the keyboard return to Satellite: “683 missing/ambiguous document Request identity”. Zero candidate pixels establish no tree appearance or no-gain verdict.
-
-The saved dusk epoch remains1791742150777.6 across this control action. Only the query changes from style=satellite to style=cartographic. The original WASM call, resolution/digest and Request2 retain the initial Satellite URL and that same epoch. Both observed WASM consumers fulfill192420-byte ArrayBuffers with SHAa680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac; neither records abort/rejection. Actual src/main.ts:80–81 uses history.replaceState. The predicate incorrectly joins the immutable Request frame URL to the mutable current witness URL. This proves a correlation defect, not a decoder failure or historical abort cause.
-
-Native unchanged:true and all six cleanup flags are true. Owner closure retains six identities; its available census has zero live, omitted-live, uncertain, descendant, marker or4340 listener rows, and the owned TEMP is removed. No cleanup or full input sweep was repeated. Existing683 bytes remain retained.
-
-Evidence under ignored artifacts/tree636/successor683: native-inspection.json SHAe443eafae510b25c48741e180110798c92a522f146093aa88617b1306a1ab228; process-cleanup.json SHA5441e32e4c44f229a30911d37bac7ca8a824a2484ddab8730eb73bff855cda15; process-closure-census.json SHA41e7aeb3894683024c7faf06b04d2dccde54446707737795e5ec84797afe6470. Relevant main.ts SHA6b5051ada029e4ec0d8705eda3e93ca5126dd03a2f298cc051301b02310fdf50.

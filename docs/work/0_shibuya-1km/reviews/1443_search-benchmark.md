@@ -1,8 +1,0 @@
-# 1443 fixed decision benchmark
-Base: main e8c4952795887b70750a9a7ef36225f5cf18d030, adopted product ce107fc619e93c85d98616ea0134abb387668df4; PRIMARY product/cache unchanged. Ordinary default seed 5970698, Satellite, 1280x720; existing AOI/source/texture/gate contracts apply.
-Question: identify one source-feasible production change that visibly improves several representative frontages together, beyond another isolated window/fitting or subtle grain adjustment.
-Baseline certificate: artifacts/visual/complete.json, run4eb529d3e8b3e8d6, SHA35d79d43619d6ff12ed50e6769df59670c97b979a3d51589712e2ea7c5817d1e.
-Fixed native baseline: artifacts/visual/sweep/satellite/plaza-az240.png (d3618ab5121d1d981482b6b7a048aad7e1b81689e62c558e89de46a65f58042c); block-az120.png in that directory (b8d597fda88c38784e2abbd1e8067a951d6b0652a4b1112a121a36afd727e024); artifacts/visual/hero/hero-satellite-dusk-approach.png (573dce74c278c875823fa5cb9ae867c2c3541b4e8fa36d0187ecc55d353dddff).
-Acceptance for a later candidate: obvious coherent improvement across at least three separated fronts in the fixed views, useful lower ordinary approach and complementary block evidence, preserved source/signage and noon/dusk behavior; untuned held-out approach after source freeze. Full code gates and independent integrated review stay required; no final criterion closes from this trial.
-Initial branches are read-only, about15minutes each: return actual production/source evidence, exact feasible scope and first discriminating prototype, or the concrete missing capability. No browser/GPU/product edit/full gate in this first feasibility pass.
-Root chooses one mechanism before implementation. A hypothesis is not a measured improvement; record unknowns and do not claim a counterfactual score.

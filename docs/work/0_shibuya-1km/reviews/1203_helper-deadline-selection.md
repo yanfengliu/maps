@@ -1,5 +1,0 @@
-# 1203 — Helper deadline reachability selection
-
-Independent1204 accepts separating complete functional evidence from the preserved10s throughput HOLD,subject to exact-source review and fresh release. Root confirms frozen1171/owned-lifecycle.ps1 declares ValidateRange(1,10000) on ExecutionWaitMs; unchanged reuse would reject the proposed300000 before launch. The frozen outer guard passes an int wait without that maximum.
-
-Root explicitly permits a fresh1203 helper copy changing only that one declared maximum to300000,and the new launcher binding to that copy. Preserve original1171 bytes,all helper executable body/error/identity/disposal/stream semantics and the single5000ms combined cleanup/drain grace. Pin both sources and prove exact inverse/body equality without subject execution. Review only this necessary reachability delta alongside the namespace/deadline changes; no lifecycle redesign or positive-control repeat is selected. Runtime permission remains false until independent1204 exact-source admission and a fresh root authority. Original ten-second outcomes and all downstream60s/30s/product obligations remain unchanged.

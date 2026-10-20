@@ -1,7 +1,0 @@
-# 1333 — Prepared source has known material findings
-
-Disposition: **PREPARED_WITH_KNOWN_MATERIAL_FINDINGS; execution remains unreleased.** This addendum qualifies the frozen1333 preparation report and index. They are source-preparation records, not acceptance or readiness for execution. All frozen sampler, support, case plan, fixture, runner, metadata, report and index bytes remain unchanged.
-
-Root supplied independent1334 partial-static-findings.json,3164 bytes/SHA-256`b2a6fca228b0c65dfff5304cfbf23abbabb339dd2cc27ee1cfd93c9689e394e9`. Its three material source findings are acknowledged: deferred import of sampler errors can put an earlier journal failure after a later typed subject exception and replace its origin timestamp; the reporter's final pin digest is computed after its measured report end; source conservation can transition into room replacements with unfinished source work when the union exit reports returned:false. These are static findings, not executed observations. Fixture/runner review is still completing and may identify further issues.
-
-No repair or execution followed these findings. Root directed preservation and will authorize a narrow fresh versioned correction after full1334 review closes. The frozen93-case plan remains incomplete for these newly identified combinations; it is not qualification evidence. Root owns final review disposition, any correction scope, later source re-review and any separate5s/1s instrument-only release. No full selected subject closure or launch packet exists.

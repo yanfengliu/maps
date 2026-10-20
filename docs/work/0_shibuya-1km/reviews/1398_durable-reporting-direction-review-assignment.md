@@ -1,9 +1,0 @@
-# 1398 — Durable reporting direction review
-
-Root dispatches existing independent reviewer1372, canonical requested Astra/xhigh with actual telemetry unavailable, to compare both fresh1397 artifacts against the immutable fixed contract4723/74875fd0…. Own ORIGINAL1398 raw/report/handoff only. Sources are [1397A producer packets](1397A_producer-durable-evidence-search.md), seal4404/e9dce1a9…, and [1397B consumer schema](1397B_consumer-durable-projection-search.md), seal6366/921ae531…. Root preserves both raw proposals and records a comparison3866/d989b953… before selecting any route.
-
-Check actual source reachability and lost context, typed first-value presence, source/setup/cleanup/oracle/pin chronology, compound writer errors, safe opaque/cycle/descriptor boundaries, concrete final writer/readback paths, calibrated natural failures, honest counts and fresh output ownership. A smaller artifact is not acceptance; a route that cannot recover upstream P context remains blocked. Do not combine routes before comparing their gaps. No proposal is admitted unchanged.
-
-The fixed reproduction assumes the actual final result writer/readback remains usable after the earlier completion writer fails. If that final sink also fails, qualification cannot pass; no hypothetical new sink framework is required for this task. Keep P/C2 counts, fixture/source bytes, proof budgets and strict normal qualification intact. Any reporting calibration is separately declared and must exercise real producers and the actual entry final writer, with literal independent readback checks.
-
-Recommend the minimal supported source direction and exact remaining requirements before root selects batch3. No parser/import/JS/native/Git or shared source writes. Owner1391 remains idle. Root owns selection, implementation dispatch, actual source/syntax admission and native leases.
