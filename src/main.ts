@@ -66,6 +66,7 @@ let retryAction: () => void = () => window.location.reload();
 let loadTimeout: ReturnType<typeof setTimeout> | undefined;
 let pins: maplibregl.Marker[] = [];
 let cleaned = false;
+let campusEventsBound = false;
 
 function escapeHtml(value: unknown): string {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
@@ -110,7 +111,7 @@ function goTo(place: Place): void {
     if (feature) showBuilding(feature.properties ?? {});
   } else if (place.campus) showCampus();
   else showCity(place);
-  if (window.innerWidth <= 760) setSidebarCompact(true);
+  if (window.innerWidth <= 760 && !place.buildingId) setSidebarCompact(true);
 }
 
 function showCampus(): void {
@@ -137,6 +138,7 @@ function showCity(place: Place): void {
 }
 
 function showBuilding(properties: Record<string, unknown>): void {
+  if (window.innerWidth <= 760) setSidebarCompact(false);
   selectedId = String(properties.id);
   updateSelection();
   details.hidden = false;
@@ -289,15 +291,37 @@ function addCampusLayers(): void {
     filter: ['all', ['has','name'], ['!=', ['get','name'], null]],
     layout: { 'text-field': ['get','name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-max-width': 10, 'text-padding': 8, 'text-offset': [0,0.8] },
     paint: { 'text-color': '#765a44', 'text-halo-color': '#fff9eb', 'text-halo-width': 1.8 } });
-  map.on('mouseenter','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = 'pointer'; });
-  map.on('mouseleave','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = ''; });
-  map.on('click','stanford-buildings', event => {
-    const feature = event.features?.[0]; if (feature) showBuilding(feature.properties);
-  });
+  if (!campusEventsBound) {
+    campusEventsBound = true;
+    map.on('mouseenter','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = ''; });
+    map.on('click','stanford-buildings', event => {
+      const feature = event.features?.[0]; if (feature) showBuilding(feature.properties);
+    });
+  }
 }
 
 function checkReady(): void {
   if (sourceReady && tilesReady && successfulRegionalTiles > 0) { el('map-status').hidden = true; if (loadTimeout) clearTimeout(loadTimeout); }
+}
+
+function scheduleLoadDeadline(): void {
+  if (loadTimeout) clearTimeout(loadTimeout);
+  loadTimeout = setTimeout(() => {
+    if ((!tilesReady || !successfulRegionalTiles) && !failed) {
+      showError('The regional map is taking longer than expected. OpenFreeMap needs an internet connection.', reloadRegionalMap);
+    }
+  }, 25000);
+}
+
+function reloadRegionalMap(): void {
+  tileErrorShown = false;
+  successfulRegionalTiles = 0;
+  tilesReady = false;
+  el('map-status').hidden = false;
+  scheduleLoadDeadline();
+  // Recreate failed sources even when the style specification is unchanged.
+  map?.setStyle(createStyle(), { diff: false });
 }
 
 function updateCameraUi(): void {
@@ -362,16 +386,14 @@ function startMap(): void {
       } else if (/fetch|network|load|HTTP|AJAX/i.test(message)) {
         if (!tileErrorShown) {
           tileErrorShown = true;
-          showError('Some map detail could not load from OpenFreeMap. Check your connection and retry.', () => { tileErrorShown = false; successfulRegionalTiles = 0; map?.setStyle(createStyle()); tilesReady = false; el('map-status').hidden = false; });
+          showError('Some map detail could not load from OpenFreeMap. Check your connection and retry.', reloadRegionalMap);
         }
       } else {
         showError(`The map configuration is invalid or could not render. ${message || 'MapLibre reported an unspecified error.'} Retry to reload the map.`, () => window.location.reload());
       }
     });
     map.on('style.load', () => { if (sourceReady) addCampusLayers(); });
-    loadTimeout = setTimeout(() => {
-      if ((!tilesReady || !successfulRegionalTiles) && !failed) showError('The regional map is taking longer than expected. OpenFreeMap needs an internet connection.', () => { window.location.reload(); });
-    }, 25000);
+    scheduleLoadDeadline();
     void loadCampus();
   } catch {
     showError('The map could not initialize. This experience needs a WebGL-capable browser. Enable hardware acceleration and retry.', () => window.location.reload());
