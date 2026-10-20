@@ -1,0 +1,21 @@
+# Development startup
+
+Owner: root integrates and verifies; startup_fix implements. Base: `7c6097e18efd712d741f66772588ee5acc3a3741`. User defect: loading is too slow with `npm run dev`.
+
+Acceptance: a cold Vite run only scans the current app, despite retained archived worktrees; no missing Shibuya dependencies or archive-triggered reloads; the first tile requests use the intended desktop/mobile overview; regional and Stanford navigation, building data and retry remain usable. Preserve the archive and cached source. No data changes, deployment or new dependencies.
+
+Instrument: hidden Vite plus an owned headless Chromium session, browser request timings, screenshots and the existing read-only `window.__bayMap`. Compare cold dependency caches and cleared browser caches at 1440×960 and 390×844. Remote map latency is measured but not controlled; avoid attributing remote variability to the local fix. Exercise navigation through actual controls, settling earlier motion before attributing results.
+
+Baseline investigation: Vite reported ready in 225 ms but its default `**/*.html` discovery traversed archived worktrees under `artifacts/`, then failed resolving old `three` and `3d-tiles-renderer` imports. The browser could not use a ready message as proof of a ready dependency bundle. Edits in those worktrees also triggered unrelated page reloads. Separately, the app waited for an initial z9 map to load before fitting the intended overview, and a Google Fonts CSS import added a remote style dependency.
+
+Implemented in `a012c041690472ffcf3de7b44595ac82af831504` and fast-forwarded to main. Vite scans only `index.html` and ignores retained root artifacts/data in its watcher while preserving live `public/data/`. Initial camera padding and overview are configured before style/tile loading. Interface text uses the native font stack, and the tile origin is preconnected. Source footprints, dependencies and map quality are unchanged.
+
+The actual primary-checkout cold run used `--force` for Vite optimization and cleared the browser cache at each viewport. Vite reported ready in 238 ms; the first observed interface was 103 ms desktop/78 ms mobile, and full map readiness was 674 ms/458 ms. The desktop requested 12 initial vector tiles; mobile requested only its two z7 tiles rather than the previous four z9 plus two z7 tiles. These are observed runs on this machine with live network services, not a guaranteed latency or controlled remote speedup. The isolated old application, after manually excluding the archive scan, was ready in 1572 ms/1446 ms; its network timings also varied.
+
+Actual controls passed desktop/mobile Stanford flights (648 loaded footprints, 475/131 visible buildings), identical overview returns, early Stanford navigation while TileJSON was held, exact Hoover Tower search/details and forced TileJSON failure followed by Retry. Native overview/campus screenshots were inspected. An actual primary Vite watcher probe saw no events for created/changed archived HTML and saw both add/change events for a temporary live `public/data/` file; both probe files and its server were removed. A real Vite optimizer regression includes the failing default-scan control and the successful scoped configuration.
+
+All 15 tests, types, production build and audit passed; audit reports zero vulnerabilities. The existing MapLibre chunk-size warning remains. [Independent review](reviews/002_startup.md) is GO with no material findings for the recoverable code revision. Its original captures precede the final primary-checkout run, whose evidence remains under ignored `artifacts/dev-startup/`.
+
+Verification repairs were limited to the temporary harness: exact building query instead of ambiguous `Hoover`, PowerShell array-result validation, snapshotting initial request arrays before later navigation, and moving a file-writing watcher probe out of the browser CLI's restricted VM. The final supported browser and Node/Vite checks pass. These failures were not product regressions.
+
+The next user request expands scope to measured 60 fps navigation and more detailed Stanford architecture while preserving the map palette. That work is separate from this completed startup correction.
