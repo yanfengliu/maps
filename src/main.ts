@@ -361,6 +361,7 @@ function startMap(): void {
     }, { capture: true });
     map.on('load', () => {
       addCampusLayers();
+      map!.setPadding(panelPadding());
       overview(false);
       for (const place of [PLACES[0]]) {
         const button = document.createElement('button');
