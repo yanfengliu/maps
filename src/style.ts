@@ -1,14 +1,13 @@
 import type { StyleSpecification, LayerSpecification, ExpressionSpecification } from 'maplibre-gl';
 
 const labelName: ExpressionSpecification = ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name:latin'], ['get', 'name']];
-const roadWidth: ExpressionSpecification = ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.35, 10, 1.2, 14, 4, 18, 16];
 
 function road(id: string, classes: string[], color: string, width: number, minzoom: number): LayerSpecification {
   return {
     id, type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', minzoom,
     filter: ['in', ['get', 'class'], ['literal', classes]],
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': color, 'line-width': ['*', roadWidth, width] },
+    paint: { 'line-color': color, 'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 6, 0.35 * width, 10, 1.2 * width, 14, 4 * width, 18, 16 * width] },
   };
 }
 

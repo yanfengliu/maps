@@ -261,7 +261,6 @@ async function loadCampus(): Promise<void> {
     allPlaces = [...PLACES, ...buildingPlaces(candidate.features)];
     sourceReady = true;
     if (map?.isStyleLoaded()) addCampusLayers();
-    if (!tileErrorShown) clearError();
     checkReady();
   } catch (error) {
     sourceReady = false;
@@ -356,9 +355,13 @@ function startMap(): void {
       const message = event.error?.message ?? '';
       if (/WebGL|context|shader/i.test(message)) {
         showError('The 3D map could not start. Enable WebGL in your browser, then retry.', () => window.location.reload());
-      } else if (!tileErrorShown && /fetch|network|load|HTTP|AJAX/i.test(message)) {
-        tileErrorShown = true;
-        showError('Some map detail could not load from OpenFreeMap. Check your connection and retry.', () => { tileErrorShown = false; successfulRegionalTiles = 0; map?.setStyle(createStyle()); tilesReady = false; el('map-status').hidden = false; });
+      } else if (/fetch|network|load|HTTP|AJAX/i.test(message)) {
+        if (!tileErrorShown) {
+          tileErrorShown = true;
+          showError('Some map detail could not load from OpenFreeMap. Check your connection and retry.', () => { tileErrorShown = false; successfulRegionalTiles = 0; map?.setStyle(createStyle()); tilesReady = false; el('map-status').hidden = false; });
+        }
+      } else {
+        showError(`The map configuration is invalid or could not render. ${message || 'MapLibre reported an unspecified error.'} Retry to reload the map.`, () => window.location.reload());
       }
     });
     map.on('style.load', () => { if (sourceReady) addCampusLayers(); });
