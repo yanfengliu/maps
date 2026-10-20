@@ -28,6 +28,7 @@ export interface BuildingDetailsLayer extends CustomLayerInterface {
 }
 
 const cachedGeometry = new WeakMap<CampusData, { geometry: DetailGeometry; buildMs: number }>();
+const SHADER_APPROACH_ZOOM = 12;
 const vertexShader = `#version 300 es
 precision highp float;
 layout(location=0) in vec3 a_position;
@@ -189,14 +190,16 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     map?.triggerRepaint();
   };
   const warmProgram = () => {
-    if (!context || compiling || gpuProgram || removed || state.error) return;
+    // Regional startup needs only the basemap. Begin the extra GPU work while
+    // approaching campus, ahead of geometry generation at zoom 14.
+    if (!context || !map || map.getZoom() < SHADER_APPROACH_ZOOM || compiling || gpuProgram || removed || state.error) return;
     const started = performance.now();
     try {
       compiling = beginProgram(context);
       state.maxSliceMs = Math.max(state.maxSliceMs, performance.now() - started);
       if (!compiling.parallel) {
         // Older WebGL2 implementations lack nonblocking completion polling.
-        // Warm the program during regional idle time, before a campus flight.
+        // Finish during approach idle time rather than blocking a detail draw.
         if (typeof window.requestIdleCallback === 'function') idleCompile = window.requestIdleCallback(() => { idleCompile = undefined; finishProgram(); }, { timeout: 800 });
         else compileTimer = setTimeout(() => { compileTimer = undefined; finishProgram(); }, 0);
       }
@@ -217,6 +220,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     render(gl: WebGL2RenderingContext, options: CustomRenderMethodInput) {
       state.drawCalls = 0; state.lastDrawDetail = 'none';
       if (!map || removed || state.error) return;
+      warmProgram();
       if (compiling?.parallel) finishProgram();
       if (state.error || map.getZoom() < 14) return;
       if (!state.ready) {

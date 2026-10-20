@@ -108,6 +108,29 @@ function gpu() {
   return { gl, live };
 }
 
+test('regional startup defers all architectural shader work until approach', () => {
+  const { gl, live } = gpu();
+  let zoom = 9, extensionQueries = 0;
+  gl.getExtension = () => { extensionQueries++; return { COMPLETION_STATUS_KHR: 1 }; };
+  const owner = { getZoom: () => zoom, on() {}, off() {}, triggerRepaint() {} };
+  const layer = createBuildingDetailsLayer(detailed);
+  try {
+    layer.onAdd(owner, gl);
+    for (const regionZoom of [9, 10, 11.99]) {
+      zoom = regionZoom; layer.render(gl, {});
+      for (const objects of Object.values(live)) assert.equal(objects.size, 0, `architectural GPU allocation at regional zoom ${zoom}`);
+      assert.equal(extensionQueries, 0, 'regional frames must not query the custom shader compiler');
+    }
+    zoom = 12; layer.render(gl, {});
+    assert.equal(extensionQueries, 1);
+    assert.equal(live.programs.size, 1);
+    assert.equal(layer.stats.shaderReady, true);
+    assert.equal(layer.stats.ready, false, 'approach warms shaders without starting geometry');
+    assert.equal(live.buffers.size, 0);
+  } finally { layer.onRemove(owner, gl); }
+  for (const objects of Object.values(live)) assert.equal(objects.size, 0);
+});
+
 test('GPU shader warmup never waits for compile/link status before parallel completion', () => {
   const { gl, live } = gpu();
   let complete = false;
@@ -115,7 +138,7 @@ test('GPU shader warmup never waits for compile/link status before parallel comp
   gl.LINK_STATUS = 2;
   gl.getShaderParameter = () => { throw new Error('COMPILE_STATUS must not block shader warmup'); };
   gl.getProgramParameter = (_, parameter) => { queries.push(parameter); return parameter === 1 ? complete : true; };
-  const owner = { getZoom: () => 9, on() {}, off() {}, triggerRepaint() {} };
+  const owner = { getZoom: () => 12, on() {}, off() {}, triggerRepaint() {} };
   const layer = createBuildingDetailsLayer(detailed);
   try {
     layer.onAdd(owner, gl);
@@ -126,19 +149,19 @@ test('GPU shader warmup never waits for compile/link status before parallel comp
     complete = true; layer.render(gl, {});
     assert.deepEqual(queries, [1, 1, 2]);
     assert.equal(layer.stats.shaderReady, true);
-    assert.equal(layer.stats.ready, false, 'regional warmup does not build campus geometry');
+    assert.equal(layer.stats.ready, false, 'approach warmup does not build campus geometry');
   } finally { layer.onRemove(owner, gl); }
   for (const objects of Object.values(live)) assert.equal(objects.size, 0);
 });
 
-test('without parallel compilation, regional idle warmup is cancellable on style removal', () => {
+test('without parallel compilation, approach idle warmup is cancellable on style removal', () => {
   const previousWindow = globalThis.window;
   let callback, cancelled = false;
   globalThis.window = { requestIdleCallback: fn => { callback = fn; return 8; }, cancelIdleCallback: handle => { assert.equal(handle, 8); cancelled = true; } };
   const { gl, live } = gpu();
   gl.getExtension = () => null;
-  gl.getProgramParameter = () => { throw new Error('link status must wait for regional idle'); };
-  const owner = { getZoom: () => 9, on() {}, off() {}, triggerRepaint() {} };
+  gl.getProgramParameter = () => { throw new Error('link status must wait for approach idle'); };
+  const owner = { getZoom: () => 12, on() {}, off() {}, triggerRepaint() {} };
   const layer = createBuildingDetailsLayer(detailed);
   try {
     layer.onAdd(owner, gl); assert.equal(typeof callback, 'function');
@@ -147,6 +170,31 @@ test('without parallel compilation, regional idle warmup is cancellable on style
     callback(); assert.equal(layer.stats.shaderReady, false);
     for (const objects of Object.values(live)) assert.equal(objects.size, 0);
   } finally { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow; }
+});
+
+test('graphics context restoration defers regional shaders and warms again on approach', () => {
+  const { gl, live } = gpu();
+  let zoom = 12;
+  const listeners = new Map();
+  const owner = { getZoom: () => zoom, triggerRepaint() {}, on: (name, fn) => listeners.set(name, fn), off: name => listeners.delete(name) };
+  const layer = createBuildingDetailsLayer(detailed);
+  try {
+    layer.onAdd(owner, gl);
+    assert.equal(live.programs.size, 1, 'attaching during approach warms immediately');
+    layer.render(gl, {}); assert.equal(layer.stats.shaderReady, true);
+    listeners.get('webglcontextlost')();
+    for (const objects of Object.values(live)) assert.equal(objects.size, 0);
+    zoom = 9; listeners.get('webglcontextrestored')(); layer.render(gl, {});
+    assert.equal(layer.stats.shaderReady, false);
+    assert.equal(live.programs.size, 0, 'restoring in the region must remain deferred');
+    zoom = 12; layer.render(gl, {});
+    assert.equal(layer.stats.shaderReady, true);
+    listeners.get('webglcontextlost')(); listeners.get('webglcontextrestored')();
+    assert.equal(live.programs.size, 1, 'restoring during approach warms immediately');
+    layer.render(gl, {}); assert.equal(layer.stats.shaderReady, true);
+  } finally { layer.onRemove(owner, gl); }
+  assert.equal(listeners.size, 0);
+  for (const objects of Object.values(live)) assert.equal(objects.size, 0);
 });
 
 test('detail layer is lazy, cancels its worker and releases all GPU resources on removal and retry', () => {
@@ -166,8 +214,10 @@ test('detail layer is lazy, cancels its worker and releases all GPU resources on
     const layer = createBuildingDetailsLayer(detailed);
     layer.onAdd(owner, gl); layer.render(gl, options);
     assert.equal(workers.length, 0);
-    assert.equal(live.programs.size, 1, 'the shader is warmed before approaching campus');
+    assert.equal(live.programs.size, 0, 'the regional view does not warm architectural shaders');
     assert.equal(live.buffers.size, 0, 'geometry upload remains lazy');
+    zoom = 12; layer.render(gl, options);
+    assert.equal(live.programs.size, 1, 'the shader warms while approaching campus');
     zoom = 15; layer.render(gl, options); assert.equal(workers.length, 1);
     layer.onRemove(owner, gl); assert.ok(workers[0].terminated); assert.equal(listeners.size, 0);
 

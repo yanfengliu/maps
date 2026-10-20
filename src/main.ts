@@ -8,6 +8,7 @@ import { createStyle } from './style.ts';
 import { BAY_BOUNDS, PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
 import { campusIllustration, icon } from './icons.ts';
 import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
+import { enableMiddleMouseTilt } from './mouse-tilt.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -42,7 +43,7 @@ root.innerHTML = `
   <button id="bay-overview" class="overview-button" aria-label="Bay Area overview">${icon('bay')}<span>Bay Area</span></button>
   <div id="map-status" class="map-status" role="status"><span class="loading-dot"></span>Opening the Bay…</div>
   <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="retry">Retry</button><button id="dismiss-error" aria-label="Dismiss error">${icon('close')}</button></div>
-  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Regional map © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Only Stanford has 3D buildings. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
+  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, or use WASD / arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Regional map © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Only Stanford has 3D buildings. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
 `;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
@@ -69,6 +70,7 @@ let pins: maplibregl.Marker[] = [];
 let cleaned = false;
 let campusEventsBound = false;
 let buildingDetails: BuildingDetailsLayer | undefined;
+let disposeMiddleMouseTilt: (() => void) | undefined;
 const renderTimes: number[] = [];
 const motionRenderTimes: number[] = [];
 
@@ -366,15 +368,24 @@ function startMap(): void {
     // first fetched a different view, then restarted the work for the overview.
     map = new maplibregl.Map({ container: 'map', center: [-122.2,37.65], zoom: 9,
       maxPitch: 65, minZoom: 7, maxZoom: 19.5, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
-      attributionControl: false, dragRotate: true, touchZoomRotate: true, pitchWithRotate: true,
+      attributionControl: false, dragRotate: { around: 'center', movement: 'linear' }, rotateSpeed: 0.25, pitchSpeed: -0.25,
+      touchZoomRotate: true, pitchWithRotate: true,
       keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: false });
     const canvas = map.getCanvas();
-    canvas.setAttribute('aria-label', 'Bay Area map. Drag to pan, scroll to zoom, right-drag to rotate and tilt.');
+    canvas.setAttribute('aria-label', 'Bay Area map. Drag or use WASD and arrow keys to pan, scroll to zoom, right-drag to rotate, middle-drag to tilt.');
     canvas.setAttribute('role','region');
+    disposeMiddleMouseTilt = enableMiddleMouseTilt(map);
     map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org" target="_blank" rel="noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>' }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
+    const panKeys: Record<string, [number, number]> = { w: [0,-100], a: [-100,0], s: [0,100], d: [100,0] };
     canvas.addEventListener('keydown', event => {
       if (!map) return;
+      const pan = panKeys[event.key.toLowerCase()];
+      if (pan && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault(); event.stopPropagation();
+        map.panBy(pan, { duration: motionDuration(180), easeId: 'wasd-pan' }, { originalEvent: event });
+        return;
+      }
       if (event.altKey && ['ArrowLeft','ArrowRight'].includes(event.key)) {
         event.preventDefault(); event.stopPropagation();
         map.easeTo({ bearing: map.getBearing() + (event.key === 'ArrowLeft' ? -15 : 15), duration: motionDuration(180) });
@@ -463,6 +474,7 @@ function cleanup(): void {
   if (cleaned) return; cleaned = true;
   if (loadTimeout) clearTimeout(loadTimeout);
   pins.forEach(pin => pin.remove()); pins = [];
+  disposeMiddleMouseTilt?.(); disposeMiddleMouseTilt = undefined;
   map?.remove(); map = undefined;
   buildingDetails = undefined;
 }
