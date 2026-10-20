@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "fetchedAt": "2026-10-20T06:13:20.820Z",
+  "source": "OpenStreetMap API 0.6 bounded map extracts",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "sourceBounds": [
+    -122.19,
+    37.415,
+    -122.15,
+    37.445
+  ],
+  "campusBoundary": {
+    "type": "way",
+    "id": "29268613",
+    "version": 52,
+    "url": "https://www.openstreetmap.org/way/29268613"
+  },
+  "selection": "Complete Polygon/MultiPolygon footprints whose complete outer-ring edges are inside the mapped Stanford University perimeter. Every edge is split at boundary intersections and every resulting interval is tested. Includes campus housing and medical facilities within that perimeter; excludes surrounding Palo Alto. Courtyards are retained. Relation member outlines, explicitly replaced 3D outlines, and explicit height=0 outlines are not extruded twice.",
+  "partsPolicy": "A simple building outline is suppressed when a contained mapped building part covers at least 80% of its footprint. All mapped parts retain their real coordinates and heights; the outline name is inherited by the tallest unnamed part. This presentation heuristic avoids hiding detailed mapped parts under a single full-height extrusion.",
+  "heightPolicy": {
+    "priority": [
+      "OSM height (metres; ft converted by 0.3048)",
+      "OSM building:levels × 3 m + roof:height or roof:levels × 3 m",
+      "Estimated by building type: university/school/dormitory/apartments 12 m; hospital/stadium 18 m; church 24 m; chapel 16 m; grandstand 12 m; garage/roof/greenhouse 4 m; shed 3.5 m; otherwise 10 m"
+    ],
+    "base": "OSM min_height, then building:min_level × 3 m, otherwise ground 0 m. These are extrusion offsets, not surveyed terrain elevations.",
+    "limitation": "Footprints are mapped source data. OSM heights are recorded tags, not independently measured. Level-based heights remain estimates. Missing-height defaults are illustrative, not a survey or detailed architectural reconstruction. Colors are an authored sandstone and terracotta palette, not measured materials."
+  },
+  "featureCount": 648,
+  "heightSources": {
+    "osm-height": 81,
+    "osm-levels": 80,
+    "estimated": 487
+  },
+  "excludedInvalidSourceFeatures": [],
+  "suppressed3DOutlines": [
+    {
+      "id": "way/232805688",
+      "name": "Hoover Tower",
+      "renderedParts": [
+        "way/1346548884",
+        "way/1346548885",
+        "way/1346548886",
+        "way/1346548887",
+        "way/1346548888",
+        "way/1346548889",
+        "way/1346548890",
+        "way/1346548891"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "outputs": {
+    "stanford-buildings.geojson": {
+      "bytes": 427316,
+      "sha256": "a27c564f8c7472bfddafd28e3328cffdf12acadb2f9854da1f1e429fd1d41d2f"
+    },
+    "stanford-campus.geojson": {
+      "bytes": 2496,
+      "sha256": "e8890575c26f83f0b6eec7beb710520b74fb400d7e8509b0814d64ead67ed9dc"
+    }
+  },
+  "generator": "tools/data/fetch-stanford.mjs",
+  "largeBlobReason": "The campus footprint GeoJSON is intentionally retained as a product input. Its size preserves real Stanford footprint vertices and courtyard holes rather than substituting invented boxes."
+}

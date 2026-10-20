@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Started: 2026-10-19. Owner: root integration. Base: `2d1883392a04c932a18136b59d43dea05fd17fb2`.
+Started: 2026-10-19. Owner: root integration. Base: `2d1883392a04c932a18136b59d43dea05fd17fb2`. Status: first increment implemented, verified and independently reviewed. Delivery is the integration commit containing this record; no further product scope is queued.
 
 ## Outcome and scope
 
@@ -14,11 +14,11 @@ The former Shibuya project remains on `codex/shibuya-archive-2026-10-19` at `e93
 
 | Outcome | Owner | State and dependencies |
 | --- | --- | --- |
-| Map, controls and interface | bay_area_app | In progress, branch `codex/bay-area-stanford`; consumes the data contract below. |
-| Actual Stanford footprints and provenance | stanford_data | In progress, branch `codex/stanford-campus-data`; independent of UI. |
-| Integration, visual checks and acceptance | root | Waiting on the two bounded implementations; branch `codex/bay-area-integration`. |
+| Map, controls and interface | bay_area_app | Complete through `475e28e`; all material review findings repaired. |
+| Actual Stanford footprints and provenance | stanford_data | Complete through `62a2507`; 648 real footprint/part features and an actual campus boundary. |
+| Integration, visual checks and acceptance | root | Accepted within the bounds in [the integration record](integration.md); final delivery merges to main and removes task-owned worktrees. |
 
-Each checkout lives under ignored `artifacts/bay-area-stanford/`. Dependencies are real owned directories, never links to the previous project. Root serializes final browser verification. Every task-owned browser/server must close after verification.
+Implementation checkouts lived under ignored `artifacts/bay-area-stanford/` and use real owned dependencies, never links to the previous project. Root serialized browser verification and closed every browser/server in a finally cleanup path. Retained screenshots, source cache and evidence ownership are described in the integration record.
 
 ## Shared contract
 
@@ -36,3 +36,7 @@ MapLibre GL renders public OpenFreeMap vector tiles with a custom light map styl
 ## Current limits
 
 The base map depends on the public OpenFreeMap service. Stanford building heights may be derived from levels or estimated when OSM has no height. Building massing is not a surveyed model or Apple Flyover. Verification must identify actual loaded/rendered counts and sampled views; screenshots alone do not establish every gesture, all campus geometry or performance across devices.
+
+## Accepted result
+
+The real Bay Area opens in a custom light map style. Stanford has 648 locally served footprint/part features, with 81 mapped height tags, 80 floor-count estimates and 487 default-height estimates. Main Quad courtyard holes and Hoover Tower's stepped mapped parts are retained. Search, mouse/keyboard controls, touch pan/pinch, compass, 2D/3D, tilt, building details, consistent desktop/mobile Bay returns and both regional/local-source Retry flows passed bounded real-control checks. Build, types, 13 unit/data tests and audit passed; the MapLibre chunk-size warning remains. The first increment is an exploratory campus massing model. Routing, physical-device/Safari verification and a broad performance claim are not part of this acceptance.
