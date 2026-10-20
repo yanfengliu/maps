@@ -1,0 +1,17 @@
+{
+  "name": "bay-area-stanford",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": ">=24 <25" },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "audit": "npm audit --audit-level=high"
+  },
+  "dependencies": { "maplibre-gl": "6.15.0" },
+  "devDependencies": { "typescript": "7.0.2", "vite": "7.3.6" }
+}
