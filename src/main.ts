@@ -343,7 +343,9 @@ function updateCameraUi(): void {
 
 function startMap(): void {
   try {
-    map = new maplibregl.Map({ container: 'map', style: createStyle(), center: [-122.2,37.65], zoom: 9,
+    // Configure the visible region before loading any tiles. Waiting for `load`
+    // first fetched a different view, then restarted the work for the overview.
+    map = new maplibregl.Map({ container: 'map', center: [-122.2,37.65], zoom: 9,
       maxPitch: 65, minZoom: 7, maxZoom: 19.5, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
       attributionControl: false, dragRotate: true, touchZoomRotate: true, pitchWithRotate: true,
       keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: false });
@@ -361,8 +363,6 @@ function startMap(): void {
     }, { capture: true });
     map.on('load', () => {
       addCampusLayers();
-      map!.setPadding(panelPadding());
-      overview(false);
       for (const place of [PLACES[0]]) {
         const button = document.createElement('button');
         button.className = 'map-pin'; button.dataset.campus = String(Boolean(place.campus));
@@ -395,7 +395,10 @@ function startMap(): void {
       }
     });
     map.on('style.load', () => { if (sourceReady) addCampusLayers(); });
+    map.setPadding(panelPadding());
+    overview(false);
     scheduleLoadDeadline();
+    map.setStyle(createStyle());
     void loadCampus();
   } catch {
     showError('The map could not initialize. This experience needs a WebGL-capable browser. Enable hardware acceleration and retry.', () => window.location.reload());
