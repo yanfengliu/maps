@@ -26,6 +26,8 @@ npm run audit
 
 The first view frames the Bay's coast from San Francisco to San José. Choose **Explore Stanford in 3D** to fly into the campus. Click a campus building for its source height information. Search covers curated Bay destinations and named campus buildings; it is a local index rather than an internet geocoder.
 
+On mobile, the places panel starts compact so the Bay stays visible, with search and a direct **Explore Stanford** action. Expand the panel to browse places and building details. The overview uses absolute viewport padding so returning to the Bay restores the same framing after visiting another place.
+
 - Drag to pan, scroll or pinch to zoom, and double-click to move closer.
 - Right-drag or Ctrl-drag to rotate and tilt. Touch supports two-finger rotation and tilt.
 - Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.

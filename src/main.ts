@@ -14,9 +14,10 @@ const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
   <div id="map" aria-label="Interactive Bay Area map"></div>
   <aside class="sidebar" aria-label="Explore places">
-    <header class="brand"><div class="brand-mark">${icon('bay')}</div><div><span class="eyebrow">A LITTLE EXPLORATION</span><h1>Bay Area</h1></div><button class="icon-button sidebar-toggle" aria-label="Collapse places" aria-expanded="true">${icon('minus')}</button></header>
+    <header class="brand"><div class="brand-mark">${icon('bay')}</div><div><span class="eyebrow">NORTHERN CALIFORNIA</span><h1>Bay Area</h1></div><button class="icon-button sidebar-toggle" aria-label="Collapse places" aria-expanded="true">${icon('minus')}</button></header>
     <div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Search the Bay Area" autocomplete="off" aria-label="Search the Bay Area" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false"/><button id="clear-search" class="clear-search" aria-label="Clear search" hidden>${icon('close')}</button></div>
     <div id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></div>
+    <button id="mobile-stanford" class="mobile-stanford-action" aria-label="Explore Stanford in 3D"><span class="quick-campus-icon">${icon('campus')}</span><span>Explore Stanford</span><span class="quick-3d">3D</span>${icon('arrow')}</button>
     <div id="explore-content">
       <div class="section-heading"><h2>Start exploring</h2><span class="small-caps">NORTHERN CALIFORNIA</span></div>
       <button class="feature-card" id="explore-stanford" aria-label="Explore Stanford in 3D">
@@ -28,7 +29,7 @@ root.innerHTML = `
       <p class="scope-note"><span class="scope-dot"></span> A Bay Area map. A closer look at Stanford.</p>
     </div>
     <section id="place-details" class="place-details" aria-live="polite" hidden></section>
-    <footer class="sidebar-footer"><span>Made for wandering.</span><button id="help-button" aria-label="Map controls and sources" aria-expanded="false">${icon('help')}</button></footer>
+    <footer class="sidebar-footer"><span>Bay Area · Stanford in 3D</span><button id="help-button" aria-label="Map controls and sources" aria-expanded="false">${icon('help')}</button></footer>
   </aside>
   <div class="map-caption"><span class="caption-dot"></span><span id="view-name">SAN FRANCISCO BAY AREA</span></div>
   <nav class="map-controls" aria-label="Map navigation">
@@ -86,12 +87,12 @@ function motionDuration(duration = 1600): number { return reducedMotion.matches 
 function panelPadding(): { top: number; bottom: number; left: number; right: number } {
   return window.innerWidth > 760
     ? { top: 80, bottom: 65, left: 410, right: 110 }
-    : { top: 130, bottom: 225, left: 35, right: 70 };
+    : { top: 215, bottom: 105, left: 24, right: 64 };
 }
 
 function overview(animate = true): void {
   if (!map) return;
-  map.fitBounds(BAY_BOUNDS, { padding: panelPadding(), pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0, maxZoom: 10 });
+  map.fitBounds(BAY_BOUNDS, { padding: panelPadding(), absolutePadding: true, pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0, maxZoom: 10 });
   el('view-name').textContent = 'SAN FRANCISCO BAY AREA';
   closeDetails();
 }
@@ -109,7 +110,7 @@ function goTo(place: Place): void {
     if (feature) showBuilding(feature.properties ?? {});
   } else if (place.campus) showCampus();
   else showCity(place);
-  if (window.innerWidth <= 760) root.querySelector('.sidebar')?.classList.add('compact');
+  if (window.innerWidth <= 760) setSidebarCompact(true);
 }
 
 function showCampus(): void {
@@ -182,7 +183,7 @@ function renderResults(): void {
 }
 
 search.addEventListener('input', renderResults);
-search.addEventListener('focus', () => { root.querySelector('.sidebar')?.classList.remove('compact'); renderResults(); });
+search.addEventListener('focus', () => { setSidebarCompact(false); renderResults(); });
 search.addEventListener('keydown', event => {
   if (event.key === 'Escape') { closeSearch(); search.blur(); return; }
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -198,6 +199,7 @@ search.addEventListener('keydown', event => {
 el('clear-search').addEventListener('click', () => { search.value = ''; renderResults(); search.focus(); });
 document.addEventListener('pointerdown', event => { if (!(event.target as HTMLElement).closest('.search-wrap, .search-results')) closeSearch(); });
 el('explore-stanford').addEventListener('click', () => goTo(PLACES[0]));
+el('mobile-stanford').addEventListener('click', () => goTo(PLACES[0]));
 root.querySelectorAll<HTMLElement>('[data-place]').forEach(button => button.addEventListener('click', () => {
   const place = PLACES.find(p => p.id === button.dataset.place); if (place) goTo(place);
 }));
@@ -227,13 +229,15 @@ el('compass').addEventListener('pointercancel', () => { compassDrag = undefined;
 el('compass').addEventListener('click', event => { if (event.detail === 0) map?.easeTo({ bearing: 0, duration: motionDuration(500) }); });
 
 const sidebarToggle = root.querySelector<HTMLButtonElement>('.sidebar-toggle')!;
-sidebarToggle.addEventListener('click', () => {
+function setSidebarCompact(compact: boolean): void {
   const sidebar = root.querySelector('.sidebar')!;
-  const compact = sidebar.classList.toggle('compact');
+  sidebar.classList.toggle('compact', compact);
   sidebarToggle.setAttribute('aria-expanded', String(!compact));
   sidebarToggle.setAttribute('aria-label', compact ? 'Expand places' : 'Collapse places');
   sidebarToggle.innerHTML = icon(compact ? 'plus' : 'minus');
-});
+}
+sidebarToggle.addEventListener('click', () => setSidebarCompact(!root.querySelector('.sidebar')!.classList.contains('compact')));
+if (window.innerWidth <= 760) setSidebarCompact(true);
 function setHelp(open: boolean): void { el('help-panel').hidden = !open; el('help-button').setAttribute('aria-expanded', String(open)); }
 el('help-button').addEventListener('click', () => setHelp(Boolean(el('help-panel').hidden)));
 el('close-help').addEventListener('click', () => setHelp(false));
