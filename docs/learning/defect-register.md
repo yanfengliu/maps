@@ -1,10 +1,18 @@
 # Defect register
 
+## 2026-10-20 — WASD stops after one key step
+
+Symptom: holding WASD produces a one-off camera jump rather than continuous movement. Root cause: each canvas keydown calls one animated 100-pixel `panBy`; movement depends on discrete key events/OS repeat instead of elapsed held-key time. The correction uses elapsed-time held-key movement, normalized diagonals, immediate release and focus/lifecycle cancellation. Native pointer and wheel gestures take priority because public `panBy` stops MapLibre handlers. Verification holds one physical key without repeated keydown events and samples late movement; the one-step negative fails. A held-wheel regression found during review also went red, then preserves the exact native zoom delta after correction. All 34 tests and 50 bounded real-input checks pass; [the input/architecture record](../work/0_bay-area-stanford/held-input-architecture.md) retains evidence and limits.
+
+## 2026-10-20 — Stanford landmarks look like generic multistory blocks
+
+Symptom: the user asks for real building floors, windows and distinctive architecture, calling out the campus church. Investigation confirms Memorial Church uses an estimated 24 m envelope and the same repeating procedural façade as ordinary buildings. Source data has 87 floor-tagged features among 648 and no verified window counts. Refinement must use actual landmark references and preserve the distinction between source facts and modeled estimates; [the active record](../work/0_bay-area-stanford/held-input-architecture.md) tracks the bounded implementation and remaining data limits.
+
 ## 2026-10-20 — Embedded browser reports a crashed localhost map
 
 Symptom: the user sees a blank map/loading indicator followed by “This page crashed. Localhost crashed unexpectedly.” in the built-in browser; Chrome loads the app. Scoped host diagnostics record `IAB browser page unresponsive` for `http://localhost:5173` at 16:21:07.696Z and 16:22:10.981Z. The host uses its crash screen for unresponsiveness as well as process termination. No matching process-gone, GPU-crash or out-of-memory diagnostic was found in the inspected logs; the underlying hang cause remains unproven.
 
-Bounded mitigation: defer custom campus shader allocation and compilation until approach zoom 12, instead of running it during the initial regional view. A mock-WebGL regression fails against the old renderer at zoom 9 and passes with deferred setup; separate tests cover approach initialization, asynchronous completion, context recovery and cleanup. This proves removal of unnecessary regional GPU work, not the host hang's root cause. Direct inspection of the built-in tab is blocked by browser security policy, and actual embedded-browser recovery remains unverified. Investigation, remaining limits and integrated checks are tracked in [the navigation/startup record](../work/0_bay-area-stanford/navigation-startup.md).
+Bounded mitigation: defer custom campus shader allocation and compilation until approach zoom 12, instead of running it during the initial regional view. A mock-WebGL regression fails against the old renderer at zoom 9 and passes with deferred setup; separate tests cover approach initialization, asynchronous completion, context recovery and cleanup. This proves removal of unnecessary regional GPU work, not the host hang's root cause. The user reports continued failure at localhost:5174 after that candidate; Chrome still works. Fresh independent investigations are tracked in [the active record](../work/0_bay-area-stanford/held-input-architecture.md). Direct inspection of the built-in tab is blocked by browser security policy, and actual embedded-browser recovery remains unverified. Earlier measurements are in [the navigation/startup record](../work/0_bay-area-stanford/navigation-startup.md).
 
 ## 2026-10-20 — Slow development startup
 

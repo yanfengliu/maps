@@ -30,7 +30,7 @@ On mobile, the places panel starts compact so the Bay stays visible, with search
 
 - Drag to pan, scroll or pinch to zoom, and double-click to move closer.
 - Right-drag or Ctrl-drag gently rotates and tilts. Middle-drag up/down adjusts tilt without changing bearing. Touch supports two-finger rotation and tilt.
-- WASD or arrow keys pan while the map has focus, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
+- Hold WASD to pan continuously while the map has focus; release to stop. Mouse and touch gestures take priority, then held-key panning resumes. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
 - Click the compass to face north; drag it horizontally to rotate or vertically to tilt.
 - The 2D/3D button and tilt slider change perspective. **Bay Area** returns to the coast overview.
 

@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-10-20 — Made held WASD pan continuously with elapsed time, normalized diagonals and release/focus cleanup; native pointer/wheel gestures pause and resume held movement. Updated Vite to patched 7.3.7. All 34 tests, build, types and audit pass; 50 actual input checks cover continued motion and adjacent gestures. [Evidence and review](../work/0_bay-area-stanford/held-input-architecture.md).
+
 - 2026-10-20 — Added focused WASD pan, gentler right-drag rotation and middle-button vertical tilt. Restored the current fleet constitution and deferred custom Stanford shaders until approach. Required gates, independent review and bounded headless controls/context recovery pass; actual embedded-browser hang recovery remains unverified. [Evidence and limits](../work/0_bay-area-stanford/navigation-startup.md).
 
 - 2026-10-20 — Refined Stanford with shaped/tiled roofs, cornices, facade bays and Main Quad arcades using lazy worker geometry and two GPU batches. Removed first-approach shader blocking, retained source footprints/heights/courtyards, and fixed custom detail after graphics restoration. Required gates and actual desktop/mobile flows pass; 1080p GPU frame intervals meet the 60 fps budget within [the measured bounds](../work/0_bay-area-stanford/detail-performance.md).
