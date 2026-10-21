@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-10-20 — Grounded Stanford architecture in actual campus photographs: dedicated present-day Memorial Church, low Quad arcades, sparse Hoover shaft, Bing Wing entrance bays and Roble's official three-story profile. Corrected the overlapping Quad/church rendering while preserving source data and courtyard areas. All 39 tests and required gates pass, with 15 native views, real picking/context restoration and a 23-check primary browser smoke. [Sources, coverage and verification bounds](../work/0_bay-area-stanford/held-input-architecture.md).
+
 - 2026-10-20 — Made held WASD pan continuously with elapsed time, normalized diagonals and release/focus cleanup; native pointer/wheel gestures pause and resume held movement. Updated Vite to patched 7.3.7. All 34 tests, build, types and audit pass; 50 actual input checks cover continued motion and adjacent gestures. [Evidence and review](../work/0_bay-area-stanford/held-input-architecture.md).
 
 - 2026-10-20 — Added focused WASD pan, gentler right-drag rotation and middle-button vertical tilt. Restored the current fleet constitution and deferred custom Stanford shaders until approach. Required gates, independent review and bounded headless controls/context recovery pass; actual embedded-browser hang recovery remains unverified. [Evidence and limits](../work/0_bay-area-stanford/navigation-startup.md).

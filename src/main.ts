@@ -9,6 +9,7 @@ import { BAY_BOUNDS, PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, 
 import { campusIllustration, icon } from './icons.ts';
 import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
 import { enableMiddleMouseTilt } from './mouse-tilt.ts';
+import { describeBuildingArchitecture } from './building-architecture.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -154,7 +155,8 @@ function showBuilding(properties: Record<string, unknown>): void {
   el('explore-content').hidden = true;
   const height = Number(properties.height);
   const source = properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">Roof forms and façade accents are stylized estimates; mapped footprints and height sources are shown above.</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
+  const architecture = campusData?.features.find(feature => feature.properties?.id === selectedId)?.properties ?? properties;
+  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">${escapeHtml(describeBuildingArchitecture(architecture))}</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   el('building-campus').addEventListener('click', () => goTo(PLACES[0]));
 }

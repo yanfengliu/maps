@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { prepareBuildingDetails, buildBuildingGeometry, MAX_DETAIL_TRIANGLES, VERTEX_FLOATS, projectLocal } from '../src/building-geometry.ts';
+import earcut from 'earcut';
+import { prepareBuildingDetails, buildBuildingGeometry, MAX_DETAIL_TRIANGLES, VERTEX_FLOATS, projectLocal, distanceToRings } from '../src/building-geometry.ts';
 import { createBuildingDetailsLayer } from '../src/building-details.ts';
+import { buildingArchitecture, describeBuildingArchitecture } from '../src/building-architecture.ts';
+import { composeMainQuad } from '../src/compose-building-parts.ts';
+import { isSimpleRing } from '../tools/data/fetch-stanford.mjs';
 
 const original = JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson', import.meta.url), 'utf8'));
 const before = JSON.stringify(original);
@@ -12,15 +16,154 @@ const geometry = buildBuildingGeometry(detailed);
 function area(ring) {
   return Math.abs(ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p[0] * q[1] - q[0] * p[1]; }, 0) / 2);
 }
+function sourceTriangles(polygon) {
+  const rings=polygon.map(r=>r.slice(0,-1).map(projectLocal)),points=rings.flat(),holes=[];
+  let offset=rings[0].length;for(const r of rings.slice(1)){holes.push(offset);offset+=r.length;}
+  const indices=earcut(points.flat(),holes,2),result=[];
+  for(let i=0;i<indices.length;i+=3)result.push(indices.slice(i,i+3).map(index=>points[index]));
+  return result;
+}
+// Independent convex clipping oracle: intersect source triangles, without
+// invoking the boundary-composition implementation or its side probes.
+function triangleIntersectionArea(subject,clip) {
+  const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  const sign=Math.sign(cross(...clip));let points=subject;
+  for(let i=0;i<3&&points.length;i++){
+    const a=clip[i],b=clip[(i+1)%3],next=[];
+    for(let j=0;j<points.length;j++){
+      const u=points[j],v=points[(j+1)%points.length],du=cross(a,b,u)*sign,dv=cross(a,b,v)*sign;
+      if(du>=0)next.push(u);
+      if((du>0)!==(dv>0)){const t=du/(du-dv);if(Number.isFinite(t))next.push([u[0]+(v[0]-u[0])*t,u[1]+(v[1]-u[1])*t]);}
+    }
+    points=next;
+  }
+  return points.length>=3?area(points):0;
+}
 
-test('roof enrichment retains every original source property, footprint and height', () => {
+test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
-    assert.equal(feature.geometry, original.features[index].geometry);
+    if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
+    else assert.equal(feature.geometry, original.features[index].geometry);
     assert.ok(detailWallHeight >= properties.base && detailWallHeight < properties.height, properties.id);
+    assert.ok(detailRoofHeight>detailWallHeight && detailRoofHeight<=properties.height,properties.id);
+    assert.equal(typeof detailArchitecture.profile, 'string');
   });
+});
+
+test('render-only Quad composition uses source vertices, retains courtyard coverage and removes exactly the actual church intersection', () => {
+  const quad=original.features.find(f=>f.properties.id==='relation/35820'),church=original.features.find(f=>f.properties.id==='way/836474103'),rendered=detailed.features.find(f=>f.properties.id==='relation/35820');
+  const vertices=new Set([...quad.geometry.coordinates.flat(),...church.geometry.coordinates.flat()].map(p=>JSON.stringify(p)));
+  for(const ring of rendered.geometry.coordinates){
+    assert.deepEqual(ring[0],ring.at(-1));assert.ok(isSimpleRing(ring));
+    for(const point of ring){assert.ok(point.every(Number.isFinite));assert.ok(vertices.has(JSON.stringify(point)),'composition must not invent a replacement footprint vertex');}
+  }
+  const quadTriangles=sourceTriangles(quad.geometry.coordinates),churchTriangles=sourceTriangles(church.geometry.coordinates),resultTriangles=sourceTriangles(rendered.geometry.coordinates);
+  const intersect=(a,b)=>a.reduce((sum,t)=>sum+b.reduce((subtotal,u)=>subtotal+triangleIntersectionArea(t,u),0),0);
+  const intersection=intersect(quadTriangles,churchTriangles),sourceArea=quadTriangles.reduce((s,t)=>s+area(t),0),resultArea=resultTriangles.reduce((s,t)=>s+area(t),0);
+  assert.ok(intersection>1800,'the source has a material overlapping church part');
+  assert.ok(Math.abs(resultArea-(sourceArea-intersection))<0.0001,'the difference must subtract the actual intersection, not an assumed rectangle');
+  assert.ok(intersect(resultTriangles,churchTriangles)<0.0001,'the rendered Quad must not remain under the church');
+  assert.ok(Math.abs(intersect(resultTriangles,quadTriangles)-resultArea)<0.0001,'the composition must retain only the actual Quad footprint');
+  for(const hole of quad.geometry.coordinates.slice(1)){
+    const holeTriangles=sourceTriangles([hole]);
+    assert.ok(intersect(resultTriangles,holeTriangles)<0.0001,'every original courtyard area stays empty, including the courtyard opened by the church cut');
+  }
+  assert.equal(rendered.properties.height,18);assert.equal(rendered.properties['osm:building:levels'],'5');
+  assert.equal(rendered.properties.detailRoofHeight,9.5);assert.equal(rendered.properties.detailWallHeight,6.2);
+  assert.equal(rendered.properties.detailArchitecture.floorSource,'reference-profile');assert.equal(rendered.properties.detailArchitecture.floors,1);
+  assert.match(describeBuildingArchitecture(rendered.properties),/OSM tags list 5 levels.*authored low arcade.*not a floor survey/);
+  const square={type:'Polygon',coordinates:[[[0,0],[10,0],[10,10],[0,10],[0,0]]]};
+  const crossing={type:'Polygon',coordinates:[[[5,-2],[12,-2],[12,5],[5,5],[5,-2]]]};
+  assert.throws(()=>composeMainQuad(square,crossing,p=>p),/cross without a shared source vertex/,'unsupported changed topology must fail clearly');
+});
+
+test('facade profiles retain mapped floor counts and distinguish explicit zero, estimates and non-storey structures', () => {
+  const profile = (p, wall=12) => buildingArchitecture({ base:0, building:'university', ...p },wall);
+  assert.deepEqual([profile({'osm:building:levels':'2'}).floors,profile({'osm:building:levels':'2'}).floorSource],[2,'osm-levels']);
+  assert.equal(profile({'osm:building:levels':'0'}).floors,0);
+  assert.equal(profile({'osm:building:levels':'4','osm:building:min_level':'1'}).floors,3);
+  assert.equal(profile({}).floorSource,'estimated');
+  assert.equal(profile({building:'dormitory'}).profile,'residential');
+  assert.equal(profile({building:'garage'}).profile,'garage');
+  assert.equal(profile({building:'hospital'}).profile,'modern');
+  assert.equal(profile({building:'shed'}).profile,'service');
+  assert.equal(profile({building:'dormitory'}).roofShape,'gabled');
+  assert.equal(profile({building:'hospital'}).roofShape,'flat');
+  assert.equal(profile({building:'hospital','osm:roof:shape':'hipped'}).roofShape,'hipped');
+  assert.equal(profile({'osm:roof:shape':'hipped'}).roofSource,'osm-roof-shape');
+  assert.equal(profile({building:'roof'}).floors,null);
+  assert.equal(profile({id:'way/836474103'}).floorSource,'not-applicable');
+  assert.match(describeBuildingArchitecture({detailArchitecture:profile({'osm:building:levels':'2'})}),/OSM records 2 levels.*exact counts have not been surveyed/);
+  assert.match(describeBuildingArchitecture({detailArchitecture:profile({})}),/approximately.*source has no floor count/);
+});
+
+test('emitted facade rows follow two recorded floors even when the height would fit many more', () => {
+  const fixture={type:'FeatureCollection',features:[{type:'Feature',properties:{id:'test/two-floors',building:'university',height:30,base:0,'osm:building:levels':'2'},geometry:{type:'Polygon',coordinates:[[[-122.17,37.427],[-122.1698,37.427],[-122.1698,37.4272],[-122.17,37.4272],[-122.17,37.427]]]}}]};
+  const mesh=buildBuildingGeometry(prepareBuildingDetails(fixture)).facades;
+  let highestUv=0;
+  for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+11]===1)highestUv=Math.max(highestUv,mesh[i+10]);
+  assert.ok(Math.abs(highestUv-7.2)<0.00001,'two shader cells must span the full wall rather than repeating every 3.6 physical metres');
+  fixture.features[0].properties['osm:building:levels']='0';
+  const zero=buildBuildingGeometry(prepareBuildingDetails(fixture)).facades;
+  for(let i=0;i<zero.length;i+=VERTEX_FLOATS)assert.equal(zero[i+11],2,'explicit zero must not receive a fabricated positive floor row');
+});
+
+test('photo-grounded Roble and Bing Wing profiles have three floor rows and three tall front bays without changing their source tags', () => {
+  const roble=detailed.features.find(f=>f.properties.id==='way/232805733');
+  assert.equal(roble.properties.building,'yes');assert.equal(roble.properties['osm:building:levels'],undefined);
+  assert.equal(roble.properties.height,10);assert.equal(roble.properties.detailArchitecture.profile,'residential');
+  assert.equal(roble.properties.detailArchitecture.floors,3);assert.equal(roble.properties.detailArchitecture.floorSource,'official-description');
+  assert.match(describeBuildingArchitecture(roble.properties),/Stanford housing describes Roble Hall as three stories.*Window spacing.*modeled/);
+  const bing=original.features.findIndex(f=>f.properties.id==='way/232805680');
+  const vertices=[];
+  for(let i=0;i<geometry.facades.length;i+=VERTEX_FLOATS)if(geometry.facades[i+12]===bing&&geometry.facades[i+11]===8)vertices.push(geometry.facades.slice(i,i+VERTEX_FLOATS));
+  assert.equal(vertices.length,12,'two consecutive source wall segments carry one continuous three-bay facade');
+  assert.ok(Math.abs(Math.min(...vertices.map(v=>v[9])))<0.00001);
+  assert.ok(Math.abs(Math.max(...vertices.map(v=>v[9]))-11.4)<0.00001,'three 3.8-unit shader cells span the whole west facade');
+  assert.ok(Math.abs(Math.max(...vertices.map(v=>v[10]))-3.6)<0.00001,'tall entrance bays span a single full-height facade band');
+});
+
+test('modern Memorial Church has a separate multilevel roof silhouette, seven front windows and three portals without generic floor texture', () => {
+  const index=original.features.findIndex(f=>f.properties.id==='way/836474103');
+  assert.equal(detailed.features[index].properties.detailArchitecture.profile,'memorial-church');
+  assert.ok(Math.abs(detailed.features[index].properties.detailWallHeight-8.4)<1e-8);
+  let roofVertices=0,facadeVertices=0;
+  const heights=new Set();
+  for(const mesh of [geometry.roofs,geometry.facades]) for(let i=0;i<mesh.length;i+=VERTEX_FLOATS) if(mesh[i+12]===index) {
+    assert.ok(mesh[i+11]===0||mesh[i+11]===2,'church must not inherit generic repeated-storey shading');
+    heights.add(Math.round(mesh[i+2]*100)/100);
+    if(mesh===geometry.roofs)roofVertices++;else facadeVertices++;
+  }
+  assert.ok(roofVertices>150 && facadeVertices>3000,'landmark needs an authored roof and facade, not a renamed extrusion');
+  for(const expected of [8.47,14.4,17.5,20.7,22.7,23.8,24]) assert.ok(heights.has(expected),`missing church roof/detail elevation ${expected}`);
+  // Count disconnected opening intervals in the actual emitted front mesh,
+  // independently of the renderer's authored window/portal loops.
+  const ring=original.features[index].geometry.coordinates[0].slice(0,-1).map(projectLocal);
+  const a=ring[0],b=ring.at(-1),length=Math.hypot(b[0]-a[0],b[1]-a[1]),u=[(b[0]-a[0])/length,(b[1]-a[1])/length],v=[u[1],-u[0]],origin=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  const inside=(p)=>{let result=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])result=!result;}return result;};
+  for(const mesh of [geometry.roofs,geometry.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+12]===index){
+    const point=[mesh[i],mesh[i+1]];
+    // Only facade relief projects beyond the real wall, by less than 18 cm.
+    if(!inside(point))assert.ok(distanceToRings(point,[ring])<(mesh===geometry.roofs?0.001:0.18),'church major geometry left its actual footprint');
+  }
+  const openingIntervals=(color,depth,minHeight)=>{
+    const intervals=[],mesh=geometry.facades;
+    for(let i=0;i<mesh.length;i+=VERTEX_FLOATS*3){
+      if(mesh[i+12]!==index || color.some((c,k)=>Math.abs(mesh[i+6+k]-c)>0.00001))continue;
+      const points=[0,1,2].map(j=>{const k=i+j*VERTEX_FLOATS,dx=mesh[k]-origin[0],dy=mesh[k+1]-origin[1];return [dx*u[0]+dy*u[1],dx*v[0]+dy*v[1],mesh[k+2]];});
+      if(points.some(p=>Math.abs(p[1]-depth)>0.001||p[2]<minHeight))continue;
+      intervals.push([Math.min(...points.map(p=>p[0])),Math.max(...points.map(p=>p[0]))]);
+    }
+    intervals.sort((a,b)=>a[0]-b[0]);const groups=[];
+    for(const interval of intervals){const last=groups.at(-1);if(last&&interval[0]<=last[1]+0.001)last[1]=Math.max(last[1],interval[1]);else groups.push(interval.slice());}
+    return groups;
+  };
+  assert.equal(openingIntervals([0.32,0.40,0.39],-0.10,10).length,7,'current facade has a central arched window with flanking triplets');
+  assert.equal(openingIntervals([0.28,0.29,0.25],-0.11,0).length,3,'front facade has three separate arched portals');
+  assert.match(describeBuildingArchitecture(detailed.features[index].properties),/three entrance arches.*central arched window.*24 m source height is estimated/);
 });
 
 test('all 648 detailed buildings stay finite, under their source heights and within the triangle budget', () => {
@@ -43,7 +186,10 @@ test('triangulated roofs retain the actual Main Quad and every courtyard area ra
   const index = original.features.findIndex(feature => feature.properties.id === 'relation/35820');
   const polygon = original.features[index].geometry.coordinates.map(ring => ring.slice(0, -1).map(projectLocal));
   assert.equal(polygon.length, 8, 'the source has seven courtyard holes');
-  const targetArea = area(polygon[0]) - polygon.slice(1).reduce((sum, ring) => sum + area(ring), 0);
+  const church=sourceTriangles(original.features.find(f=>f.properties.id==='way/836474103').geometry.coordinates);
+  const sourceQuad=sourceTriangles(original.features[index].geometry.coordinates);
+  const overlap=sourceQuad.reduce((sum,t)=>sum+church.reduce((subtotal,u)=>subtotal+triangleIntersectionArea(t,u),0),0);
+  const targetArea = area(polygon[0]) - polygon.slice(1).reduce((sum, ring) => sum + area(ring), 0)-overlap;
   let meshArea = 0;
   const inside = (p, ring) => {
     let result = false;

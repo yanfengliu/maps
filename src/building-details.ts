@@ -76,12 +76,21 @@ void main() {
     float distanceToFocus = distance(v_position,u_focus);
     float detail = 1.0-smoothstep(u_radius*0.72,u_radius,distanceToFocus);
     vec2 cell = fract(v_uv / vec2(3.8,3.6));
-    vec2 edge = abs(cell - vec2(0.5,0.53));
+    bool residential = abs(v_kind-4.0)<0.1;
+    bool modern = abs(v_kind-5.0)<0.1;
+    bool garage = abs(v_kind-6.0)<0.1;
+    bool tower = abs(v_kind-7.0)<0.1;
+    vec2 edge = abs(cell - vec2(0.5,tower ? 0.88 : 0.53));
+    // Each facade's UV range is normalized to its recorded storeys, or to a
+    // labeled height estimate. Distinct uses have different opening rhythms.
+    if (residential) edge.x = abs(abs(cell.x-0.5)-0.14);
     vec2 aa = max(fwidth(cell),vec2(0.008));
-    float opening = (1.0-smoothstep(0.21-aa.x,0.21+aa.x,edge.x)) * (1.0-smoothstep(0.26-aa.y,0.26+aa.y,edge.y));
+    float halfWidth = residential ? 0.075 : modern ? 0.39 : garage ? 0.39 : tower ? 0.115 : 0.21;
+    float halfHeight = garage ? 0.33 : tower ? 0.045 : modern ? 0.19 : 0.26;
+    float opening = (1.0-smoothstep(halfWidth-aa.x,halfWidth+aa.x,edge.x)) * (1.0-smoothstep(halfHeight-aa.y,halfHeight+aa.y,edge.y));
     float surround = (1.0-smoothstep(0.245-aa.x,0.245+aa.x,edge.x)) * (1.0-smoothstep(0.29-aa.y,0.29+aa.y,edge.y));
     vec3 recess = mix(vec3(0.42,0.46,0.43),vec3(0.55,0.57,0.51),smoothstep(0.34,0.7,cell.y));
-    if (v_kind > 2.5 && v_uv.y < 3.6) {
+    if (abs(v_kind-3.0)<0.1 && v_uv.y < 3.6) {
       float x = (cell.x-0.5)*3.8;
       float y = v_uv.y;
       float arch = max(abs(x)-1.12, y>2.1 ? length(vec2(x,y-2.1))-1.12 : -1.0);
@@ -89,13 +98,30 @@ void main() {
       surround = (1.0-smoothstep(0.10,0.20,arch))*smoothstep(0.03,0.1,y);
       recess = vec3(0.48,0.43,0.34);
     }
+    if (abs(v_kind-8.0)<0.1) {
+      float x=(cell.x-0.5)*3.8,y=cell.y*3.6;
+      float arch=max(abs(x)-1.12,y>1.4?length(vec2(x,(y-1.4)*1.3))-1.12:-1.0);
+      opening=(1.0-smoothstep(-0.04,0.04,arch))*smoothstep(0.09,0.18,y);
+      surround=(1.0-smoothstep(0.09,0.18,arch))*smoothstep(0.03,0.1,y);
+      if(cell.y>0.78){
+        vec2 small=vec2(fract(cell.x*3.0)-0.5,(cell.y-0.87)*5.0);
+        float smallArch=max(abs(small.x)-0.23,small.y>0.0?length(small)-0.23:-1.0);
+        opening=(1.0-smoothstep(-0.02,0.02,smallArch))*step(-0.33,small.y);
+      }
+      recess=vec3(0.43,0.48,0.45);
+    }
     tint = mix(tint,tint*1.035,surround*detail);
-    float recessStrength = v_kind > 2.5 && v_uv.y >= 3.6 ? 0.48 : 0.75;
+    if (garage) recess = vec3(0.48,0.45,0.39);
+    float recessStrength = abs(v_kind-3.0)<0.1 && v_uv.y >= 3.6 ? 0.48 : 0.75;
     tint = mix(tint,recess,opening*recessStrength*detail);
     // A thin light sill and dark upper reveal supply depth without separate
     // per-window objects or draw calls.
     float sill = (1.0-smoothstep(0.018,0.035,abs(cell.y-0.27))) * step(edge.x,0.245);
     tint = mix(tint,v_color*1.08,sill*detail);
+    if (modern || garage) {
+      float mullion = 1.0-smoothstep(0.016,0.035,abs(fract(cell.x*3.0)-0.5));
+      tint = mix(tint,v_color*1.04,mullion*opening*detail);
+    }
   }
   outColor = vec4(tint,1.0);
 }`;

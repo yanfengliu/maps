@@ -1,5 +1,8 @@
 import earcut from 'earcut';
 import type * as GeoJSON from 'geojson';
+import { buildingArchitecture, type BuildingArchitecture } from './building-architecture.ts';
+import { addMemorialChurch } from './memorial-church.ts';
+import { composeMainQuad } from './compose-building-parts.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -27,7 +30,7 @@ export function projectLocal(position: readonly number[]): Point {
 
 function roofRise(properties: GeoJSON.GeoJsonProperties): number {
   const available = Number(properties?.height) - Number(properties?.base);
-  const shape = String(properties?.['osm:roof:shape'] ?? 'hipped');
+  const shape = buildingArchitecture(properties, Number(properties?.height)).roofShape;
   const mapped = Number(properties?.['osm:roof:height']);
   if (shape === 'flat') return Math.min(0.28, available * 0.1);
   if (Number.isFinite(mapped) && mapped > 0) return Math.min(mapped, available * 0.45);
@@ -36,10 +39,20 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 
 /** Derived geometry hints are estimates; the original source height is retained. */
 export function prepareBuildingDetails(data: CampusData): CampusData {
-  return { ...data, features: data.features.map(feature => ({
-    ...feature,
-    properties: { ...feature.properties, detailWallHeight: Number(feature.properties?.height) - roofRise(feature.properties) },
-  })) };
+  const church = data.features.find(feature=>feature.properties?.id==='way/836474103');
+  return { ...data, features: data.features.map(feature => {
+    const p = feature.properties;
+    const quad = p?.id === 'relation/35820';
+    const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : Number(p?.height);
+    const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
+      ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : Number(p?.height) - roofRise(p);
+    let geometry = feature.geometry;
+    if(quad && church){
+      if(geometry.type!=='Polygon' || church.geometry.type!=='Polygon')throw new Error('Main Quad/church rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
+      geometry=composeMainQuad(geometry,church.geometry,projectLocal);
+    }
+    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture: buildingArchitecture(p, detailWallHeight) } };
+  }) };
 }
 
 function color(value: unknown): Color {
@@ -129,13 +142,19 @@ export class BuildingGeometryBuilder {
     const building = this.featureIndex++;
     const feature = this.data.features[building];
     const p = feature.properties!;
-    const height = Number(p.height), base = Number(p.base), wall = Number(p.detailWallHeight);
+    const height = Number(p.detailRoofHeight), base = Number(p.base), wall = Number(p.detailWallHeight);
     const roofTint = color(p.roofColor), wallTint = color(p.color);
+    const architecture = p.detailArchitecture as BuildingArchitecture;
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
-    const shape = String(p['osm:roof:shape'] ?? 'hipped');
+    const shape = architecture.roofShape;
     for (const polygon of polygons) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
+      if (architecture.profile === 'memorial-church') {
+        addMemorialChurch(this.roofs, this.facades, rings[0], building, base, height, wallTint, roofTint);
+        this.checkBudget(String(p.id));
+        continue;
+      }
       const vertices = rings.flat(), holes: number[] = [];
       let offset = rings[0].length;
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
@@ -181,9 +200,19 @@ export class BuildingGeometryBuilder {
           const nx = outward * dy / length, ny = -outward * dx / length;
           const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
           if (wall > base + 1 && length > 1.8) {
-            const kind = p.id === 'relation/35820' ? 3 : 1;
+            const libraryFront = architecture.profile==='library' && ringIndex===0 && (i===14 || i===15);
+            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 3 : architecture.profile === 'residential' ? 4
+              : architecture.profile === 'modern' ? 5 : architecture.profile === 'garage' ? 6
+              : architecture.profile === 'service' || architecture.profile === 'open' || architecture.floors === 0 ? 2
+              : architecture.profile === 'tower' ? 7 : 1;
+            const bays = Math.max(1, Math.round(length / architecture.bayWidth));
+            const rows = libraryFront ? 1 : architecture.floors ?? (architecture.profile === 'tower' ? 1 : architecture.profile==='library' ? 3 : 0);
+            const frontStart=libraryFront?ring[14]:a,frontEnd=libraryFront?ring[16]:b;
+            const frontLength=Math.hypot(frontEnd[0]-frontStart[0],frontEnd[1]-frontStart[1]);
+            const along=(point:Point)=>((point[0]-frontStart[0])*(frontEnd[0]-frontStart[0])+(point[1]-frontStart[1])*(frontEnd[1]-frontStart[1]))/(frontLength*frontLength)*11.4;
+            const u0=libraryFront?along(a):0,u1=libraryFront?along(b):bays*3.8;
             this.facades.quad(at(a, base), at(b, base), at(b, wall - 0.12), at(a, wall - 0.12), wallTint, kind, building,
-              [[0, 0], [length, 0], [length, wall - base - 0.12], [0, wall - base - 0.12]]);
+              [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
           }
           const z = Math.min(height - 0.07, wall);
           const low = Math.max(base, z - 0.23);
@@ -202,8 +231,12 @@ export class BuildingGeometryBuilder {
         }
       }
       // Keep malformed/unbounded future inputs from allocating an unlimited mesh.
-      if ((this.roofs.values.length + this.facades.values.length) / (VERTEX_FLOATS * 3) > MAX_DETAIL_TRIANGLES) throw new Error(`Campus detail exceeds ${MAX_DETAIL_TRIANGLES} triangles at ${String(p.id)}.`);
+      this.checkBudget(String(p.id));
     }
+  }
+
+  private checkBudget(id: string): void {
+    if ((this.roofs.values.length + this.facades.values.length) / (VERTEX_FLOATS * 3) > MAX_DETAIL_TRIANGLES) throw new Error(`Campus detail exceeds ${MAX_DETAIL_TRIANGLES} triangles at ${id}.`);
   }
 
   finish(): DetailGeometry {
