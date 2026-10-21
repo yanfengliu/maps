@@ -1,8 +1,10 @@
 import earcut from 'earcut';
 import type * as GeoJSON from 'geojson';
-import { buildingArchitecture, type BuildingArchitecture } from './building-architecture.ts';
+import { buildingArchitecture, buildingMaterials, type BuildingArchitecture } from './building-architecture.ts';
 import { addMemorialChurch } from './memorial-church.ts';
 import { composeMainQuad } from './compose-building-parts.ts';
+import { addCampusEnvironment, emptyEnvironmentCounts, type CampusEnvironment, type EnvironmentCounts } from './campus-environment.ts';
+import { addLandmarkAccents } from './landmark-accents.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -51,7 +53,8 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
       if(geometry.type!=='Polygon' || church.geometry.type!=='Polygon')throw new Error('Main Quad/church rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
       geometry=composeMainQuad(geometry,church.geometry,projectLocal);
     }
-    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture: buildingArchitecture(p, detailWallHeight) } };
+    const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
+    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof } };
   }) };
 }
 
@@ -79,14 +82,14 @@ export function distanceToRings(point: Point, rings: Point[][]): number {
 
 class Mesh {
   values: number[] = [];
-  triangle(a: Vertex, b: Vertex, c: Vertex, tint: Color, kind: number, building: number, uv?: [Point, Point, Point]): void {
+  triangle(a: Vertex, b: Vertex, c: Vertex, tint: Color, kind: number, building: number, uv?: [Point, Point, Point], normals?:[Vertex,Vertex,Vertex]): void {
     const ab = b.map((v, i) => v - a[i]);
     const ac = c.map((v, i) => v - a[i]);
     const normal = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
     const length = Math.hypot(...normal);
     if (length < 1e-8) return;
     const n = normal.map(v => v / length);
-    for (const [i, p] of [a, b, c].entries()) this.values.push(...p, ...n, ...tint, ...(uv?.[i] ?? [p[0], p[1]]), kind, building);
+    for (const [i, p] of [a, b, c].entries()) this.values.push(...p, ...(normals?.[i]??n), ...tint, ...(uv?.[i] ?? [p[0], p[1]]), kind, building);
   }
   quad(a: Vertex, b: Vertex, c: Vertex, d: Vertex, tint: Color, kind: number, building: number, uv?: [Point, Point, Point, Point]): void {
     this.triangle(a, b, c, tint, kind, building, uv ? [uv[0], uv[1], uv[2]] : undefined);
@@ -102,6 +105,7 @@ export interface DetailGeometry {
   facadeTriangles: number;
   triangles: number;
   bytes: number;
+  environment: EnvironmentCounts;
 }
 
 function midpoint(a: Point, b: Point): Point { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
@@ -134,7 +138,9 @@ export class BuildingGeometryBuilder {
   private facades = new Mesh();
   private featureIndex = 0;
   private data: CampusData;
-  constructor(data: CampusData) { this.data = data; }
+  private environment:CampusEnvironment|undefined;
+  private completed:DetailGeometry|undefined;
+  constructor(data: CampusData,environment?:CampusEnvironment) { this.data = data;this.environment=environment; }
   get done(): boolean { return this.featureIndex >= this.data.features.length; }
 
   step(): void {
@@ -143,7 +149,7 @@ export class BuildingGeometryBuilder {
     const feature = this.data.features[building];
     const p = feature.properties!;
     const height = Number(p.detailRoofHeight), base = Number(p.base), wall = Number(p.detailWallHeight);
-    const roofTint = color(p.roofColor), wallTint = color(p.color);
+    const roofTint = color(p.detailRoofColor??p.roofColor), wallTint = color(p.detailWallColor??p.color);
     const architecture = p.detailArchitecture as BuildingArchitecture;
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
     const shape = architecture.roofShape;
@@ -160,7 +166,7 @@ export class BuildingGeometryBuilder {
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
       const indices = earcut(vertices.flat(), holes, 2);
       let roofTriangles: [Point, Point, Point][] = [];
-      const depth = shape === 'dome' ? 3 : shape === 'gabled' ? 0 : p.id === 'relation/35820' ? 2 : 1;
+      const depth = shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : p.id === 'relation/35820' ? 2 : 1;
       for (let i = 0; i < indices.length; i += 3) subdivide(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], depth, roofTriangles);
       const minY = Math.min(...vertices.map(v => v[1])), maxY = Math.max(...vertices.map(v => v[1]));
       let ridgeAxis: Point = [0, 1], longest = 0;
@@ -189,7 +195,7 @@ export class BuildingGeometryBuilder {
       };
       for (const [a, b, c] of roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-        this.roofs.triangle(roofPoint(a), roofPoint(signed > 0 ? b : c), roofPoint(signed > 0 ? c : b), roofTint, 0, building);
+        this.roofs.triangle(roofPoint(a), roofPoint(signed > 0 ? b : c), roofPoint(signed > 0 ? c : b), roofTint, ['flat','skillion'].includes(shape)?9:0, building);
       }
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
@@ -201,7 +207,8 @@ export class BuildingGeometryBuilder {
           const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
           if (wall > base + 1 && length > 1.8) {
             const libraryFront = architecture.profile==='library' && ringIndex===0 && (i===14 || i===15);
-            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 3 : architecture.profile === 'residential' ? 4
+            const robleFront=p.id==='way/232805733'&&ringIndex===0&&nx*0.49+ny*0.87>0.7;
+            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 3 : robleFront?13:architecture.profile === 'residential' ? 4
               : architecture.profile === 'modern' ? 5 : architecture.profile === 'garage' ? 6
               : architecture.profile === 'service' || architecture.profile === 'open' || architecture.floors === 0 ? 2
               : architecture.profile === 'tower' ? 7 : 1;
@@ -230,6 +237,7 @@ export class BuildingGeometryBuilder {
           this.roofs.quad(at(a, low, 0.16), at(b, low, 0.16), at(b, z, 0.16), at(a, z, 0.16), wallTint, 2, building);
         }
       }
+      addLandmarkAccents(this.facades,String(p.id),rings[0],building,base,wall,wallTint);
       // Keep malformed/unbounded future inputs from allocating an unlimited mesh.
       this.checkBudget(String(p.id));
     }
@@ -241,14 +249,18 @@ export class BuildingGeometryBuilder {
 
   finish(): DetailGeometry {
     if (!this.done) throw new Error('Campus geometry is not complete. Finish its feature slices first.');
+    if(this.completed)return this.completed;
+    const environment=this.environment?addCampusEnvironment(this.roofs,this.environment,projectLocal):emptyEnvironmentCounts();
+    this.environment=undefined;
+    this.checkBudget('mapped campus trees and furniture');
     const roofs = new Float32Array(this.roofs.values), facades = new Float32Array(this.facades.values);
     const roofTriangles = roofs.length / VERTEX_FLOATS / 3, facadeTriangles = facades.length / VERTEX_FLOATS / 3;
-    return { roofs, facades, buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength };
+    return this.completed={ roofs, facades, buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength, environment };
   }
 }
 
-export function buildBuildingGeometry(data: CampusData): DetailGeometry {
-  const builder = new BuildingGeometryBuilder(data);
+export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment): DetailGeometry {
+  const builder = new BuildingGeometryBuilder(data,environment);
   while (!builder.done) builder.step();
   return builder.finish();
 }

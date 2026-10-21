@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-10-20 — Made WASD compose with mouse pan, rotation, tilt and wheel zoom. Refined Stanford's stone, roofs and landmark relief; added 726 mapped trees, 163 benches and 80 lamps in the existing two GPU batches. Split uploads across frames after measuring an approach hitch. All 51 tests and required package gates, 40 focused mixed-input checks, 17 environment checks and 14 final primary checks pass. [Sources, independent reviews, measurements and verification limits](../work/0_bay-area-stanford/simultaneous-environment.md).
+
 - 2026-10-20 — Grounded Stanford architecture in actual campus photographs: dedicated present-day Memorial Church, low Quad arcades, sparse Hoover shaft, Bing Wing entrance bays and Roble's official three-story profile. Corrected the overlapping Quad/church rendering while preserving source data and courtyard areas. All 39 tests and required gates pass, with 15 native views, real picking/context restoration and a 23-check primary browser smoke. [Sources, coverage and verification bounds](../work/0_bay-area-stanford/held-input-architecture.md).
 
 - 2026-10-20 — Made held WASD pan continuously with elapsed time, normalized diagonals and release/focus cleanup; native pointer/wheel gestures pause and resume held movement. Updated Vite to patched 7.3.7. All 34 tests, build, types and audit pass; 50 actual input checks cover continued motion and adjacent gestures. [Evidence and review](../work/0_bay-area-stanford/held-input-architecture.md).

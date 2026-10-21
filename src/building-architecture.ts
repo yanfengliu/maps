@@ -13,6 +13,16 @@ export interface BuildingArchitecture {
 }
 const hooverParts = new Set(['way/1346548884','way/1346548885','way/1346548886','way/1346548887','way/1346548888','way/1346548889','way/1346548890','way/1346548891']);
 
+/** Authored material families, informed by the inspected Stanford photographs. */
+export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
+  const p=properties??{},profile=architecture.profile;
+  const flat=architecture.roofShape==='flat'||architecture.roofShape==='skillion';
+  const wall=p.id==='way/232805733'?'#c8aaa0':profile==='memorial-church'?'#d8c29e':profile==='quad'?'#d4bc94':profile==='library'?'#d1bd98':profile==='tower'?'#e0cba2'
+    :profile==='modern'?'#d9ddd4':profile==='garage'?'#c9c9b9':profile==='service'?'#d0cdc0':profile==='residential'?'#dfcfb7':'#dbccb1';
+  const roof=p.id==='way/232805733'?'#c6bca9':flat?(profile==='modern'?'#c1cbc7':'#c9c8b9'):profile==='memorial-church'||profile==='quad'||profile==='library'?'#b66e4e':'#b77d60';
+  return {wall,roof};
+}
+
 /** Source tags determine the treatment; absent dimensions remain explicit estimates. */
 export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wallHeight: number): BuildingArchitecture {
   const p = properties ?? {};

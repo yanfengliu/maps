@@ -28,3 +28,7 @@ node tools/data/fetch-stanford.mjs --cached --source-dir artifacts/stanford-sour
 ```
 
 Cache file modification times record individual retrieval times. If copying source XML changed those timestamps, pass the original provenance's `--fetched-at` value to preserve its final retrieval time. Geometry bytes depend only on source elements and the checked-in converter; they do not depend on retrieval time, file iteration order or randomness. The fetch cache is temporary evidence, not a public runtime dependency. Tests use retained output bytes and synthetic independent negative cases, so they do not download or require the raw cache.
+
+## Campus environment
+
+The separate stanford-environment.geojson contains 726 mapped tree positions, 163 benches and 80 lamps from the same four pinned OSM extracts. Its provenance records exclusions, source tags, ODbL attribution and modeled dimensions. Reproduce it with node tools/data/build-campus-environment.mjs --source-dir followed by the existing cached extract directory. This command preserves the original building/campus inputs. See docs/work/0_bay-area-stanford/campus-environment.md for selection and rendering bounds.

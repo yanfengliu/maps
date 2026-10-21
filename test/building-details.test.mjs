@@ -43,7 +43,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
@@ -231,7 +231,7 @@ test('mapped gables have an exact ridge and flat/skillion raised edges have ston
     if (!['gabled','flat','skillion'].includes(shape)) continue;
     let highestRoof = -Infinity, highestClosure = -Infinity;
     for (let i = 0; i < geometry.roofs.length; i += VERTEX_FLOATS) if (geometry.roofs[i + 12] === index) {
-      if (geometry.roofs[i + 11] === 0) highestRoof = Math.max(highestRoof, geometry.roofs[i + 2]);
+      if (geometry.roofs[i + 11] === 0 || geometry.roofs[i+11]===9) highestRoof = Math.max(highestRoof, geometry.roofs[i + 2]);
       if (geometry.roofs[i + 11] === 2) highestClosure = Math.max(highestClosure, geometry.roofs[i + 2]);
     }
     assert.ok(Math.abs(highestRoof - feature.properties.height) < 0.0001, `${feature.properties.id} roof does not reach its source height`);
@@ -250,7 +250,7 @@ function gpu() {
     getShaderParameter: () => true, getProgramParameter: () => true, getUniformLocation: () => ({}),
     getExtension: () => ({ COMPLETION_STATUS_KHR: 1 }),
   };
-  for (const name of ['shaderSource','compileShader','attachShader','linkProgram','bindVertexArray','bindBuffer','bufferData','enableVertexAttribArray','vertexAttribPointer','useProgram','uniformMatrix4fv','uniform1f','uniform2f','enable','depthFunc','depthMask','disable','drawArrays']) gl[name] = () => {};
+  for (const name of ['shaderSource','compileShader','attachShader','linkProgram','bindVertexArray','bindBuffer','bufferData','bufferSubData','enableVertexAttribArray','vertexAttribPointer','useProgram','uniformMatrix4fv','uniform1f','uniform2f','enable','depthFunc','depthMask','disable','drawArrays']) gl[name] = () => {};
   return { gl, live };
 }
 
@@ -371,7 +371,8 @@ test('detail layer is lazy, cancels its worker and releases all GPU resources on
     retry.onAdd(owner, gl); retry.render(gl, options);
     workers[1].onmessage({ data: { geometry, buildMs: 10 } });
     assert.ok(workers[1].terminated);
-    retry.render(gl, options); assert.equal(retry.stats.drawCalls, 1); assert.equal(retry.stats.lastDrawDetail, 'roofs');
+    for(let i=0;i<80&&!retry.stats.ready;i++)retry.render(gl,options);
+    assert.equal(retry.stats.drawCalls, 1); assert.equal(retry.stats.lastDrawDetail, 'roofs');
     zoom = 15.8; retry.render(gl, options); assert.equal(retry.stats.drawCalls, 2); assert.equal(retry.stats.lastDrawDetail, 'facades');
     assert.ok(Object.isFrozen(retry.stats)); retry.setSelected(original.features[0].properties.id);
     retry.onRemove(owner, gl);
@@ -386,4 +387,53 @@ test('detail layer is lazy, cancels its worker and releases all GPU resources on
     assert.equal(listeners.size, 0);
     for (const objects of Object.values(live)) assert.equal(objects.size, 0, 'failed upload left a GPU allocation');
   } finally { if (priorWorker === undefined) delete globalThis.Worker; else globalThis.Worker = priorWorker; }
+});
+
+test('high zoom in San Francisco starts no Stanford worker; approaching campus starts it once',()=>{
+  const priorWorker=globalThis.Worker,workers=[];
+  globalThis.Worker=class {constructor(){this.terminated=false;workers.push(this);}postMessage(){}terminate(){this.terminated=true;}};
+  let center=[-122.4194,37.7749];
+  const owner={getZoom:()=>15,getCenter:()=>({toArray:()=>center}),on(){},off(){},triggerRepaint(){}};
+  const options={defaultProjectionData:{mainMatrix:[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}};
+  const {gl,live}=gpu();const layer=createBuildingDetailsLayer(prepareBuildingDetails(structuredClone(original)));
+  try{
+    layer.onAdd(owner,gl);for(let i=0;i<3;i++)layer.render(gl,options);
+    assert.equal(workers.length,0,'an offscreen campus must not trigger its geometry worker or environment fetch');
+    assert.equal(live.buffers.size,0);
+    center=[-122.1697,37.4278];layer.render(gl,options);layer.render(gl,options);
+    assert.equal(workers.length,1,'the actual campus approach starts one worker');
+  }finally{layer.onRemove(owner,gl);if(priorWorker===undefined)delete globalThis.Worker;else globalThis.Worker=priorWorker;}
+  assert.ok(workers[0].terminated);for(const values of Object.values(live))assert.equal(values.size,0);
+});
+
+test('mesh upload transfers at most 1MiB per frame, draws only complete meshes and restarts cleanly after loss, removal and failure',()=>{
+  const priorWorker=globalThis.Worker,workers=[];
+  globalThis.Worker=class{constructor(){this.terminated=false;workers.push(this);}postMessage(){}terminate(){this.terminated=true;}};
+  const listeners=new Map(),owner={getZoom:()=>16,getCenter:()=>({toArray:()=>[-122.1697,37.4278]}),on:(name,fn)=>listeners.set(name,fn),off:name=>listeners.delete(name),triggerRepaint(){}};
+  const options={defaultProjectionData:{mainMatrix:[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]}};
+  const data=prepareBuildingDetails(structuredClone(original));
+  const {gl,live}=gpu();let bound;const allocations=new Map(),chunks=[];
+  gl.bindBuffer=(_,buffer)=>{bound=buffer;};
+  gl.bufferData=(_,size)=>{assert.equal(typeof size,'number','allocation must not upload the whole array synchronously');allocations.set(bound,size);};
+  gl.bufferSubData=(_,offset,values)=>{assert.ok(values.byteLength<=1024*1024,'one render callback exceeded the finite transfer budget');chunks.push({buffer:bound,offset,size:values.byteLength});};
+  const layer=createBuildingDetailsLayer(data);
+  try{
+    layer.onAdd(owner,gl);layer.render(gl,options);workers[0].onmessage({data:{geometry,buildMs:10}});
+    layer.render(gl,options);assert.equal(live.buffers.size,1);assert.equal(layer.stats.ready,false);assert.equal(layer.stats.drawCalls,0);
+    layer.render(gl,options);assert.equal(chunks.length,1);assert.equal(layer.stats.ready,false);assert.equal(layer.stats.drawCalls,0);
+    listeners.get('webglcontextlost')();for(const values of Object.values(live))assert.equal(values.size,0,'partial uploads leaked across lost context');
+    chunks.length=0;allocations.clear();listeners.get('webglcontextrestored')();
+    for(let i=0;i<100&&!layer.stats.ready;i++)layer.render(gl,options);
+    assert.equal(layer.stats.ready,true);assert.equal(layer.stats.drawCalls,2);assert.ok(layer.stats.uploadSlices>10);
+    assert.equal(allocations.size,2);
+    for(const [buffer,size]of allocations){let end=0;for(const chunk of chunks.filter(c=>c.buffer===buffer)){assert.equal(chunk.offset,end,'upload omitted or duplicated a byte range');end+=chunk.size;}assert.equal(end,size,'ready was reported before the full buffer was transferred');}
+    layer.onRemove(owner,gl);for(const values of Object.values(live))assert.equal(values.size,0);
+
+    const cancelled=createBuildingDetailsLayer(data);cancelled.onAdd(owner,gl);cancelled.render(gl,options);assert.equal(live.buffers.size,1);assert.equal(cancelled.stats.ready,false);cancelled.onRemove(owner,gl);
+    for(const values of Object.values(live))assert.equal(values.size,0,'removal left a partial allocation');
+    gl.bufferSubData=()=>{throw new Error('injected partial transfer failure');};
+    const failed=createBuildingDetailsLayer(data);failed.onAdd(owner,gl);failed.render(gl,options);failed.render(gl,options);
+    assert.match(failed.stats.error,/injected partial transfer failure/);assert.equal(failed.stats.ready,false);
+    for(const values of Object.values(live))assert.equal(values.size,0,'failed transfer leaked partial GPU objects');failed.onRemove(owner,gl);
+  }finally{layer.onRemove(owner,gl);if(priorWorker===undefined)delete globalThis.Worker;else globalThis.Worker=priorWorker;}
 });

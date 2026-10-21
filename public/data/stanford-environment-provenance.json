@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "derivedFromFetchedAt": "2026-10-20T06:13:20.820Z",
+  "source": "Existing pinned OpenStreetMap API 0.6 bounded map extracts",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "sourceProvenance": "stanford-provenance.json",
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "selection": "Mapped natural=tree, amenity=bench and highway=street_lamp nodes inside the pinned Stanford campus boundary. Original source coordinates and retained tags are unchanged. No authored or randomly distributed tree positions are added.",
+  "exclusion": "Exclude roots/furniture inside a building polygon (courtyard holes remain empty), within 0.65 m of its wall, or inside mapped drivable-road clearance: explicit width/2 capped at 8 m; otherwise 3 m, service 2 m, parking aisle 1.8 m. Road centerline distance uses a local metre approximation. Tree crowns may overhang paths as real crowns do. No sampling or cap is applied to eligible nodes.",
+  "dimensions": "Tree height, crown dimensions and furniture dimensions are authored estimates unless numeric source tags exist. Missing tree type defaults to a modeled broadleaf; Phoenix/palm and needleleaved tags determine distinct silhouettes. Species tags are not a botanical field survey. Bench orientation is estimated from the nearest mapped drivable centerline; direction tags take priority when present. Lamp and bench models are generic representations at real mapped points.",
+  "beforeExclusions": {
+    "tree": 728,
+    "bench": 166,
+    "lamp": 81
+  },
+  "retained": {
+    "tree": 726,
+    "bench": 163,
+    "lamp": 80
+  },
+  "excluded": [
+    {
+      "id": "node/6475091353",
+      "kind": "tree",
+      "reason": "inside-or-close-to-building"
+    },
+    {
+      "id": "node/6533330507",
+      "kind": "tree",
+      "reason": "inside-or-close-to-building"
+    },
+    {
+      "id": "node/7419918077",
+      "kind": "bench",
+      "reason": "inside-or-close-to-building"
+    },
+    {
+      "id": "node/7419918078",
+      "kind": "bench",
+      "reason": "inside-or-close-to-building"
+    },
+    {
+      "id": "node/12064314984",
+      "kind": "lamp",
+      "reason": "inside-or-close-to-building"
+    },
+    {
+      "id": "node/14078263436",
+      "kind": "bench",
+      "reason": "inside-or-close-to-building"
+    }
+  ],
+  "outputs": {
+    "stanford-environment.geojson": {
+      "bytes": 228874,
+      "sha256": "ffab0171ce296e17ade5f464fbd0239de75f6526f0419c9c0ab86067ae104a74"
+    }
+  },
+  "generator": "tools/data/build-campus-environment.mjs"
+}

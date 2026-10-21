@@ -1,5 +1,6 @@
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
+import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
@@ -9,6 +10,7 @@ export interface BuildingDetailStats {
   facadeTriangles: number;
   triangles: number;
   bytes: number;
+  environment: EnvironmentCounts;
   /** CPU geometry generation runs in the dedicated worker. */
   buildMs: number;
   /** Longest observed main-thread shader setup or mesh upload slice. */
@@ -17,6 +19,8 @@ export interface BuildingDetailStats {
   /** Asynchronous compiler wall time; not a main-thread blocking duration. */
   compileMs: number;
   uploadMs: number;
+  uploadSlices:number;
+  uploadWallMs:number;
   drawCalls: number;
   lastDrawDetail: 'none' | 'roofs' | 'facades';
   error: string | null;
@@ -45,7 +49,7 @@ out vec2 v_position;
 flat out float v_kind;
 void main() {
   gl_Position = u_matrix * vec4(a_position, 1.0);
-  float illumination = 0.76 + 0.24 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
+  float illumination = 0.72 + 0.28 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
   vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.6) : a_color;
   v_color = tint * illumination;
   v_uv = a_uv;
@@ -70,13 +74,13 @@ void main() {
     float course = abs(fract(v_uv.y * frequency) - 0.5);
     float seam = 1.0 - smoothstep(0.015,0.055 + footprint,course);
     tint *= 1.0 - 0.065 * seam * (1.0-smoothstep(0.3,0.8,footprint));
-  } else if (abs(v_kind - 2.0) > 0.1) {
+  } else if ((v_kind < 8.5 && abs(v_kind - 2.0) > 0.1) || abs(v_kind-13.0)<0.1) {
     // Nearby elevations use meter-sized bays, recessed glazing and stone
     // surrounds. Main Quad's lower storey reads as a shaded arcade.
     float distanceToFocus = distance(v_position,u_focus);
     float detail = 1.0-smoothstep(u_radius*0.72,u_radius,distanceToFocus);
     vec2 cell = fract(v_uv / vec2(3.8,3.6));
-    bool residential = abs(v_kind-4.0)<0.1;
+    bool residential = abs(v_kind-4.0)<0.1 || abs(v_kind-13.0)<0.1;
     bool modern = abs(v_kind-5.0)<0.1;
     bool garage = abs(v_kind-6.0)<0.1;
     bool tower = abs(v_kind-7.0)<0.1;
@@ -89,7 +93,15 @@ void main() {
     float halfHeight = garage ? 0.33 : tower ? 0.045 : modern ? 0.19 : 0.26;
     float opening = (1.0-smoothstep(halfWidth-aa.x,halfWidth+aa.x,edge.x)) * (1.0-smoothstep(halfHeight-aa.y,halfHeight+aa.y,edge.y));
     float surround = (1.0-smoothstep(0.245-aa.x,0.245+aa.x,edge.x)) * (1.0-smoothstep(0.29-aa.y,0.29+aa.y,edge.y));
-    vec3 recess = mix(vec3(0.42,0.46,0.43),vec3(0.55,0.57,0.51),smoothstep(0.34,0.7,cell.y));
+    vec3 recess = mix(vec3(0.31,0.40,0.40),vec3(0.53,0.62,0.60),smoothstep(0.34,0.7,cell.y));
+    if(modern)recess=mix(vec3(0.34,0.48,0.51),vec3(0.65,0.73,0.70),smoothstep(0.3,0.74,cell.y));
+    // Quiet, metre-scale stone courses retain visual depth without a texture asset.
+    if(!modern&&!garage&&!residential){
+      float row=floor(v_uv.y*2.3),course=abs(fract(v_uv.y*2.3)-0.5);
+      float joint=min(course,abs(fract(v_uv.x*1.15+mod(row,2.0)*0.5)-0.5));
+      float fade=1.0-smoothstep(0.18,0.55,max(fwidth(v_uv.x),fwidth(v_uv.y)));
+      tint*=1.0-(1.0-smoothstep(0.012,0.035,joint))*0.065*fade*detail;
+    }
     if (abs(v_kind-3.0)<0.1 && v_uv.y < 3.6) {
       float x = (cell.x-0.5)*3.8;
       float y = v_uv.y;
@@ -121,6 +133,16 @@ void main() {
     if (modern || garage) {
       float mullion = 1.0-smoothstep(0.016,0.035,abs(fract(cell.x*3.0)-0.5));
       tint = mix(tint,v_color*1.04,mullion*opening*detail);
+    }
+    if(abs(v_kind-13.0)<0.1){
+      // The inspected front has connected ivy, with exposed stone around its
+      // openings. Keep fine leaf variation quiet as the facade recedes.
+      float edge=0.45+0.12*sin(v_uv.x*1.4);
+      float ivy=smoothstep(edge,edge+0.3,v_uv.y)*(1.0-surround);
+      float leafDetail=1.0-smoothstep(0.05,0.14,max(fwidth(v_uv.x),fwidth(v_uv.y)));
+      float leaves=sin(v_uv.x*18.0)*sin(v_uv.y*13.0+sin(v_uv.x*4.1))*0.018*leafDetail;
+      vec3 foliage=vec3(0.29,0.39,0.26)+leaves;
+      tint=mix(tint,foliage,ivy*0.89*detail);
     }
   }
   outColor = vec4(tint,1.0);
@@ -158,14 +180,14 @@ function beginProgram(gl: WebGL2RenderingContext): PendingProgram {
   }
 }
 
-function upload(gl: WebGL2RenderingContext, values: Float32Array): GpuMesh {
+function allocateMesh(gl: WebGL2RenderingContext, values: Float32Array): GpuMesh {
   const vao = gl.createVertexArray(), buffer = gl.createBuffer();
   if (!vao || !buffer) {
     if (vao) gl.deleteVertexArray(vao); if (buffer) gl.deleteBuffer(buffer);
     throw new Error('Campus detail GPU buffers could not be allocated.');
   }
   try {
-    gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, values, gl.STATIC_DRAW);
+    gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, values.byteLength, gl.STATIC_DRAW);
     for (const [attribute, size, offset] of [[0,3,0],[1,3,3],[2,3,6],[3,2,9],[4,1,11],[5,1,12]]) {
       gl.enableVertexAttribArray(attribute); gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, VERTEX_FLOATS * 4, offset * 4);
     }
@@ -175,10 +197,30 @@ function upload(gl: WebGL2RenderingContext, values: Float32Array): GpuMesh {
   } finally { gl.bindVertexArray(null); gl.bindBuffer(gl.ARRAY_BUFFER, null); }
 }
 
+const UPLOAD_SLICE_FLOATS=1024*1024/Float32Array.BYTES_PER_ELEMENT;
+interface MeshUpload {roofs?:GpuMesh;facades?:GpuMesh;roofOffset:number;facadeOffset:number;started:number}
+/** One allocation or at most 1 MiB transfer per render callback. */
+function advanceUpload(gl:WebGL2RenderingContext,job:MeshUpload,geometry:DetailGeometry):boolean {
+  if(!job.roofs){job.roofs=allocateMesh(gl,geometry.roofs);return false;}
+  if(job.roofOffset<geometry.roofs.length){
+    const end=Math.min(geometry.roofs.length,job.roofOffset+UPLOAD_SLICE_FLOATS);
+    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.roofs.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.roofOffset*4,geometry.roofs.subarray(job.roofOffset,end));job.roofOffset=end;}
+    finally{gl.bindBuffer(gl.ARRAY_BUFFER,null);}return false;
+  }
+  if(!job.facades){job.facades=allocateMesh(gl,geometry.facades);return false;}
+  if(job.facadeOffset<geometry.facades.length){
+    const end=Math.min(geometry.facades.length,job.facadeOffset+UPLOAD_SLICE_FLOATS);
+    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.facades.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.facadeOffset*4,geometry.facades.subarray(job.facadeOffset,end));job.facadeOffset=end;}
+    finally{gl.bindBuffer(gl.ARRAY_BUFFER,null);}return job.facadeOffset===geometry.facades.length;
+  }
+  return true;
+}
+
 /** Mercator-only native layer: two batched draws, shared depth, no animation loop. */
 export function createBuildingDetailsLayer(data: CampusData, onError?: (message: string) => void): BuildingDetailsLayer {
   let map: MapLibreMap | undefined, context: WebGL2RenderingContext | undefined;
   let gpuProgram: WebGLProgram | undefined, roofs: GpuMesh | undefined, facades: GpuMesh | undefined;
+  let uploading:MeshUpload|undefined;
   let compiling: PendingProgram | undefined;
   let idleCompile: number | undefined, compileTimer: ReturnType<typeof setTimeout> | undefined;
   let worker: Worker | undefined, removed = false, selected = -1;
@@ -186,16 +228,16 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
-  const state: BuildingDetailStats = { ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const state: BuildingDetailStats = { ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, environment:emptyEnvironmentCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const destroyGpu = () => {
     if (idleCompile !== undefined) { window.cancelIdleCallback(idleCompile); idleCompile = undefined; }
     if (compileTimer !== undefined) { clearTimeout(compileTimer); compileTimer = undefined; }
     if (context) {
-      for (const mesh of [roofs, facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
+      for (const mesh of [roofs, facades,uploading?.roofs,uploading?.facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
       if (gpuProgram) context.deleteProgram(gpuProgram);
       if (compiling) { context.deleteProgram(compiling.program); compiling.shaders.forEach(value => context!.deleteShader(value)); }
     }
-    compiling = undefined; roofs = undefined; facades = undefined; gpuProgram = undefined; state.ready = false; state.shaderReady = false;
+    compiling = undefined; roofs = undefined; facades = undefined; uploading=undefined;gpuProgram = undefined; state.ready = false; state.shaderReady = false;
   };
   const fail = (message: string) => {
     state.error = message; worker?.terminate(); worker = undefined; destroyGpu(); onError?.(message);
@@ -235,7 +277,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const restored = () => { if (!removed) { warmProgram(); map?.triggerRepaint(); } };
   return {
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
-    get stats() { return Object.freeze({ ...state }); },
+    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
     onAdd(owner, gl) { map = owner; context = gl; removed = false; owner.on('webglcontextlost', lost); owner.on('webglcontextrestored', restored); warmProgram(); },
     onRemove() {
@@ -249,6 +291,9 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       warmProgram();
       if (compiling?.parallel) finishProgram();
       if (state.error || map.getZoom() < 14) return;
+      // High zoom in another Bay Area city must not fetch or build Stanford's
+      // environment. Six kilometres includes campus and its arrival context.
+      if(!pending&&!state.ready&&Math.hypot(...projectLocal(map.getCenter().toArray()))>6000)return;
       if (!state.ready) {
         if (!pending) {
           if (!worker) {
@@ -266,12 +311,15 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           return;
         }
         if (!state.shaderReady) return;
+        if(!uploading){uploading={roofOffset:0,facadeOffset:0,started:performance.now()};state.uploadMs=0;state.uploadSlices=0;state.uploadWallMs=0;}
         const started = performance.now();
         try {
-          roofs = upload(gl, pending.geometry.roofs); facades = upload(gl, pending.geometry.facades);
-          state.uploadMs = performance.now() - started;
+          const complete=advanceUpload(gl,uploading,pending.geometry);
+          const elapsed=performance.now()-started;state.uploadMs+=elapsed;state.uploadSlices++;state.maxSliceMs=Math.max(state.maxSliceMs,elapsed);
+          if(!complete){map.triggerRepaint();return;}
+          roofs=uploading.roofs;facades=uploading.facades;state.uploadWallMs=performance.now()-uploading.started;uploading=undefined;
           Object.assign(state, { ready: true, roofTriangles: pending.geometry.roofTriangles, facadeTriangles: pending.geometry.facadeTriangles,
-            triangles: pending.geometry.triangles, bytes: pending.geometry.bytes, buildMs: pending.buildMs, maxSliceMs: Math.max(state.maxSliceMs, state.uploadMs) });
+            triangles: pending.geometry.triangles, bytes: pending.geometry.bytes, environment:pending.geometry.environment, buildMs: pending.buildMs });
         } catch (error) { fail(error instanceof Error ? error.message : 'Campus GPU detail could not initialize.'); return; }
       }
       const main = options.defaultProjectionData.mainMatrix;

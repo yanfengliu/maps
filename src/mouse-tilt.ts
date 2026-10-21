@@ -1,45 +1,53 @@
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { Handler, Map as MapLibreMap } from 'maplibre-gl';
+import { registerInputHandler } from './input-handler.ts';
 
-/** Middle-drag tilts without invoking the browser's middle-button autoscroll. */
+/** Middle-drag adds tilt to native camera input without browser autoscroll. */
 export function enableMiddleMouseTilt(map: MapLibreMap): () => void {
   const canvas = map.getCanvas();
-  const ownerWindow = canvas.ownerDocument.defaultView!;
-  let drag: { pointer: number; y: number; pitch: number } | undefined;
-  const end = () => {
-    const pointer = drag?.pointer;
-    drag = undefined;
-    if (pointer !== undefined && canvas.hasPointerCapture(pointer)) canvas.releasePointerCapture(pointer);
+  const document = canvas.ownerDocument;
+  const ownerWindow = document.defaultView!;
+  let y: number | undefined;
+  let enabled = true;
+  let disposed = false;
+  const reset = (): void => { y = undefined; };
+  const handler: Handler = {
+    enable: () => { enabled = true; },
+    disable: () => { enabled = false; reset(); },
+    isEnabled: () => enabled,
+    isActive: () => y !== undefined,
+    reset,
+    mousedown: (event: MouseEvent) => {
+      if (event.button !== 1) return;
+      event.preventDefault();
+      y = event.clientY;
+      canvas.focus({ preventScroll: true });
+    },
+    mousemoveWindow: (event: MouseEvent) => {
+      if (y === undefined) return;
+      if (!(event.buttons & 4)) { reset(); return; }
+      event.preventDefault();
+      const pitchDelta = (y - event.clientY) * 0.25;
+      y = event.clientY;
+      return pitchDelta ? { pitchDelta, noInertia: true } : undefined;
+    },
+    mouseup: (event: MouseEvent) => { if (event.button === 1) reset(); },
+    mouseupWindow: (event: MouseEvent) => { if (event.button === 1) reset(); },
   };
-  const start = (event: PointerEvent) => {
-    if (event.button !== 1) return;
-    event.preventDefault();
-    map.stop();
-    drag = { pointer: event.pointerId, y: event.clientY, pitch: map.getPitch() };
-    canvas.setPointerCapture(event.pointerId);
-    canvas.focus({ preventScroll: true });
-  };
-  const move = (event: PointerEvent) => {
-    if (!drag || event.pointerId !== drag.pointer) return;
-    if (!(event.buttons & 4)) { end(); return; }
-    event.preventDefault();
-    map.jumpTo({ pitch: Math.max(map.getMinPitch(), Math.min(map.getMaxPitch(), drag.pitch + (drag.y - event.clientY) * 0.25)) });
-  };
-  const preventAutoscroll = (event: MouseEvent) => { if (event.button === 1) event.preventDefault(); };
-  canvas.addEventListener('pointerdown', start);
-  canvas.addEventListener('pointermove', move);
-  canvas.addEventListener('pointerup', end);
-  canvas.addEventListener('pointercancel', end);
-  canvas.addEventListener('lostpointercapture', end);
+  const registration = registerInputHandler(map, 'middleMouseTilt', handler);
+  const clear = (): void => { if (y !== undefined) { reset(); registration.requestFrame(); } };
+  const visibility = (): void => { if (document.hidden) clear(); };
+  const preventAutoscroll = (event: MouseEvent): void => { if (event.button === 1) event.preventDefault(); };
   canvas.addEventListener('auxclick', preventAutoscroll);
-  ownerWindow.addEventListener('blur', end);
+  canvas.addEventListener('blur', clear);
+  ownerWindow.addEventListener('blur', clear);
+  document.addEventListener('visibilitychange', visibility);
   return () => {
-    end();
-    canvas.removeEventListener('pointerdown', start);
-    canvas.removeEventListener('pointermove', move);
-    canvas.removeEventListener('pointerup', end);
-    canvas.removeEventListener('pointercancel', end);
-    canvas.removeEventListener('lostpointercapture', end);
+    if (disposed) return;
+    disposed = true;
+    registration.dispose();
     canvas.removeEventListener('auxclick', preventAutoscroll);
-    ownerWindow.removeEventListener('blur', end);
+    canvas.removeEventListener('blur', clear);
+    ownerWindow.removeEventListener('blur', clear);
+    document.removeEventListener('visibilitychange', visibility);
   };
 }

@@ -1,5 +1,9 @@
 # Defect register
 
+## 2026-10-20 — Mouse gestures pause held WASD
+
+Symptom: WASD and mouse must move the camera at the same time. Root cause: the first held-input repair deliberately paused keyboard RAF updates during pointer/wheel activity to avoid public camera calls resetting MapLibre's native handlers. That preserved each input separately but prevented composition. The correction merges deltas in the pinned native input pipeline; 40 actual checks cover both inputs being active, both release orders, wheel equivalence and drag event ownership. Restoring the old pause reproduces the failure. [The record](../work/0_bay-area-stanford/simultaneous-environment.md) and [review 007](../work/0_bay-area-stanford/reviews/007_simultaneous-input.md) retain exact hashes and bounds; this supersedes the previous pointer-priority policy.
+
 ## 2026-10-20 — WASD stops after one key step
 
 Symptom: holding WASD produces a one-off camera jump rather than continuous movement. Root cause: each canvas keydown calls one animated 100-pixel `panBy`; movement depends on discrete key events/OS repeat instead of elapsed held-key time. The correction uses elapsed-time held-key movement, normalized diagonals, immediate release and focus/lifecycle cancellation. Native pointer and wheel gestures take priority because public `panBy` stops MapLibre handlers. Verification holds one physical key without repeated keydown events and samples late movement; the one-step negative fails. A held-wheel regression found during review also went red, then preserves the exact native zoom delta after correction. All 34 tests and 50 bounded real-input checks pass; [the input/architecture record](../work/0_bay-area-stanford/held-input-architecture.md) retains evidence and limits.

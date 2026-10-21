@@ -30,7 +30,7 @@ On mobile, the places panel starts compact so the Bay stays visible, with search
 
 - Drag to pan, scroll or pinch to zoom, and double-click to move closer.
 - Right-drag or Ctrl-drag gently rotates and tilts. Middle-drag up/down adjusts tilt without changing bearing. Touch supports two-finger rotation and tilt.
-- Hold WASD to pan continuously while the map has focus; release to stop. Mouse and touch gestures take priority, then held-key panning resumes. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
+- Hold WASD to pan continuously while the map has focus; release to stop. Mouse drag, rotation, middle-button tilt and wheel zoom work at the same time as held WASD. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
 - Click the compass to face north; drag it horizontally to rotate or vertically to tilt.
 - The 2D/3D button and tilt slider change perspective. **Bay Area** returns to the coast overview.
 
@@ -41,6 +41,8 @@ Reduced motion is respected. A WebGL-capable browser is required. Loading failur
 The campus uses real OpenStreetMap footprints, including multipolygons and courtyards. Mapped heights are used where present; mapped floor counts and missing heights use documented estimates. Memorial Church has a dedicated exterior; Stanford photographs ground the Main Quad, Hoover Tower, Bing Wing and Roble Hall treatments. Sandstone, terracotta and muted windows keep an illustrated map palette. Building cards distinguish OSM levels, official descriptions and estimated facade rows; exact window counts across campus remain unknown. See the [photo references and model limits](docs/work/0_bay-area-stanford/architecture-references.md).
 
 Original source geometry, heights and provenance stay intact. A render-only subtraction removes the church from the overlapping Main Quad outline so both models remain visible while all original courtyard areas stay empty. Most ordinary buildings still use estimated architectural profiles.
+
+The campus environment uses 726 mapped tree positions, 163 benches and 80 lamps from the same pinned OSM extracts. Palms, broadleaf trees and conifers have distinct batched 3D silhouettes; sizes and generic furniture details are modeled. Historic sandstone/tile, Roble's pink stone/ivy and modern light roofs have separate authored materials. The [environment and material record](docs/work/0_bay-area-stanford/campus-environment.md) describes source selection, exclusions and model limits.
 
 Architectural geometry is generated in a worker only when approaching campus, then rendered in two batched draws with zoom/distance detail control. Shader preparation runs ahead of the flight, using nonblocking completion where available. The [detail and performance record](docs/work/0_bay-area-stanford/detail-performance.md) gives measurements and their hardware bounds.
 

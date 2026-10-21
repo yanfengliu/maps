@@ -170,8 +170,8 @@ function closeDetails(): void {
 
 function updateSelection(): void {
   if (!map?.getLayer('stanford-buildings')) return;
-  map.setPaintProperty('stanford-buildings', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#e5ad64', ['get','color']]);
-  map.setPaintProperty('stanford-roofs', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#c56c3e', ['get','roofColor']]);
+  map.setPaintProperty('stanford-buildings', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#e5ad64', ['coalesce', ['get','detailWallColor'], ['get','color']]]);
+  map.setPaintProperty('stanford-roofs', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#c56c3e', ['coalesce', ['get','detailRoofColor'], ['get','roofColor']]]);
   buildingDetails?.setSelected(selectedId);
 }
 
@@ -309,9 +309,9 @@ function addCampusLayers(): void {
     paint: { 'line-color': '#b49a7f', 'line-width': 1, 'line-dasharray': [3,3], 'line-opacity': 0.5 } }, 'road-label');
   map.addSource('stanford', { type: 'geojson', data: campusData });
   map.addLayer({ id: 'stanford-buildings', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
-    paint: { 'fill-extrusion-color': ['get','color'], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
+    paint: { 'fill-extrusion-color': ['coalesce', ['get','detailWallColor'], ['get','color']], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
   map.addLayer({ id: 'stanford-roofs', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
-    paint: { 'fill-extrusion-color': ['get','roofColor'], 'fill-extrusion-height': ['+', ['get','detailWallHeight'], 0.05], 'fill-extrusion-base': ['get','detailWallHeight'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
+    paint: { 'fill-extrusion-color': ['coalesce', ['get','detailRoofColor'], ['get','roofColor']], 'fill-extrusion-height': ['+', ['get','detailWallHeight'], 0.05], 'fill-extrusion-base': ['get','detailWallHeight'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
   addBuildingDetailLayer();
   map.addLayer({ id: 'stanford-names', type: 'symbol', source: 'stanford', minzoom: 16,
     filter: ['all', ['has','name'], ['!=', ['get','name'], null]],
