@@ -7,7 +7,7 @@ Started: 2026-10-20. Integration owner: root. Base: `cd5ade1565ebb9a9904d894620b
 | Continuous held WASD | held_wasd | Integrated and committed locally as `89cb74e`; 34 unit tests, 41 initial real-input checks and nine focused wheel checks pass. Review 005 is GO with the wheel-interruption finding resolved. |
 | Embedded-browser hang | hang_host_route, hang_source_route | Independent routes complete; host corroborates unresponsive events, source audit identifies native synchronous boundaries without a causal observation. Restored5174 HTTP200, then user confirms failure persists. No additional app repair is supported. |
 | Real Stanford architecture | stanford_landmarks | Photo-grounded church, low Quad, Hoover, Bing Wing and Roble treatments integrated. Fifteen native views, two actual church clicks and graphics restoration pass. Ordinary profiles and unsurveyed counts remain explicit estimates. |
-| Integration and independent review | root, held_architecture_review | Final primary smoke23/23, all39 tests/types/build/audit and independent review006 pass. Local architecture commit and remaining worktree cleanup follow; browser recovery remains a separate unmet criterion. |
+| Integration and independent review | root, held_architecture_review | Complete locally on main: input `89cb74e`, architecture `89fc3e8`. Primary smoke 23/23, all 39 tests/types/build/audit and independent review 006 pass. Task-owned worktrees and temporary processes are cleaned; embedded-browser recovery remains unmet. |
 
 ## Fixed browser reproduction and disqualifiers
 
@@ -44,6 +44,8 @@ Final primary `localhost:5174` verification passes 23/23 actual-control checks o
 Coverage remains explicit: 503 facade floor estimates, 80 OSM-level treatments, 63 structures without a storey treatment, one Quad reference profile and one official Roble story count. Of 648 features, 58 have mapped roof shapes and 590 use roof estimates. This increment is not a building-by-building survey. Independent review identifies approximately 0.1607 m² of modeled church roof-triangle overhang at concave edges despite contained vertices; the source footprint is unchanged and exact roof polygon containment is not claimed.
 
 [Independent review 006](reviews/006_architecture.md) is GO for the final nine architecture/source-reference files, including an independently implemented intersection oracle and recomputed native image digests. The unavailable Claude lane is an explicit abstention. Root also inspected the primary church-selection and overview-return screenshots. No executable bytes changed after the successful primary browser and package gates.
+
+The reviewed architecture content is recoverable in local main commit `89fc3e899b80b08e02215be047d27646780158d7`. All five task-created native worktrees and two worker branches were removed after verifying every changed authored file was retained in main history or named evidence. Exact review targets/oracles are preserved outside worktrees under ignored `artifacts/held-input-review/evidence/`; native map captures remain intentionally available for review. All owned browser/GUI/daemon processes and temporary profiles were closed. The final permitted census found no leftovers or reviewer child processes. Hidden primary Vite servers on 5173/PID27152 and 5174/PID1308 remain at the user's request, both HEAD200; existing unrelated resources and the Shibuya archive were preserved. No map-code push or remote CI run was performed.
 
 ## Embedded-browser acceptance still open
 
