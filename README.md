@@ -50,6 +50,36 @@ Map data: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright),
 
 For headless verification, `window.__bayMap` is a frozen object with read-only getters: `camera` (`center`, `zoom`, `pitch`, `bearing`), `ready`, `campusBuildings`, `renderedBuildings`, `heightSources`, `sources`, `selectedBuilding`, `errors`, `details` (lazy geometry/shader readiness, build/upload timing, triangles/bytes and current draw calls), and `rendering` (bounded render-event timestamps, motion timestamps and pixel ratio). It exposes no MapLibre instance or camera setters. `ready` requires local campus data, a loaded style, settled tile requests, at least one successful regional tile event, and no active reported error; architectural readiness is separately reported by `details.ready`. Browser flow checks must still use real controls and inspect the rendered map. Render-event cadence is not display-refresh telemetry.
 
+## Medieval city proof of concept
+
+This branch also carries a separate proof of concept: a small walled medieval town in Unreal Engine 5.8, with assets authored procedurally in Blender, walkable in first and third person. It is independent of the Bay Area map above and shares no code with it.
+
+It needs Unreal Engine 5.8, Blender 5.2 LTS and Python 3.13 on Windows. Nothing is downloaded and no package is installed.
+
+Unreal also needs a .NET Framework 4.6 or later SDK to build any Editor target, because `SwarmInterface` refuses to load without one and `UnrealEd` always depends on it. Install the Windows SDK ".NET Framework 4.x SDK" component if you have not. Without it the build still works: it points `UE_SDKS_ROOT` at a presence marker for that one subprocess and says so each time, and that marker goes inert once a real SDK is registered.
+
+Generated content is not committed: the Blender exports, the imported Unreal packages, the level and the build output are all reproduced by this sequence, in order, from the branch root.
+
+```sh
+python tools/blender/build_assets.py
+python tools/medieval/build_layout.py
+python tools/medieval/build_native.py --target both
+python tools/medieval/prepare_project.py
+python tools/medieval/build_level.py
+```
+
+Then open `MedievalCity.uproject` and press Play, which starts you on the market plaza.
+
+```sh
+python tools/medieval/run_probe.py --mode city
+```
+
+That is the scripted walk through the town: it injects real key events, checks movement, both camera modes, sprint, jump, ground contact and wall collision, and captures screenshots. Without `--mode city` it runs `smoke` instead, which is a bare test floor for checking the character alone and shows none of the town.
+
+Walk with W, A, S and D, look with the mouse, jump with Space, sprint with Left Shift, and press V to switch between first and third person.
+
+The scope, contracts and acceptance evidence are in [the plan](docs/work/2_medieval-city/plan.md) and [the contracts](docs/work/2_medieval-city/design.md). This proof of concept stays on its branch; `main` keeps the Bay Area map.
+
 ## Previous project
 
 The current product direction and contribution checks are in [local rules](docs/policies/local-rules.md). The first increment's acceptance and verification are in [the plan](docs/work/0_bay-area-stanford/plan.md).

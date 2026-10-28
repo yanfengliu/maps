@@ -1,3 +1,21 @@
+# Medieval city branch rules
+
+These rules apply only on `codex/medieval-city-20261027`, which carries a medieval city proof of concept beside the map product. The map rules below are unchanged and still govern every map file.
+
+The owner asked on 2026-10-27 for a small medieval city in Unreal Engine with Blender assets, walkable in first and third person, as a proof of concept on a new branch. Keep it on that branch; integrating it into `main` needs a later owner decision. The Bay Area map stays the product on `main` and this branch does not change it.
+
+Nothing tracked in Git is a binary Unreal package. No Blueprint, input asset, skeletal mesh or animation asset, because fleet rule R23 keeps binaries over 512 KiB out of ordinary Git. Enhanced Input objects are built in C++ at runtime and the third-person avatar is assembled from engine primitive shapes, so the tracked project is text and the generated content is reproduced by the command sequence in the README.
+
+Blender authors in metres with Z up; Unreal works in centimetres. An asset's origin is its footprint centre with the lowest point at Z equal to 0, and plus Y is its front. The importer measures imported bounds against the Blender inventory rather than assuming the engine's glTF scale.
+
+Verification injects real key events through the player controller so the input bindings are exercised. Moving the character directly is placement, not evidence about the controls. Screenshots are inspected at native resolution and acceptance is bound to their digests.
+
+Assets are authored procedurally and deterministically: seeded randomness only, sorted iteration, two runs byte-identical. No downloaded, purchased or third-party asset, and no Python package outside the standard library.
+
+Unreal 5.8 cannot build any project's Editor target on a machine with no .NET Framework SDK, because `SwarmInterface.Build.cs` throws when it finds no NetFxSDK directory and `UnrealEd` depends on it unconditionally. The Editor target is not optional here: the Game binary refuses to start on uncooked content, so the game runs as `UnrealEditor-Cmd.exe <uproject> <map> -game`, and importing assets and saving a level are editor work too.
+
+The owner chose installing the Windows SDK ".NET Framework 4.x SDK" component as the standing answer on 2026-10-27. That install needs an elevated shell, which this session could not obtain (`vs_installer` exit code 5007, "should be run elevated from the beginning"), so it is still pending. Until it lands, `build_native.py` checks the registry and, only when no real SDK is registered, creates an AutoSDK presence marker under ignored `artifacts/` and sets `UE_SDKS_ROOT` for that single UnrealBuildTool subprocess. Nothing is installed, no registry key is written and nothing persists. UnrealBuildTool only checks that the marker file exists, and an installed engine never recompiles SwarmInterface, so the paths derived from it are never read. The build records `netfx_autosdk_marker` per target so the workaround is never silent, and it goes inert by itself once the real SDK is registered.
+
 # Current map direction
 
 The product is a map inspired by Apple Maps, beginning with the San Francisco Bay Area coastline and regional context. Stanford University's main campus is the only area with 3D buildings. Keep the regional-first view and a clear Stanford flight. Moving around the map should offer smooth pan, zoom, rotation, tilt, compass reset and useful local place search.

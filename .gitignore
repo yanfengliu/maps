@@ -10,3 +10,17 @@
 .env.*
 !.env.example
 *.log
+
+# Medieval city proof of concept (codex/medieval-city-20261027).
+# Generated Unreal content, build output and Blender exports are reproduced by
+# the command sequence in README.md and never committed.
+/Binaries/
+/Content/
+/DerivedDataCache/
+/Intermediate/
+/Saved/
+/assets/generated/
+
+# Python and lint caches from the medieval city tooling.
+__pycache__/
+.ruff_cache/
