@@ -13,3 +13,13 @@ Keep the sandstone/terracotta map palette as architectural detail grows. Derived
 The frozen `window.__bayMap` observer is read-only. Verification drives real controls and reads observations, never assigns camera state. Treat remote loading and local campus data as separate readiness conditions; errors need working recovery. Review desktop/mobile framing, repeated overview returns, search focus, selected building details and source-failure recovery when those paths change.
 
 Run `npm run build`, `npm run typecheck`, `npm test` and `npm run audit` before code commits. Keep meaningful visual/control evidence under ignored `artifacts/`; do not commit temporary captures or raw source XML. Independent review must inspect the integrated changes. Retain plans, authored review rounds and conclusions in `docs/work/0_bay-area-stanford/`. The old Shibuya archive and retained resources remain separate from this direction.
+
+# Work-document allocation
+
+The fleet work-docs allocator cannot reserve an ID in this repository, and no registry content can make it. `docs/work/registry.json` existed twice in this repository's history with contradictory allocations for ID 0: `00ff7e6f7f5cdee2e60b03132b72e6a452b473b9`, an ancestor of `main`, records `shibuya-1km`, and `af4403654cfa2917c17bc52caf838da61939770e`, reachable from `codex/shibuya-unreal-5.8` and pushed to `origin`, records `unreal-shibuya`. The allocator's history check requires every reachable past registry to be a prefix of the current one by both ID and theme, so ID 0 would have to carry both names at once. A registry here fails that history check; its absence fails the missing-registry check.
+
+Six work folders have existed across all refs: ID 0 under `bay-area-stanford`, `shibuya-1km` and `unreal-shibuya`, ID 1 under `local-rules-refresh` and `walk-speed-fps`, and ID 2 under `medieval-city`. IDs 0 and 1 were reused inside `main`'s own history, not only on divergent branches, so a sweep of branch tips alone understates what is taken.
+
+Allocate work-folder IDs by hand until the allocator can accept this repository. Sweep all refs for taken IDs, and record the chosen ID and this blocker in the plan. Never hand-edit a registry into existence.
+
+Resolving it needs the in-place adoption and acknowledgment mechanism designed as fleet work unit 18, which is `Status: blocked` and was never committed to any fleet ref. Removing either conflicting commit is not an option: both are reachable from real branches, one of them pushed, and the archived Shibuya branch must not change. Separately, `docs/work/0_bay-area-stanford/` does not satisfy the current structural rules; adoption is designed to take those documents as they are, so do not rename or reshape them to make a check pass.
