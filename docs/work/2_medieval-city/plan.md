@@ -61,7 +61,7 @@ Decisions and findings worth keeping, recorded as they were settled:
 - The flat-ground box is x within plus or minus 60 and y within plus or minus 64 metres. W3 found the first numbers too small for the real inventory, W1 implemented the widening, and both now check it.
 - The glTF frame mapping in this document was wrong until W4 measured it. Authored (x, y, z) arrives as Unreal (100x, -100y, 100z) with no axis swap, and camera headings need a further 90 degrees. The measured mapping replaced the guess, and the probe is being corrected to match.
 - Interchange enables Nanite by default, which makes LOD0 a decimated fallback and would have given a walking character half-resolution collision geometry. The importer turns Nanite off; triangle counts then match the inventory exactly.
-- Unreal 5.8 cannot build any Editor target without a .NET Framework SDK. The owner chose to install it; that install needs elevation this session could not obtain, so a non-persistent AutoSDK presence marker stands in and reports itself. See [local rules](../../policies/local-rules.md).
+- Unreal 5.8 cannot build any Editor target without a .NET Framework SDK. The owner authorised the install and it landed on 2026-10-27: NETFXSDK 4.8 is registered machine-wide and the Editor target builds from it with the marker inert, 10 compile and 2 link actions on a forced rebuild. The first attempt failed with `vs_installer` exit 1 because the calling script left the space-containing install path unquoted, not because the component was wrong. The marker stays as a fallback for a machine with no SDK. See [local rules](../../policies/local-rules.md).
 - W4's introspection probe saved eight actors into the engine's own default map. The owner authorised a targeted repair, which the orchestrator ran after taking a backup: the eight were destroyed, the engine's original PlayerStart survived, and the map was verified clean.
 
 ## Outcome
@@ -81,7 +81,7 @@ Reviewed independently in two rounds, both recorded in [reviews](reviews/). Roun
 
 Known limits, not defects to chase: the Escape binding exists but is unexercised; the smoke floor is the engine's near-white material, so the exposure claim rests only on the town's own cobble; one shaded street vantage is genuinely dark under fixed exposure; the camera separation figure fails for an incidental reason while the view-to-camera check is the structurally sound half; the import step opens the engine map it once polluted, protected by spawning nothing rather than by a guard; and the red-proof harnesses live under ignored paths, so those proofs cannot be re-run from the repository.
 
-Not done: this stays on its branch and is not merged to `main`, which keeps the Bay Area map. The Unreal Editor target still builds through a non-persistent AutoSDK presence marker, because the .NET Framework SDK install the owner chose needs an elevated shell this session could not obtain.
+Not done: this stays on its branch and is not merged to `main`, which keeps the Bay Area map.
 
 Retained resource, deliberately not removed: the worktree at `artifacts/medieval-city/worktree` in the primary checkout holds the built project — the imported meshes and materials under `Content/`, the compiled binaries, and the saved level. Removing it would mean rebuilding all of that before anyone could walk the town again. Anyone picking this up owns that directory; the five README commands rebuild it from nothing if it is lost.
 
