@@ -156,13 +156,17 @@ Keys, mapped through Enhanced Input objects created in code: W, A, S and D move,
 
 ## Verification
 
-`tools/medieval/run_probe.py` starts the real game with `-MedievalProbe=<directory>` and the probe actor runs one fixed sequence: settle, capture, hold W for three seconds in third person, toggle to first person, hold W again, look with the mouse, jump, then run into a wall, and finally capture each layout vantage before requesting exit.
+`tools/medieval/run_probe.py --mode city` starts the real game with `-MedievalProbe=<directory>` and the probe actor runs one fixed sequence: settle, capture, hold W for three seconds in third person, toggle to first person, hold W again, look with the mouse, jump, a paced walk against a paced sprint, one run for each of W, A, S and D, a run into a wall, a walk through the gate arch, and finally each layout vantage, before requesting exit. Without `--mode city` it runs `smoke`, a bare test floor that shows none of the town and skips the gate step.
 
 Movement input is injected as real key events through the player controller, so the Enhanced Input bindings are exercised. Vantage captures move the character directly and are recorded as placement, not as evidence about the controls.
 
-`probe.json` records, per step, the key injected, the character's start and end location, its speed, which camera was active and where it was, and each screenshot's name and SHA-256. The probe fails when movement under held input is 3 m or less, when the camera does not change between modes, when the character leaves the ground envelope, or when pushing into a wall moves it more than 1 m.
+`probe.json` records, per step, the key injected, the character's start and end location, its speed, where the rendered view was and which camera the character calls active, and each screenshot's name and SHA-256. The probe fails when movement under held input is 3 m or less; when a movement key moves the character less than 150 cm along its own direction or more than 60 cm across it; when the rendered view moves less than 100 cm between the camera modes; when the rendered view sits more than 5 cm from the camera component the character calls active; when the view was never compared at all, which a sample count makes distinguishable from a clean pass; when sprinting covers less than 1.4 times the walking distance over the same time; when the character leaves the ground envelope; when pushing into a wall moves it more than 1 m; or when it fails to clear the gate line by 200 cm.
 
-The wall test is two steps under one held key, because the layout only promises a wall within 4 m of the run start: an unmeasured approach until contact, then a measured push of at least 1.5 s more, which must move the character no more than 1 m. The ground envelope is measured as clearance above the surface under a downward trace rather than absolute Z, so the ground's relief cannot break it. A vantage names where the camera goes, so the capsule is placed 72 cm below it, matching the first-person camera offset.
+The rendered view is read from the player camera manager, not from the camera components, because a check that branches on the same flag it is checking proves only that the flag flipped. The opening sample of each step is discarded: the step opens in the same tick as a placement, after the camera manager has already run, so it would read the pre-placement view.
+
+The wall test is two steps under one held key, because the layout only promises a wall within 4 m of the run start: an approach that must itself cover at least 25 cm, so a character that never moved cannot be reported as stopped by a wall, then a measured push of at least 1.5 s more, which must move it no more than 1 m. The ground envelope is measured as clearance above the surface under a downward trace rather than absolute Z, so the ground's relief cannot break it. A vantage names where the camera goes, so the capsule is placed 72 cm below it, matching the first-person camera offset.
+
+The gate step places the character on the main street short of the gatehouse and holds W until it is through. It shows that this gatehouse's arch admits a colliding character at this placement; it is not a claim about gate passability in general.
 
 Sprint is part of the sequence: holding Left Shift with W must cover meaningfully more ground than W alone over the same time. The Escape binding exists but the probe exits through the engine's own exit request, so Escape stays unexercised and is reported as such.
 
@@ -173,10 +177,10 @@ Screenshots are 1280x720 and are inspected at native resolution; acceptance is b
 | Gate | Command | Bound |
 | --- | --- | --- |
 | Assets | `python tools/medieval/test_assets.py` | Inventory completeness, metre envelopes, triangle budgets, declared materials, byte-identical repeat run. No claim about appearance. |
-| Layout | `python tools/medieval/test_layout.py` | Overlap, containment, player start clearance and probe run clearances in the layout JSON. No engine claim. |
-| Native build | `python tools/medieval/build_native.py --target both` | Editor and Game targets compile and link. No runtime claim. |
-| Level | `python tools/medieval/build_level.py --verify` | Imported mesh bounds against the inventory, and every layout placement present in the saved map. |
-| Probe | `python tools/medieval/run_probe.py` | Real game, injected keys, both camera modes, ground contact, wall collision, non-blank captures. Not a performance or appearance claim. |
+| Layout | `python tools/medieval/test_layout.py` | Overlap, containment, flat-box containment, player start clearance, and the probe's run clearances, including the 20 m of clear street the two walks consume. No engine claim. |
+| Native build | `python tools/medieval/build_native.py --target both` | That both targets are current and their binaries post-date every source file. An ordinary run may compile nothing and says so; `--rebuild` is the run that compiles, and it records to its own filename so an ordinary run cannot overwrite the evidence. No runtime claim. |
+| Level | `python tools/medieval/build_level.py --verify` | Imported mesh bounds and triangle counts against the inventory, every layout placement present at its mapped transform, no undeclared actor of any class, house fronts facing their streets, and the world actors present. Ground under the player start is traced on the Pawn profile; the axis-sign probes use Visibility. |
+| Probe | `python tools/medieval/run_probe.py --mode city` | Real game, injected keys, per-key movement direction, the rendered view in both camera modes with a sample count, sprint against walk, ground contact, a wall that stops a character that actually approached it, the gate arch, and non-blank captures. Not a performance or appearance claim. |
 | Repository | `npm run build`, `npm run typecheck`, `npm test`, `npm run audit` | The Bay Area map product on this branch is unchanged and still passes. |
 
 Each script owns and closes the processes it starts, terminates only its own process tree, and writes evidence under ignored `artifacts/`.

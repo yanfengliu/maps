@@ -1,9 +1,11 @@
 # Medieval city walk-around proof of concept
 
-Status: active
+Status: complete
 Owner: Root orchestrator (Claude Opus 5 session, 2026-10-27)
 Created: 2026-10-27
 Updated: 2026-10-27
+
+Complete as scoped: a proof of concept delivered on its own branch, which is what the owner asked for. It is deliberately not merged to `main`, so by the fleet's merge rule it is not "done" in the ordinary sense; its location is `codex/medieval-city-20261027`, pushed to `origin`, with the built project retained in the worktree named under Outcome.
 
 ## Problem and outcome
 
@@ -72,7 +74,7 @@ Verified by the orchestrator on the integrated revision, not from worker reports
 - Layout: 193 placements, 26 buildings, 16 of 16 checks, observed red on 27 corruptions.
 - Level: 193 actors placed and verified, worst location error 0.00000 cm, worst yaw error 0.00001 degrees, 25 of 25 house fronts facing their street, mesh bounds within 0.00008 cm of the inventory times 100, no undeclared actor of any class.
 - Build: a rebuild for the record compiled 10 and linked 2 for the Editor target, 9 and 1 for the Game target, in a file ordinary runs cannot overwrite.
-- Probe, driving real injected key events: third person walk 871.0 cm, first person 871.6 cm, each movement key moving along its own direction with about 1e-5 cm sideways, rendered view 352.5 cm apart between camera modes over 26 compared samples, sprint 1.856 times walking at exactly 300 and 600 cm/s, 325.8 cm approach then 2.53 cm of push against a wall, ground held throughout, and a walk through the gate arch ending 771.3 cm past the gate line.
+- Probe, driving real injected key events: third person walk 870.9 cm, first person 871.7 cm, each movement key moving along its own direction with about 1e-5 cm sideways, rendered view 352.5 cm apart between camera modes over 26 compared samples, sprint 1.856 times walking at exactly 300 and 600 cm/s, 325.8 cm approach then 2.53 cm of push against a wall, ground held throughout, and a walk through the gate arch ending 771.3 cm past the gate line.
 - Repository: `npm run build`, `npm run typecheck`, `npm test` (51 of 51) and `npm run audit` (0 vulnerabilities) all pass; the tracked diff touches no map product code.
 
 Reviewed independently in two rounds, both recorded in [reviews](reviews/). Round 0 found 15 findings, 5 material, including that neither documented route actually opened the town and that the camera-mode check would have passed with the camera switch deleted. Round 1 confirmed 14 repairs and found 2 further material defects, one of them introduced inside a repair. All 17 were accepted and repaired, each material one observed going red on the defect it names.
@@ -80,5 +82,9 @@ Reviewed independently in two rounds, both recorded in [reviews](reviews/). Roun
 Known limits, not defects to chase: the Escape binding exists but is unexercised; the smoke floor is the engine's near-white material, so the exposure claim rests only on the town's own cobble; one shaded street vantage is genuinely dark under fixed exposure; the camera separation figure fails for an incidental reason while the view-to-camera check is the structurally sound half; the import step opens the engine map it once polluted, protected by spawning nothing rather than by a guard; and the red-proof harnesses live under ignored paths, so those proofs cannot be re-run from the repository.
 
 Not done: this stays on its branch and is not merged to `main`, which keeps the Bay Area map. The Unreal Editor target still builds through a non-persistent AutoSDK presence marker, because the .NET Framework SDK install the owner chose needs an elevated shell this session could not obtain.
+
+Retained resource, deliberately not removed: the worktree at `artifacts/medieval-city/worktree` in the primary checkout holds the built project — the imported meshes and materials under `Content/`, the compiled binaries, and the saved level. Removing it would mean rebuilding all of that before anyone could walk the town again. Anyone picking this up owns that directory; the five README commands rebuild it from nothing if it is lost.
+
+Reviewed in three rounds: [0](reviews/0_implementation.md) found 15 findings, [1](reviews/1_implementation.md) found 2 more inside the repairs, and [2](reviews/2_implementation.md) found the contract document stale and the code clean.
 
 Blocker recorded at allocation: the fleet work-docs allocator refuses to reserve an ID in this repository because `docs/work/registry.json` does not exist beside the existing `0_bay-area-stanford` folder, and the tool has no migrate command. ID 2 was taken by hand after checking every branch in the repository, where `0` and `1` are both already used on divergent branches and `2` is unused. Creating that registry is a `main`-owned migration and is not part of this proof of concept.
