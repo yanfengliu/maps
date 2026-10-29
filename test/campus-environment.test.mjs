@@ -20,7 +20,7 @@ const inside=(p,ring)=>{let hits=0;for(let i=1;i<ring.length;i++){const a=ring[i
 const distance=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],q=dx*dx+dy*dy,t=q?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/q)):0;return Math.hypot(p[0]-a[0]-dx*t,p[1]-a[1]-dy*t);};
 
 test('bounded ODbL environment input has pinned positions, source hashes and explicit exclusions, with no generated planting grid',()=>{
-  assert.equal(digest(bytes),'c6d7e0803a3b0e6c012d6fba431e914263833f012e0945b259ddcbd919dac300');
+  assert.equal(digest(bytes),'d9c056c55c154a98bf33309477155f0731aef3d58039bff7f6a099f87a1b6fa0');
   assert.equal(provenance.outputs['stanford-environment.geojson'].sha256,digest(bytes));
   assert.equal(provenance.license,'ODbL 1.0');assert.equal(environment.features.length,1002);
   assert.deepEqual(provenance.beforeExclusions,{tree:728,bench:166,lamp:81});
@@ -164,7 +164,7 @@ test('bench ways of unknown material are flat neutral markers on their mapped pa
 test('a tagged backrest runs one side of a whole bench way: opposite the modeled facing, or a bent way\'s outer side where that facing runs along it',()=>{
   const side=(p,line)=>{let best=Infinity,sign=0;for(let i=1;i<line.length;i++){const d=distance(p,line[i-1],line[i]);if(d<best){best=d;const a=line[i-1],b=line[i];sign=Math.sign((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]));}}return sign;};
   // way/1509660899 is the one mapped way with a known material and a backrest: concrete, bending left through three segments.
-  // Its modeled facing, 164.61 degrees toward way/1509660898, points to its left, so the whole back must run along its right.
+  // Its modeled facing, 104.39 degrees, crosses its overall line toward its left, so the whole back must run along its right.
   const backed=environment.features.find(f=>f.properties.id==='way/1509660899');
   assert.equal(backed.properties.material,'concrete');assert.equal(backed.properties.backrest,'yes');
   const line=backed.geometry.coordinates.map(projectLocal),back=benchTriangles(backed).flatMap(t=>t.points).filter(p=>p[2]>0.9);
@@ -190,19 +190,41 @@ test('a tagged backrest runs one side of a whole bench way: opposite the modeled
   // Neighbouring segments share the back's corners: an open way's back top has exactly an inner and an outer corner at each node, so bends leave no gap or overlap.
   const corners=new Set(benchTriangles(backed).flatMap(t=>t.points).filter(p=>p[2]===0.91).map(p=>p[0].toFixed(6)+','+p[1].toFixed(6)));
   assert.equal(corners.size,2*line.length,'the back of the bent way must join its segments at shared corners');
+  // A back mirrored to either side keeps its faces wound outward: every top triangle's normal points up.
+  const up=feature=>benchTriangles(feature).filter(t=>t.points.every(p=>p[2]===0.91)).every(({points:[a,b,c]})=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])>0);
+  assert.ok(up(backed),'the right-side back of way/1509660899 must face up');
+  for(const modeledFacing of [0,180])assert.ok(up(fixtureWay({material:'wood',backrest:'yes',modeledFacing},straight)),`facing ${modeledFacing}: the back's top must face up`);
 });
 
-test('modeled facing sets aside every path through the bench and measures a way from the middle of its length',()=>{
+test('modeled facing never runs along a footway the bench lies on, nor along a bench way, and a path through the bench is set aside',()=>{
   const walk=(id,a,b)=>({id,a,b});
-  // A node on a footway's line: the whole footway is set aside, its farther segments included, and the bench faces the separate path 3 m north.
-  assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[0,0]),walk('1',[0,0],[1,0]),walk('1',[1,0],[2,0.5]),walk('2',[-5,3],[5,3])]),{modeledFacing:0,orientationSource:'way/2'});
-  // A way sharing its end node with a footway: the footway is set aside even where it passes 0.5 m from the way's middle.
+  // A node on a footway's line faces across that footway, toward the nearest path it does not touch: here 3 m south-east.
+  assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[0,0]),walk('1',[0,0],[1,0]),walk('1',[1,0],[2,0.5]),walk('2',[2,-3],[6,-3])]),{modeledFacing:180,orientationSource:'way/1'});
+  // The path that continues the footway lies dead ahead along it, so it decides no side; the bench still faces across, to the footway's left.
+  assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[2,0]),walk('2',[2,0],[6,0.3]),walk('3',[-5,4],[5,4])]),{modeledFacing:0,orientationSource:'way/1'});
+  // A way sharing its end node with a footway: the footway is set aside even where it passes 0.5 m from the way's middle; the way faces across itself, south.
   assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('3',[4,0],[6,1]),walk('3',[6,1],[2,0.5]),walk('4',[2,-2],[2,-6])]),{modeledFacing:180,orientationSource:'way/4'});
+  // A footway crossing a way between its nodes, here at its middle, is set aside too.
+  assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('9',[2,-1],[2,1]),walk('10',[0,-3],[4,-3])]),{modeledFacing:180,orientationSource:'way/10'});
+  assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('9',[2.6,-1],[2.4,1]),walk('10',[0,-3],[4,-3])]),{modeledFacing:180,orientationSource:'way/10'});
   // A two-node way is measured from its middle (5, 0), where the path 4 m south is nearest, not from an end node 2 m from the path to the east.
   assert.deepEqual(estimateFacing([[0,0],[10,0]],[walk('5',[12,-1],[12,1]),walk('6',[5,-4],[5,-8])]),{modeledFacing:180,orientationSource:'way/6'});
-  // A bench a path does not touch faces it, from either side.
+  // A path straight ahead along a way decides no side, and the way faces across itself to its left, never along itself.
+  assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('11',[6,0],[9,0])]),{modeledFacing:0,orientationSource:'way/11'});
+  // A bench node no path touches faces the nearest one.
   assert.deepEqual(estimateFacing([[0,0]],[walk('7',[-1,-1],[1,-1])]),{modeledFacing:180,orientationSource:'way/7'});
   assert.deepEqual(estimateFacing([[0,0]],[walk('8',[1,-1],[1,1])]),{modeledFacing:90,orientationSource:'way/8'});
+  // Every open mapped way's facing crosses its own overall line, so no estimate runs along a bench way. The four closed rings,
+  // way/1508655696 to 699, have no such line and face their reference path instead.
+  let open=0;
+  for(const way of environment.features.filter(f=>f.geometry.type==='LineString'&&f.properties.benchModel!=='quad-seat-wall')){
+    const line=way.geometry.coordinates.map(projectLocal);let x=0,y=0;for(let i=1;i<line.length;i++){x-=line[i][1]-line[i-1][1];y+=line[i][0]-line[i-1][0];}
+    if(Math.hypot(x,y)<1e-6){assert.deepEqual(line[0],line.at(-1),`${way.properties.id} has no overall line but is not closed`);continue;}
+    open++;
+    const f=way.properties.modeledFacing*Math.PI/180,cosine=Math.abs(x*Math.sin(f)+y*Math.cos(f))/Math.hypot(x,y);
+    assert.ok(cosine>0.999,`${way.properties.id} faces ${way.properties.modeledFacing}, not across its line`);
+  }
+  assert.equal(open,21);
 });
 
 test('actual emitted palm, broadleaf and conifer silhouettes differ; untagged size stays an estimate',()=>{

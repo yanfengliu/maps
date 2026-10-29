@@ -30,19 +30,34 @@ const tagsKept = ['species','genus','leaf_type','leaf_cycle','height','circumfer
 const quadSeatWalls=new Set(['30775532','30775534','30775535','30775536','30775539','30775540','30775541','30775542']);
 const bingTeak=new Set(['5831701380','5831701381','5831701382','5831701383','5831701384']);
 const closestPoint=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],q=dx*dx+dy*dy,t=q?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/q)):0;return [a[0]+dx*t,a[1]+dy*t];};
+const turn=(o,p,q)=>(p[0]-o[0])*(q[1]-o[1])-(p[1]-o[1])*(q[0]-o[0]);
+const segmentsCross=(a,b,c,d)=>{const d1=turn(c,d,a),d2=turn(c,d,b),d3=turn(a,b,c),d4=turn(a,b,d);return d1*d2<0&&d3*d4<0;};
+const segmentGap=(a,b,c,d)=>segmentsCross(a,b,c,d)?0:Math.min(segmentDistance(a,c,d),segmentDistance(b,c,d),segmentDistance(c,a,b),segmentDistance(d,a,b));
 /**
- * Modeled facing of a bench with no direction tag: the bearing from the bench node, or from the middle of a bench way's length,
- * to the nearest mapped pedestrian path. A path passing within 5 cm of any of the bench's nodes runs through or into the bench
- * and says nothing of where it faces, so that whole path is set aside, every segment of it. `walks` are path segments {a, b, id}
- * in local metres. A way's middle node can be an end node, so the length midpoint is used instead.
+ * Modeled facing of a bench with no direction tag, from mapped pedestrian paths given as segments {a, b, id} in local metres.
+ * A path whose segment comes within 5 cm of the bench, by node, crossing or shared end, runs through or into it and is set aside
+ * whole; the nearest remaining path to the bench node, or to the middle of a way's length, is the reference path.
+ * - A bench way faces across its own length-weighted line, toward the reference path's side, so it never faces along itself.
+ *   A closed ring has no such line and faces the reference path from the middle of its length.
+ * - A bench node lying on a path faces across that path's segment, toward the reference path's side.
+ * - Any other bench node faces the reference path.
+ * With the reference path dead ahead along the line it faces across, the side is undecided and the left of that line is taken.
  */
 export function estimateFacing(benchPoints,walks){
-  const touching=new Set(walks.filter(path=>benchPoints.some(p=>{const q=closestPoint(p,path.a,path.b);return Math.hypot(q[0]-p[0],q[1]-p[1])<0.05;})).map(path=>path.id));
+  const pieces=benchPoints.length>1?benchPoints.slice(1).map((b,i)=>[benchPoints[i],b]):[[benchPoints[0],benchPoints[0]]];
+  const contact=walks.filter(path=>pieces.some(([a,b])=>segmentGap(a,b,path.a,path.b)<0.05)),touching=new Set(contact.map(path=>path.id));
   const lengths=benchPoints.slice(1).map((p,i)=>Math.hypot(p[0]-benchPoints[i][0],p[1]-benchPoints[i][1])),half=lengths.reduce((sum,length)=>sum+length,0)/2;
   let walked=0,point=benchPoints[0];
   for(let i=0;i<lengths.length;i++){if(walked+lengths[i]>=half){const t=lengths[i]?(half-walked)/lengths[i]:0;point=[benchPoints[i][0]+(benchPoints[i+1][0]-benchPoints[i][0])*t,benchPoints[i][1]+(benchPoints[i+1][1]-benchPoints[i][1])*t];break;}walked+=lengths[i];}
-  const nearest=walks.reduce((best,path)=>{if(touching.has(path.id))return best;const q=closestPoint(point,path.a,path.b),distance=Math.hypot(q[0]-point[0],q[1]-point[1]);return distance<best.distance?{distance,q,id:path.id}:best;},{distance:Infinity,q:[point[0],point[1]+1],id:'unknown'});
-  return {modeledFacing:Math.round(Math.atan2(nearest.q[0]-point[0],nearest.q[1]-point[1])*180/Math.PI*100)/100,orientationSource:'way/'+nearest.id};
+  const reference=walks.reduce((best,path)=>{if(touching.has(path.id))return best;const q=closestPoint(point,path.a,path.b),distance=Math.hypot(q[0]-point[0],q[1]-point[1]);return distance<best.distance?{distance,q,id:path.id}:best;},{distance:Infinity,q:[point[0],point[1]+1],id:'unknown'});
+  const toward=[reference.q[0]-point[0],reference.q[1]-point[1]];
+  let across,source=reference.id;
+  if(benchPoints.length>1){let x=0,y=0;for(const [a,b] of pieces){x-=b[1]-a[1];y+=b[0]-a[0];}if(Math.hypot(x,y)>1e-9)across=[x,y];}
+  else if(contact.length){const on=contact.reduce((best,path)=>segmentDistance(point,path.a,path.b)<segmentDistance(point,best.a,best.b)?path:best);across=[-(on.b[1]-on.a[1]),on.b[0]-on.a[0]];source=on.id;}
+  const facing=across?(reference.id!=='unknown'&&across[0]*toward[0]+across[1]*toward[1]<0?[-across[0],-across[1]]:across):toward;
+  // A flipped [0, y] becomes [-0, -y], and atan2 gives -0 and -180 for those; both are written as 0 and 180.
+  const bearing=Math.round(Math.atan2(facing[0],facing[1])*180/Math.PI*100)/100;
+  return {modeledFacing:bearing===-180?180:bearing||0,orientationSource:'way/'+source};
 }
 
 export async function buildCampusEnvironment({ sourceDir, outputDir = path.join(root,'public/data') }) {
@@ -103,7 +118,7 @@ export async function buildCampusEnvironment({ sourceDir, outputDir = path.join(
   const provenance={schemaVersion:2,derivedFromFetchedAt:originalProvenance.fetchedAt,source:'Existing pinned OpenStreetMap API 0.6 bounded map extracts',attribution:'© OpenStreetMap contributors',license:'ODbL 1.0',licenseUrl:'https://www.openstreetmap.org/copyright',sourceProvenance:'stanford-provenance.json',sources:originalProvenance.sources,
     selection:'Mapped natural=tree, amenity=bench and highway=street_lamp nodes, plus complete amenity=bench ways inside the pinned Stanford campus boundary. Eight separately labeled authored seat-wall interpretations follow exact mapped Inner Quad planting boundaries. Original coordinates and retained tags are unchanged. No authored or randomly distributed tree positions are added. Bench counts refer to feature assemblies, not a physical-seat inventory.',
     exclusion:'Exclude point roots/furniture inside a building polygon (courtyard holes remain empty), within 0.65 m of its wall, or inside mapped drivable-road clearance: explicit width/2 capped at 8 m; otherwise 3 m, service 2 m, parking aisle 1.8 m. Bench lines sample every 0.2 m and require 0.65 m centerline clearance for their bounded 0.5 m miter envelope, then complete emitted triangles receive a separate wall-crossing/clearance test. Road centerline distance uses a local metre approximation. Tree crowns may overhang paths as real crowns do. No sampling or cap is applied to eligible nodes.',
-    dimensions:'Tree height, crown dimensions and furniture dimensions are authored estimates unless numeric source tags exist. Missing tree type defaults to a modeled broadleaf; Phoenix/palm and needleleaved tags determine distinct silhouettes. Species tags are not a botanical field survey. Bench direction tags describe seated facing; otherwise modeledFacing points from the bench node, or from the middle of a bench way\'s length, toward the nearest mapped pedestrian path, setting aside every path that passes within 5 cm of one of the bench\'s nodes, and is an estimate, not a surveyed long axis. Material tags identify seating only, not the frame. Unverified point designs and bench ways of unknown material are flat neutral map markers. Lamp dimensions remain modeled estimates.',
+    dimensions:'Tree height, crown dimensions and furniture dimensions are authored estimates unless numeric source tags exist. Missing tree type defaults to a modeled broadleaf; Phoenix/palm and needleleaved tags determine distinct silhouettes. Species tags are not a botanical field survey. Bench direction tags describe seated facing; otherwise modeledFacing is an estimate, not a surveyed long axis, made from the nearest mapped pedestrian path that does not touch the bench (none of its segments within 5 cm). A bench way faces across its own overall line toward that path\'s side; a bench node lying on a path faces across that path toward it; any other bench node faces it. Material tags identify seating only, not the frame. Unverified point designs and bench ways of unknown material are flat neutral map markers. Lamp dimensions remain modeled estimates.',
     benchInterpretation:'Mapped amenity=bench ways preserve every original coordinate and retained tag. The eight named Inner Quad natural=wood boundaries are authored seat-wall interpretations corroborated by Stanford Gardens guide p4 photo/text; they are NOT OSM amenity=bench features. Their modeled 0.50 m width and 0.45 m height follow the exact planted outline, without inventing circular centers. Five Bing courtyard nodes use a modeled six-foot teak family with solid posts, vertical back spindles and arms based on Stanford courtyard photography; dimensions and facing remain estimates. Other mapped wood seats are material/backrest estimates; unknown materials do not receive an invented wood design. Ways of known material are solid ribbons whose dimensions are modeled, not survey measurements; a tagged backrest runs the whole way on the side opposite its modeled facing or, where that facing runs along the way, on a bent way\'s outer side; either side is an estimate.',
     benchReferences:[{id:'stanford-gardens-guide-p4',url:'https://familyweekend.stanford.edu/sites/g/files/sbiybj17671/files/media/file/a_self-guided_tour_of_stanford_gardens.pdf',page:4,accessed:'2026-10-20',note:'2017 student garden guide hosted for Family Weekend 2022; photo and text corroborate circular concrete benches around the eight Quad oases, not current as-built dimensions.'},{id:'bing-courtyard-photo',url:'https://aabs2018.stanford.edu/images/stanford/sunset.jpg',accessed:'2026-10-20',note:'Actual Stanford courtyard photograph: vertical back spindles, solid wooden posts and arms. Bing west context also checked at https://trees.stanford.edu/images/inner_palms/inner_palms-Pages/Image8.html; finite node assignment is a modeled family interpretation, not a field survey.'},{id:'bench-tag-semantics',url:'https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dbench',accessed:'2026-10-20',note:'Facing, material-seat semantics and line mapping.'}],
     beforeExclusions:counts,retained,excluded,benchLines:lines,outputs:{[output]:{bytes:Buffer.byteLength(data),sha256:digest(data)}},generator:'tools/data/build-campus-environment.mjs'};

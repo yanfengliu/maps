@@ -98,9 +98,11 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
           // The 9 cm back is centred on the seat's mitred edge, so neighbouring segments share its corners and bends leave no gap.
           const side=backOnLeft?1:-1,at=(p:Point,n:Point,offset:number,z:number):Vertex=>[p[0]+side*n[0]*offset,p[1]+side*n[1]*offset,z];
           const ai=(z:number)=>at(a,na,half-0.045,z),ao=(z:number)=>at(a,na,half+0.045,z),bi=(z:number)=>at(b,nb,half-0.045,z),bo=(z:number)=>at(b,nb,half+0.045,z);
-          quad(ai(0.45),bi(0.45),bi(0.91),ai(0.91),tone,12);quad(bo(0.45),ao(0.45),ao(0.91),bo(0.91),tone,12);quad(ai(0.91),bi(0.91),bo(0.91),ao(0.91),tone,12);
-          if(i===1&&!closed)quad(ao(0.45),ai(0.45),ai(0.91),ao(0.91),tone,12);
-          if(i===points.length-1&&!closed)quad(bi(0.45),bo(0.45),bo(0.91),bi(0.91),tone,12);
+          // Mirroring the back to the right reverses its winding, so its faces are listed the other way round there and still face out.
+          const face=(q:Vertex,r:Vertex,s:Vertex,t:Vertex)=>side>0?quad(q,r,s,t,tone,12):quad(t,s,r,q,tone,12);
+          face(ai(0.45),bi(0.45),bi(0.91),ai(0.91));face(bo(0.45),ao(0.45),ao(0.91),bo(0.91));face(ai(0.91),bi(0.91),bo(0.91),ao(0.91));
+          if(i===1&&!closed)face(ao(0.45),ai(0.45),ai(0.91),ao(0.91));
+          if(i===points.length-1&&!closed)face(bi(0.45),bo(0.45),bo(0.91),bi(0.91));
         }
       }
       if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],tone,12);}
