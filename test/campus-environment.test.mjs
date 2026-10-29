@@ -211,6 +211,13 @@ test('modeled facing never runs along a footway the bench lies on, nor along a b
   assert.deepEqual(estimateFacing([[0,0],[10,0]],[walk('5',[12,-1],[12,1]),walk('6',[5,-4],[5,-8])]),{modeledFacing:180,orientationSource:'way/6'});
   // A path straight ahead along a way decides no side, and the way faces across itself to its left, never along itself.
   assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('11',[6,0],[9,0])]),{modeledFacing:0,orientationSource:'way/11'});
+  // The same tie off the axes, where rounding leaves a dot product of about -1.4e-14, and moved by (100, 100): still the left, -77.74.
+  for(const shift of [0,100]){
+    const at=([x,y])=>[x+shift,y+shift];
+    assert.deepEqual(estimateFacing([at([0,0]),at([4.936,22.712])],[walk('12',at([7.404,34.068]),at([11.106,51.102]))]),{modeledFacing:-77.74,orientationSource:'way/12'},`shifted by ${shift}`);
+  }
+  // A node on a zero-length footway segment has nothing to face across and faces its reference path instead.
+  assert.deepEqual(estimateFacing([[0,0]],[walk('13',[0,0],[0,0]),walk('14',[3,0],[3,2])]),{modeledFacing:90,orientationSource:'way/14'});
   // A bench node no path touches faces the nearest one.
   assert.deepEqual(estimateFacing([[0,0]],[walk('7',[-1,-1],[1,-1])]),{modeledFacing:180,orientationSource:'way/7'});
   assert.deepEqual(estimateFacing([[0,0]],[walk('8',[1,-1],[1,1])]),{modeledFacing:90,orientationSource:'way/8'});
