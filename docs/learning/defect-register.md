@@ -1,5 +1,9 @@
 # Defect register
 
+## 2026-10-20 — Benches do not match campus seating
+
+Symptom: the user reports that benches are inaccurate. Investigation confirms all benches used the same wood model even when material tags specified concrete; unknown backrest/material and road-derived facing were treated as detailed geometry. The node-only source extraction also omitted mapped bench ways and curved seating. Correction and verification are tracked in [the bench/sculpture record](../work/0_bay-area-stanford/benches-statues.md): preserve source facts, use photo-supported forms, distinguish unknowns, check actual line paths and facing semantics, and inspect native close views.
+
 ## 2026-10-20 — Mouse gestures pause held WASD
 
 Symptom: WASD and mouse must move the camera at the same time. Root cause: the first held-input repair deliberately paused keyboard RAF updates during pointer/wheel activity to avoid public camera calls resetting MapLibre's native handlers. That preserved each input separately but prevented composition. The correction merges deltas in the pinned native input pipeline; 40 actual checks cover both inputs being active, both release orders, wheel equivalence and drag event ownership. Restoring the old pause reproduces the failure. [The record](../work/0_bay-area-stanford/simultaneous-environment.md) and [review 007](../work/0_bay-area-stanford/reviews/007_simultaneous-input.md) retain exact hashes and bounds; this supersedes the previous pointer-priority policy.

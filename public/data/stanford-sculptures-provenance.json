@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "source": "Two curated outdoor works at points in the existing pinned OpenStreetMap extracts",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "sourceProvenance": "stanford-provenance.json",
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "sourceNodes": [
+    {
+      "type": "node",
+      "id": "5648594207",
+      "version": 4,
+      "timestamp": "2026-07-13T10:23:20Z",
+      "tags": {
+        "artist_name": "Auguste Rodin",
+        "artwork_type": "sculpture",
+        "name": "The Burghers of Calais",
+        "name:fr": "Les Bourgeois de Calais",
+        "tourism": "artwork",
+        "wikidata": "Q47522991"
+      },
+      "coordinate": [
+        -122.1699656,
+        37.4280031
+      ]
+    },
+    {
+      "type": "node",
+      "id": "6477042804",
+      "version": 1,
+      "timestamp": "2019-05-16T04:44:53Z",
+      "tags": {
+        "artwork_type": "sculpture",
+        "name": "Angel of Grief",
+        "tourism": "artwork",
+        "wikidata": "Q531989",
+        "wikipedia": "en:Angel of Grief"
+      },
+      "coordinate": [
+        -122.1688001,
+        37.4373687
+      ]
+    }
+  ],
+  "selection": "The Burghers of Calais in Memorial Court and Angel of Grief in the Arboretum are within the pinned Stanford campus perimeter. Original source point coordinates, node identity and version remain unchanged. The indoor Thinker and unreviewed artworks are not generated.",
+  "geometry": "Original authored low-poly interpretations from inspected Stanford photographs. Bronze/marble, six separate Burghers plinths and gestures, and the Angel altar, bowed pose and drooping wings are reference based. All dimensions, figure arrangement around the mapped group point, orientation, face details and relief are modeled estimates, not survey measurements, scans or exact replicas. No external models, image textures or remote runtime geometry are used.",
+  "references": [
+    {
+      "url": "https://news.stanford.edu/stories/2017/08/stanfords-cantor-arts-center-offers-fresh-look-rodin",
+      "supports": "Rodin attribution and Memorial Court location"
+    },
+    {
+      "url": "https://news.stanford.edu/stories/2015/08/vandalism-angel-grief-081415",
+      "supports": "White marble, William Wetmore Story replica, Henry Clay Lathrop memorial in the Arboretum"
+    },
+    {
+      "url": "https://web.stanford.edu/~siegelr/art/rodin.html",
+      "supports": "Robert Siegel Stanford photographs; six different poses, robes, dark bronze, separate low bases"
+    },
+    {
+      "url": "https://web.stanford.edu/~siegelr/stanford/angelofgrief.html",
+      "supports": "Robert Siegel Stanford photographs; bowed figure, hanging arm, flared altar, steps and long folded wings"
+    }
+  ],
+  "referenceUse": "References inspected as private browser captures. Photographs remain copyrighted by their owners and are not shipped in this repository or app.",
+  "outputs": {
+    "stanford-sculptures.geojson": {
+      "bytes": 610,
+      "sha256": "751a0f69362573b0050989199c3713b277feb4c99fef900840838694f1dad700"
+    }
+  }
+}

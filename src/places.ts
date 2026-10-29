@@ -7,7 +7,16 @@ export interface Place {
   zoom: number;
   campus?: boolean;
   buildingId?: string;
+  sculptureId?: string;
 }
+
+export interface SculpturePlace extends Place { sculptureId:string;artist:string;material:string;sourceUrl:string;description:string }
+// This small search index is consistency-checked against the pinned GeoJSON.
+// Indexing two artworks adds no regional request or renderer work.
+export const SCULPTURE_PLACES:SculpturePlace[]=[
+  {id:'sculpture-burghers-of-calais',sculptureId:'burghers-of-calais',name:'The Burghers of Calais',subtitle:'Sculpture · Auguste Rodin · Stanford',center:[-122.1699656,37.4280031],zoom:21.1,campus:true,artist:'Auguste Rodin',material:'Bronze',sourceUrl:'https://news.stanford.edu/stories/2017/08/stanfords-cantor-arts-center-offers-fresh-look-rodin',description:'Six bronze figures stand on separate low plinths in Memorial Court, each with a different stance and gesture.'},
+  {id:'sculpture-angel-of-grief',sculptureId:'angel-of-grief',name:'Angel of Grief',subtitle:'Sculpture · Stanford Arboretum',center:[-122.1688001,37.4373687],zoom:21.1,campus:true,artist:'After William Wetmore Story',material:'Marble',sourceUrl:'https://news.stanford.edu/stories/2015/08/vandalism-angel-grief-081415',description:'A bowed, winged figure leans over a flared funeral altar. Jane Stanford commissioned the memorial for her brother, Henry Clay Lathrop.'}
+];
 
 export const STANFORD_CENTER: Position = [-122.1697, 37.4278];
 export const BAY_BOUNDS: [Position, Position] = [[-122.67, 37.20], [-121.69, 38.08]];
@@ -26,7 +35,7 @@ function normalize(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-/** Search remains local: only the Bay destinations and supplied campus footprints are indexed. */
+/** Search remains local: Bay destinations, two reviewed artworks and supplied campus footprints. */
 export function searchPlaces(query: string, places: readonly Place[]): Place[] {
   const term = normalize(query);
   if (!term) return [];

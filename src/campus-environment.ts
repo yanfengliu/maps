@@ -7,7 +7,7 @@ interface MeshWriter {
   triangle(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind:number,building:number,uv?:[Point,Point,Point],normals?:[Vertex,Vertex,Vertex]):void;
   quad(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind:number,building:number):void;
 }
-export type CampusEnvironment = GeoJSON.FeatureCollection<GeoJSON.Point, {id:string;version:number;kind:'tree'|'bench'|'lamp';[key:string]:unknown}>;
+export type CampusEnvironment = GeoJSON.FeatureCollection<GeoJSON.Point|GeoJSON.LineString, {id:string;version:number;kind:'tree'|'bench'|'lamp';[key:string]:unknown}>;
 export interface EnvironmentCounts { trees:number; palms:number; broadleaf:number; conifers:number; benches:number; lamps:number }
 export const ENVIRONMENT_BUILDING = -2;
 export const ENVIRONMENT_VERTEX_KIND = 10;
@@ -16,14 +16,24 @@ export const emptyEnvironmentCounts = ():EnvironmentCounts=>({trees:0,palms:0,br
 /** A malformed or missing local input fails the existing detail retry path. */
 export function validateCampusEnvironment(value:unknown):CampusEnvironment {
   const data=value as CampusEnvironment;
-  if(data?.type!=='FeatureCollection'||!Array.isArray(data.features)||data.features.length>1200)throw new Error('Campus environment input must contain at most 1,200 mapped point features. Restore /data/stanford-environment.geojson and retry campus detail.');
+  if(data?.type!=='FeatureCollection'||!Array.isArray(data.features)||data.features.length>1200)throw new Error('Campus environment input must contain at most 1,200 mapped features. Restore /data/stanford-environment.geojson and retry campus detail.');
   const ids=new Set<string>();
   for(const feature of data.features){
-    const p=feature?.properties,point=feature?.geometry?.coordinates;
-    if(feature?.geometry?.type!=='Point'||!Array.isArray(point)||point.length!==2||point.some(x=>!Number.isFinite(x))||point[0]<-122.19||point[0]>-122.15||point[1]<37.415||point[1]>37.445||!p||!/^node\/\d+$/.test(p.id)||ids.has(p.id)||!['tree','bench','lamp'].includes(p.kind))throw new Error(`Campus environment feature ${String(p?.id??'unknown')} has an invalid identity, kind or Stanford coordinate. Restore the pinned environment input and retry campus detail.`);
+    const p=feature?.properties,geometry=feature?.geometry;
+    const line=geometry?.type==='LineString',points=line&&Array.isArray(geometry.coordinates)?geometry.coordinates:geometry?.type==='Point'?[geometry.coordinates]:[];
+    if(!p||!['tree','bench','lamp'].includes(p.kind)||ids.has(p.id)||!(line?p.kind==='bench'&&/^way\/\d+$/.test(p.id)&&points.length>=2&&points.length<=80:geometry?.type==='Point'&&/^node\/\d+$/.test(p.id))||points.some(point=>!Array.isArray(point)||point.length!==2||point.some(x=>!Number.isFinite(x))||point[0]<-122.19||point[0]>-122.15||point[1]<37.415||point[1]>37.445))throw new Error(`Campus environment feature ${String(p?.id??'unknown')} has an invalid identity, kind or Stanford coordinate. Restore the pinned environment input and retry campus detail.`);
     ids.add(p.id);
   }
   return data;
+}
+
+/** OSM direction describes the seated person's facing normal, not the long axis. */
+export function benchFacing(properties:CampusEnvironment['features'][number]['properties']):number {
+  const compass:Record<string,number>={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};
+  const raw=properties.direction,cardinal=typeof raw==='string'?compass[raw.trim().toUpperCase()]:undefined;
+  const numeric=typeof raw==='number'?raw:typeof raw==='string'&&/^\s*\d+(?:\.\d+)?\s*$/.test(raw)?Number(raw):NaN;
+  const mapped=cardinal??numeric,fallback=Number(properties.modeledFacing);
+  return Number.isFinite(mapped)&&mapped>=0&&mapped<=360?mapped:Number.isFinite(fallback)?fallback:0;
 }
 
 function variation(id:string):number {
@@ -49,6 +59,67 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
   const counts=emptyEnvironmentCounts();
   const triangle=(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,tint,kind,ENVIRONMENT_BUILDING,undefined,normals);
   const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND)=>mesh.quad(a,b,c,d,tint,kind,ENVIRONMENT_BUILDING);
+  const box=(at:(u:number,v:number,z:number)=>Vertex,u0:number,u1:number,v0:number,v1:number,z0:number,z1:number,color:Color)=>{
+    const a=at(u0,v0,z0),b=at(u1,v0,z0),c=at(u1,v1,z0),d=at(u0,v1,z0),e=at(u0,v0,z1),f=at(u1,v0,z1),g=at(u1,v1,z1),h=at(u0,v1,z1);
+    quad(a,b,f,e,color,12);quad(b,c,g,f,color,12);quad(c,d,h,g,color,12);quad(d,a,e,h,color,12);quad(e,f,g,h,color,12);quad(d,c,b,a,color,12);
+  };
+  const addBench=(feature:CampusEnvironment['features'][number])=>{
+    const p=feature.properties,stone:Color=p.material==='stone'?[0.64,0.62,0.57]:[0.73,0.72,0.67];
+    if(feature.geometry.type==='LineString'){
+      const points=feature.geometry.coordinates.map(project),closed=points.length>2&&Math.hypot(points[0][0]-points.at(-1)![0],points[0][1]-points.at(-1)![1])<0.01;
+      const width=p.benchModel==='quad-seat-wall'?0.50:0.48,half=width/2;
+      const normals=points.map((point,i)=>{
+        const previous=points[i===0?(closed?points.length-2:0):i-1],next=points[i===points.length-1?(closed?1:i):i+1];
+        const normal=(a:Point,b:Point):Point=>{const d=Math.hypot(b[0]-a[0],b[1]-a[1]);return d>0?[(-(b[1]-a[1])/d),(b[0]-a[0])/d]:[0,0];};
+        const a=normal(previous,point),b=normal(point,next),x=a[0]+b[0],y=a[1]+b[1],den=x*b[0]+y*b[1];
+        return Math.abs(den)>0.25?[x/den,y/den] as Point:(i===0?b:a);
+      });
+      for(let i=1;i<points.length;i++){
+        const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];
+        const al:Vertex=[a[0]+na[0]*half,a[1]+na[1]*half,0.45],ar:Vertex=[a[0]-na[0]*half,a[1]-na[1]*half,0.45],bl:Vertex=[b[0]+nb[0]*half,b[1]+nb[1]*half,0.45],br:Vertex=[b[0]-nb[0]*half,b[1]-nb[1]*half,0.45];
+        quad(al,ar,br,bl,stone,12);quad([al[0],al[1],0],[bl[0],bl[1],0],bl,al,stone,12);quad([br[0],br[1],0],[ar[0],ar[1],0],ar,br,stone,12);
+        if(p.backrest==='yes'){
+          // The line fixes the actual length/shape. Facing and this back's width/height remain estimates.
+          const angle=-benchFacing(p)*Math.PI/180,forward:Point=[Math.sin(-angle),Math.cos(angle)];
+          const side=na[0]*forward[0]+na[1]*forward[1]>0?-1:1;
+          const aa=side>0?al:ar,bb=side>0?bl:br;
+          // Follow the mapped segment, including bends, rather than substituting repeated 1.9 m benches.
+          const dx=bb[0]-aa[0],dy=bb[1]-aa[1],axis=Math.atan2(dy,dx),nx=-Math.sin(axis)*0.045,ny=Math.cos(axis)*0.045;
+          quad([aa[0]-nx,aa[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.91],[aa[0]-nx,aa[1]-ny,0.91],stone,12);
+          quad([bb[0]+nx,bb[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],stone,12);
+          quad([aa[0]-nx,aa[1]-ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],stone,12);
+          if(i===1&&!closed)quad([aa[0]+nx,aa[1]+ny,0.45],[aa[0]-nx,aa[1]-ny,0.45],[aa[0]-nx,aa[1]-ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],stone,12);
+          if(i===points.length-1&&!closed)quad([bb[0]-nx,bb[1]-ny,0.45],[bb[0]+nx,bb[1]+ny,0.45],[bb[0]+nx,bb[1]+ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],stone,12);
+        }
+      }
+      if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],stone,12);}
+      return;
+    }
+    const [x,y]=project(feature.geometry.coordinates),angle=-benchFacing(p)*Math.PI/180;
+    const at=(u:number,v:number,z:number):Vertex=>[x+Math.cos(angle)*u-Math.sin(angle)*v,y+Math.sin(angle)*u+Math.cos(angle)*v,z];
+    const photographed=p.benchModel==='courtyard-teak',wood=p.material==='wood'||photographed;
+    if(!wood&&p.material!=='concrete'&&p.material!=='stone'){
+      // An unsurveyed bench is a flat neutral map marker, not an invented wood/metal design.
+      quad(at(-0.8,-0.19,0.025),at(0.8,-0.19,0.025),at(0.8,0.19,0.025),at(-0.8,0.19,0.025),[0.58,0.60,0.57],12);return;
+    }
+    const seat:Color=wood?[0.61,0.54,0.43]:stone,frame:Color=photographed?seat:[0.48,0.49,0.46];
+    const half=photographed?0.915:0.90;
+    if(photographed){
+      for(let i=0;i<5;i++)box(at,-half,half,-0.25+i*0.105,-0.165+i*0.105,0.42,0.46,seat);
+      for(const u of [-0.81,0.81])for(const v of [-0.23,0.23])box(at,u-0.045,u+0.045,v-0.045,v+0.045,0,v<0?0.94:0.67,seat);
+      for(const z of [0.52,0.87])box(at,-half,half,-0.28,-0.20,z,z+0.07,seat);
+      for(let i=0;i<9;i++){const u=-0.72+i*0.18;box(at,u-0.022,u+0.022,-0.26,-0.22,0.57,0.87,seat);}
+      for(const u of [-0.84,0.84]){
+        // A three-section rounded-down arm profile from the actual courtyard photograph.
+        box(at,u-0.055,u+0.055,-0.24,0.08,0.67,0.73,seat);box(at,u-0.055,u+0.055,0.08,0.22,0.66,0.72,seat);box(at,u-0.055,u+0.055,0.22,0.29,0.63,0.70,seat);
+      }
+    }else{
+      box(at,-half,half,-0.24,0.24,0.41,0.46,seat);
+      // Source material identifies the seating only. Neutral supports are explicitly modeled, not tagged metal/wood.
+      for(const u of [-0.64,0.64])box(at,u-0.08,u+0.08,-0.20,0.20,0,0.41,frame);
+      if(p.backrest==='yes')box(at,-half,half,-0.27,-0.20,0.46,0.91,seat);
+    }
+  };
   const cylinder=(x:number,y:number,radius:number,bottom:number,top:number,tint:Color,sides=6)=>{
     for(let i=0;i<sides;i++){const a=i*2*Math.PI/sides,b=(i+1)*2*Math.PI/sides;quad([x+Math.cos(a)*radius,y+Math.sin(a)*radius,bottom],[x+Math.cos(b)*radius,y+Math.sin(b)*radius,bottom],[x+Math.cos(b)*radius,y+Math.sin(b)*radius,top],[x+Math.cos(a)*radius,y+Math.sin(a)*radius,top],tint,11);}
   };
@@ -63,7 +134,10 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
     }
   };
   for(const feature of data.features){
-    const p=feature.properties,[x,y]=project(feature.geometry.coordinates);
+    const p=feature.properties;
+    if(p.kind==='bench'){counts.benches++;addBench(feature);continue;}
+    if(feature.geometry.type!=='Point')continue;
+    const [x,y]=project(feature.geometry.coordinates);
     if(p.kind==='tree'){
       const {type,height,radius,seed}=environmentDimensions(p);counts.trees++;
       const bark:Color=type==='palm'?[0.56,0.48,0.35]:[0.45,0.40,0.31];
@@ -93,14 +167,6 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
         const evergreen=p.leaf_cycle==='evergreen',green:Color=evergreen?[0.39,0.49,0.31]:[0.49,0.59,0.35];
         crown(x,y,height*0.68,radius,radius*(0.86+seed*0.20),height*0.32,green,seed);
       }
-    }else if(p.kind==='bench'){
-      counts.benches++;
-      const direction=Number(p.direction),angle=Number.isFinite(direction)?(90-direction)*Math.PI/180:Number(p.modeledOrientation)||0;
-      const at=(u:number,v:number,z:number):Vertex=>[x+Math.cos(angle)*u-Math.sin(angle)*v,y+Math.sin(angle)*u+Math.cos(angle)*v,z];
-      const wood:Color=[0.59,0.49,0.36],metal:Color=[0.32,0.37,0.31];
-      for(let i=0;i<3;i++){const v=-0.26+i*0.18;quad(at(-0.95,v,0.48),at(0.95,v,0.48),at(0.95,v+0.13,0.48),at(-0.95,v+0.13,0.48),wood,12);}
-      if(p.backrest!=='no')for(let i=0;i<2;i++){const z=0.61+i*0.19;quad(at(-0.95,0.26,z),at(0.95,0.26,z),at(0.95,0.26,z+0.13),at(-0.95,0.26,z+0.13),wood,12);}
-      for(const u of [-0.65,0.65])for(const v of [-0.19,0.19])quad(at(u-0.035,v,0),at(u+0.035,v,0),at(u+0.035,v,0.47),at(u-0.035,v,0.47),metal,12);
     }else{
       counts.lamps++;
       cylinder(x,y,0.085,0,3.6,[0.37,0.41,0.35],4);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PLACES, searchPlaces, geometryCenter, buildingPlaces, normalizeBearing } from '../src/places.ts';
+import { PLACES,SCULPTURE_PLACES, searchPlaces, geometryCenter, buildingPlaces, normalizeBearing } from '../src/places.ts';
+import {readFileSync} from 'node:fs';
 
 test('local destination search matches accents, multiple words and no-result queries', () => {
   assert.equal(searchPlaces(' san jose ', PLACES)[0].id, 'san-jose');
@@ -27,4 +28,18 @@ test('compass bearings wrap without changing the represented direction', () => {
   for (const [input, expected] of [[0,0],[360,0],[-390,-30],[725,5],[-181,179]]) {
     assert.equal(normalizeBearing(input), expected);
   }
+});
+
+test('both reviewed artworks are searchable and use the mapped sculpture coordinates at an inspectable native zoom',()=>{
+  const data=JSON.parse(readFileSync(new URL('../public/data/stanford-sculptures.geojson',import.meta.url)));
+  assert.equal(SCULPTURE_PLACES.length,2);
+  for(const place of SCULPTURE_PLACES){
+    const feature=data.features.find(f=>f.properties.model===place.sculptureId);assert.ok(feature);
+    assert.deepEqual(place.center,feature.geometry.coordinates);assert.equal(place.name,feature.properties.name);
+    assert.equal(place.artist,feature.properties.artist);assert.equal(place.material.toLowerCase(),feature.properties.material);
+    assert.ok(place.zoom>=21&&place.zoom<=21.5);assert.equal(place.campus,true);
+    assert.equal(searchPlaces(place.name,[...PLACES,...SCULPTURE_PLACES])[0].id,place.id);
+    assert.match(place.sourceUrl,/^https:\/\/news\.stanford\.edu\//);
+  }
+  assert.equal(searchPlaces('rodin sculpture',SCULPTURE_PLACES)[0].sculptureId,'burghers-of-calais');
 });
