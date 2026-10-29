@@ -18,6 +18,8 @@ export const SCULPTURE_PLACES:SculpturePlace[]=[
   {id:'sculpture-angel-of-grief',sculptureId:'angel-of-grief',name:'Angel of Grief',subtitle:'Sculpture · Stanford Arboretum',center:[-122.1688001,37.4373687],zoom:21.1,campus:true,artist:'After William Wetmore Story',material:'Marble',sourceUrl:'https://news.stanford.edu/stories/2015/08/vandalism-angel-grief-081415',description:'A bowed, winged figure leans over a flared funeral altar. Jane Stanford commissioned the memorial for her brother, Henry Clay Lathrop.'}
 ];
 
+/** The map's native maximum zoom; every place flight must land within it, the artwork flights at 21.1 included. */
+export const MAX_MAP_ZOOM = 21.5;
 export const STANFORD_CENTER: Position = [-122.1697, 37.4278];
 export const BAY_BOUNDS: [Position, Position] = [[-122.67, 37.20], [-121.69, 38.08]];
 export const PLACES: Place[] = [

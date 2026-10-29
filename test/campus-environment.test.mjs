@@ -20,11 +20,13 @@ const inside=(p,ring)=>{let hits=0;for(let i=1;i<ring.length;i++){const a=ring[i
 const distance=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],q=dx*dx+dy*dy,t=q?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/q)):0;return Math.hypot(p[0]-a[0]-dx*t,p[1]-a[1]-dy*t);};
 
 test('bounded ODbL environment input has pinned positions, source hashes and explicit exclusions, with no generated planting grid',()=>{
-  assert.equal(digest(bytes),'554f290a952942cbc323e8171986b31f465f4b5fc8e50abe34d1680a61725317');
+  assert.equal(digest(bytes),'c49c2f667c91460ce5cd821fc39c8f48612aac32faf38e0a158af77e8aba03b6');
   assert.equal(provenance.outputs['stanford-environment.geojson'].sha256,digest(bytes));
   assert.equal(provenance.license,'ODbL 1.0');assert.equal(environment.features.length,1002);
   assert.deepEqual(provenance.beforeExclusions,{tree:728,bench:166,lamp:81});
-  assert.deepEqual(provenance.retained,{tree:726,bench:196,lamp:80});assert.equal(provenance.excluded.length,6);
+  assert.deepEqual(provenance.retained,{tree:726,bench:163,lamp:80});assert.equal(provenance.excluded.length,6);
+  // Retained counts source nodes only: the 25 ways and eight authored walls live in benchLines, so each kind balances.
+  for(const kind of ['tree','bench','lamp'])assert.equal(provenance.retained[kind],provenance.beforeExclusions[kind]-provenance.excluded.filter(e=>e.kind===kind).length,kind+' retained must equal before less excluded');
   assert.deepEqual(provenance.sources.map(s=>s.sha256),JSON.parse(load('stanford-provenance.json')).sources.map(s=>s.sha256));
   const palm=environment.features.find(f=>f.properties.id==='node/6475091349');
   assert.deepEqual(palm.geometry.coordinates,[-122.171698,37.4278552]);assert.equal(palm.properties.species,'Phoenix canariensis');
@@ -78,7 +80,8 @@ function benchTriangles(feature){
 }
 const fixtureBench=properties=>({type:'Feature',properties:{id:'node/123',version:1,kind:'bench',material:'wood',backrest:'yes',...properties},geometry:{type:'Point',coordinates:[-122.1697,37.4278]}});
 test('numeric and cardinal bench direction is seated facing, with the back behind it and solid supports',()=>{
-  for(const [direction,front] of [[0,[0,1]],['N',[0,1]],[90,[1,0]],['E',[1,0]],[180,[0,-1]],['SW',[-Math.SQRT1_2,-Math.SQRT1_2]]]){
+  // OSM supplies direction as text, so numeric strings are checked beside JS numbers and compass names.
+  for(const [direction,front] of [[0,[0,1]],['N',[0,1]],[90,[1,0]],['E',[1,0]],[180,[0,-1]],['SW',[-Math.SQRT1_2,-Math.SQRT1_2]],['90',[1,0]],[' 180 ',[0,-1]],['22.5',[Math.sin(Math.PI/8),Math.cos(Math.PI/8)]]]){
     const triangles=benchTriangles(fixtureBench({direction}));
     const high=triangles.flatMap(t=>t.points).filter(p=>p[2]>0.5),dot=high.map(p=>p[0]*front[0]+p[1]*front[1]);
     assert.ok(Math.max(...dot)<-0.19,`${direction}: back is not behind the seated facing normal`);
@@ -96,6 +99,8 @@ test('mapped unknown seats are neutral flat markers; wood/concrete/backrests and
   const concrete=benchTriangles(fixtureBench({material:'concrete',backrest:'no'}));
   assert.ok(concrete.flatMap(t=>t.points).every(p=>p[2]<=0.46));assert.ok(concrete.some(t=>t.tint[0]>0.7));
   const wood=benchTriangles(fixtureBench({backrest:'no'}));assert.ok(wood.flatMap(t=>t.points).every(p=>p[2]<=0.46));
+  // An absent backrest tag is unknown, not yes: known-material seats get no back unless it is tagged.
+  for(const material of ['wood','concrete','stone'])assert.ok(benchTriangles(fixtureBench({material,backrest:undefined})).flatMap(t=>t.points).every(p=>p[2]<=0.46),material+' seat without a backrest tag must have no back');
   const photographed=benchTriangles(fixtureBench({benchModel:'courtyard-teak'}));
   const high=photographed.flatMap(t=>t.points).filter(p=>p[2]>0.6);
   assert.ok(high.some(p=>p[1]>0.2),'photographed curved arms must reach forward');
@@ -123,10 +128,54 @@ test('all bench solids and ribbons clear building material, preserve mapped curv
   assert.ok(minimum>0.1,'the complete emitted seat envelope needs positive wall clearance');
   const curved=environment.features.find(f=>f.properties.id==='way/1505422554');assert.equal(curved.geometry.coordinates.length,16);assert.equal(curved.properties.material,'stone');
   const walls=benches.filter(f=>f.properties.benchModel==='quad-seat-wall');assert.equal(walls.length,8);
-  for(const wall of walls){assert.deepEqual(wall.geometry.coordinates[0],wall.geometry.coordinates.at(-1));const mesh=benchTriangles(wall);assert.equal(mesh.length,(wall.geometry.coordinates.length-1)*6);assert.ok(mesh.flatMap(t=>t.points).every(p=>p[2]===0||p[2]===0.45));assert.equal(wall.properties.material,undefined,'modeled concrete interpretation must not invent a source material tag');}
+  for(const wall of walls){
+    assert.deepEqual(wall.geometry.coordinates[0],wall.geometry.coordinates.at(-1));const mesh=benchTriangles(wall);assert.equal(mesh.length,(wall.geometry.coordinates.length-1)*6);assert.ok(mesh.flatMap(t=>t.points).every(p=>p[2]===0||p[2]===0.45));assert.equal(wall.properties.material,undefined,'modeled concrete interpretation must not invent a source material tag');
+    // The closing seam: the first and last segments must share both seat corners there. Segments are at least 2.6 m long, so 0.6 m holds only that vertex's corners.
+    const close=projectLocal(wall.geometry.coordinates[0]),corners=new Set(mesh.flatMap(t=>t.points).filter(p=>p[2]===0.45&&Math.hypot(p[0]-close[0],p[1]-close[1])<0.6).map(p=>p[0].toFixed(6)+','+p[1].toFixed(6)));
+    assert.equal(corners.size,2,wall.properties.id+' leaves a gap or overlap at its closing vertex');
+  }
   // A real full-length triangle can cross a narrow wall while all its endpoints
   // are outside it. This negative catches a vertex-only clearance oracle.
   assert.ok(cross([-2,0],[2,0],[0,-1],[0,1]));
+});
+
+const fixtureWay=(properties,coordinates=[[-122.1697,37.4278],[-122.16968,37.4278],[-122.16966,37.42782]])=>({type:'Feature',properties:{id:'way/123',version:1,kind:'bench',modeledFacing:0,...properties},geometry:{type:'LineString',coordinates}});
+test('bench ways of unknown material are flat neutral markers on their mapped path; known materials stay solid in their own tone',()=>{
+  for(const backrest of [undefined,'no','yes']){
+    const way=fixtureWay({backrest}),mesh=benchTriangles(way);
+    assert.equal(mesh.length,(way.geometry.coordinates.length-1)*2,'one flat quad a segment');
+    assert.ok(mesh.flatMap(t=>t.points).every(p=>p[2]===0.025),`backrest=${backrest}: an unknown-material way must not gain a seat or back`);
+    assert.ok(mesh.every(t=>t.tint[0]<t.tint[1]),'unknown material keeps the neutral marker tone');
+    const line=way.geometry.coordinates.map(projectLocal);
+    for(const p of mesh.flatMap(t=>t.points))assert.ok(line.slice(1).some((b,i)=>distance(p,line[i],b)<0.3),'the marker follows the mapped path, its 0.19 m half-width mitred at bends');
+  }
+  const tones={wood:[0.61,0.54,0.43],concrete:[0.73,0.72,0.67],stone:[0.64,0.62,0.57]};
+  for(const [material,tone] of Object.entries(tones)){
+    const mesh=benchTriangles(fixtureWay({material,backrest:'no'}));
+    assert.ok(Math.max(...mesh.flatMap(t=>t.points).map(p=>p[2]))===0.45,material+' way is a solid 0.45 m seat');
+    assert.ok(mesh.every(t=>t.tint.every((v,i)=>v===tone[i])),material+' way keeps its own tone');
+  }
+  const ways=environment.features.filter(f=>f.geometry.type==='LineString'&&f.properties.benchModel!=='quad-seat-wall');
+  const flat=ways.filter(f=>benchTriangles(f).every(t=>t.points.every(p=>p[2]===0.025)));
+  assert.equal(ways.length,25);assert.equal(flat.length,23);
+  assert.ok(flat.every(f=>!['wood','concrete','stone'].includes(f.properties.material)),'only unknown-material ways are flat');
+});
+
+test('a tagged backrest runs one side of a bent bench way, the outer side where the modeled facing runs along the way',()=>{
+  const side=(p,line)=>{let best=Infinity,sign=0;for(let i=1;i<line.length;i++){const d=distance(p,line[i-1],line[i]);if(d<best){best=d;const a=line[i-1],b=line[i];sign=Math.sign((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]));}}return sign;};
+  // way/1509660899 is the one mapped way with a known material and a backrest: concrete, bending left through three segments.
+  const backed=environment.features.find(f=>f.properties.id==='way/1509660899');
+  assert.equal(backed.properties.material,'concrete');assert.equal(backed.properties.backrest,'yes');
+  const line=backed.geometry.coordinates.map(projectLocal),back=benchTriangles(backed).flatMap(t=>t.points).filter(p=>p[2]>0.9);
+  assert.ok(back.length>0);
+  const sides=new Set(back.map(p=>side(p,line)));
+  assert.deepEqual([...sides],[-1],'the whole back lies on the outer, right side of this left-bending way');
+  // A facing across the way puts the back opposite it, on either side, for the whole way.
+  const straight=[[-122.1697,37.4278],[-122.1695,37.4278],[-122.1693,37.4278]];
+  for(const [modeledFacing,expected] of [[0,-1],[180,1]]){
+    const s=new Set(benchTriangles(fixtureWay({material:'wood',backrest:'yes',modeledFacing},straight)).flatMap(t=>t.points).filter(p=>p[2]>0.9).map(p=>side(p,straight.map(projectLocal))));
+    assert.deepEqual([...s],[expected],`facing ${modeledFacing}: the back belongs behind the seated person on one side`);
+  }
 });
 
 test('actual emitted palm, broadleaf and conifer silhouettes differ; untagged size stays an estimate',()=>{

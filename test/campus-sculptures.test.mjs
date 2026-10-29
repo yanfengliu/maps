@@ -68,6 +68,19 @@ test('integrated building/environment/sculpture mesh preserves source data and 1
   for(const feature of data.features){const [x,y]=projectLocal(feature.geometry.coordinates);assert.ok(Math.hypot(x,y)<2000);}
 });
 
+test('both works stand clear of every mapped building, by every emitted vertex',()=>{
+  const ring=(p,r)=>{let hits=0;for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])hits++;}return hits%2===1;};
+  const edge=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],q=dx*dx+dy*dy,t=q?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/q)):0;return Math.hypot(p[0]-a[0]-dx*t,p[1]-a[1]-dy*t);};
+  const polygons=JSON.parse(read('stanford-buildings.geojson')).features.flatMap(f=>f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).map(p=>p.map(r=>r.map(projectLocal)));
+  const vertices=[];addCampusSculptures({triangle:(a,b,c)=>vertices.push(a,b,c)},data,projectLocal);
+  let nearest=Infinity;
+  for(const p of vertices)for(const polygon of polygons){
+    assert.ok(!(ring(p,polygon[0])&&!polygon.slice(1).some(h=>ring(p,h))),'a sculpture vertex lies inside building material');
+    for(const r of polygon)for(let i=1;i<r.length;i++)nearest=Math.min(nearest,edge(p,r[i-1],r[i]));
+  }
+  assert.ok(nearest>2,`sculptures need clear space from walls; nearest is ${nearest.toFixed(2)} m`);
+});
+
 test('invalid curated sculpture identities, duplicate models and out-of-campus inputs fail with recovery guidance',()=>{
   assert.throws(()=>validateCampusSculptures(empty),/two reviewed Stanford artworks.*Restore.*retry/);
   for(const mutate of [d=>d.features[0].geometry.coordinates=[0,0],d=>d.features[0].properties.model='generic-statue',d=>d.features[0].properties.version=NaN,d=>d.features[0].properties.artist='',d=>d.features[1].properties.model=d.features[0].properties.model,d=>d.features[1].properties.id=d.features[0].properties.id]){
@@ -75,17 +88,19 @@ test('invalid curated sculpture identities, duplicate models and out-of-campus i
   }
 });
 
-test('worker validates sculpture HTTP/JSON/network failures and a valid retry produces both meshes',async()=>{
+test('worker names each local input in its HTTP/JSON/network failure and a valid retry produces both meshes',async()=>{
   const priorFetch=globalThis.fetch,priorSelf=globalThis.self,messages=[];
   globalThis.self={postMessage:message=>messages.push(message)};
   try{
     await import('../src/building-worker.ts');
-    for(const mode of ['HTTP','JSON','network','valid']){
+    // Each mode breaks one input and serves the other intact, so a message must name the input that failed.
+    for(const [target,label] of [['stanford-sculptures.geojson','Campus sculpture'],['stanford-environment.geojson','Campus environment']])for(const mode of ['HTTP','JSON','network','valid']){
       const calls=[];messages.length=0;
-      globalThis.fetch=async input=>{calls.push(input);if(input.endsWith('stanford-environment.geojson'))return new Response(JSON.stringify(empty));if(mode==='HTTP')return new Response('Missing',{status:503});if(mode==='JSON')return new Response('{');if(mode==='network')throw new Error('fixture network unavailable');return new Response(bytes);};
+      globalThis.fetch=async input=>{calls.push(input);if(!input.endsWith(target)||mode==='valid')return new Response(input.endsWith('stanford-environment.geojson')?JSON.stringify(empty):bytes);if(mode==='HTTP')return new Response('Missing',{status:503});if(mode==='JSON')return new Response('{');throw new Error('fixture network unavailable');};
       await self.onmessage({data:empty});assert.equal(messages.length,1);assert.deepEqual(calls.sort(),['/data/stanford-environment.geojson','/data/stanford-sculptures.geojson']);
-      if(mode==='valid'){assert.deepEqual(messages[0].geometry.sculptures,{works:2,figures:7,triangles:3820});assert.equal(messages[0].geometry.facades.length,0);}
-      else assert.match(messages[0].error,mode==='HTTP'?/Campus sculpture.*HTTP 503.*stanford-sculptures.*retry/:mode==='JSON'?/Campus sculpture.*not valid JSON.*retry/:/Campus sculpture.*could not load.*network unavailable.*retry/);
+      if(mode==='valid'){assert.deepEqual(messages[0].geometry.sculptures,{works:2,figures:7,triangles:3820});assert.equal(messages[0].geometry.facades.length,0);continue;}
+      const file=target.replace('.','\\.');
+      assert.match(messages[0].error,new RegExp(mode==='HTTP'?`${label}.*HTTP 503.*${file}.*retry`:mode==='JSON'?`${label}.*${file}.*not valid JSON.*retry`:`${label}.*${file}.*could not load.*network unavailable.*retry`),`${target} ${mode}: ${messages[0].error}`);
     }
   }finally{globalThis.fetch=priorFetch;globalThis.self=priorSelf;}
 });

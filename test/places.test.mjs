@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PLACES,SCULPTURE_PLACES, searchPlaces, geometryCenter, buildingPlaces, normalizeBearing } from '../src/places.ts';
+import { MAX_MAP_ZOOM,PLACES,SCULPTURE_PLACES, searchPlaces, geometryCenter, buildingPlaces, normalizeBearing } from '../src/places.ts';
 import {readFileSync} from 'node:fs';
 
 test('local destination search matches accents, multiple words and no-result queries', () => {
@@ -42,4 +42,13 @@ test('both reviewed artworks are searchable and use the mapped sculpture coordin
     assert.match(place.sourceUrl,/^https:\/\/news\.stanford\.edu\//);
   }
   assert.equal(searchPlaces('rodin sculpture',SCULPTURE_PLACES)[0].sculptureId,'burghers-of-calais');
+});
+
+test('every place flight lands within the map native maximum zoom, the artwork flights included',()=>{
+  // main.ts builds the map with maxZoom MAX_MAP_ZOOM; a flight past it would stop short of its real-scale view.
+  const footprints=buildingPlaces(JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))).features);
+  assert.ok(footprints.length>0);
+  for(const place of [...PLACES,...SCULPTURE_PLACES,...footprints])assert.ok(place.zoom<=MAX_MAP_ZOOM,`${place.name} flies to zoom ${place.zoom}, past ${MAX_MAP_ZOOM}`);
+  assert.ok(SCULPTURE_PLACES.every(place=>place.zoom>19.5),'artwork flights need the raised limit; the old 19.5 would clip them');
+  assert.match(readFileSync(new URL('../src/main.ts',import.meta.url),'utf8'),/maxZoom:\s*MAX_MAP_ZOOM\b/,'the map must take its maximum zoom from MAX_MAP_ZOOM');
 });

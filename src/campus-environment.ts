@@ -67,32 +67,45 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
     const p=feature.properties,stone:Color=p.material==='stone'?[0.64,0.62,0.57]:[0.73,0.72,0.67];
     if(feature.geometry.type==='LineString'){
       const points=feature.geometry.coordinates.map(project),closed=points.length>2&&Math.hypot(points[0][0]-points.at(-1)![0],points[0][1]-points.at(-1)![1])<0.01;
-      const width=p.benchModel==='quad-seat-wall'?0.50:0.48,half=width/2;
+      // As at a point, a mapped way of unknown seating material is a flat neutral marker along its real path, not an invented solid seat.
+      const derived=p.benchModel==='quad-seat-wall',solid=derived||p.material==='stone'||p.material==='concrete'||p.material==='wood';
+      const tone:Color=p.material==='wood'?[0.61,0.54,0.43]:stone;
+      const width=derived?0.50:solid?0.48:0.38,half=width/2;
       const normals=points.map((point,i)=>{
         const previous=points[i===0?(closed?points.length-2:0):i-1],next=points[i===points.length-1?(closed?1:i):i+1];
         const normal=(a:Point,b:Point):Point=>{const d=Math.hypot(b[0]-a[0],b[1]-a[1]);return d>0?[(-(b[1]-a[1])/d),(b[0]-a[0])/d]:[0,0];};
         const a=normal(previous,point),b=normal(point,next),x=a[0]+b[0],y=a[1]+b[1],den=x*b[0]+y*b[1];
         return Math.abs(den)>0.25?[x/den,y/den] as Point:(i===0?b:a);
       });
+      if(!solid){
+        for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];quad([a[0]+na[0]*half,a[1]+na[1]*half,0.025],[a[0]-na[0]*half,a[1]-na[1]*half,0.025],[b[0]-nb[0]*half,b[1]-nb[1]*half,0.025],[b[0]+nb[0]*half,b[1]+nb[1]*half,0.025],[0.58,0.60,0.57],12);}
+        return;
+      }
+      // One back runs the whole way, on the side opposite the modeled facing read against the way's length-weighted normal.
+      // A facing within about 15 degrees of the way's overall line gives no side, so a bent way's back goes on its outer side,
+      // seats facing into the bend, and a straight way's on its right. Either side remains an estimate without a direction tag.
+      let leftX=0,leftY=0,turn=0;
+      for(let i=1;i<points.length;i++){const dx=points[i][0]-points[i-1][0],dy=points[i][1]-points[i-1][1];leftX-=dy;leftY+=dx;if(i>1)turn+=(points[i-1][0]-points[i-2][0])*dy-(points[i-1][1]-points[i-2][1])*dx;}
+      const facing=benchFacing(p)*Math.PI/180,forward:Point=[Math.sin(facing),Math.cos(facing)];
+      const leftLength=Math.hypot(leftX,leftY),cosine=leftLength?(leftX*forward[0]+leftY*forward[1])/leftLength:0;
+      const backOnLeft=Math.abs(cosine)>=0.25?cosine<0:turn<0;
       for(let i=1;i<points.length;i++){
         const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];
         const al:Vertex=[a[0]+na[0]*half,a[1]+na[1]*half,0.45],ar:Vertex=[a[0]-na[0]*half,a[1]-na[1]*half,0.45],bl:Vertex=[b[0]+nb[0]*half,b[1]+nb[1]*half,0.45],br:Vertex=[b[0]-nb[0]*half,b[1]-nb[1]*half,0.45];
-        quad(al,ar,br,bl,stone,12);quad([al[0],al[1],0],[bl[0],bl[1],0],bl,al,stone,12);quad([br[0],br[1],0],[ar[0],ar[1],0],ar,br,stone,12);
+        quad(al,ar,br,bl,tone,12);quad([al[0],al[1],0],[bl[0],bl[1],0],bl,al,tone,12);quad([br[0],br[1],0],[ar[0],ar[1],0],ar,br,tone,12);
         if(p.backrest==='yes'){
           // The line fixes the actual length/shape. Facing and this back's width/height remain estimates.
-          const angle=-benchFacing(p)*Math.PI/180,forward:Point=[Math.sin(-angle),Math.cos(angle)];
-          const side=na[0]*forward[0]+na[1]*forward[1]>0?-1:1;
-          const aa=side>0?al:ar,bb=side>0?bl:br;
+          const aa=backOnLeft?al:ar,bb=backOnLeft?bl:br;
           // Follow the mapped segment, including bends, rather than substituting repeated 1.9 m benches.
           const dx=bb[0]-aa[0],dy=bb[1]-aa[1],axis=Math.atan2(dy,dx),nx=-Math.sin(axis)*0.045,ny=Math.cos(axis)*0.045;
-          quad([aa[0]-nx,aa[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.91],[aa[0]-nx,aa[1]-ny,0.91],stone,12);
-          quad([bb[0]+nx,bb[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],stone,12);
-          quad([aa[0]-nx,aa[1]-ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],stone,12);
-          if(i===1&&!closed)quad([aa[0]+nx,aa[1]+ny,0.45],[aa[0]-nx,aa[1]-ny,0.45],[aa[0]-nx,aa[1]-ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],stone,12);
-          if(i===points.length-1&&!closed)quad([bb[0]-nx,bb[1]-ny,0.45],[bb[0]+nx,bb[1]+ny,0.45],[bb[0]+nx,bb[1]+ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],stone,12);
+          quad([aa[0]-nx,aa[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.91],[aa[0]-nx,aa[1]-ny,0.91],tone,12);
+          quad([bb[0]+nx,bb[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],tone,12);
+          quad([aa[0]-nx,aa[1]-ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],tone,12);
+          if(i===1&&!closed)quad([aa[0]+nx,aa[1]+ny,0.45],[aa[0]-nx,aa[1]-ny,0.45],[aa[0]-nx,aa[1]-ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],tone,12);
+          if(i===points.length-1&&!closed)quad([bb[0]-nx,bb[1]-ny,0.45],[bb[0]+nx,bb[1]+ny,0.45],[bb[0]+nx,bb[1]+ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],tone,12);
         }
       }
-      if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],stone,12);}
+      if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],tone,12);}
       return;
     }
     const [x,y]=project(feature.geometry.coordinates),angle=-benchFacing(p)*Math.PI/180;

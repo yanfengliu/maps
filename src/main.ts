@@ -5,7 +5,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './styles.css';
 import { createStyle } from './style.ts';
-import { BAY_BOUNDS, PLACES, SCULPTURE_PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
+import { BAY_BOUNDS, MAX_MAP_ZOOM, PLACES, SCULPTURE_PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
 import { campusIllustration, icon } from './icons.ts';
 import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
 import { enableMiddleMouseTilt } from './mouse-tilt.ts';
@@ -122,7 +122,8 @@ function goTo(place: Place): void {
   } else if(place.sculptureId)showSculpture(place.sculptureId);
   else if (place.campus) showCampus();
   else showCity(place);
-  if (window.innerWidth <= 760 && !place.buildingId&&!place.sculptureId) setSidebarCompact(true);
+  // On a phone the expanded panel covers the padded flight centre, so artwork flights keep it compact like other places; its card opens with Expand places.
+  if (window.innerWidth <= 760 && !place.buildingId) setSidebarCompact(true);
 }
 
 function showCampus(): void {
@@ -141,9 +142,8 @@ function showCampus(): void {
 function showSculpture(id:string):void {
   const place=SCULPTURE_PLACES.find(p=>p.sculptureId===id);
   if(!place)return;
-  if(window.innerWidth<=760)setSidebarCompact(false);
   selectedId=null;updateSelection();details.hidden=false;el('explore-content').hidden=true;
-  details.innerHTML=`<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">SCULPTURE · STANFORD UNIVERSITY</span><h2>${escapeHtml(place.name)}</h2><p class="detail-description">${escapeHtml(place.description)}</p><div class="detail-stats"><span><strong>${escapeHtml(place.material)}</strong>original material</span><span><strong>3D</strong>stylized model</span></div><p class="data-note">${escapeHtml(place.artist)}. Photo-based interpretation; proportions, orientation and individual figure placement are estimates.</p><a class="text-action" href="${place.sourceUrl}" target="_blank" rel="noreferrer">Read the Stanford source ↗</a><button class="detail-action" id="next-sculpture">Explore the other sculpture ${icon('arrow')}</button><button class="text-action" id="sculpture-campus">View the whole campus</button>`;
+  details.innerHTML=`<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">SCULPTURE · STANFORD UNIVERSITY</span><h2>${escapeHtml(place.name)}</h2><p class="detail-description">${escapeHtml(place.description)}</p><div class="detail-stats"><span><strong>${escapeHtml(place.material)}</strong>original material</span><span><strong>3D</strong>stylized model</span></div><p class="data-note">${escapeHtml(place.artist)}. Photo-based interpretation; proportions, orientation and individual figure placement are estimates.</p><a class="text-action" href="${escapeHtml(place.sourceUrl)}" target="_blank" rel="noreferrer">Read the Stanford source ↗</a><button class="detail-action" id="next-sculpture">Explore the other sculpture ${icon('arrow')}</button><button class="text-action" id="sculpture-campus">View the whole campus</button>`;
   details.querySelector('.close-details')?.addEventListener('click',closeDetails);
   el('next-sculpture').addEventListener('click',()=>goTo(SCULPTURE_PLACES.find(p=>p.sculptureId!==id)!));
   el('sculpture-campus').addEventListener('click',()=>goTo(PLACES[0]));
@@ -384,7 +384,7 @@ function startMap(): void {
     // Configure the visible region before loading any tiles. Waiting for `load`
     // first fetched a different view, then restarted the work for the overview.
     map = new maplibregl.Map({ container: 'map', center: [-122.2,37.65], zoom: 9,
-      maxPitch: 65, minZoom: 7, maxZoom: 21.5, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
+      maxPitch: 65, minZoom: 7, maxZoom: MAX_MAP_ZOOM, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
       attributionControl: false, dragRotate: { around: 'center', movement: 'linear' }, rotateSpeed: 0.25, pitchSpeed: -0.25,
       touchZoomRotate: true, pitchWithRotate: true,
       keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: false });
