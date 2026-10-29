@@ -95,14 +95,12 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
         quad(al,ar,br,bl,tone,12);quad([al[0],al[1],0],[bl[0],bl[1],0],bl,al,tone,12);quad([br[0],br[1],0],[ar[0],ar[1],0],ar,br,tone,12);
         if(p.backrest==='yes'){
           // The line fixes the actual length/shape. Facing and this back's width/height remain estimates.
-          const aa=backOnLeft?al:ar,bb=backOnLeft?bl:br;
-          // Follow the mapped segment, including bends, rather than substituting repeated 1.9 m benches.
-          const dx=bb[0]-aa[0],dy=bb[1]-aa[1],axis=Math.atan2(dy,dx),nx=-Math.sin(axis)*0.045,ny=Math.cos(axis)*0.045;
-          quad([aa[0]-nx,aa[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.45],[bb[0]-nx,bb[1]-ny,0.91],[aa[0]-nx,aa[1]-ny,0.91],tone,12);
-          quad([bb[0]+nx,bb[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.45],[aa[0]+nx,aa[1]+ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],tone,12);
-          quad([aa[0]-nx,aa[1]-ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],[bb[0]+nx,bb[1]+ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],tone,12);
-          if(i===1&&!closed)quad([aa[0]+nx,aa[1]+ny,0.45],[aa[0]-nx,aa[1]-ny,0.45],[aa[0]-nx,aa[1]-ny,0.91],[aa[0]+nx,aa[1]+ny,0.91],tone,12);
-          if(i===points.length-1&&!closed)quad([bb[0]-nx,bb[1]-ny,0.45],[bb[0]+nx,bb[1]+ny,0.45],[bb[0]+nx,bb[1]+ny,0.91],[bb[0]-nx,bb[1]-ny,0.91],tone,12);
+          // The 9 cm back is centred on the seat's mitred edge, so neighbouring segments share its corners and bends leave no gap.
+          const side=backOnLeft?1:-1,at=(p:Point,n:Point,offset:number,z:number):Vertex=>[p[0]+side*n[0]*offset,p[1]+side*n[1]*offset,z];
+          const ai=(z:number)=>at(a,na,half-0.045,z),ao=(z:number)=>at(a,na,half+0.045,z),bi=(z:number)=>at(b,nb,half-0.045,z),bo=(z:number)=>at(b,nb,half+0.045,z);
+          quad(ai(0.45),bi(0.45),bi(0.91),ai(0.91),tone,12);quad(bo(0.45),ao(0.45),ao(0.91),bo(0.91),tone,12);quad(ai(0.91),bi(0.91),bo(0.91),ao(0.91),tone,12);
+          if(i===1&&!closed)quad(ao(0.45),ai(0.45),ai(0.91),ao(0.91),tone,12);
+          if(i===points.length-1&&!closed)quad(bi(0.45),bo(0.45),bo(0.91),bi(0.91),tone,12);
         }
       }
       if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],tone,12);}
