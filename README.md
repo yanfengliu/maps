@@ -24,7 +24,7 @@ npm run audit
 
 ## Explore
 
-The first view frames the Bay's coast from San Francisco to San José. Choose **Explore Stanford in 3D** to fly into the campus. Click a campus building for its source height information. Search covers curated Bay destinations and named campus buildings; it is a local index rather than an internet geocoder.
+The first view frames the Bay's coast from San Francisco to San José. Choose **Explore Stanford in 3D** to fly into the campus. Click a campus building for its source height information. Search covers curated Bay destinations, named campus buildings, **The Burghers of Calais** and **Angel of Grief**. The campus sculpture action opens the first artwork; its card links the other work and the reference source.
 
 On mobile, the places panel starts compact so the Bay stays visible, with search and a direct **Explore Stanford** action. Expand the panel to browse places and building details. The overview uses absolute viewport padding so returning to the Bay restores the same framing after visiting another place.
 
@@ -42,7 +42,9 @@ The campus uses real OpenStreetMap footprints, including multipolygons and court
 
 Original source geometry, heights and provenance stay intact. A render-only subtraction removes the church from the overlapping Main Quad outline so both models remain visible while all original courtyard areas stay empty. Most ordinary buildings still use estimated architectural profiles.
 
-The campus environment uses 726 mapped tree positions, 163 benches and 80 lamps from the same pinned OSM extracts. Palms, broadleaf trees and conifers have distinct batched 3D silhouettes; sizes and generic furniture details are modeled. Historic sandstone/tile, Roble's pink stone/ivy and modern light roofs have separate authored materials. The [environment and material record](docs/work/0_bay-area-stanford/campus-environment.md) describes source selection, exclusions and model limits.
+The campus environment uses 726 mapped tree positions, 80 lamps and 196 seating feature assemblies: 163 original bench points, 25 mapped bench paths and eight explicitly derived Quad seat walls. Known seating materials and photo-supported forms have solid geometry; 127 material-unknown points remain flat neutral markers. Bench dimensions and absent facing remain estimates. See the [bench source and model bounds](docs/work/0_bay-area-stanford/bench-accuracy.md). Palms, broadleaf trees and conifers retain distinct batched silhouettes and modeled sizes. Historic sandstone/tile, Roble's pink stone/ivy and modern light roofs retain separate materials.
+
+Two [photo-grounded outdoor sculptures](docs/work/0_bay-area-stanford/campus-sculptures.md) use mapped location anchors: the Burghers' six separate bronze figures/plinths and the Angel's bowed pose, long wings, altar and steps. Their proportions, poses and orientation are stylized estimates. Buildings, seating, planting and sculpture share the existing two GPU batches and lazy sliced upload; this remains an illustrated map, not a mesh scan or physical survey.
 
 Architectural geometry is generated in a worker only when approaching campus, then rendered in two batched draws with zoom/distance detail control. Shader preparation runs ahead of the flight, using nonblocking completion where available. The [detail and performance record](docs/work/0_bay-area-stanford/detail-performance.md) gives measurements and their hardware bounds.
 

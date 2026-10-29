@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "derivedFromFetchedAt": "2026-10-20T06:13:20.820Z",
   "source": "Existing pinned OpenStreetMap API 0.6 bounded map extracts",
   "attribution": "© OpenStreetMap contributors",
@@ -36,9 +36,31 @@
       "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
     }
   ],
-  "selection": "Mapped natural=tree, amenity=bench and highway=street_lamp nodes inside the pinned Stanford campus boundary. Original source coordinates and retained tags are unchanged. No authored or randomly distributed tree positions are added.",
-  "exclusion": "Exclude roots/furniture inside a building polygon (courtyard holes remain empty), within 0.65 m of its wall, or inside mapped drivable-road clearance: explicit width/2 capped at 8 m; otherwise 3 m, service 2 m, parking aisle 1.8 m. Road centerline distance uses a local metre approximation. Tree crowns may overhang paths as real crowns do. No sampling or cap is applied to eligible nodes.",
-  "dimensions": "Tree height, crown dimensions and furniture dimensions are authored estimates unless numeric source tags exist. Missing tree type defaults to a modeled broadleaf; Phoenix/palm and needleleaved tags determine distinct silhouettes. Species tags are not a botanical field survey. Bench orientation is estimated from the nearest mapped drivable centerline; direction tags take priority when present. Lamp and bench models are generic representations at real mapped points.",
+  "selection": "Mapped natural=tree, amenity=bench and highway=street_lamp nodes, plus complete amenity=bench ways inside the pinned Stanford campus boundary. Eight separately labeled authored seat-wall interpretations follow exact mapped Inner Quad planting boundaries. Original coordinates and retained tags are unchanged. No authored or randomly distributed tree positions are added. Bench counts refer to feature assemblies, not a physical-seat inventory.",
+  "exclusion": "Exclude point roots/furniture inside a building polygon (courtyard holes remain empty), within 0.65 m of its wall, or inside mapped drivable-road clearance: explicit width/2 capped at 8 m; otherwise 3 m, service 2 m, parking aisle 1.8 m. Bench lines sample every 0.2 m and require 0.65 m centerline clearance for their bounded 0.5 m miter envelope, then complete emitted triangles receive a separate wall-crossing/clearance test. Road centerline distance uses a local metre approximation. Tree crowns may overhang paths as real crowns do. No sampling or cap is applied to eligible nodes.",
+  "dimensions": "Tree height, crown dimensions and furniture dimensions are authored estimates unless numeric source tags exist. Missing tree type defaults to a modeled broadleaf; Phoenix/palm and needleleaved tags determine distinct silhouettes. Species tags are not a botanical field survey. Bench direction tags describe seated facing; otherwise modeledFacing points toward the nearest mapped pedestrian path and is an estimate, not a surveyed long axis. Material tags identify seating only, not the frame. Unverified point designs are flat neutral map markers. Lamp dimensions remain modeled estimates.",
+  "benchInterpretation": "Mapped amenity=bench ways preserve every original coordinate and retained tag. The eight named Inner Quad natural=wood boundaries are authored seat-wall interpretations corroborated by Stanford Gardens guide p4 photo/text; they are NOT OSM amenity=bench features. Their modeled 0.50 m width and 0.45 m height follow the exact planted outline, without inventing circular centers. Five Bing courtyard nodes use a modeled six-foot teak family with solid posts, vertical back spindles and arms based on Stanford courtyard photography; dimensions and facing remain estimates. Other mapped wood seats are material/backrest estimates; unknown materials do not receive an invented wood design. Line ribbon dimensions are modeled, not survey measurements.",
+  "benchReferences": [
+    {
+      "id": "stanford-gardens-guide-p4",
+      "url": "https://familyweekend.stanford.edu/sites/g/files/sbiybj17671/files/media/file/a_self-guided_tour_of_stanford_gardens.pdf",
+      "page": 4,
+      "accessed": "2026-10-20",
+      "note": "2017 student garden guide hosted for Family Weekend 2022; photo and text corroborate circular concrete benches around the eight Quad oases, not current as-built dimensions."
+    },
+    {
+      "id": "bing-courtyard-photo",
+      "url": "https://aabs2018.stanford.edu/images/stanford/sunset.jpg",
+      "accessed": "2026-10-20",
+      "note": "Actual Stanford courtyard photograph: vertical back spindles, solid wooden posts and arms. Bing west context also checked at https://trees.stanford.edu/images/inner_palms/inner_palms-Pages/Image8.html; finite node assignment is a modeled family interpretation, not a field survey."
+    },
+    {
+      "id": "bench-tag-semantics",
+      "url": "https://wiki.openstreetmap.org/wiki/Tag:amenity%3Dbench",
+      "accessed": "2026-10-20",
+      "note": "Facing, material-seat semantics and line mapping."
+    }
+  ],
   "beforeExclusions": {
     "tree": 728,
     "bench": 166,
@@ -46,7 +68,7 @@
   },
   "retained": {
     "tree": 726,
-    "bench": 163,
+    "bench": 196,
     "lamp": 80
   },
   "excluded": [
@@ -81,10 +103,15 @@
       "reason": "inside-or-close-to-building"
     }
   ],
+  "benchLines": {
+    "mapped": 25,
+    "quadSeatWalls": 8,
+    "excluded": []
+  },
   "outputs": {
     "stanford-environment.geojson": {
-      "bytes": 228874,
-      "sha256": "ffab0171ce296e17ade5f464fbd0239de75f6526f0419c9c0ab86067ae104a74"
+      "bytes": 249282,
+      "sha256": "554f290a952942cbc323e8171986b31f465f4b5fc8e50abe34d1680a61725317"
     }
   },
   "generator": "tools/data/build-campus-environment.mjs"

@@ -5,6 +5,7 @@ import { addMemorialChurch } from './memorial-church.ts';
 import { composeMainQuad } from './compose-building-parts.ts';
 import { addCampusEnvironment, emptyEnvironmentCounts, type CampusEnvironment, type EnvironmentCounts } from './campus-environment.ts';
 import { addLandmarkAccents } from './landmark-accents.ts';
+import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -13,7 +14,9 @@ type Color = [number, number, number];
 
 export const DETAIL_ORIGIN: Point = [-122.1697, 37.4278];
 export const VERTEX_FLOATS = 13;
-export const MAX_DETAIL_TRIANGLES = 150_000;
+// 160k × three vertices × 13 float32 values remains below the 24 MiB cap.
+// The extra margin covers mapped bench forms and two authored sculpture works.
+export const MAX_DETAIL_TRIANGLES = 160_000;
 const CIRCUMFERENCE = 40_075_016.68557849;
 const ORIGIN_LAT = DETAIL_ORIGIN[1] * Math.PI / 180;
 export const METERS_TO_MERCATOR = 1 / (CIRCUMFERENCE * Math.cos(ORIGIN_LAT));
@@ -106,6 +109,7 @@ export interface DetailGeometry {
   triangles: number;
   bytes: number;
   environment: EnvironmentCounts;
+  sculptures: SculptureCounts;
 }
 
 function midpoint(a: Point, b: Point): Point { return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; }
@@ -139,8 +143,9 @@ export class BuildingGeometryBuilder {
   private featureIndex = 0;
   private data: CampusData;
   private environment:CampusEnvironment|undefined;
+  private sculptures:CampusSculptures|undefined;
   private completed:DetailGeometry|undefined;
-  constructor(data: CampusData,environment?:CampusEnvironment) { this.data = data;this.environment=environment; }
+  constructor(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures) { this.data = data;this.environment=environment;this.sculptures=sculptures; }
   get done(): boolean { return this.featureIndex >= this.data.features.length; }
 
   step(): void {
@@ -252,15 +257,17 @@ export class BuildingGeometryBuilder {
     if(this.completed)return this.completed;
     const environment=this.environment?addCampusEnvironment(this.roofs,this.environment,projectLocal):emptyEnvironmentCounts();
     this.environment=undefined;
-    this.checkBudget('mapped campus trees and furniture');
+    const sculptures=this.sculptures?addCampusSculptures(this.roofs,this.sculptures,projectLocal):emptySculptureCounts();
+    this.sculptures=undefined;
+    this.checkBudget('mapped campus trees, furniture and sculpture');
     const roofs = new Float32Array(this.roofs.values), facades = new Float32Array(this.facades.values);
     const roofTriangles = roofs.length / VERTEX_FLOATS / 3, facadeTriangles = facades.length / VERTEX_FLOATS / 3;
-    return this.completed={ roofs, facades, buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength, environment };
+    return this.completed={ roofs, facades, buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength, environment,sculptures };
   }
 }
 
-export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment): DetailGeometry {
-  const builder = new BuildingGeometryBuilder(data,environment);
+export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures): DetailGeometry {
+  const builder = new BuildingGeometryBuilder(data,environment,sculptures);
   while (!builder.done) builder.step();
   return builder.finish();
 }

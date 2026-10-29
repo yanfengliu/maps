@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {buildBuildingGeometry,BuildingGeometryBuilder,prepareBuildingDetails,projectLocal,VERTEX_FLOATS} from '../src/building-geometry.ts';
-import {validateCampusEnvironment,environmentDimensions} from '../src/campus-environment.ts';
+import {validateCampusEnvironment,environmentDimensions,addCampusEnvironment} from '../src/campus-environment.ts';
 import {footprintClearance} from '../tools/data/build-campus-environment.mjs';
 
 const load=name=>readFileSync(new URL('../public/data/'+name,import.meta.url));
@@ -20,24 +20,28 @@ const inside=(p,ring)=>{let hits=0;for(let i=1;i<ring.length;i++){const a=ring[i
 const distance=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],q=dx*dx+dy*dy,t=q?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/q)):0;return Math.hypot(p[0]-a[0]-dx*t,p[1]-a[1]-dy*t);};
 
 test('bounded ODbL environment input has pinned positions, source hashes and explicit exclusions, with no generated planting grid',()=>{
-  assert.equal(digest(bytes),'ffab0171ce296e17ade5f464fbd0239de75f6526f0419c9c0ab86067ae104a74');
+  assert.equal(digest(bytes),'554f290a952942cbc323e8171986b31f465f4b5fc8e50abe34d1680a61725317');
   assert.equal(provenance.outputs['stanford-environment.geojson'].sha256,digest(bytes));
-  assert.equal(provenance.license,'ODbL 1.0');assert.equal(environment.features.length,969);
+  assert.equal(provenance.license,'ODbL 1.0');assert.equal(environment.features.length,1002);
   assert.deepEqual(provenance.beforeExclusions,{tree:728,bench:166,lamp:81});
-  assert.deepEqual(provenance.retained,{tree:726,bench:163,lamp:80});assert.equal(provenance.excluded.length,6);
+  assert.deepEqual(provenance.retained,{tree:726,bench:196,lamp:80});assert.equal(provenance.excluded.length,6);
   assert.deepEqual(provenance.sources.map(s=>s.sha256),JSON.parse(load('stanford-provenance.json')).sources.map(s=>s.sha256));
   const palm=environment.features.find(f=>f.properties.id==='node/6475091349');
   assert.deepEqual(palm.geometry.coordinates,[-122.171698,37.4278552]);assert.equal(palm.properties.species,'Phoenix canariensis');
-  for(const feature of environment.features){assert.match(feature.properties.id,/^node\/\d+$/);assert.ok(inside(feature.geometry.coordinates,campus));assert.equal(feature.properties.authored,undefined);}
+  for(const feature of environment.features){assert.match(feature.properties.id,/^(node|way)\/\d+$/);for(const point of feature.geometry.type==='Point'?[feature.geometry.coordinates]:feature.geometry.coordinates)assert.ok(inside(point,campus));assert.equal(feature.properties.authored,undefined);}
+  assert.equal(environment.features.filter(f=>f.geometry.type==='Point').length,969);
+  assert.deepEqual(provenance.benchLines,{mapped:25,quadSeatWalls:8,excluded:[]});
 });
 
 test('mapped roots and furniture stay outside actual building material, preserve courtyard planting, and enforce wall clearance',()=>{
   const polygons=source.features.flatMap(f=>f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).map(p=>p.map(r=>r.map(projectLocal)));
   for(const feature of environment.features){
-    const point=projectLocal(feature.geometry.coordinates);
+    for(const coordinate of feature.geometry.type==='Point'?[feature.geometry.coordinates]:feature.geometry.coordinates){
+    const point=projectLocal(coordinate);
     for(const polygon of polygons){
       assert.ok(!inside(point,polygon[0])||polygon.slice(1).some(r=>inside(point,r)),feature.properties.id+' is inside building material');
       for(const ring of polygon)for(let i=1;i<ring.length;i++)assert.ok(distance(point,ring[i-1],ring[i])>0.63,feature.properties.id+' has no root clearance');
+    }
     }
   }
   // An exclusion predicate that only tests the outer ring would wrongly erase
@@ -48,9 +52,9 @@ test('mapped roots and furniture stay outside actual building material, preserve
   assert.equal(footprintClearance([5,5],[[fixture[0]]]),-1);
 });
 
-test('all combined building and environment geometry stays finite within 150k triangles and 24MiB in two buffers',()=>{
-  assert.equal(geometry.buildings,648);assert.ok(geometry.triangles<150000);assert.ok(geometry.bytes<24*1024*1024);
-  assert.deepEqual(geometry.environment,{trees:726,palms:337,broadleaf:363,conifers:26,benches:163,lamps:80});
+test('all combined building and environment geometry stays finite within approved 160k triangles and 24MiB in two buffers',()=>{
+  assert.equal(geometry.buildings,648);assert.ok(geometry.triangles<160000);assert.ok(geometry.bytes<24*1024*1024);
+  assert.deepEqual(geometry.environment,{trees:726,palms:337,broadleaf:363,conifers:26,benches:196,lamps:80});
   let environmentVertices=0;
   for(const mesh of [geometry.roofs,geometry.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS){
     assert.ok(mesh.slice(i,i+VERTEX_FLOATS).every(Number.isFinite));
@@ -65,6 +69,64 @@ test('all combined building and environment geometry stays finite within 150k tr
   }
   assert.ok(environmentVertices>100000,'the render buffers must contain the sourced planting, not just report its count');
   const builder=new BuildingGeometryBuilder(prepared,environment);while(!builder.done)builder.step();const first=builder.finish();assert.equal(builder.finish(),first,'repeated reads must not duplicate trees or reset their counts');
+});
+
+// Independent emitted-geometry oracle: this does not use the production angle helper.
+function benchTriangles(feature){
+  const result=[],mesh={triangle:(a,b,c,tint,kind,building)=>result.push({points:[a,b,c],tint,kind,building}),quad:(a,b,c,d,tint,kind,building)=>{mesh.triangle(a,b,c,tint,kind,building);mesh.triangle(a,c,d,tint,kind,building);}};
+  addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal);return result;
+}
+const fixtureBench=properties=>({type:'Feature',properties:{id:'node/123',version:1,kind:'bench',material:'wood',backrest:'yes',...properties},geometry:{type:'Point',coordinates:[-122.1697,37.4278]}});
+test('numeric and cardinal bench direction is seated facing, with the back behind it and solid supports',()=>{
+  for(const [direction,front] of [[0,[0,1]],['N',[0,1]],[90,[1,0]],['E',[1,0]],[180,[0,-1]],['SW',[-Math.SQRT1_2,-Math.SQRT1_2]]]){
+    const triangles=benchTriangles(fixtureBench({direction}));
+    const high=triangles.flatMap(t=>t.points).filter(p=>p[2]>0.5),dot=high.map(p=>p[0]*front[0]+p[1]*front[1]);
+    assert.ok(Math.max(...dot)<-0.19,`${direction}: back is not behind the seated facing normal`);
+    const low=triangles.filter(t=>t.points.every(p=>p[2]<=0.41));
+    const projections=low.flatMap(t=>t.points).map(p=>p[0]*front[0]+p[1]*front[1]);
+    assert.ok(Math.max(...projections)-Math.min(...projections)>0.39,'supports have physical depth, not paper-thin planes');
+    assert.ok(low.some(t=>{const [a,b,c]=t.points;return a[2]===b[2]&&b[2]===c[2]&&Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))>0.01;}),'supports have non-zero horizontal caps');
+  }
+});
+
+test('mapped unknown seats are neutral flat markers; wood/concrete/backrests and photographed teak remain distinct',()=>{
+  const unknown=benchTriangles(fixtureBench({material:undefined,backrest:undefined}));
+  assert.equal(unknown.length,2);assert.ok(unknown.flatMap(t=>t.points).every(p=>p[2]===0.025));
+  assert.ok(unknown.every(t=>t.tint[0]<t.tint[1]),'unknown material must not silently receive brown wood');
+  const concrete=benchTriangles(fixtureBench({material:'concrete',backrest:'no'}));
+  assert.ok(concrete.flatMap(t=>t.points).every(p=>p[2]<=0.46));assert.ok(concrete.some(t=>t.tint[0]>0.7));
+  const wood=benchTriangles(fixtureBench({backrest:'no'}));assert.ok(wood.flatMap(t=>t.points).every(p=>p[2]<=0.46));
+  const photographed=benchTriangles(fixtureBench({benchModel:'courtyard-teak'}));
+  const high=photographed.flatMap(t=>t.points).filter(p=>p[2]>0.6);
+  assert.ok(high.some(p=>p[1]>0.2),'photographed curved arms must reach forward');
+  assert.ok(new Set(high.map(p=>p[0].toFixed(3))).size>20,'photographed backs need separated vertical spindles');
+  const p=photographed.flatMap(t=>t.points);assert.ok(Math.abs(Math.max(...p.map(v=>v[0]))-Math.min(...p.map(v=>v[0]))-1.83)<0.001);
+});
+
+test('all bench solids and ribbons clear building material, preserve mapped curves, and do not duplicate point seats',()=>{
+  const polygons=source.features.flatMap(f=>f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).map(p=>p.map(r=>r.map(projectLocal)));
+  const inMaterial=p=>polygons.some(polygon=>inside(p,polygon[0])&&!polygon.slice(1).some(r=>inside(p,r)));
+  const orient=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  const cross=(a,b,c,d)=>orient(a,b,c)*orient(a,b,d)<-1e-10&&orient(c,d,a)*orient(c,d,b)<-1e-10;
+  const benches=environment.features.filter(f=>f.properties.kind==='bench');
+  let minimum=Infinity;
+  for(const feature of benches){
+    for(const triangle of benchTriangles(feature)){
+      for(const p of triangle.points){assert.ok(!inMaterial(p),feature.properties.id+' has a solid vertex in a building');for(const polygon of polygons)for(const ring of polygon)for(let i=1;i<ring.length;i++)minimum=Math.min(minimum,distance(p,ring[i-1],ring[i]));}
+      for(const polygon of polygons)for(const ring of polygon)for(let i=1;i<ring.length;i++)for(let edge=0;edge<3;edge++)assert.ok(!cross(triangle.points[edge],triangle.points[(edge+1)%3],ring[i-1],ring[i]),feature.properties.id+' crosses a building wall');
+    }
+    if(feature.geometry.type==='LineString')for(const point of benches.filter(f=>f.geometry.type==='Point')){
+      const p=projectLocal(point.geometry.coordinates),line=feature.geometry.coordinates.map(projectLocal);
+      assert.ok(line.slice(1).every((b,i)=>distance(p,line[i],b)>1.0),feature.properties.id+' duplicates '+point.properties.id);
+    }
+  }
+  assert.ok(minimum>0.1,'the complete emitted seat envelope needs positive wall clearance');
+  const curved=environment.features.find(f=>f.properties.id==='way/1505422554');assert.equal(curved.geometry.coordinates.length,16);assert.equal(curved.properties.material,'stone');
+  const walls=benches.filter(f=>f.properties.benchModel==='quad-seat-wall');assert.equal(walls.length,8);
+  for(const wall of walls){assert.deepEqual(wall.geometry.coordinates[0],wall.geometry.coordinates.at(-1));const mesh=benchTriangles(wall);assert.equal(mesh.length,(wall.geometry.coordinates.length-1)*6);assert.ok(mesh.flatMap(t=>t.points).every(p=>p[2]===0||p[2]===0.45));assert.equal(wall.properties.material,undefined,'modeled concrete interpretation must not invent a source material tag');}
+  // A real full-length triangle can cross a narrow wall while all its endpoints
+  // are outside it. This negative catches a vertex-only clearance oracle.
+  assert.ok(cross([-2,0],[2,0],[0,-1],[0,1]));
 });
 
 test('actual emitted palm, broadleaf and conifer silhouettes differ; untagged size stays an estimate',()=>{
@@ -122,4 +184,5 @@ test('invalid, duplicate and out-of-campus environment inputs fail explicitly be
   assert.throws(()=>validateCampusEnvironment({type:'FeatureCollection',features:new Array(1201)}),/at most 1,200/);
   const changed=structuredClone(environment);changed.features.push(structuredClone(changed.features[0]));assert.throws(()=>validateCampusEnvironment(changed),/invalid identity, kind or Stanford coordinate/);
   const outside=structuredClone(environment);outside.features[0].geometry.coordinates=[0,0];assert.throws(()=>validateCampusEnvironment(outside),/Restore the pinned environment input/);
+  for(const coordinates of [null,'broken',[],[[0,0]],[[NaN,37.427],[-122.17,37.427]]])assert.throws(()=>validateCampusEnvironment({type:'FeatureCollection',features:[{type:'Feature',properties:{id:'way/1',version:1,kind:'bench'},geometry:{type:'LineString',coordinates}}]}),/invalid identity, kind or Stanford coordinate/);
 });

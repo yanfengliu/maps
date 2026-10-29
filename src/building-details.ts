@@ -1,6 +1,7 @@
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
 import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
+import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
@@ -11,6 +12,7 @@ export interface BuildingDetailStats {
   triangles: number;
   bytes: number;
   environment: EnvironmentCounts;
+  sculptures: SculptureCounts;
   /** CPU geometry generation runs in the dedicated worker. */
   buildMs: number;
   /** Longest observed main-thread shader setup or mesh upload slice. */
@@ -228,7 +230,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
-  const state: BuildingDetailStats = { ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, environment:emptyEnvironmentCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const state: BuildingDetailStats = { ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const destroyGpu = () => {
     if (idleCompile !== undefined) { window.cancelIdleCallback(idleCompile); idleCompile = undefined; }
     if (compileTimer !== undefined) { clearTimeout(compileTimer); compileTimer = undefined; }
@@ -277,7 +279,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const restored = () => { if (!removed) { warmProgram(); map?.triggerRepaint(); } };
   return {
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
-    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}) }); },
+    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
     onAdd(owner, gl) { map = owner; context = gl; removed = false; owner.on('webglcontextlost', lost); owner.on('webglcontextrestored', restored); warmProgram(); },
     onRemove() {
@@ -319,7 +321,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           if(!complete){map.triggerRepaint();return;}
           roofs=uploading.roofs;facades=uploading.facades;state.uploadWallMs=performance.now()-uploading.started;uploading=undefined;
           Object.assign(state, { ready: true, roofTriangles: pending.geometry.roofTriangles, facadeTriangles: pending.geometry.facadeTriangles,
-            triangles: pending.geometry.triangles, bytes: pending.geometry.bytes, environment:pending.geometry.environment, buildMs: pending.buildMs });
+            triangles: pending.geometry.triangles, bytes: pending.geometry.bytes, environment:pending.geometry.environment,sculptures:pending.geometry.sculptures, buildMs: pending.buildMs });
         } catch (error) { fail(error instanceof Error ? error.message : 'Campus GPU detail could not initialize.'); return; }
       }
       const main = options.defaultProjectionData.mainMatrix;
