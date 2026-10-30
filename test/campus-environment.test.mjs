@@ -194,14 +194,24 @@ test('a tagged backrest runs one side of a whole bench way: opposite the modeled
   const up=feature=>benchTriangles(feature).filter(t=>t.points.every(p=>p[2]===0.91)).every(({points:[a,b,c]})=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])>0);
   assert.ok(up(backed),'the right-side back of way/1509660899 must face up');
   for(const modeledFacing of [0,180])assert.ok(up(fixtureWay({material:'wood',backrest:'yes',modeledFacing},straight)),`facing ${modeledFacing}: the back's top must face up`);
+  // A closed ring's normals sum to rounding noise, here 8.9e-16 m, which must not pick the side: the back takes the outside, the
+  // left of this clockwise ring, even with the facing set along that noise so that reading it would put the back inside.
+  const ring=[[-122.1698001,37.4271003],[-122.1697503,37.4271307],[-122.1697011,37.4271002],[-122.1697499,37.4270697],[-122.1698001,37.4271003]],ringLine=ring.map(projectLocal);
+  let nx=0,ny=0;for(let i=1;i<ringLine.length;i++){nx-=ringLine[i][1]-ringLine[i-1][1];ny+=ringLine[i][0]-ringLine[i-1][0];}
+  assert.ok(Math.hypot(nx,ny)>0&&Math.hypot(nx,ny)<1e-12,'the fixture ring leaves a little rounding noise');
+  const ringSides=new Set(benchTriangles(fixtureWay({material:'wood',backrest:'yes',modeledFacing:Math.atan2(nx,ny)*180/Math.PI},ring)).flatMap(t=>t.points).filter(p=>p[2]>0.9).map(p=>side(p,ringLine)));
+  assert.deepEqual([...ringSides],[1],'a closed ring\'s back takes its outside');
 });
 
-test('modeled facing never runs along a footway the bench lies on, nor along a bench way, and a path through the bench is set aside',()=>{
+// Bound: a node lying on a footway faces across the nearest of its segments, so at a bend or junction it can face along the other
+// one; no published node lies at one. These fixtures cover single segments, crossings, ties and zero-length segments.
+test('modeled facing crosses a bench way, and the footway segment a node lies on, and a path through the bench is set aside',()=>{
   const walk=(id,a,b)=>({id,a,b});
   // A node on a footway's line faces across that footway, toward the nearest path it does not touch: here 3 m south-east.
   assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[0,0]),walk('1',[0,0],[1,0]),walk('1',[1,0],[2,0.5]),walk('2',[2,-3],[6,-3])]),{modeledFacing:180,orientationSource:'way/1'});
   // The path that continues the footway lies dead ahead along it, so it decides no side; the bench still faces across, to the footway's left.
-  assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[2,0]),walk('2',[2,0],[6,0.3]),walk('3',[-5,4],[5,4])]),{modeledFacing:0,orientationSource:'way/1'});
+  // The farther path 4 m south is not consulted: a rule that skipped to it would face 180.
+  assert.deepEqual(estimateFacing([[0,0]],[walk('1',[-2,0],[2,0]),walk('2',[2,0],[6,0.3]),walk('3',[-5,-4],[5,-4])]),{modeledFacing:0,orientationSource:'way/1'});
   // A way sharing its end node with a footway: the footway is set aside even where it passes 0.5 m from the way's middle; the way faces across itself, south.
   assert.deepEqual(estimateFacing([[0,0],[4,0]],[walk('3',[4,0],[6,1]),walk('3',[6,1],[2,0.5]),walk('4',[2,-2],[2,-6])]),{modeledFacing:180,orientationSource:'way/4'});
   // A footway crossing a way between its nodes, here at its middle, is set aside too.
@@ -216,8 +226,15 @@ test('modeled facing never runs along a footway the bench lies on, nor along a b
     const at=([x,y])=>[x+shift,y+shift];
     assert.deepEqual(estimateFacing([at([0,0]),at([4.936,22.712])],[walk('12',at([7.404,34.068]),at([11.106,51.102]))]),{modeledFacing:-77.74,orientationSource:'way/12'},`shifted by ${shift}`);
   }
+  // The same tie in mapped 7-decimal coordinates, projected as the generator does, on a 0.59 m bench. The cosine comes out at
+  // -1.66e-9, so a 1e-9 tie bound would let rounding pick the right; 1e-6 keeps it a tie on the left.
+  const local=([lon,lat])=>[(lon+122.1697)*88_400,(lat-37.4278)*111_320];
+  const [a,b]=[[-122.1689944,37.4283496],[-122.1689969,37.4283447]].map(local),left=Math.round(Math.atan2(-(b[1]-a[1]),b[0]-a[0])*180/Math.PI*100)/100;
+  assert.deepEqual(estimateFacing([a,b],[walk('16',local([-122.1689994,37.4283398]),local([-122.1690019,37.4283349]))]),{modeledFacing:left,orientationSource:'way/16'});
   // A node on a zero-length footway segment has nothing to face across and faces its reference path instead.
   assert.deepEqual(estimateFacing([[0,0]],[walk('13',[0,0],[0,0]),walk('14',[3,0],[3,2])]),{modeledFacing:90,orientationSource:'way/14'});
+  // With a real segment beside the duplicated node, it faces across that segment, toward the reference's side.
+  assert.deepEqual(estimateFacing([[0,0]],[walk('13',[0,0],[0,0]),walk('13',[0,0],[0,2]),walk('14',[3,0],[3,2])]),{modeledFacing:90,orientationSource:'way/13'});
   // A bench node no path touches faces the nearest one.
   assert.deepEqual(estimateFacing([[0,0]],[walk('7',[-1,-1],[1,-1])]),{modeledFacing:180,orientationSource:'way/7'});
   assert.deepEqual(estimateFacing([[0,0]],[walk('8',[1,-1],[1,1])]),{modeledFacing:90,orientationSource:'way/8'});

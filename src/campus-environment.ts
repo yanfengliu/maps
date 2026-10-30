@@ -84,10 +84,11 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
       // One back runs the whole way, on the side opposite the modeled facing read against the way's length-weighted normal.
       // A facing within about 15 degrees of the way's overall line gives no side, so a bent way's back goes on its outer side,
       // seats facing into the bend, and a straight way's on its right. Either side remains an estimate without a direction tag.
+      // A closed ring's normals sum to rounding noise, as the generator also treats under 1e-9, so its back takes its outside.
       let leftX=0,leftY=0,turn=0;
       for(let i=1;i<points.length;i++){const dx=points[i][0]-points[i-1][0],dy=points[i][1]-points[i-1][1];leftX-=dy;leftY+=dx;if(i>1)turn+=(points[i-1][0]-points[i-2][0])*dy-(points[i-1][1]-points[i-2][1])*dx;}
       const facing=benchFacing(p)*Math.PI/180,forward:Point=[Math.sin(facing),Math.cos(facing)];
-      const leftLength=Math.hypot(leftX,leftY),cosine=leftLength?(leftX*forward[0]+leftY*forward[1])/leftLength:0;
+      const leftLength=Math.hypot(leftX,leftY),cosine=leftLength>1e-9?(leftX*forward[0]+leftY*forward[1])/leftLength:0;
       const backOnLeft=Math.abs(cosine)>=0.25?cosine<0:turn<0;
       for(let i=1;i<points.length;i++){
         const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];
