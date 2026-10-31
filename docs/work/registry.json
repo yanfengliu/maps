@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "allocations": [
+    {
+      "id": 0,
+      "theme": "bay-area-stanford",
+      "inPlaceHistory": {
+        "canonicalReviewStart": 9,
+        "files": [
+          {
+            "path": "architecture-references.md",
+            "sha256": "a312846c33f7107ab3c44f1e01dac24573688f27d2c9b74c8308b6d29f598196",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/architecture-references.md",
+            "sourceBlob": "0307b651efb8e08cd2085db222841be6b2e7f02c"
+          },
+          {
+            "path": "campus-environment.md",
+            "sha256": "141be4f6dd2efbed79f62ec57b1bfc0748c5fc4f4158e8e805034867376cf4d5",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/campus-environment.md",
+            "sourceBlob": "b6d0d13f12bf4877e96473d9c0c0fe3e1c5cfbee"
+          },
+          {
+            "path": "detail-performance.md",
+            "sha256": "8cef2bc44f1da61925fdb530ee75a43b7c27b41c754e8edbc196d640a78a9115",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/detail-performance.md",
+            "sourceBlob": "f70d364f6ad403b0edd85333ae81ad5ed59cd8b0"
+          },
+          {
+            "path": "held-input-architecture.md",
+            "sha256": "8ef5ae18388c985b2b59f5d9865041a496ea98986a90d8c6d79086efcdde6206",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/held-input-architecture.md",
+            "sourceBlob": "3ded2208a5c81bfbabc359fd76c89d7525d553b0"
+          },
+          {
+            "path": "integration.md",
+            "sha256": "c6be2756e327663da69282fb4e8c9d76af2511d9d55b9dbae2a153f855d658e6",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/integration.md",
+            "sourceBlob": "7d036f1497b1ebb719a11317edeb9c05add7f662"
+          },
+          {
+            "path": "navigation-startup.md",
+            "sha256": "6d85d92a6c5122f21a3c4337170b8e2af2e7b82cc984f639a1d051b2cc1f7ae4",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/navigation-startup.md",
+            "sourceBlob": "fd26a375832a8c65eefc78765577e61df7fa980f"
+          },
+          {
+            "path": "reviews/002_startup.md",
+            "sha256": "942b00abad66516c3dababb72acedde13337354824cd5693c8de5aaf2e5cdee3",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/002_startup.md",
+            "sourceBlob": "9dcb0a1695cd83e256941e5499afe4c2575ddd4c"
+          },
+          {
+            "path": "reviews/003_detail-performance.md",
+            "sha256": "30b538568ea50eef8144519c71d8a1815d97650051c0ef3cbcb1254bcaeb3969",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/003_detail-performance.md",
+            "sourceBlob": "f440112c6c14c7408d814144f59e8278a5641c79"
+          },
+          {
+            "path": "reviews/004_navigation-startup.md",
+            "sha256": "c18319aedb7e3cc8f23a87d5bcfb4820e366e80f21c3d9d27c4e3d9768360afc",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/004_navigation-startup.md",
+            "sourceBlob": "5bc0e9536cd8a581ade2e40cdd2d6011f23fcbff"
+          },
+          {
+            "path": "reviews/005_held-input.md",
+            "sha256": "2acb492bdc39dc4b391b02a91d36afe07621943d40e8fe32b4a057a316bb60d6",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/005_held-input.md",
+            "sourceBlob": "4c3c40ac45c4d2e55bcea6d2c3115c7d0285e122"
+          },
+          {
+            "path": "reviews/006_architecture.md",
+            "sha256": "74e56b5184ac0a25daf8a77f1828960f13bd736b886b580030195cefc3752d1b",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/006_architecture.md",
+            "sourceBlob": "d9839f5b8224c140ca14901b13c72c55690190b3"
+          },
+          {
+            "path": "reviews/007_simultaneous-input.md",
+            "sha256": "f5310b5cec6919610b867ffedf07e26ddd05002b2985dc975500829df4b9c7e3",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/007_simultaneous-input.md",
+            "sourceBlob": "bf317867e5080c3fcbff6bec6b6e9f421347d60b"
+          },
+          {
+            "path": "reviews/008_campus-environment.md",
+            "sha256": "2ef1287239d331ff60edb5ec474f4a002d4de9d33de7ff3f6d387761396887fb",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/008_campus-environment.md",
+            "sourceBlob": "46ea3621cebafcce0dcb49f679188a24c03fc73a"
+          },
+          {
+            "path": "reviews/1_integrated-review.md",
+            "sha256": "538aa8d6ac96ac434c5a20921c621c93390e32ae5d0aef7b8c932e748f3df1e8",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/1_integrated-review.md",
+            "sourceBlob": "023b8c38d61f6dabc0782a6b82b72a417a85ed01"
+          },
+          {
+            "path": "reviews/2_focused-review.md",
+            "sha256": "c40258935dbfe0d2796baaf137600b1a87a398eb3bc964cc94f4cc55ea0f3286",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/reviews/2_focused-review.md",
+            "sourceBlob": "46de63d3aa05174a191c5920bb3be0a8cd5cce4b"
+          },
+          {
+            "path": "simultaneous-environment.md",
+            "sha256": "7d6c04f4fe1d6d8b74b6fb195e1379a1d5c241d03bcc1465e7329d9a0ac19427",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/simultaneous-environment.md",
+            "sourceBlob": "65dfe0bf715f134d12a6f44131556b0d3e8d4f1c"
+          },
+          {
+            "path": "startup.md",
+            "sha256": "8c10fe444fbb687b82786e91182f9f1b06b3b4f248ae292f48cbbc114508bcf3",
+            "sourceRevision": "7e43b5d056da66512c1ab0556ebc27568b42887b",
+            "sourcePath": "docs/work/0_bay-area-stanford/startup.md",
+            "sourceBlob": "58b2ff6dc51139a2216dc35333f7528a87f3120f"
+          }
+        ]
+      }
+    }
+  ],
+  "historicalRegistryAcknowledgments": [
+    {
+      "commit": "00ff7e6f7f5cdee2e60b03132b72e6a452b473b9",
+      "blob": "103752e0e6a308bfb079c28209ac888e6db06f4c",
+      "sha256": "b403e03972574808f6559db48a386e09535c082750ed95dc77ae4dbf7aef242f",
+      "decision": "Owner, 2026-10-27: 2d18833 cleared docs/work as a deliberate fresh start, so id 0 belongs to bay-area-stanford and this shibuya-1km allocation is superseded."
+    },
+    {
+      "commit": "af4403654cfa2917c17bc52caf838da61939770e",
+      "blob": "c897239b77911f8bb605b53e44a0368fe7c8b922",
+      "sha256": "adb57cba53ab441b84e4747e71cfb4773c01b32fd8943f7858f1fcf4a5b2972d",
+      "decision": "Owner, 2026-10-27: id 0 belongs to bay-area-stanford, so the unreal-shibuya allocation recorded on the divergent Unreal Shibuya line is superseded."
+    }
+  ],
+  "supersededWitnessAcknowledgment": {
+    "sha256": "09c52a6c5c9c4038446b18041087cbc50205cf8bb5cb94c4417e06be3d4443f7",
+    "allocations": [
+      {
+        "id": 0,
+        "theme": "shibuya-1km"
+      }
+    ],
+    "decision": "Owner, 2026-10-27: the local witness still reserved id 0 as shibuya-1km from before the 2d18833 fresh start; superseded so id 0 belongs to bay-area-stanford."
+  }
+}
