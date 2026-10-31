@@ -3,7 +3,7 @@
 Status: active
 Owner: root integration
 Created: 2026-10-19
-Updated: 2026-10-28
+Updated: 2026-10-30
 
 Migration note: this plan restructures the original `docs/work/0_bay-area-stanford/plan.md` into the current plan format. The original is git blob `59b480ca55168d5b434dbd14bf0a5e4d5fa9dbed`, 4,844 bytes, SHA-256 `fc9836d5c98d292e1aeb75678b5eab21af837679cc78674e2649e5779af2fd39`. It entered `main` in integration merge `7c6097e18efd712d741f66772588ee5acc3a3741` and is unchanged through `7e43b5d056da66512c1ab0556ebc27568b42887b`. `git show 7c6097e:docs/work/0_bay-area-stanford/plan.md` recovers it. Its metadata line was split: `Started` became `Created`, `Owner` is unchanged, `Base` opens Implementation steps and the status sentences are quoted under Outcome. Every other original sentence and table row is kept word for word, and the subheadings are original headings. Paragraphs marked "Migration note", and the list after one, are added. In the original's text, "this increment" and "this acceptance" mean the first increment. The `plan.md` line citations in `reviews/1_integrated-review.md` and `reviews/2_focused-review.md` use the original's line numbers, which are the same at plan base `9995b1b`.
 
@@ -62,11 +62,15 @@ Migration note: work continued in this folder after `7c6097e` without updating t
 - `89fc3e8`: [architecture-references.md](architecture-references.md), [reviews/006_architecture.md](reviews/006_architecture.md)
 - `f9d803e`: [simultaneous-environment.md](simultaneous-environment.md), [campus-environment.md](campus-environment.md), [reviews/007_simultaneous-input.md](reviews/007_simultaneous-input.md), [reviews/008_campus-environment.md](reviews/008_campus-environment.md)
 
+Added 2026-10-30: the bench accuracy and campus sculpture increment was written on 2026-10-20 and neither gated nor reviewed then. It was parked as `584733e` on 2026-10-29, merged onto `main`'s `d683dac` in `7dba7ab`, and repaired in `8e45ed8`, `5c9f24b`, `a2486a8`, `c5483cd` and `649d7c2` after review rounds 9 to 13. It merged to `main` on 2026-10-30, with its three notes folded into [design.md](design.md). Its review rounds are [reviews/9_integration.md](reviews/9_integration.md) to [reviews/14_integration.md](reviews/14_integration.md).
+
 ## Outcome
 
 Migration note: this migration sets `Status: active`, and the unit's outcome is pending. The original's status sentences cover only the first increment. Later records in this folder leave an acceptance item open: [held-input-architecture.md](held-input-architecture.md) has a section headed "Embedded-browser acceptance still open", and [simultaneous-environment.md](simultaneous-environment.md) says actual embedded-browser recovery "remains an unresolved earlier defect".
 
 Migration note: the original's status sentences read "Status: first increment implemented, verified and independently reviewed. Delivery is the integration commit containing this record; no further product scope is queued." There, "this record" is the original plan; the integration commit that first contains it is `7c6097e`, a merge of plan `9995b1b`, app `475e28e` and data `62a2507`. The integration record holds that increment's verification, review rounds and bounds. Quoting the status is history, not a new verification claim.
+
+Added 2026-10-30: the bench accuracy and campus sculpture increment is merged. The 163 mapped bench points keep their source tags and coordinates. 25 mapped bench ways and eight authored Inner Quad seat walls are added. Material and backrest follow their tags, and a bench of unknown material is a flat neutral marker, as 23 of the 25 ways are. Facing follows a `direction` tag, or else is estimated by the rule in [design.md](design.md#modeled-facing). Rodin's Burghers of Calais and the Angel of Grief stand at their mapped anchors, searchable, with flights at zoom 21.1 under a native maximum of 21.5. The campus detail mesh is 153,765 triangles and 23,987,340 bytes in its two draws. The integrated revision named in [review 14](reviews/14_integration.md) passed typecheck, 65 unit tests, build with only MapLibre's chunk-size warning and audit with 0 vulnerabilities on Node 24.18.1. It also passed a native check of 17/17 through real controls at 1920×1080 and 390×844. 23 regression checks each went red with their defect put back. Rounds 9 to 13 each ran both review lanes, and review 14 records the review of the integrated revision. [design.md](design.md) records the design and the [limits the reviews left](design.md#limits-the-reviews-recorded).
 
 ### Accepted result
 
