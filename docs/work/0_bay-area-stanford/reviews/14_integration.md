@@ -151,7 +151,7 @@ Under R19 and the work-docs rule, coverage stays with its named target. Either r
 
 ## Findings and disposition
 
-Rounds 9 to 14 number their findings in a series of their own, F0 to F40, apart from the frozen reviews' IDs (F40).
+Rounds 9 to 14 number their findings in a series of their own, F0 to F40, apart from the frozen reviews' IDs (F40). After this round, a docs-only follow-up commit fixed F31 and F34 to F38 (Round outcome).
 
 | ID | Finding | Disposition and reason | Repair or follow-up |
 |---|---|---|---|
@@ -188,3 +188,13 @@ After this record was added, fleet main's work-docs check passed again.
 ## Round outcome
 
 No blocking finding, so by the agreed plan the merge proceeds: this record's commit, on `15e5423`, is pushed to `main`, and the integration worktree is removed after the push. Of the two should-fix findings, this record answers F32. F31 is accepted and left unrepaired, because R11's five repairs for this merge are spent: `8e45ed8`, `5c9f24b`, `a2486a8`, `c5483cd` and `649d7c2`. Eight minor findings, F33 to F40, are accepted, F38 in part. None is repaired here: F39 needs no repair once the push lands, and the others wait for the same reason. None changes what renders or what the data holds. The integrated revision is therefore not fully verified while F31 stays open. Its docs-only fix and the minor corrections await the coordinator's decision.
+
+Follow-up, 2026-10-30: the coordinator ruled that record corrections like these are follow-up work, not a sixth repair. The commit that adds this paragraph changes docs only, with no code or data, and fixes:
+
+- F31: the data sentence in [design.md](../design.md).
+- F34: the zero-length case and the spur end in design.md. In `public/data/README.md`, where "nearest" is measured from, the zero-length case, and the bend and junction limit.
+- F35 and F36: design.md.
+- F37: reviews 9 and 12, each correction marked in its row.
+- F38: the devlog line.
+
+The provenance's `dimensions` text still leaves out F34's zero-length case and still makes F33's ring claim. `tools/data/build-campus-environment.mjs` writes that text, so changing it is a code and data change. Reviews 9 and 11 keep their data counts, which F31 corrects. F33 and F40 stay open as recorded. F39 needs nothing now that the push has landed.

@@ -102,23 +102,23 @@ The notes above were never gated or reviewed before integration. Five review rou
 
 - A mapped bench way of unknown material is a flat neutral marker 0.38 m wide along its mapped path, like an unknown point, not a solid seat. 23 of the 25 mapped ways are such markers. The bench note's 0.48 m width, 0.45 m seat height and 0.91 m back now apply only to the two ways with a known material: the stone arc `way/1505422554` and the backed concrete bench `way/1509660899`. Wood, concrete and stone ways keep their own tones, and the eight Inner Quad seat walls are unchanged.
 - On an open way, a tagged back runs the whole way on the side opposite its facing. The back is centred on the seat's mitred edge, so neighbouring segments share corners at bends. A tagged direction can run along the way; then a bent way's back takes its outer side and a straight way's takes its right. A closed ring's back takes its outside. Either side is an estimate.
-- A seat whose backrest tag is absent gets no back. A numeric-string `direction` such as "90" counts like a number.
+- A seat whose backrest tag is absent gets no back, except the five photographed Bing teak benches, which keep their photo-supported model and its back. A numeric-string `direction` such as "90" counts like a number.
 
 ### Modeled facing
 
-Without a direction tag, `estimateFacing` in `tools/data/build-campus-environment.mjs` decides a bench's facing. The provenance's `dimensions` text states the same rule.
+Without a direction tag, `estimateFacing` in `tools/data/build-campus-environment.mjs` decides a bench's facing. The provenance's `dimensions` text states the same rule, but leaves out the zero-length case below.
 
 - The reference is the pedestrian path nearest the bench node, or the middle of a way's length, among paths that do not touch the bench. A path touches it when any of its segments comes within 5 cm of any of the bench's segments, crossings included.
 - An open way faces across its own length-weighted line, toward the reference's side, so it never faces along itself. A closed ring faces the reference.
-- A node lying on a path faces across that path's nearest segment, toward the reference's side. Any other node faces the reference.
-- A reference within rounding of straight ahead along the line leaves the side undecided: a cosine within 1e-6 of zero, and the line's left is taken. A reference a fraction of a degree off the line still decides the side, which is then a weak estimate. Seven flat markers have such a margin.
-- `orientationSource` names the reference. For a node lying on a path it names that path instead.
+- A node lying on a path faces across the nearest of its touching segments that has length, toward the reference's side. A node whose touching segments all have zero length faces the reference, as any other node does.
+- A reference within rounding of straight ahead along the line leaves the side undecided: a cosine within 1e-6 of zero, and the line's left is taken. A reference a fraction of a degree off the line still decides the side, which is then a weak estimate. Seven flat markers have margins from 0.28° to 3.56°, three of them under 1°.
+- `orientationSource` names the reference. For a node that faces across a path's segment, it names that path instead.
 
 This replaces the note's "modeledFacing" estimate. That estimate measured a way from its middle node, and it could face along a bench or along the footway the bench lies on.
 
 ### Data, provenance and counts
 
-- `public/data/stanford-environment.geojson` is 249,297 bytes, SHA-256 `d9c056c55c154a98bf33309477155f0731aef3d58039bff7f6a099f87a1b6fa0`. It was regenerated from the four hash-verified extracts in the ignored `artifacts/bay-area-stanford/stanford-source/`. Against the note's `554f290a…` only `modeledFacing` changed, and for one node `orientationSource`. Every coordinate, tag, version and the feature order are unchanged.
+- `public/data/stanford-environment.geojson` is 249,297 bytes, SHA-256 `d9c056c55c154a98bf33309477155f0731aef3d58039bff7f6a099f87a1b6fa0`. It was regenerated from the four hash-verified extracts in the ignored `artifacts/bay-area-stanford/stanford-source/`. Against the note's `554f290a…`, 23 `modeledFacing` values changed, and `orientationSource` for six ways. Every coordinate, tag, version and the feature order are unchanged.
 - Provenance `retained` counts source nodes only: 163 benches, which equals `beforeExclusions` less `excluded`. The 25 ways and 8 authored walls are counted in `benchLines`.
 - The integrated mesh has 153,765 triangles and 23,987,340 bytes in the existing two draws, under the 160,000-triangle guard and the 24 MiB cap.
 
@@ -146,6 +146,6 @@ A native headless check through real controls passed 17/17. It ran in system Chr
 - Sculpture modelling frames: the head tilt and the feet and hand ellipsoids follow the group's axes, not each figure's. Tube segments crack at elbows. Two Burghers plinths stand 3 cm apart. These are deferred as qualities of a stylized model.
 - Road widths stop scaling at zoom 18, and regional tiles are over-zoomed to 21.5 anywhere in the Bay. Deferred.
 - The seat's long walls and one end cap are wound inward. Lighting is two-sided and culling is off, so nothing shows. Deferred.
-- A node at a footway bend, junction or spur end can face along the wrong segment. No published node lies at one. For a node lying on a path, the reference that chose its side is not recorded.
+- A node at a footway bend or junction can face along the wrong segment. At a spur end it faces across the spur. No published node lies at any of these. For a node lying on a path, the reference that chose its side is not recorded.
 - Bench ways skip the road-clearance check that points get, and a way with a node off campus is dropped unrecorded. Of the extracts' 27 bench ways, 25 are kept and 2 lie wholly off campus.
 - The sculpture pins agree only with themselves in the repository. On 2026-10-29 both were checked by hand against the extracts: ids, versions and coordinates match.
