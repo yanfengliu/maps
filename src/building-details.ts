@@ -147,6 +147,53 @@ void main() {
       tint=mix(tint,foliage,ivy*0.89*detail);
     }
   }
+  if(abs(v_kind-17.0)<0.1){
+    // Barrel tiles follow the wing's roof axes; fade below pixel resolution.
+    vec2 tiles=v_uv/vec2(0.24,0.42),aa=fwidth(tiles);
+    float fade=1.0-smoothstep(0.35,0.9,max(aa.x,aa.y));
+    float barrel=cos(fract(tiles.x)*6.2831853)*0.045;
+    float lap=1.0-smoothstep(0.015,0.045+aa.y,abs(fract(tiles.y)-0.5));
+    tint*=1.0+(barrel-lap*0.075)*fade;
+  }
+  if(abs(v_kind-14.0)<0.1 || abs(v_kind-18.0)<0.1){
+    // Sandstone blocks have staggered joints and restrained face variation.
+    // Dimensions are in metres, so close views gain detail without crawling
+    // one-pixel brick lines at the campus overview.
+    vec2 masonry=vec2(v_uv.x/0.72+mod(floor(v_uv.y/0.34),2.0)*0.5,v_uv.y/0.34);
+    vec2 cell=fract(masonry),aa=max(fwidth(masonry),vec2(0.006));
+    float joint=min(min(cell.x,1.0-cell.x),min(cell.y,1.0-cell.y));
+    float fade=1.0-smoothstep(0.30,0.8,max(aa.x,aa.y));
+    float variation=fract(sin(dot(floor(masonry),vec2(12.9898,78.233)))*43758.5453)-0.5;
+    tint*=1.0+variation*0.055*fade;
+    tint*=1.0-(1.0-smoothstep(0.008,0.025+max(aa.x,aa.y),joint))*0.16*fade;
+    if(abs(v_kind-18.0)<0.1){
+      float x=mod(v_uv.x,5.2)-2.6,y=v_uv.y;
+      float arch=max(abs(x)-1.64,y>2.55?length(vec2(x,y-2.55))-1.64:-1.0);
+      float lower=(1.0-smoothstep(-0.025,0.025,arch))*smoothstep(0.15,0.25,y);
+      float ring=(1.0-smoothstep(0.23,0.28,arch))-lower;
+      float upper=step(6.2,y)*(1.0-step(9.0,y))*(1.0-smoothstep(1.65,1.72,abs(x)));
+      float surround=step(6.05,y)*(1.0-step(9.16,y))*(1.0-smoothstep(1.78,1.84,abs(x)));
+      vec3 glass=mix(vec3(0.23,0.30,0.28),vec3(0.43,0.49,0.43),smoothstep(1.0,9.0,y));
+      float opening=max(lower,upper);
+      tint=mix(tint,tint*1.09,max(ring,surround-upper));
+      tint=mix(tint,glass,opening*0.9);
+      float vertical=(1.0-smoothstep(0.035,0.07,abs(x)))+1.0-smoothstep(0.035,0.07,abs(abs(x)-0.82));
+      float transom=1.0-smoothstep(0.04,0.09,min(abs(y-8.22),abs(y-8.68)));
+      tint=mix(tint,v_color*1.07,clamp(max(vertical,transom)*upper,0.0,1.0));
+      float lowerFrame=max(1.0-smoothstep(0.025,0.055,abs(x)),1.0-smoothstep(0.035,0.07,abs(y-2.5)));
+      tint=mix(tint,vec3(0.18,0.22,0.20),lowerFrame*lower);
+      // Radial stone joints distinguish the arch ring from ordinary courses.
+      float angle=atan(max(0.0,y-2.55),x);
+      float wedge=abs(fract(angle/3.14159265*13.0)-0.5);
+      tint*=1.0-(1.0-smoothstep(0.015,0.06+fwidth(angle),wedge))*ring*0.13;
+    }
+  }else if(abs(v_kind-15.0)<0.1){
+    float edge=abs(fract(v_uv.x/0.7)-0.5);
+    tint*=0.88+0.12*smoothstep(0.0,0.5,edge);
+  }else if(abs(v_kind-16.0)<0.1){
+    float grain=sin(v_uv.x*17.0+sin(v_uv.y*2.0));
+    tint*=1.0+grain*0.045;
+  }
   outColor = vec4(tint,1.0);
 }`;
 

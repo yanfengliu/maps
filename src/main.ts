@@ -11,6 +11,7 @@ import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetail
 import { enableMiddleMouseTilt } from './mouse-tilt.ts';
 import { describeBuildingArchitecture } from './building-architecture.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
+import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -306,6 +307,8 @@ function addBuildingDetailLayer(): void {
   buildingDetails.setSelected(selectedId);
 }
 
+const quadArcadeVisibility=createQuadArcadeVisibility();
+
 function addCampusLayers(): void {
   if (!map || !campusData || !campusBoundary) return;
   if (map.getSource('stanford')) {
@@ -321,8 +324,9 @@ function addCampusLayers(): void {
   map.addLayer({ id: 'campus-boundary', type: 'line', source: 'stanford-campus', minzoom: 13,
     paint: { 'line-color': '#b49a7f', 'line-width': 1, 'line-dasharray': [3,3], 'line-opacity': 0.5 } }, 'road-label');
   map.addSource('stanford', { type: 'geojson', data: campusData });
+  quadArcadeVisibility.reset();
   map.addLayer({ id: 'stanford-buildings', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
-    paint: { 'fill-extrusion-color': ['coalesce', ['get','detailWallColor'], ['get','color']], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
+    paint: { 'fill-extrusion-color': ['coalesce', ['get','detailWallColor'], ['get','color']], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-height-transition': { duration:0 }, 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');
   map.addLayer({ id: 'stanford-roofs', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
     paint: { 'fill-extrusion-color': ['coalesce', ['get','detailRoofColor'], ['get','roofColor']], 'fill-extrusion-height': ['+', ['get','detailWallHeight'], 0.05], 'fill-extrusion-base': ['get','detailWallHeight'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
   addBuildingDetailLayer();
@@ -423,6 +427,7 @@ function startMap(): void {
     });
     map.on('move', updateCameraUi);
     map.on('render', () => {
+      quadArcadeVisibility.sync(map,Boolean(buildingDetails?.stats.ready));
       const time = performance.now();
       renderTimes.push(time);
       if (renderTimes.length > 1800) renderTimes.shift();

@@ -2,10 +2,11 @@ import earcut from 'earcut';
 import type * as GeoJSON from 'geojson';
 import { buildingArchitecture, buildingMaterials, type BuildingArchitecture } from './building-architecture.ts';
 import { addMemorialChurch } from './memorial-church.ts';
-import { composeMainQuad } from './compose-building-parts.ts';
+import { composeBuildingParts } from './compose-building-parts.ts';
 import { addCampusEnvironment, emptyEnvironmentCounts, type CampusEnvironment, type EnvironmentCounts } from './campus-environment.ts';
 import { addLandmarkAccents } from './landmark-accents.ts';
 import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
+import { addQuadArcade, addQuadWingElevation, isArcadeEdge, quadWingRoof } from './quad-architecture.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -44,7 +45,7 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 
 /** Derived geometry hints are estimates; the original source height is retained. */
 export function prepareBuildingDetails(data: CampusData): CampusData {
-  const church = data.features.find(feature=>feature.properties?.id==='way/836474103');
+  const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
   return { ...data, features: data.features.map(feature => {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
@@ -52,12 +53,13 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : Number(p?.height) - roofRise(p);
     let geometry = feature.geometry;
-    if(quad && church){
-      if(geometry.type!=='Polygon' || church.geometry.type!=='Polygon')throw new Error('Main Quad/church rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
-      geometry=composeMainQuad(geometry,church.geometry,projectLocal);
+    if(quad && quadParts.length){
+      if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
+      geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
-    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof } };
+    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof,
+      ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };
   }) };
 }
 
@@ -171,8 +173,10 @@ export class BuildingGeometryBuilder {
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
       const indices = earcut(vertices.flat(), holes, 2);
       let roofTriangles: [Point, Point, Point][] = [];
-      const depth = shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : p.id === 'relation/35820' ? 2 : 1;
+      const depth = architecture.profile==='quad-wing'?0:shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : p.id === 'relation/35820' ? 2 : 1;
       for (let i = 0; i < indices.length; i += 3) subdivide(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], depth, roofTriangles);
+      const wingRoof=architecture.profile==='quad-wing'?quadWingRoof(rings[0],roofTriangles):undefined;
+      if(wingRoof)roofTriangles=wingRoof.triangles;
       const minY = Math.min(...vertices.map(v => v[1])), maxY = Math.max(...vertices.map(v => v[1]));
       let ridgeAxis: Point = [0, 1], longest = 0;
       if (shape === 'gabled') for (let i = 0; i < rings[0].length; i++) {
@@ -189,7 +193,7 @@ export class BuildingGeometryBuilder {
         maximumDistance = Math.max(maximumDistance, distances.get(point)!);
       }
       const roofPoint = (point: Point): Vertex => {
-        let fraction = shape === 'flat' ? 1 : shape === 'skillion'
+        let fraction = wingRoof ? wingRoof.fraction(point) : shape === 'flat' ? 1 : shape === 'skillion'
           ? (point[1] - minY) / Math.max(0.1, maxY - minY)
           : shape === 'gabled' ? Math.max(0, 1 - Math.abs((point[0] * ridgeAxis[0] + point[1] * ridgeAxis[1] - ridgeMiddle) / Math.max(0.01, (ridgeHigh - ridgeLow) / 2)))
           : Math.min(1, (distances.get(point) ?? 0) / Math.max(0.01, maximumDistance));
@@ -200,17 +204,27 @@ export class BuildingGeometryBuilder {
       };
       for (const [a, b, c] of roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-        this.roofs.triangle(roofPoint(a), roofPoint(signed > 0 ? b : c), roofPoint(signed > 0 ? c : b), roofTint, ['flat','skillion'].includes(shape)?9:0, building);
+        const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],roofTint,wingRoof?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
         for (let i = 0; i < ring.length; i++) {
           const a = ring[i], b = ring[(i + 1) % ring.length];
           const dx = b[0] - a[0], dy = b[1] - a[1], length = Math.hypot(dx, dy);
-          if (length < 0.4) continue;
+          if (length < (architecture.profile==='quad'?0.00001:0.4)) continue;
           const nx = outward * dy / length, ny = -outward * dx / length;
           const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
-          if (wall > base + 1 && length > 1.8) {
+          const arcade=architecture.profile==='quad'&&isArcadeEdge(a,b,(p.detailArcadeCourt as GeoJSON.Position[]??[]).slice(0,-1).map(projectLocal));
+          if(arcade){
+            addQuadArcade(this.facades,a,b,[nx,ny],base,wall,building,wallTint);
+          }else if(architecture.profile==='quad-wing'&&length>1.8){
+            addQuadWingElevation(this.facades,a,b,[nx,ny],base,wall,building,wallTint,String(p.id));
+          }else if(architecture.profile==='quad'&&length<=1.8){
+            // The native parent is hidden for open arcades. Short returns
+            // still need solid walls even though they cannot fit a window bay.
+            this.facades.quad(at(a,base),at(b,base),at(b,wall-0.12),at(a,wall-0.12),wallTint,14,building,[[0,0],[length,0],[length,wall-base-0.12],[0,wall-base-0.12]]);
+          }else if (wall > base + 1 && length > 1.8) {
             const libraryFront = architecture.profile==='library' && ringIndex===0 && (i===14 || i===15);
             const robleFront=p.id==='way/232805733'&&ringIndex===0&&nx*0.49+ny*0.87>0.7;
             const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 3 : robleFront?13:architecture.profile === 'residential' ? 4
@@ -226,15 +240,17 @@ export class BuildingGeometryBuilder {
             this.facades.quad(at(a, base), at(b, base), at(b, wall - 0.12), at(a, wall - 0.12), wallTint, kind, building,
               [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
           }
-          const z = Math.min(height - 0.07, wall);
+          // The cornice encloses the small raised eave seam; a second wall
+          // strip inside that solid trim is redundant. Keep sloped gable ends.
+          const z = Math.min(height, wall + 0.07);
           const low = Math.max(base, z - 0.23);
-          const edge: Point[] = [a];
+          const edge: Point[] = wingRoof?wingRoof.edge(a,b):[a];
           const da = a[0] * ridgeAxis[0] + a[1] * ridgeAxis[1] - ridgeMiddle, db = b[0] * ridgeAxis[0] + b[1] * ridgeAxis[1] - ridgeMiddle;
-          if (shape === 'gabled' && da * db < 0) { const t = da / (da - db); edge.push([a[0] + t * dx, a[1] + t * dy]); }
-          edge.push(b);
+          if (!wingRoof&&shape === 'gabled' && da * db < 0) { const t = da / (da - db); edge.push([a[0] + t * dx, a[1] + t * dy]); }
+          if(!wingRoof)edge.push(b);
           for (let j = 1; j < edge.length; j++) {
             const u = edge[j - 1], v = edge[j], roofA = roofPoint(u), roofB = roofPoint(v);
-            if (Math.max(roofA[2], roofB[2]) > wall + 0.001) this.roofs.quad([u[0], u[1], wall], [v[0], v[1], wall], roofB, roofA, wallTint, 2, building);
+            if (Math.max(roofA[2], roofB[2]) > z + 0.001) this.roofs.quad([u[0], u[1], z], [v[0], v[1], z], roofB, roofA, wallTint, 2, building);
           }
           // Modest cornices sit just beyond the wall; they do not replace the
           // source footprint or bridge a courtyard.

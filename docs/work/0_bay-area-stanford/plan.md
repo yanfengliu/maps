@@ -3,7 +3,7 @@
 Status: active
 Owner: root integration
 Created: 2026-10-19
-Updated: 2026-10-30
+Updated: 2026-11-07
 
 Migration note: this plan restructures the original `docs/work/0_bay-area-stanford/plan.md` into the current plan format. The original is git blob `59b480ca55168d5b434dbd14bf0a5e4d5fa9dbed`, 4,844 bytes, SHA-256 `fc9836d5c98d292e1aeb75678b5eab21af837679cc78674e2649e5779af2fd39`. It entered `main` in integration merge `7c6097e18efd712d741f66772588ee5acc3a3741` and is unchanged through `7e43b5d056da66512c1ab0556ebc27568b42887b`. `git show 7c6097e:docs/work/0_bay-area-stanford/plan.md` recovers it. Its metadata line was split: `Started` became `Created`, `Owner` is unchanged, `Base` opens Implementation steps and the status sentences are quoted under Outcome. Every other original sentence and table row is kept word for word, and the subheadings are original headings. Paragraphs marked "Migration note", and the list after one, are added. In the original's text, "this increment" and "this acceptance" mean the first increment. The `plan.md` line citations in `reviews/1_integrated-review.md` and `reviews/2_focused-review.md` use the original's line numbers, which are the same at plan base `9995b1b`.
 
@@ -20,6 +20,12 @@ Navigation means camera movement and finding places: pan, zoom, rotation, tilt, 
 The former Shibuya project remains on `codex/shibuya-archive-2026-10-19` at `e93f56711a5b629481c1512a89058c2823017840`. Do not alter it or its retained local resources.
 
 ## Approach
+
+### Current increment: Quad surfaces and architectural detail
+
+The 2026-11-07 embedded-browser retest of `12c8fb4` passed in the current runtime: regional startup, repeated Stanford flights, close landmarks, desktop/mobile framing, real input and a fresh production tab. The owner confirmed it works without error. No application repair or original hang cause is claimed; retained evidence is under ignored `artifacts/embedded-recovery-20261107/output/playwright/`.
+
+The owner then reported interleaved arches and rectangular windows near Margaret Jacks Hall and requested much more architectural detail, prioritizing the Main Quad and landmarks. The implementation composes all nine mapped parts out of the render-only parent, preserving source coordinates, heights and courtyard coverage. Inner Quad arcades have actual recessed geometry, columns and stone arch surrounds; eight named wings have fitted elevations and planar hip roofs. [The design](design.md#quad-detail-2026-11-07) records sources and unsurveyed limits. Independent [review 15](reviews/15_implementation.md) and [review 16](reviews/16_implementation.md) accepted the final source/tests after fixing ten short wall gaps. All 69 tests, build, types and audit pass. Final browser checks, integration and cleanup are owned by root in `codex/embedded-recovery-20261107`; no source-data or archive change is required.
 
 ### Shared contract
 
@@ -65,6 +71,8 @@ Migration note: work continued in this folder after `7c6097e` without updating t
 Added 2026-10-30: the bench accuracy and campus sculpture increment was written on 2026-10-20 and neither gated nor reviewed then. It was parked as `584733e` on 2026-10-29, merged onto `main`'s `d683dac` in `7dba7ab`, and repaired in `8e45ed8`, `5c9f24b`, `a2486a8`, `c5483cd` and `649d7c2` after review rounds 9 to 13. It merged to `main` on 2026-10-30, with its three notes folded into [design.md](design.md). Its review rounds are [reviews/9_integration.md](reviews/9_integration.md) to [reviews/14_integration.md](reviews/14_integration.md).
 
 ## Outcome
+
+Added 2026-11-07: the previously unresolved embedded-browser acceptance now passes on the unchanged baseline, with owner confirmation; the original cause remains unknown. The Main Quad overlap correction and detail refinement are implemented and independently reviewed. The final mesh is 156,842 triangles and 24,467,352 bytes in two custom draws. Integration and resource cleanup are pending until the delivery record is added here.
 
 Migration note: this migration sets `Status: active`, and the unit's outcome is pending. The original's status sentences cover only the first increment. Later records in this folder leave an acceptance item open: [held-input-architecture.md](held-input-architecture.md) has a section headed "Embedded-browser acceptance still open", and [simultaneous-environment.md](simultaneous-environment.md) says actual embedded-browser recovery "remains an unresolved earlier defect".
 

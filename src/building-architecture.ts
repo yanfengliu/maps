@@ -1,6 +1,7 @@
 import type * as GeoJSON from 'geojson';
+import { QUAD_WING_IDS } from './quad-architecture.ts';
 
-export type ArchitectureProfile = 'memorial-church' | 'quad' | 'library' | 'tower' | 'residential' | 'institutional' | 'modern' | 'garage' | 'service' | 'open';
+export type ArchitectureProfile = 'memorial-church' | 'quad' | 'quad-wing' | 'library' | 'tower' | 'residential' | 'institutional' | 'modern' | 'garage' | 'service' | 'open';
 export interface BuildingArchitecture {
   profile: ArchitectureProfile;
   /** Facade rows are a model parameter, never a surveyed window count. */
@@ -17,9 +18,9 @@ const hooverParts = new Set(['way/1346548884','way/1346548885','way/1346548886',
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
   const flat=architecture.roofShape==='flat'||architecture.roofShape==='skillion';
-  const wall=p.id==='way/232805733'?'#c8aaa0':profile==='memorial-church'?'#d8c29e':profile==='quad'?'#d4bc94':profile==='library'?'#d1bd98':profile==='tower'?'#e0cba2'
+  const wall=p.id==='way/232805733'?'#c8aaa0':profile==='memorial-church'?'#d8c29e':profile==='quad'||profile==='quad-wing'?'#cdb58e':profile==='library'?'#d1bd98':profile==='tower'?'#e0cba2'
     :profile==='modern'?'#d9ddd4':profile==='garage'?'#c9c9b9':profile==='service'?'#d0cdc0':profile==='residential'?'#dfcfb7':'#dbccb1';
-  const roof=p.id==='way/232805733'?'#c6bca9':flat?(profile==='modern'?'#c1cbc7':'#c9c8b9'):profile==='memorial-church'||profile==='quad'||profile==='library'?'#b66e4e':'#b77d60';
+  const roof=p.id==='way/232805733'?'#c6bca9':flat?(profile==='modern'?'#c1cbc7':'#c9c8b9'):profile==='memorial-church'||profile==='quad'||profile==='quad-wing'||profile==='library'?'#b66e4e':'#b77d60';
   return {wall,roof};
 }
 
@@ -30,6 +31,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const name = String(p.name ?? '');
   const profile: ArchitectureProfile = p.id === 'way/836474103' ? 'memorial-church'
     : p.id === 'relation/35820' ? 'quad'
+    : QUAD_WING_IDS.has(String(p.id)) ? 'quad-wing'
     : p.id === 'way/232805680' ? 'library'
     : hooverParts.has(String(p.id)) || /tower/i.test(name) ? 'tower'
     : ['roof', 'steps', 'bridge', 'grandstand', 'stadium'].includes(type) ? 'open'
@@ -41,7 +43,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
-  const special = ['memorial-church', 'library', 'tower', 'open'].includes(profile);
+  const special = ['memorial-church', 'quad-wing', 'library', 'tower', 'open'].includes(profile);
   const minLevel = Math.max(0, Number(p['osm:building:min_level']) || 0);
   const available = Math.max(0, wallHeight - Number(p.base));
   const floorHeight = profile === 'residential' ? 3.25 : profile === 'modern' ? 4.1 : 4.2;
@@ -60,6 +62,7 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   if (!detail || typeof detail !== 'object') return 'Architectural details are modeled; exact window counts have not been surveyed.';
   if (detail.profile === 'memorial-church') return 'Memorial Church has a modeled Romanesque exterior with three entrance arches, its current central arched window, flanking triplets, mosaic facade and crossing skylight. Side window spacing and proportions are modeled; the 24 m source height is estimated.';
   if (detail.profile === 'quad') return 'OSM tags list 5 levels for the Main Quad complex. This authored low arcade model uses one arcade band, eaves around 6.2 m and roofs around 9.5 m. These proportions are not a floor survey; window spacing is modeled.';
+  if (detail.profile === 'quad-wing') return `${String(p.name)} uses its own mapped footprint, with modeled sandstone arches, grouped glazing, transoms and stone trim informed by Main Quad photographs. The source height is a 12 m estimate; exterior window bands are not a surveyed floor count. Bay spacing and unphotographed elevations are estimates.`;
   if (detail.profile === 'library') return 'Bing Wing has three tall arched bays on its west facade and an upper band of small openings, based on Stanford reference photos. Other elevations and window spacing are modeled; the 12 m source height is estimated.';
   if (detail.floorSource === 'official-description') return 'Stanford housing describes Roble Hall as three stories. The model uses three facade rows and a restrained cornice roof. Window spacing and roof proportions are modeled; the 10 m source height is estimated.';
   if (p.id === 'way/1346548889') return 'Stanford places the carillon and observation deck on the 14th floor. OSM tags list 15 levels on this modeled part; this is not a floor survey. The model follows the sparse shaft and stepped crown, with modeled window spacing.';

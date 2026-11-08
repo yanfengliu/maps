@@ -2,14 +2,14 @@ import type * as GeoJSON from 'geojson';
 
 interface BoundaryPoint { source: GeoJSON.Position; xy: [number, number] }
 
-/** Render-only difference for the pinned Quad/church boundaries, which meet
+/** Render-only difference for the pinned Quad/part boundaries, which meet
  * at existing source vertices. This deliberately is not a general clipping
  * engine: crossing edges without a source vertex fail instead of being guessed.
  */
-export function composeMainQuad(quad: GeoJSON.Polygon, church: GeoJSON.Polygon, project: (position: readonly number[]) => [number, number]): GeoJSON.Polygon {
+export function composeBuildingParts(quad: GeoJSON.Polygon, parts: GeoJSON.Polygon[], project: (position: readonly number[]) => [number, number]): GeoJSON.Polygon | GeoJSON.MultiPolygon {
   const convert = (ring: GeoJSON.Position[]): BoundaryPoint[] => ring.slice(0,-1).map(source => ({ source, xy: project(source) }));
-  const rings = quad.coordinates.map(convert), part = church.coordinates.map(convert);
-  const boundaries = [...rings,...part], points = boundaries.flat();
+  const rings = quad.coordinates.map(convert), cuts = parts.map(part=>part.coordinates.map(convert));
+  const boundaries = [...rings,...cuts.flat()], points = boundaries.flat();
   const key = (p: BoundaryPoint) => p.xy.map(n=>n.toFixed(5)).join(',');
   const inside = (p: number[], ring: BoundaryPoint[]) => {
     let result = false;
@@ -20,7 +20,7 @@ export function composeMainQuad(quad: GeoJSON.Polygon, church: GeoJSON.Polygon, 
     return result;
   };
   const inPolygon = (p: number[], polygon: BoundaryPoint[][]) => inside(p,polygon[0]) && !polygon.slice(1).some(r=>inside(p,r));
-  const remaining = (p: number[]) => inPolygon(p,rings) && !inPolygon(p,part);
+  const remaining = (p: number[]) => inPolygon(p,rings) && !cuts.some(part=>inPolygon(p,part));
   const segments = boundaries.flatMap(ring=>ring.map((a,i)=>({a,b:ring[(i+1)%ring.length]})));
   // The reviewed source has shared edges and endpoint joins only. Detect a
   // changed topology before relying on that bounded source contract.
@@ -28,7 +28,7 @@ export function composeMainQuad(quad: GeoJSON.Polygon, church: GeoJSON.Polygon, 
   for(let i=0;i<segments.length;i++)for(let j=i+1;j<segments.length;j++){
     const a=segments[i],b=segments[j];
     if(cross(a.a.xy,a.b.xy,b.a.xy)*cross(a.a.xy,a.b.xy,b.b.xy)<-1e-8 && cross(b.a.xy,b.b.xy,a.a.xy)*cross(b.a.xy,b.b.xy,a.b.xy)<-1e-8)
-      throw new Error('Main Quad/church rendering boundaries cross without a shared source vertex. Review the updated footprint topology.');
+      throw new Error('Main Quad/part rendering boundaries cross without a shared source vertex. Review the updated footprint topology.');
   }
   const edges = new Map<string,{a: BoundaryPoint;b: BoundaryPoint}>();
   for(const {a,b} of segments){
@@ -67,6 +67,16 @@ export function composeMainQuad(quad: GeoJSON.Polygon, church: GeoJSON.Polygon, 
   }
   const signedArea=(ring: GeoJSON.Position[])=>{const p=ring.slice(0,-1).map(project);return p.reduce((sum,a,i)=>{const b=p[(i+1)%p.length];return sum+a[0]*b[1]-b[0]*a[1];},0)/2;};
   const outer=result.filter(r=>signedArea(r)>0),holes=result.filter(r=>signedArea(r)<0);
-  if(outer.length!==1)throw new Error('Main Quad/church rendering difference no longer has one connected outer boundary. Review the updated source footprint topology.');
-  return {type:'Polygon',coordinates:[outer[0],...holes]};
+  const polygons = outer.map(ring=>[ring]);
+  for(const hole of holes){
+    const owners=outer.map((ring,i)=>inside(project(hole[0]),convert(ring))?i:-1).filter(i=>i>=0);
+    if(owners.length!==1)throw new Error('Main Quad/part rendering hole has no unique outer boundary. Review the updated source footprint topology.');
+    polygons[owners[0]].push(hole);
+  }
+  return polygons.length===1?{type:'Polygon',coordinates:polygons[0]}:{type:'MultiPolygon',coordinates:polygons};
+}
+
+/** Compatibility for the original two-boundary composition check. */
+export function composeMainQuad(quad: GeoJSON.Polygon, church: GeoJSON.Polygon, project: (position: readonly number[]) => [number, number]): GeoJSON.Polygon | GeoJSON.MultiPolygon {
+  return composeBuildingParts(quad,[church],project);
 }

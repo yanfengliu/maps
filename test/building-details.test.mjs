@@ -6,12 +6,16 @@ import { prepareBuildingDetails, buildBuildingGeometry, MAX_DETAIL_TRIANGLES, VE
 import { createBuildingDetailsLayer } from '../src/building-details.ts';
 import { buildingArchitecture, describeBuildingArchitecture } from '../src/building-architecture.ts';
 import { composeMainQuad } from '../src/compose-building-parts.ts';
+import { QUAD_WING_IDS, isArcadeEdge } from '../src/quad-architecture.ts';
 import { isSimpleRing } from '../tools/data/fetch-stanford.mjs';
 
 const original = JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson', import.meta.url), 'utf8'));
 const before = JSON.stringify(original);
 const detailed = prepareBuildingDetails(original);
 const geometry = buildBuildingGeometry(detailed);
+const quadParts=original.features.filter(f=>QUAD_WING_IDS.has(f.properties.id)||f.properties.id==='way/836474103');
+const polygons=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates;
+const intersect=(a,b)=>a.reduce((sum,t)=>sum+b.reduce((subtotal,u)=>subtotal+triangleIntersectionArea(t,u),0),0);
 
 function area(ring) {
   return Math.abs(ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p[0] * q[1] - q[0] * p[1]; }, 0) / 2);
@@ -43,7 +47,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailArcadeCourt, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
@@ -53,19 +57,25 @@ test('render preparation leaves source objects and metadata unchanged; only the 
   });
 });
 
-test('render-only Quad composition uses source vertices, retains courtyard coverage and removes exactly the actual church intersection', () => {
-  const quad=original.features.find(f=>f.properties.id==='relation/35820'),church=original.features.find(f=>f.properties.id==='way/836474103'),rendered=detailed.features.find(f=>f.properties.id==='relation/35820');
-  const vertices=new Set([...quad.geometry.coordinates.flat(),...church.geometry.coordinates.flat()].map(p=>JSON.stringify(p)));
-  for(const ring of rendered.geometry.coordinates){
+test('render-only Quad composition removes all nine overlapping parts, retains disconnected wings and courtyard coverage using source vertices', () => {
+  const quad=original.features.find(f=>f.properties.id==='relation/35820'),rendered=detailed.features.find(f=>f.properties.id==='relation/35820');
+  assert.equal(quadParts.length,9);
+  assert.equal(rendered.geometry.type,'MultiPolygon');
+  assert.equal(rendered.geometry.coordinates.length,3,'retain the two detached low wings as well as the main arcade');
+  const vertices=new Set([...quad.geometry.coordinates.flat(),...quadParts.flatMap(p=>p.geometry.coordinates.flat())].map(p=>JSON.stringify(p)));
+  for(const ring of polygons(rendered.geometry).flat()){
     assert.deepEqual(ring[0],ring.at(-1));assert.ok(isSimpleRing(ring));
     for(const point of ring){assert.ok(point.every(Number.isFinite));assert.ok(vertices.has(JSON.stringify(point)),'composition must not invent a replacement footprint vertex');}
   }
-  const quadTriangles=sourceTriangles(quad.geometry.coordinates),churchTriangles=sourceTriangles(church.geometry.coordinates),resultTriangles=sourceTriangles(rendered.geometry.coordinates);
-  const intersect=(a,b)=>a.reduce((sum,t)=>sum+b.reduce((subtotal,u)=>subtotal+triangleIntersectionArea(t,u),0),0);
-  const intersection=intersect(quadTriangles,churchTriangles),sourceArea=quadTriangles.reduce((s,t)=>s+area(t),0),resultArea=resultTriangles.reduce((s,t)=>s+area(t),0);
-  assert.ok(intersection>1800,'the source has a material overlapping church part');
+  const quadTriangles=sourceTriangles(quad.geometry.coordinates),partTriangles=quadParts.map(p=>sourceTriangles(p.geometry.coordinates)),resultTriangles=polygons(rendered.geometry).flatMap(sourceTriangles);
+  for(let i=0;i<partTriangles.length;i++){
+    assert.ok(intersect(quadTriangles,partTriangles[i])>1000,`${quadParts[i].properties.name} is materially covered by the source parent`);
+    assert.ok(intersect(resultTriangles,partTriangles[i])<0.0001,`${quadParts[i].properties.name} must not overlap the rendered parent`);
+    for(let j=i+1;j<partTriangles.length;j++)assert.ok(intersect(partTriangles[i],partTriangles[j])<0.0001,'disjoint source parts permit an independent union-area sum');
+  }
+  const intersection=partTriangles.reduce((sum,p)=>sum+intersect(quadTriangles,p),0),sourceArea=quadTriangles.reduce((s,t)=>s+area(t),0),resultArea=resultTriangles.reduce((s,t)=>s+area(t),0);
+  assert.ok(intersection>13000,'all mapped parts contribute to the difference');
   assert.ok(Math.abs(resultArea-(sourceArea-intersection))<0.0001,'the difference must subtract the actual intersection, not an assumed rectangle');
-  assert.ok(intersect(resultTriangles,churchTriangles)<0.0001,'the rendered Quad must not remain under the church');
   assert.ok(Math.abs(intersect(resultTriangles,quadTriangles)-resultArea)<0.0001,'the composition must retain only the actual Quad footprint');
   for(const hole of quad.geometry.coordinates.slice(1)){
     const holeTriangles=sourceTriangles([hole]);
@@ -186,9 +196,9 @@ test('triangulated roofs retain the actual Main Quad and every courtyard area ra
   const index = original.features.findIndex(feature => feature.properties.id === 'relation/35820');
   const polygon = original.features[index].geometry.coordinates.map(ring => ring.slice(0, -1).map(projectLocal));
   assert.equal(polygon.length, 8, 'the source has seven courtyard holes');
-  const church=sourceTriangles(original.features.find(f=>f.properties.id==='way/836474103').geometry.coordinates);
+  const parts=quadParts.flatMap(f=>sourceTriangles(f.geometry.coordinates));
   const sourceQuad=sourceTriangles(original.features[index].geometry.coordinates);
-  const overlap=sourceQuad.reduce((sum,t)=>sum+church.reduce((subtotal,u)=>subtotal+triangleIntersectionArea(t,u),0),0);
+  const overlap=intersect(sourceQuad,parts);
   const targetArea = area(polygon[0]) - polygon.slice(1).reduce((sum, ring) => sum + area(ring), 0)-overlap;
   let meshArea = 0;
   const inside = (p, ring) => {
@@ -237,6 +247,81 @@ test('mapped gables have an exact ridge and flat/skillion raised edges have ston
     assert.ok(Math.abs(highestRoof - feature.properties.height) < 0.0001, `${feature.properties.id} roof does not reach its source height`);
     assert.ok(Math.abs(highestClosure - feature.properties.height) < 0.0001, `${feature.properties.id} has an open roof boundary`);
   }
+});
+
+test('named Quad wings have source-clipped planar roofs and complete fitted window bays, not generic floor grids', () => {
+  for(const [index,feature] of detailed.features.entries()){
+    if(!QUAD_WING_IDS.has(feature.properties.id))continue;
+    assert.equal(feature.properties.detailArchitecture.profile,'quad-wing');
+    assert.equal(feature.properties.height,12);
+    assert.equal(feature.properties.heightSource,'estimated');
+    assert.match(describeBuildingArchitecture(feature.properties),/own mapped footprint.*estimate.*not a surveyed floor count/);
+    const source=sourceTriangles(feature.geometry.coordinates),roof=[],normals=new Set();
+    let faceCount=0;
+    for(let i=0;i<geometry.roofs.length;i+=VERTEX_FLOATS*3){
+      const mesh=geometry.roofs;
+      if(mesh[i+12]!==index||mesh[i+11]!==17)continue;
+      roof.push([0,1,2].map(j=>[mesh[i+j*VERTEX_FLOATS],mesh[i+j*VERTEX_FLOATS+1]]));
+      normals.add([...mesh.slice(i+3,i+6)].map(n=>n.toFixed(4)).join(','));
+      for(const j of [0,1,2])assert.ok(mesh[i+j*VERTEX_FLOATS+2]<=12.00001);
+    }
+    assert.equal(normals.size,4,'a hip roof has four stable plane normals rather than tessellation spikes');
+    const roofArea=roof.reduce((sum,t)=>sum+area(t),0),sourceArea=source.reduce((sum,t)=>sum+area(t),0);
+    assert.ok(Math.abs(roofArea-sourceArea)<0.02,'clipped roof preserves all mapped notches and holes');
+    assert.ok(Math.abs(intersect(roof,source)-roofArea)<0.02,'roof does not span outside the wing');
+    for(let i=0;i<geometry.facades.length;i+=VERTEX_FLOATS*6){
+      const mesh=geometry.facades;
+      if(mesh[i+12]!==index||mesh[i+11]!==18)continue;
+      const width=mesh[i+VERTEX_FLOATS+9];
+      assert.ok(Math.abs(width/5.2-Math.round(width/5.2))<0.00001,'whole window bays terminate at wall ends');
+      faceCount++;
+    }
+    assert.ok(faceCount>=4);
+  }
+});
+
+test('Inner Quad arcades replace flat wall faces with recessed walks, segmented arches and physical columns', () => {
+  const index=detailed.features.findIndex(f=>f.properties.id==='relation/35820'),quad=detailed.features[index];
+  const court=quad.properties.detailArcadeCourt.slice(0,-1).map(projectLocal);
+  assert.equal(court.length,13,'pinned Inner Quad boundary must be explicitly reviewed if the source changes');
+  assert.ok(Math.abs(area(court)-13037.89966)<0.01,'open the Inner Quad rather than a neighboring courtyard');
+  const mesh=geometry.facades;
+  let recessed=0,columns=0,wood=0;
+  const nearCourt=p=>distanceToRings(p,[court])<2.3;
+  for(let i=0;i<mesh.length;i+=VERTEX_FLOATS){
+    if(mesh[i+12]!==index||!nearCourt([mesh[i],mesh[i+1]]))continue;
+    if(mesh[i+11]===14&&distanceToRings([mesh[i],mesh[i+1]],[court])>2)recessed++;
+    if(mesh[i+11]===14&&mesh[i+2]>.3&&mesh[i+2]<3&&Math.abs(mesh[i+5])<.01)columns++;
+    if(mesh[i+11]===16)wood++;
+  }
+  assert.ok(recessed>100&&columns>1000&&wood>=24,`arcades need depth, shafts and timber ceilings: ${recessed}/${columns}/${wood}`);
+  assert.equal(isArcadeEdge([0,0],[10,0],[[0,0],[10,0],[10,10],[0,10]]),true);
+  assert.equal(isArcadeEdge([0,1],[10,1],[[0,0],[10,0],[10,10],[0,10]]),false,'nearby parallel walls are not source courtyard edges');
+});
+
+test('every non-arcade Quad boundary retains a solid wall when native extrusion is hidden, including short corners',()=>{
+  const index=detailed.features.findIndex(f=>f.properties.id==='relation/35820'),feature=detailed.features[index],mesh=geometry.facades;
+  const court=feature.properties.detailArcadeCourt.slice(0,-1).map(projectLocal);
+  const triangles=[];
+  for(let i=0;i<mesh.length;i+=VERTEX_FLOATS*3)if(mesh[i+12]===index)triangles.push([0,1,2].map(j=>[...mesh.slice(i+j*VERTEX_FLOATS,i+j*VERTEX_FLOATS+3)]));
+  const cross=(a,b,p)=>(b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);
+  let short=0;
+  for(const polygon of polygons(feature.geometry))for(const ring of polygon){
+    const points=ring.slice(0,-1).map(projectLocal);
+    for(let i=0;i<points.length;i++){
+      const a=points[i],b=points[(i+1)%points.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      if(isArcadeEdge(a,b,court))continue;
+      if(length<1.8)short++;
+      const u=[(b[0]-a[0])/length,(b[1]-a[1])/length];
+      const faces=triangles.filter(tri=>tri.every(p=>Math.abs(Math.abs((p[0]-a[0])*u[1]-(p[1]-a[1])*u[0])-0.045)<0.001))
+        .map(tri=>tri.map(p=>[(p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],p[2]]));
+      for(const fraction of [.2,.5,.8])for(const z of [.25,3,6]){
+        const sample=[length*fraction,z];
+        assert.ok(faces.some(tri=>{const signs=tri.map((p,j)=>cross(p,tri[(j+1)%3],sample));return signs.every(s=>s>=-0.0001)||signs.every(s=>s<=0.0001);}),`uncovered ${length.toFixed(3)} m edge ${JSON.stringify(a)} at ${fraction}/${z}`);
+      }
+    }
+  }
+  assert.equal(short,10,'exercise every short edge in the reviewed source');
 });
 
 function gpu() {

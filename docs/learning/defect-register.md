@@ -1,5 +1,13 @@
 # Defect register
 
+## 2026-11-07 — Parent and part facades interleave at Main Quad
+
+Symptom: round arches and rectangular windows overlap near Margaret Jacks Hall. Root cause: the render-only parent difference removed Memorial Church but retained eight named building parts; parent and part facade planes both sat 0.045 m beyond their shared source boundary. Compose all nine parts together and preserve the three resulting components. An independent triangle-intersection oracle checks every part, area conservation, source vertices and all original courtyards; the church-only negative fails. New recessed Inner Quad arcades retain native walls until their mesh is ready. The premature-hide negative fails. Independent review found ten short non-arcade edges without custom walls once the parent extrusion collapsed; emitted-triangle coverage now tests every boundary and fails at the first 1.520 m gap before repair. Source data remains unchanged. [Design and verification](../work/0_bay-area-stanford/design.md#quad-detail-2026-11-07), [review 15](../work/0_bay-area-stanford/reviews/15_implementation.md) and [review 16](../work/0_bay-area-stanford/reviews/16_implementation.md) retain the bounds.
+
+## 2026-11-07 — Embedded-browser follow-up passes
+
+The current embedded runtime passed regional start, repeated flights, close landmarks, desktop/mobile views and a fresh production tab at the unchanged `12c8fb4` baseline. The owner confirmed: “It works in your native browser now without error.” The historical 2026-10-20 report below remains intact; its acceptance status is superseded by this current successful retest. The earlier host hang's cause remains unknown, and no code cure is claimed. [Current plan](../work/0_bay-area-stanford/plan.md) and ignored `artifacts/embedded-recovery-20261107/output/playwright/verification.json` retain the evidence.
+
 ## 2026-10-20 — Benches do not match campus seating
 
 Symptom: the user reports that benches are inaccurate. Investigation confirms all benches used the same wood model even when material tags specified concrete; unknown backrest/material and road-derived facing were treated as detailed geometry. The node-only source extraction also omitted mapped bench ways and curved seating. Correction and verification are tracked in [the bench/sculpture record](../work/0_bay-area-stanford/design.md#bench-accuracy-and-campus-sculpture): preserve source facts, use photo-supported forms, distinguish unknowns, check actual line paths and facing semantics, and inspect native close views.
