@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Status: active
+Status: complete
 Owner: root integration
 Created: 2026-10-19
 Updated: 2026-11-07
@@ -25,7 +25,7 @@ The former Shibuya project remains on `codex/shibuya-archive-2026-10-19` at `e93
 
 The 2026-11-07 embedded-browser retest of `12c8fb4` passed in the current runtime: regional startup, repeated Stanford flights, close landmarks, desktop/mobile framing, real input and a fresh production tab. The owner confirmed it works without error. No application repair or original hang cause is claimed; retained evidence is under ignored `artifacts/embedded-recovery-20261107/output/playwright/`.
 
-The owner then reported interleaved arches and rectangular windows near Margaret Jacks Hall and requested much more architectural detail, prioritizing the Main Quad and landmarks. The implementation composes all nine mapped parts out of the render-only parent, preserving source coordinates, heights and courtyard coverage. Inner Quad arcades have actual recessed geometry, columns and stone arch surrounds; eight named wings have fitted elevations and planar hip roofs. [The design](design.md#quad-detail-2026-11-07) records sources and unsurveyed limits. Independent [review 15](reviews/15_implementation.md) and [review 16](reviews/16_implementation.md) accepted the final source/tests after fixing ten short wall gaps. All 69 tests, build, types and audit pass. Final browser checks, integration and cleanup are owned by root in `codex/embedded-recovery-20261107`; no source-data or archive change is required.
+The owner then reported interleaved arches and rectangular windows near Margaret Jacks Hall and requested much more architectural detail, prioritizing the Main Quad and landmarks. The implementation composes all nine mapped parts out of the render-only parent, preserving source coordinates, heights and courtyard coverage. Inner Quad arcades have actual recessed geometry, columns and stone arch surrounds; eight named wings have fitted elevations and planar hip roofs. [The design](design.md#quad-detail-2026-11-07) records sources and unsurveyed limits. Independent [review 15](reviews/15_implementation.md) and [review 16](reviews/16_implementation.md) accepted the final source/tests after fixing ten short wall gaps. All 69 tests, build, types and audit pass. Browser verification and integration are complete at `111e6655aa4b7470f8ea1546eb8b15020809bbaa` on pushed main. Source data and the archive are unchanged.
 
 ### Shared contract
 
@@ -72,7 +72,7 @@ Added 2026-10-30: the bench accuracy and campus sculpture increment was written 
 
 ## Outcome
 
-Added 2026-11-07: the previously unresolved embedded-browser acceptance now passes on the unchanged baseline, with owner confirmation; the original cause remains unknown. The Main Quad overlap correction and detail refinement are implemented and independently reviewed. The final mesh is 156,842 triangles and 24,467,352 bytes in two custom draws. Integration and resource cleanup are pending until the delivery record is added here.
+Added 2026-11-07: the previously unresolved embedded-browser acceptance now passes on the unchanged baseline, with owner confirmation; the original cause remains unknown. The Main Quad overlap correction and detail refinement are merged and pushed as `111e6655aa4b7470f8ea1546eb8b15020809bbaa`. The final mesh is 156,842 triangles and 24,467,352 bytes in two custom draws. Actual graphics recovery, fixed and rotated desktop views, production loading and phone flights pass. GPU motion and host-throttling limits are explicit in the design. GitHub reports zero configured workflows, zero runs and zero checks for this commit; no remote CI result is claimed. All task tabs, both servers and their recorded child processes are closed. Delivery removes the task branch, active checkout and unused historical comparison checkout after this documentation commit; intentionally retained evidence stays under `artifacts/embedded-recovery-20261107/output/`. No unmerged product work remains.
 
 Migration note: this migration sets `Status: active`, and the unit's outcome is pending. The original's status sentences cover only the first increment. Later records in this folder leave an acceptance item open: [held-input-architecture.md](held-input-architecture.md) has a section headed "Embedded-browser acceptance still open", and [simultaneous-environment.md](simultaneous-environment.md) says actual embedded-browser recovery "remains an unresolved earlier defect".
 

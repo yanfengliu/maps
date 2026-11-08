@@ -4,6 +4,8 @@
 
 F41 correction to [review 15](15_implementation.md), on the same base `12c8fb4978272a50ea726dc04b14fd12a18c8b98`. The exact final source/test target is the code in the first commit containing this record. Seven files retain review 15's hashes. The two changed hashes are recorded in the report below. Documentation added after review is integration-owner authored and is not claimed as independently reviewed.
 
+Integration binding added 2026-11-07: that commit is `111e6655aa4b7470f8ea1546eb8b15020809bbaa`, merged to main and pushed. All nine reviewed files match its code after normal Git line-ending conversion; the hashes below identify working-copy bytes. Exact bytes, manifest and base-to-commit patch are intentionally retained under ignored `artifacts/embedded-recovery-20261107/output/review-16/`.
+
 ## Reviewers and coverage
 
 The same independent GPT-6 Astra reviewer inspected the correction, reran the two focused read-only test files, calculated complete geometry budgets, inspected the Inner Quad screenshot and read the negative-control failure. No writes or browser/server processes occurred.
