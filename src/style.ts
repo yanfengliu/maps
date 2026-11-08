@@ -1,4 +1,5 @@
 import type { StyleSpecification, LayerSpecification, ExpressionSpecification } from 'maplibre-gl';
+import {BAY_TERRAIN_BOUNDS,TERRAIN_SOURCE_ID} from './terrain-grounding.ts';
 
 const labelName: ExpressionSpecification = ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name:latin'], ['get', 'name']];
 
@@ -17,6 +18,7 @@ export function createStyle(): StyleSpecification {
     version: 8,
     name: 'World · warm cartography',
     projection: { type: 'globe' },
+    terrain: {source:TERRAIN_SOURCE_ID,exaggeration:1},
     sky: {
       'sky-color': ['interpolate', ['linear'], ['zoom'], 0, '#132735', 7, '#b7d4df', 12, '#dce7e6'],
       'horizon-color': '#829da9', 'sky-horizon-blend': 0.08,
@@ -26,6 +28,8 @@ export function createStyle(): StyleSpecification {
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: {
       openmaptiles: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
+      [TERRAIN_SOURCE_ID]: {type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:15,bounds:BAY_TERRAIN_BOUNDS,attribution:'Terrain: <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen Terrain Tiles</a> · USGS 3DEP/NED, GMTED2010 &amp; SRTM · NOAA ETOPO1'},
+      'bay-area-hillshade': {type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],encoding:'terrarium',tileSize:256,maxzoom:15,bounds:BAY_TERRAIN_BOUNDS,attribution:'Terrain: <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen Terrain Tiles</a> · USGS 3DEP/NED, GMTED2010 &amp; SRTM · NOAA ETOPO1'},
     },
     light: { anchor: 'viewport', color: '#fff4df', intensity: 0.42, position: [1.5, 210, 35] },
     layers: [
@@ -38,6 +42,7 @@ export function createStyle(): StyleSpecification {
         filter: ['in', ['get', 'class'], ['literal', ['cemetery','pitch','school','hospital']]],
         paint: { 'fill-color': ['match', ['get', 'class'], 'cemetery', '#d8e2ce', 'pitch', '#d3dfc3', 'hospital', '#f3e5e1', '#eae6d9'], 'fill-opacity': 0.65 } },
       { id: 'water', type: 'fill', source: 'openmaptiles', 'source-layer': 'water', paint: { 'fill-color': '#afd4e3' } },
+      {id:'regional-relief',type:'hillshade',source:'bay-area-hillshade',minzoom:7,paint:{'hillshade-exaggeration':0.18,'hillshade-shadow-color':'#7c8570','hillshade-highlight-color':'#f4f3e9','hillshade-accent-color':'#969c83'}},
       { id: 'country-boundary', type: 'line', source: 'openmaptiles', 'source-layer': 'boundary',
         filter: ['all',['==',['get','admin_level'],2],['!=',['get','maritime'],1]],
         paint: { 'line-color':'#b6b9a9','line-width':['interpolate',['linear'],['zoom'],1,.5,6,1.2], 'line-opacity':.7 } },

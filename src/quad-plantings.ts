@@ -1,4 +1,5 @@
 import type {CampusEnvironment} from './campus-environment.ts';
+import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
 import {QUAD_PLANTING_REFERENCE,QUAD_SPECIES,type ReferencePlant} from './quad-planting-reference.ts';
 export {quadPlantingCoverage} from './quad-planting-reference.ts';
 
@@ -51,10 +52,11 @@ export function locateQuadPlantings(data:CampusEnvironment,project:(p:readonly n
 
 /** No new material, draw call or geographic source: append to the batched
  * environment mesh, using the established leaf/bark/plain kinds and sentinel. */
-export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:(p:readonly number[])=>Point){
+export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:(p:readonly number[])=>Point,registerAnchor?:RegisterTerrainAnchor){
   const circles=locateQuadPlantings(data,project),counts={trees:0,palms:0,broadleaf:0,conifers:0};
-  const triangle=(a:Vertex,b:Vertex,c:Vertex,color:Color,kind=10,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,color,kind,-2,undefined,normals);
-  const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,color:Color,kind=10)=>mesh.quad(a,b,c,d,color,kind,-2);
+  let objectId=-2;
+  const triangle=(a:Vertex,b:Vertex,c:Vertex,color:Color,kind=10,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,color,kind,objectId,undefined,normals);
+  const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,color:Color,kind=10)=>mesh.quad(a,b,c,d,color,kind,objectId);
   const taper=(x:number,y:number,levels:[number,number][],color:Color)=>{
     for(let j=1;j<levels.length;j++)for(let i=0;i<6;i++){
       const a=i*Math.PI/3,b=(i+1)*Math.PI/3,[z0,r0]=levels[j-1],[z1,r1]=levels[j];
@@ -74,6 +76,7 @@ export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:
   };
   for(const circle of circles){
     const {center,ring}=circle;
+    objectId=registerAnchor?-5:-2;
     // Groundcover species are stated in the diagram, but their exact patch
     // boundaries are not surveyed. One continuous tone avoids making the
     // triangulation read as a fictitious radial planting pattern.
@@ -83,6 +86,7 @@ export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:
     }
     for(const plant of circle.plants){
       const species=QUAD_SPECIES[plant.code],{shape,height:h,radius:r}=species,[x,y]=plant.position;
+      objectId=registerAnchor?.(plant.position)??-2;
       const rotation=(Number(plant.id.split('/').at(-1))*2.399963+circle.number)%6.283185;
       const green:Color=species.silver?[0.48,0.56,0.46]:shape==='cycad'?[0.27,0.40,0.24]:[0.33,0.46,0.28],bark:Color=[0.47,0.42,0.32];
       counts.trees++;

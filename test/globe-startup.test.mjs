@@ -1,3 +1,4 @@
+import {enableTerrainRecovery} from '../src/terrain-recovery.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -18,11 +19,11 @@ test('initial camera opens on Stanford before the globe style requests tiles, wi
     addControl(){} on(){} setPadding(){calls.push('padding');}
     setStyle(style){assert.equal(style.projection.type,'globe');calls.push('style');}
   }
-  const context={map:undefined,maplibregl:{Map:MapHost,AttributionControl:class{},ScaleControl:class{}},PLACES,MAX_MAP_ZOOM,reducedMotion:{matches:false},enableMiddleMouseTilt(){},enableHeldKeyboardPan(){},panelPadding:()=>({}),updateCameraUi:()=>calls.push('ui'),overview:()=>calls.push('overview'),scheduleLoadDeadline(){},loadCampus:()=>calls.push('campus'),createStyle,addCampusLayers(){},showError:message=>assert.fail(message)};
+  const context={enableTerrainRecovery,campusRoads:{attach(){calls.push('roads');}},map:undefined,maplibregl:{Map:MapHost,AttributionControl:class{},ScaleControl:class{}},PLACES,MAX_MAP_ZOOM,reducedMotion:{matches:false},enableMiddleMouseTilt(){},enableHeldKeyboardPan(){},panelPadding:()=>({}),updateCameraUi:()=>calls.push('ui'),overview:()=>calls.push('overview'),scheduleLoadDeadline(){},loadCampus:()=>calls.push('campus'),createStyle,addCampusLayers(){},showError:message=>assert.fail(message)};
   runInNewContext(`${handler('startMap')}\nstartMap();`,context);
   assert.deepEqual(options.center,PLACES[0].center);assert.equal(options.zoom,PLACES[0].zoom);
   assert.equal(options.pitch,58);assert.equal(options.bearing,-28);assert.equal(options.maxBounds,undefined);
-  assert.deepEqual(calls,['construct','padding','ui','style','campus']);
+  assert.deepEqual(calls,['construct','padding','ui','style','roads','campus']);
   assert.doesNotMatch(source,/id="view-name"|id="world-overview"/);
   assert.equal(createStyle().projection.type,'globe','every recreated style retains the globe');
 });

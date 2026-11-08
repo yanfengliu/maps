@@ -37,40 +37,24 @@ test('Main Quad-style pavement retains all eight planting holes and exact mapped
  assert.ok(triangles.every(t=>t.kind===60&&t.building===SURFACE_BUILDING&&t.vertices.every(p=>p[2]===.025)));
 });
 
-test('physical metre UVs keep paving modules the same size across polygons and differently oriented streets',()=>{
- const inputs=[collection(polygon([[[0,0],[10,10],[0,20],[-10,10],[0,0]]])),collection(street([[0,0],[30,40]])),collection(street([[0,0],[100,0]]))];
+test('physical metre UVs keep custom paving modules the same size across differently oriented plazas',()=>{
+ const inputs=[collection(polygon([[[0,0],[10,10],[0,20],[-10,10],[0,0]]])),collection(polygon([[[0,0],[100,0],[100,20],[0,20],[0,0]]]))];
  for(const input of inputs)for(const {vertices,uv} of render(input).triangles)for(let i=0;i<3;i++){
   const j=(i+1)%3,physical=Math.hypot(vertices[j][0]-vertices[i][0],vertices[j][1]-vertices[i][1]),texture=Math.hypot(uv[j][0]-uv[i][0],uv[j][1]-uv[i][1]);
   assert.ok(Math.abs(physical-texture)<1e-8,'texture coordinates must be metres, not normalized footprint units');
  }
 });
 
-test('joined street strips remain connected and finite at right-angle, acute, duplicate and short-segment bends',()=>{
- const right=render(collection(street([[0,0],[10,0],[10,10]]))).triangles;
- assert.ok(Math.abs(right.reduce((sum,t)=>sum+area(t.vertices),0)-80)<.0001);
- assert.ok(right.some(t=>triangleContains([11,-1],t.vertices)),'outer miter is filled');
- assert.ok(right.some(t=>triangleContains([9,1],t.vertices)),'inside bend has no crack');
- const paths=[[[0,0],[10,0],[.1,.1]],[[0,0],[10,0],[10,0],[10,10]],[[0,0],[.1,0],[.1,10]],[[0,0],[10,0],[10.1,1],[20,0]]];
- for(const path of paths){const {triangles}=render(collection(street(path))),xs=path.map(p=>p[0]),ys=path.map(p=>p[1]);
-  for(const t of triangles)for(const p of t.vertices){assert.ok(p.every(Number.isFinite));assert.ok(p[0]>=Math.min(...xs)-4-.001&&p[0]<=Math.max(...xs)+4+.001&&p[1]>=Math.min(...ys)-4-.001&&p[1]<=Math.max(...ys)+4+.001,'bounded join must not emit spikes');}
-  assert.ok(triangles.every(t=>t.vertices.every(p=>Math.abs(p[2]-t.vertices[0][2])<1e-9&&p[2]>0&&p[2]<.05)),'no vertical barrier caps a normal street');
- }
-});
-
-test('separate mapped ways meet without wedge gaps and different surface materials cannot fight at equal depth',()=>{
- const first=street([[0,0],[10,0]],'way/1',{modeledSurface:'asphalt'}),second=street([[10,0],[10,10]],'way/2',{modeledSurface:'asphalt'});
- const joined=render(collection(first,second)).triangles;
- assert.ok(joined.some(t=>triangleContains([10.8,-.5],t.vertices)),'outer corner between source ways must be joined');
- for(const t of joined)for(const p of t.vertices)assert.ok(p[0]>=-2.001&&p[0]<=12.001&&p[1]>=-2.001&&p[1]<=12.001,'join may not create an oversized intersection');
- const overlap=render(collection(first,street([[5,-5],[5,5]],'way/3',{modeledSurface:'unknown'}))).triangles;
- const asphalt=overlap.filter(t=>t.kind===61).map(t=>t.vertices[0][2]),unknown=overlap.filter(t=>t.kind===63).map(t=>t.vertices[0][2]);
- assert.ok(asphalt.length&&unknown.length);assert.ok(asphalt.every(a=>unknown.every(b=>Math.abs(a-b)>=.004)),'unlike overlapping materials need a stable depth order');
+test('every road junction and bend uses only the native renderer, with no duplicate custom ribbons or convex spike hulls',()=>{
+ const paths=[[[0,0],[10,0],[10,10]],[[0,0],[10,0],[.1,.1]],[[0,0],[10,0],[10,0],[10,10]],[[0,0],[.1,0],[.1,10]],[[0,0],[10,0],[10.1,1],[20,0]],[[10,0],[10,-10]],[[10,0],[20,0]]];
+ const input=collection(...paths.map((path,i)=>street(path,`way/${i+1}`,{modeledSurface:i%2?'asphalt':'concrete'}))),before=JSON.stringify(input);
+ const {counts,triangles}=render(input);assert.equal(counts.streets,paths.length);assert.deepEqual(triangles,[],'native round joins must not coexist with pointed custom hulls');assert.equal(JSON.stringify(input),before);
 });
 
 test('materials follow evidence classes and pedestrian malls receive no invented traffic paint or curbs',()=>{
  for(const [surface,kind] of [['pavers',60],['asphalt',61],['concrete',62],['unknown',63]]){
   const input=collection(street([[0,0],[20,0]],'way/1',{modeledSurface:surface,highway:'pedestrian',lanes:'2',oneway:'yes'})),before=JSON.stringify(input),{triangles,counts}=render(input);
-  assert.ok(triangles.every(t=>t.kind===kind));assert.equal(counts.markings,0);assert.equal(JSON.stringify(input),before);
+  assert.equal(triangles.length,0,'road materials are exclusively native; see campus-road-layer coverage');assert.equal(counts.streets,1);assert.equal(counts.markings,0);assert.equal(JSON.stringify(input),before);
  }
  const {triangles}=render(collection(street([[0,0],[20,0]],'way/1',{modeledCurbHeight:.1,curbEvidence:'fixture-curb-photo'})));
  const curbs=triangles.filter(t=>t.kind===65);assert.ok(curbs.length>0);assert.ok(curbs.every(t=>Math.max(...t.vertices.map(p=>p[2]))===.1));
@@ -98,7 +82,7 @@ test('evidenced side curbs leave mapped junctions and pedestrian crossing landin
 test('bounded pavement geometry remains below the additional surface/GPU budget',()=>{
  const features=Array.from({length:300},(_,i)=>street([[i%30*10,Math.floor(i/30)*10],[i%30*10+8,Math.floor(i/30)*10]],`way/${i+1}`));
  const {counts}=render(validateCampusSurfaces(collection(...features)));
- assert.equal(counts.streets,300);assert.equal(counts.triangles,600);assert.ok(counts.triangles<MAX_SURFACE_TRIANGLES);assert.ok(counts.triangles*3*44<1_300_000);
+ assert.equal(counts.streets,300);assert.equal(counts.triangles,0,'network breadth must not consume the custom building mesh budget');assert.ok(counts.triangles<MAX_SURFACE_TRIANGLES);assert.ok(counts.triangles*3*44<1_300_000);
  assert.deepEqual(render(collection()).counts,emptySurfaceCounts());
 });
 

@@ -1,6 +1,7 @@
 /** Evidence coverage, not a photographic quality score. Every mapped environment
  * feature and every selected ground surface remains individually inspectable. */
-export function auditNonBuildings({environment,sculptures,surfaces,provenance,quadPlantings}) {
+export function auditNonBuildings({environment,sculptures,surfaces,provenance,quadPlantings,roads,controls,landscape,landscapeProvenance}) {
+ const list=value=>value==null?[]:Array.isArray(value)?value:[value];
  const references=new Map((provenance.references??[]).map(r=>[r.id??r.key,r]));
  const rows=[];
  for(const f of environment.features){
@@ -11,7 +12,7 @@ export function auditNonBuildings({environment,sculptures,surfaces,provenance,qu
    photographicAcceptance:'unverified'});
  }
  for(const f of sculptures.features){const p=f.properties;rows.push({id:p.id,kind:'sculpture',name:p.name??'',geometry:f.geometry.type,material:'See sculpture reference record',evidence:'Mapped anchor with referenced authored model',limitations:'Stylized proportions and orientation; not a scan or surveyed replica.',photographicAcceptance:'unverified'});}
- for(const f of surfaces.features){
+ for(const f of new Map([...surfaces.features,...(roads?.features??[])].map(f=>[f.properties.id,f])).values()){
   const p=f.properties,reference=references.get(p.surfaceEvidence);
   rows.push({id:p.id,kind:p.kind,name:p.name??'',geometry:f.geometry.type,
    material:p.modeledSurface,evidence:p.surfaceEvidence,
@@ -20,12 +21,14 @@ export function auditNonBuildings({environment,sculptures,surfaces,provenance,qu
    limitations:'Material evidence does not verify all dimensions or present-day appearance. '+(p.widthSource==='class-estimate'?'Width is estimated. ':'')+(p.kind==='crossing'?'Paint only where a documented marking type is available. ':'')+'Paver joints, wear and curb dimensions are modeled estimates.',
    photographicAcceptance:'unverified'});
  }
+ for(const f of controls?.features??[]){const p=f.properties;rows.push({id:p.id,kind:p.controlType,name:p.name??'',geometry:f.geometry.type,material:'Map symbol',evidence:'Exact pinned OSM regulatory point; direction '+p.directionStatus,limitations:'This is a mapped traffic-control location, not a surveyed roadside pole. No live signal state is represented.',photographicAcceptance:'unverified'});}
+ for(const f of landscape?.features??[]){const p=f.properties;rows.push({id:p.id,kind:p.kind,name:p.name??'',geometry:f.geometry.type,material:p.kind==='grass'?'Procedural turf':'Procedural planting',evidence:p.groundEvidence,limitations:'Source boundary and researched planting interpretation; unsurveyed blade/flower appearance, seasonal colors and estimated road-width cutouts are not a current botanical survey.',photographicAcceptance:'unverified'});}
  const count=key=>Object.fromEntries([...new Set(rows.map(r=>r[key]))].sort().map(value=>[value,rows.filter(r=>r[key]===value).length]));
  return {meaning:'Mapped identity and source coverage only; no whole-object photographic acceptance is implied.',
-  scope:provenance.selection,coreBounds:provenance.coreBounds,
+  scope:[provenance.campusRoads?.coverage,provenance.selection].filter(Boolean).join(' '),coreBounds:provenance.coreBounds,campusRoads:provenance.campusRoads??null,
   counts:{features:rows.length,kinds:count('kind'),unknownMaterials:rows.filter(r=>r.material==='unknown').length,estimatedSurfaceWidths:rows.filter(r=>r.widthSource==='class-estimate').length},
   quadPlantings:quadPlantings??null,
-  groundReferences:provenance.references??[],groundLimitations:provenance.modelLimits??provenance.limitations??[],rows};
+  groundReferences:[...(provenance.references??[]),...(landscapeProvenance?.references??[])],groundLimitations:[...list(provenance.modelLimits??provenance.limitations),...list(landscapeProvenance?.modelLimits)],rows};
 }
 
 export function renderNonBuildings(audit){

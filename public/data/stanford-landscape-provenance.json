@@ -1,0 +1,1002 @@
+{
+  "schemaVersion": 1,
+  "derivedFromFetchedAt": "2026-10-20T06:13:20.820Z",
+  "source": "Pinned OpenStreetMap API 0.6 campus extracts",
+  "sourceProvenance": "stanford-provenance.json",
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "counts": {
+    "lawns": 126,
+    "flowerbeds": 6,
+    "borders": 1,
+    "triangles": 2399
+  },
+  "excluded": [
+    {
+      "id": "way/473409879",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665211874",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665211876",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665214494",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665214506",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665214507",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665214508",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217118",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217119",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217120",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217121",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217122",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217123",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217124",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/665217125",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992389",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992390",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992400",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992403",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992404",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992405",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992406",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992408",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992409",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992410",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992411",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992414",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992416",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/666992419",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152330",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152332",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152334",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152335",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152337",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152422",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/676152423",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695765712",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695765716",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695765723",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695765731",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695766898",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695766905",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695766908",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801469",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801470",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801474",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801477",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801480",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/695801484",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1060179882",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1060179883",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1062766634",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1112762746",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1112762753",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1112762754",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157535373",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958473",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958474",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958478",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958479",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958480",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958481",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958482",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958483",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958484",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958485",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958486",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1157958487",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101984",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101985",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101988",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101989",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101990",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101991",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101992",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101993",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101994",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101995",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101996",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101997",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101998",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169101999",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102000",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102001",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102002",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102003",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102004",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102005",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102006",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102007",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102008",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102009",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169102743",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169118622",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1169394536",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311292",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311298",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311299",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311300",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311301",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207311302",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1207846787",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1215472632",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254662038",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254662041",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254734947",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254734949",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254734951",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1254734972",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1256919269",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1256919270",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1256919271",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1257971209",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1258021708",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1265676809",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1265676816",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1265677955",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1265678484",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1265678485",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695293",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695295",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695296",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695297",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695305",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1283695308",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953202",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953203",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953204",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953205",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953206",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1284953207",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435221",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435222",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435223",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435224",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435225",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435226",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358435227",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441677",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441678",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441679",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441681",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441682",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441683",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441684",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441685",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441696",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441697",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441698",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441699",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441701",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441702",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441703",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441704",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441705",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441706",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441707",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441708",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441719",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441720",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441721",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441723",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441724",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441725",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441726",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441727",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441728",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441729",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441730",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441731",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441732",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358441755",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1358442156",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364562560",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364562565",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364562566",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364562567",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364562568",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1364888733",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1365598205",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1365598206",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1365598207",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1365598208",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1413171224",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1413171225",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1413171226",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1413171227",
+      "reason": "outside-mapped-campus"
+    },
+    {
+      "id": "way/1434719866",
+      "reason": "outside-mapped-campus"
+    }
+  ],
+  "selection": "Complete campus-contained Polygon/MultiPolygon areas explicitly tagged landuse=grass or surface=grass; sport and golf areas excluded. Relation members are not repeated. A park/garden/wood/meadow/grassland designation alone does not imply maintained turf. Five grass multipolygons and 121 standalone grass ways are included; this is mapped evidence from the pinned extracts, not a claim that every current campus lawn has been surveyed.",
+  "topology": {
+    "shapely": "2.1.2",
+    "geos": "3.13.1",
+    "usage": "Installed offline authoring tools only; no runtime dependency",
+    "roadRoundJoinSegmentsPerQuadrant": 2,
+    "sourceGeometry": "Original mapped geometry is preserved verbatim in properties.sourceGeometry; render geometry subtracts intersecting source-width road/path corridors and documented Oval planting beds. No source vertex simplification.",
+    "circulation": {
+      "file": "stanford-surfaces-roads-manifest.json",
+      "sha256": "b2a59ee61502ed9df64d059aa1e7426a6dd53713640d992c690f90b069f2b4ac",
+      "files": [
+        {
+          "file": "stanford-surfaces-roads-0.geojson",
+          "sha256": "3493061116ad1a3cf80d55b5955718a84a2a913e6b8a7ccc504fb51400806f28"
+        },
+        {
+          "file": "stanford-surfaces-roads-1.geojson",
+          "sha256": "6219dc937fc07d64ecc5f8f2fec44c2bc8eb169f30fbd059dd764b88e03e3957"
+        },
+        {
+          "file": "stanford-surfaces-roads-2.geojson",
+          "sha256": "55f01cfe2cad996a06fb5dfde4ec51a23561a3a7ee112ce4e98e7f393cf08566"
+        }
+      ]
+    }
+  },
+  "modelLimits": "Mapped coordinates, identities, versions and grass/flowerbed tags are source records. Turf colour, blade marks, bloom density, species-neutral petal forms and plant relief are authored estimates. The central red S uses exact flowerbed way/1425123465. The emblem surround and four rose beds are photographic interpretations bounded by the mapped circular path and spokes, with an estimated 1.45 m inward clearance; the central border is 0.32 m wide. Photographs document a historic red/white planting scheme; seasons and later planting replacements vary, so these are not current botanical claims. Geometry carries illustrative relative offsets (turf 0.012 m, flowers 0.16–0.30 m, border 0.12 m); the native terrain ground pass drapes these surfaces onto the DEM and does not retain that vertical relief. Grass blades and blooms are procedural surface detail, not individually modeled plants. Native road/path widths, including estimates, are inherited without reimplementation.",
+  "references": [
+    {
+      "id": "stanford-oval-garden-guide",
+      "url": "https://familyweekend.stanford.edu/sites/g/files/sbiybj17671/files/media/file/a_self-guided_tour_of_stanford_gardens.pdf",
+      "date": "2017 study republished 2022",
+      "observed": "Page 3 describes the broad Oval lawn, round red/white emblem garden, framing rings and symmetric surrounding rose beds. The document cautions that features may have changed."
+    },
+    {
+      "id": "stanford-oval-close-2010",
+      "url": "https://web.stanford.edu/~siegelr/stanford/oval.html",
+      "image": "https://web.stanford.edu/~siegelr/stanford/oval/IMG_4109%20bar%20S%20in%20oval%206-14-2010%20stanford%20oval%20Canon%20EOS%20REBEL%20T1i.jpg",
+      "date": "2010-06-14",
+      "observed": "Inspected original Robert Siegel photograph: low dense red S blooms, white surrounding blooms with visible soil and foliage, low green border. Reference only; no photograph distributed."
+    },
+    {
+      "id": "stanford-oval-flowers-2010",
+      "url": "https://web.stanford.edu/~siegelr/stanford/oval.html",
+      "image": "https://web.stanford.edu/~siegelr/stanford/oval/IMG_4105%20oval%20flowers%206-14-2010%20stanford%20oval%20Canon%20EOS%20REBEL%20T1i.jpg",
+      "date": "2010-06-14",
+      "observed": "Inspected close view shows separate red/white blossom clusters and dark foliage/soil rather than a solid painted floral surface."
+    },
+    {
+      "id": "stanford-oval-aerial-2019",
+      "url": "https://web.stanford.edu/~siegelr/stanford/1000feet.html",
+      "image": "https://web.stanford.edu/~siegelr/flying/heli-flyover2019/0T1A6621%20the%20oval%20-%20stanford%20from%20helicopter%2006-23-2019%20Canon%20EOS%207D%20Mark%20II.jpg",
+      "date": "2019-06-23",
+      "observed": "Inspected aerial establishes central emblem bed, four surrounding beds, continuous twin linear walks and intervening broad turf. Derived bed extents are estimates inside the mapped path network."
+    },
+    {
+      "id": "stanford-oval-visit",
+      "url": "https://www.stanford.edu/life/visit",
+      "image": "https://a-us.storyblok.com/f/1023936/1200x675/36061dcbd1/stanford-oval-1200w.jpg",
+      "observed": "Inspected university visitor photograph shows short fine-textured grass with gradual tonal/mowing variation and clear paths; no flower carpet across the lawn."
+    },
+    {
+      "id": "stanford-planting-seasonality",
+      "url": "https://stanforddaily.com/2024/04/24/petal-to-the-metal-wildflowers-bloom-at-stanford/",
+      "date": "2024-04-24",
+      "observed": "Original report interviewing campus horticulturists describes changes from scarlet Heuchera to red petunias and blue-green fescue around the S; this limits any claim that the historical white-flower surround is current."
+    }
+  ],
+  "sourceGeometryHashes": {
+    "relation/12126729": "8a011a0dc32837a197ab14f3eb60597fbd822dfddd6e1985ec05d6ed38b578f7",
+    "relation/15858300": "75decf5a24eda8ff2e019c4800db34e98200d746774e4b61ef94c54044ded0ed",
+    "relation/17859515": "8afb0b32a036b293e5d212aadcfb8f9b5eb4c47d7047d14d641f5581ffd2f88c",
+    "relation/20449884": "5e0abd718228bb0288cb9c1c92716cc21e8d464337dfcab28a9dd9645ea22a72",
+    "relation/21094342": "a15a353aef9f4f6dfd0c675a8e031a433cb81fa6b63594c66c191867b49c88e9",
+    "way/26249488": "c488cd5ee2f7afa3d9fa44a76c249d7d678d2e961728710962f0b8e875ccd7d7",
+    "way/26250724": "2ae6ff2c4abfa97fb7a55526c86dbb0c7bd3a17822c110c1a0bbfd1ff81094f8",
+    "way/26292012": "547fe0252111e39f3502c7928e5dc644da4569142ea4cd76cc909920a82d1a54",
+    "way/26292018": "cde84b2e9f6533ddd5762538ea428b0c073f1d2e28d43bdefa9b5598476f951f",
+    "way/26292264": "9264ef435d7898e4b018f48cbe1c9f8d1f17ffc661ab79c18f11631f949ae7dc",
+    "way/26292269": "432924e5c3730f411e156a2d2f334db790b8f3e74479c61619002116d58b1730",
+    "way/26294313": "2f827af6d39e1f4eef20d1b7ebd91ead25dda61c234a92854e80d20fafbbb55e",
+    "way/26294317": "b0a30fd5351595e74424c521f435f19b0c6007089c066d569a8b228096991253",
+    "way/26294325": "9e2d4a3eef8f7551526551e5bce3871d7047913206a2ad4856e644a30ae8abdc",
+    "way/31009422": "3ec9785c44de256bb7628cb3e225f663b2fdc0bb7d7a9d974f97169efb3845bd",
+    "way/31009433": "8478d11cf508c1006dd5be7437dc2f3d3aafc7a2b1bc4c4785984bb18a137663",
+    "way/31009434": "83481db320f9c43281d7d7e07e9960ec68980edbeae1da035733b5212c74d2bb",
+    "way/31711608": "5d0467cfcce84bcdd04cec3ebd2c6d87a1a3f3fc1e2cca303a5252966ba74f68",
+    "way/31711636": "d9d2489d6756198707b5f9482aba74db72f8018f3841de9fd2ab8b17282fb617",
+    "way/71183079": "870ea66f5c493a94b8272ca8a6275ad2cdcd8df4d21a8033a1936ad31ff51218",
+    "way/158630337": "d3d16e960742711f33d3a0dcb65835ac1fa56753bd0804edf69991f7a288001d",
+    "way/158630341": "76d58aebd45928fc9f7545f37c9a5000d296f24abf8ceb61a12fc1a951e4b4f1",
+    "way/332354680": "8145ea7893fc28d91c41fffd97b43d14cae018bd3e848fc230d8b6e5585663d8",
+    "way/332354681": "c34a9ebb776b99ca945786ac9af9429ef00f3e0e4a12a14bbcb70e9f6cab6232",
+    "way/332354682": "ce3d2982c11c779b076cb0245c69e944d1fbbad657286971756d57b6b28ae0cc",
+    "way/333374033": "28201d945818b0502e9e65eb1c17c775f26a04234159c072d2f05a8b292f9281",
+    "way/341081750": "a99a43a0a9aef8982c82fcddf000036004769fda4628fd4a37c0494db05174a2",
+    "way/468532141": "0524d784e31d909835d64f7a4f2c1c344ac96294dfd597fad472591c72b8df38",
+    "way/468537297": "a261f90ba763331e47585b1f82f47870dfd254b5c30488a1dfd843ee3524ef49",
+    "way/468538160": "133d314d2b3972700c758ec14761f9c4d38b96589470fceb087ea3949b0f8e10",
+    "way/632249854": "67920d94dc67b7e2d8005bcd7ae6bd11091556838626247b0b535a28bd0c5791",
+    "way/632250839": "5bf939acbe2db009fe378a0cd05ed3eeecdc963c907e7fe23caf266afa17b486",
+    "way/632250842": "f97d82d7dcfdb063636f8450749f7857383e7d5b51205c3b6063be3c4ca6faef",
+    "way/632250844": "99064ec334e67d750c48a0f41428d264f6ce9e508b413c1da70d4844371bc81f",
+    "way/632250847": "63b84c4d07d3dec7a16c3444f60483459d0222213719e96f1978738b745750df",
+    "way/632250849": "30f9d59a17ec7f0aad276c9247bb955f1ca659f7a4ab612d2445ee4333b5af64",
+    "way/632250850": "74f503a72472affc8bc645b71db0e4e8e4d6b50ee28d94cf1459605b4ff6fac3",
+    "way/632250852": "467b424eb9b0d0175e0ca76001325d711a4eca0399fa4c695cb387576485a1cb",
+    "way/632250853": "23d38096d792faf01f253ddcf761c024f3a3a0e051c84ac66ac28cec384280cc",
+    "way/632250854": "5a50a12ba7207505cb1ffac4271a68aa771cc66d689e9e03e3bdc3a2255de248",
+    "way/632250855": "ebac11d41982ace8010ef09757e7d13311b7d042a00b099e8084333e67ead40d",
+    "way/632250857": "074001a6a8455cbdd47508a4300acd31570eaa1b9d38b005171694f942093296",
+    "way/632250859": "9c5a3556f3e6369b66350c26280e422e7c4f8d2914583dd950a52fb4b451c0b7",
+    "way/632250860": "875bb3a30417b4268a27a3d475f9e430a0470c910ad9a8e5a8416b7df2884962",
+    "way/632250989": "2d9a5cfee35aca7e2ae81caf0c456ec4da1cadf7add0d6f37b00653c1edcf8b2",
+    "way/632250991": "343be372581ac3cea61de39400d031a961553aaa9f9d2a1f6c3bceff97189376",
+    "way/632251630": "b8441defcd8371419f7ef663c59b8e905dcec5c0b29ff1e9e386b836c0c1000c",
+    "way/690344380": "67990dfcac60bf4734cbbadf9b6243fdc368fd0a73a2225f5f64bc03e4669e7b",
+    "way/690344384": "c40d7679299913ca6ee3b68542768e41e3470e0a1ea49187eee24914ae6819ab",
+    "way/694684117": "bd020e570d295d1b1bd156b33781d04f539c980dd74de9cda04c562d6b07299b",
+    "way/694950163": "d94393c6396f534e643e8d655537b38cf0d8ae484672f62e8c9abd233f5a8152",
+    "way/694950164": "016fd1d208e69ce7fa0bfb22c1e526879288a807a66fff0f3097bbf132f6dd47",
+    "way/694950165": "efa2d52fbb68dfbc22484bb6efc7573729fcaca9f7bc8c87e95c3cd63c2a17f8",
+    "way/694950166": "eab596bd31ab02ff4442c81ec6f042d18bea0697e48944a05b07b1701e194d4d",
+    "way/694950168": "a398a27459813b34cb7b264e332e8a0b7da2ba72b5ce8490805891228e6f961a",
+    "way/694950173": "cbdafe14c394589d6064bfb927f8749dafabbee4386a77563c7027186d4ae706",
+    "way/694950174": "29879be88affc1fe20d377b922fc31767ae7f6d4da4547bcd000f618629a5e96",
+    "way/694950175": "ad33de772ef49e2fe3f10b83508b50b51dbee44eed1c87bfd2d4dc3d7cb84d34",
+    "way/694950176": "d710bc788e2af9d9a1846858fb202a9771092476b23e8942dcba36577afb65e0",
+    "way/694950177": "be14a73a18074d9f50f62ae39f27b4ec15df4f22895897fcb64be3c1e969583c",
+    "way/694950178": "33dfd112aed5b331634c0f0334c95275f83c56a2afe7ea70c1a2aad6a1b27cf7",
+    "way/694960767": "fba0472cfcf8a8a8a57452ab330e753846ab64b3e5f040339612d637fc6786fd",
+    "way/695759678": "89844f70df8f52ea0ca6652e14c4d0c75d61356fc45238443505d25832f0d29b",
+    "way/695765705": "eb9ac4e2b6fdd2c9ea4bcda30bedbdeb82db90e8cf83df527a1b0199267f98c4",
+    "way/695765708": "90dedb68fe44115f59c74805f8d51efe4bf9231678617c47fff16adf8eec88e1",
+    "way/695765710": "dace0e39c11bb36bec429a7d6c92c677a65c4a0ea8f8c5da1b17d009205e9d2b",
+    "way/696312594": "c69cebf787a2cae5dc22040ac8ae650fc034c9680d68d48b2646f82e68417222",
+    "way/696868949": "77781d22e17e0f6659a3e8708ee4d95dbac570cabc85f348411378d8d0faf6a3",
+    "way/696868950": "8801edfc4d9b90a57730c0c2f2e128f2fd63cdedd5e7a2cf4028551c291fb18e",
+    "way/1151639040": "02a1c499dad8ae74d5f273d54dbc2f6f577421334f2b7ad18495e50c5e6c0175",
+    "way/1168128413": "af7dea3998a658e67069f4b6c0ed5fea72c383125055e8118a8e6bba4e3f2d9f",
+    "way/1168128415": "2d08e98f64116f7679903f19c02628b9e41ee0ba6567ab6344944600067b4218",
+    "way/1168128416": "2656e1fb33ded6a94ed6b74b26eeaf75b36bfa9d37c835e48570d0a5d1e2377b",
+    "way/1168351504": "26fa38536da3a47eea62b69b8ef257b72711b61c45effc6ea2f8fc5f53e37c85",
+    "way/1168351505": "3a5ac78bfed64acecab7eea957fb723ec66bb6a0a69bd7974cd52b10f695fea7",
+    "way/1169137072": "35bee641b1c109db68e24f4ff40dad4043522b54daf5209b498858f345c44ef0",
+    "way/1169897605": "1120dd7ea208496f841a1b3dcf5e0656c459016b87c3b377f030e6793b2014a6",
+    "way/1169931572": "672ad12f59e82df286a5ceac8d455ae06cbd8926d2d6d5bc459a6e997a2e2db2",
+    "way/1170989911": "64c5637e8527ce1f4a3cb2224328215f23f173dfab2351c5383f84c40201dab1",
+    "way/1170989912": "2ad01a1fbe87ff711da2a11298fb1ac9520e6f63c3f2bd7a9696f13dba10ebb6",
+    "way/1170989917": "99b1f09d2a05ae3aa928ac40e3ba5880a341b0f2f2dccd61494ee6ae7326fdef",
+    "way/1170989920": "94c2bbf30332bbfdeb661435cf1ff9f32d2fe3a6edd9635ff0bc1de69786e21a",
+    "way/1170989921": "af337e58de11b1a79ff18b5944f52cca0c535534318ef707a8798e0d8c04b105",
+    "way/1170989922": "68adf1f0cab393df937ba4f4c73d76f658c55ed82ea5e017f72186f06047256a",
+    "way/1170989923": "f16bb7a95206d26724a404a759c099cdbf1707ff3a8ad586682c8c2609e7618a",
+    "way/1170989926": "c42d0adc51b24ddef9ad20129ed110bf086656205bf1482e4937fe86dbeb34af",
+    "way/1170989927": "8626cc2e47626812726f9a4207acf3a9320dad7d58228aada3df18cbb7b85a93",
+    "way/1170989928": "7a4aee0ffe3db501b5337f19fa616fa7cca2c26fd89ec7279fd35204b125f0b7",
+    "way/1171322634": "11fb909c63e7723788a6890be6821554a663783a20059d88d552643a84046ca7",
+    "way/1171322635": "25bc555ea2fde8871339d940cf85d3bf9bf08eca3b747ef03b69d0e5dcb9c341",
+    "way/1171322636": "3465fd4ddc52ed055710b6fe8a2e89b54ac270f2e92d47d7581bccec18c1005b",
+    "way/1171322637": "fae34434490233822a8b6141de2a2a1a3f45ee38855dfb215ff18fda38e4cfb1",
+    "way/1171322638": "8b7ab5fee0f9fc13477d1e5f17997a447fd480f61f2588c3be5221bf294267d3",
+    "way/1171322639": "60ccf9b669a4c27bd0a0a8567bf92d467e500733aed35397ceb6f254119daaee",
+    "way/1171322640": "b4d70f1bba8e0cf099e0d61e2d9a4bcbad5ff645ac229b9663bbecee2368f17e",
+    "way/1171322641": "76913eafffe63cd0f405c2c86513fcf6b7555b5f4097a31ee651044012673d87",
+    "way/1171322642": "5bbd2979c6d4ff39837f8327a36f2e0d6609289f762a7309a1b313ea5ce666b8",
+    "way/1171322643": "c79491264e5c7dac2deda6e1a7a1efb7d7b90fa91ce03d7f19ccd93888402824",
+    "way/1171322644": "8326525a36093c988e040010eb247610119deb95058297f889f70f1b6cd1fff4",
+    "way/1171322645": "8c173f7a4d5bfbd60e74677110787e9e768360277d2fe449e34428e7672e9cf6",
+    "way/1171322655": "a194dff49a4ad89ada34ee83142a716823c87e9c91c3f0c6e74fbc853722849b",
+    "way/1173038800": "93ecbade84bd0eb8cc5dfd9dd40ea69a1caed9aa680466a8d93b7cb083c714d1",
+    "way/1173038801": "cc6dfc3443ee0e213cb0e2ef669ddbfe71aacbecf92de1269cac2b8ca50ebd12",
+    "way/1173038802": "204ca4cccc6e6fca9672a7a6db4694eadce8627a0dc69dec2f9113e7aece36f6",
+    "way/1173038803": "4d375b5144bfa4a6cd54b227c68f855adc9d04cf95f334f2031cf592962cbfa1",
+    "way/1173038806": "4da23458b5177e44542da077da649ea7e4ee00f880685cd8638f6babf361295b",
+    "way/1173038807": "78f25f5de074f1b1e63a40ef88e3985e46cf6bf437c02ebedf657701d982fa0e",
+    "way/1173038809": "3721fa6dfc8b33aa008208be7c971eb0a6f1dd13cf0b89d01ef0dc3837489c71",
+    "way/1173038810": "48d0559ccc41760aa2d5eaf17a4bfa9720c650d97c61306ef3537b3366efed2a",
+    "way/1173042930": "b9c0dcb1732e067a89d32fcf094af5b5a25de327c338a435c3235c7e441f299e",
+    "way/1173042931": "8ad624b073685a06bbcc291b0e426330aa329471a29e1617f293dbc36ddc248f",
+    "way/1173042932": "4461fa5138531ef01d2691c54a863c7fc9ec05117f8277caeaad30269c9a100a",
+    "way/1173042933": "7312e69cea419752ea8158257c3aef4722de54e4655398207b4ab1d673dc8e33",
+    "way/1173042934": "aaf941a042e45d1ac20ce9637a5b7829a4f87d4848e2caa5c9dde880b3364910",
+    "way/1173069473": "4d33c3cd00ed3a3f96546ec44d79d35a207cc40125b7a801d7acfb7331019218",
+    "way/1302912256": "39ecf850b76400e8c893768982a4c084fc89b48c0bead21ca49266cd29569764",
+    "way/1302912257": "0085a19a099f2a96e1e75099d899dc27d3e3fc087f43baa6afec4e71bfabedbc",
+    "way/1302912258": "885323ea1c118d531ff6f2fbb7c314489f881918405831c50edd280572ca74cc",
+    "way/1302912259": "4d447f1d7c48a7d4c8cec568dc4b22a26480a428abcda5b043181a936bb4f46b",
+    "way/1356169600": "2248c9d9dc8e8531bf487dd6dd8176b9d22c6c3b19f74f7bcf6b589c445bd40c",
+    "way/1456983579": "069f9cd3451ce1f976785167b6b9cf603371751f5690fa41368ee11c36b656f8",
+    "way/1456983580": "69b933677e2b4b4eb66a40492f57b0a3555cb208ba1ac611a0530598173fbd27",
+    "way/1492819822": "64781fde46b551a5340826fca9377ed9cf8d379dbad80b2328efd323d2678ee0",
+    "way/1537961289": "64ca2427666371249c9b443982a8c66e6520ab74e94d4733afc55df42950b1d1",
+    "way/1537961290": "d1f07e2913314a74e19366310beefb06c83dbbcb7eae029ed1ecc4bb46301ebc",
+    "way/1537961291": "f068412f0d3f9f8e474ecec71c1d2de75d84cff7912b40b80b6ce681f5d3ff13",
+    "way/1425123465": "38fa2e892776a9ef2aa8edcf0912d25f831026ebe6251174766370777b5df02c"
+  },
+  "outputs": {
+    "stanford-landscape.geojson": {
+      "bytes": 184067,
+      "sha256": "2ed28cd949e1ce5a312c5984d63e798c7a4c7e15f0a9fb5ce730e8579161edf8"
+    }
+  }
+}

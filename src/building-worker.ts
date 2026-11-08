@@ -1,4 +1,5 @@
-import { buildBuildingGeometry, appendCampusSurfaces, type CampusData } from './building-geometry.ts';
+import {validateCampusLandscape} from './campus-landscape.ts';
+import { buildBuildingGeometry, appendCampusSurfaces, appendCampusLandscape, type CampusData } from './building-geometry.ts';
 import { validateCampusSurfaces } from './campus-surfaces.ts';
 import { validateCampusEnvironment } from './campus-environment.ts';
 import { validateCampusSculptures } from './campus-sculptures.ts';
@@ -18,20 +19,21 @@ async function readLocalInput(file:string,label:string):Promise<unknown> {
 self.onmessage = async (event: MessageEvent<{data:CampusData;interior:boolean}>) => {
   try {
     if(event.data.interior){
-      const surfaces=validateCampusSurfaces(await readLocalInput('stanford-surfaces.geojson','Campus paving'));
-      const started=performance.now(),geometry=appendCampusSurfaces(buildChurchInterior(event.data.data),surfaces,'facades');
+      const [surfaces,landscape]=await Promise.all([readLocalInput('stanford-surfaces.geojson','Campus paving').then(validateCampusSurfaces),readLocalInput('stanford-landscape.geojson','Campus landscape').then(validateCampusLandscape)]);
+      const started=performance.now(),geometry=appendCampusLandscape(appendCampusSurfaces(buildChurchInterior(event.data.data),surfaces,'facades'),landscape,'facades');
       self.postMessage({geometry,buildMs:performance.now()-started},{transfer:[geometry.roofs.buffer,geometry.facades.buffer]});
       return;
     }
-    const [source,sculptureSource,surfaceSource]=await Promise.all([
+    const [source,sculptureSource,surfaceSource,landscapeSource]=await Promise.all([
       readLocalInput('stanford-environment.geojson','Campus environment'),
       readLocalInput('stanford-sculptures.geojson','Campus sculpture'),
-      readLocalInput('stanford-surfaces.geojson','Campus paving')
+      readLocalInput('stanford-surfaces.geojson','Campus paving'),
+      readLocalInput('stanford-landscape.geojson','Campus landscape')
     ]);
     const environment=validateCampusEnvironment(source),sculptures=validateCampusSculptures(sculptureSource);
     const started=performance.now();
-    const geometry = buildBuildingGeometry(event.data.data,environment,sculptures,validateCampusSurfaces(surfaceSource));
-    self.postMessage({ geometry, buildMs: performance.now() - started }, { transfer: [geometry.roofs.buffer, geometry.facades.buffer] });
+    const geometry = buildBuildingGeometry(event.data.data,environment,sculptures,validateCampusSurfaces(surfaceSource),validateCampusLandscape(landscapeSource));
+    self.postMessage({ geometry, buildMs: performance.now() - started }, { transfer: [geometry.roofs.buffer, geometry.facades.buffer,...(geometry.terrainAnchors?[geometry.terrainAnchors.buffer]:[])] });
   } catch (error) {
     self.postMessage({ error: error instanceof Error ? error.message : 'Campus geometry generation failed.' });
   }

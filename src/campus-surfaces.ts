@@ -57,15 +57,6 @@ const materials={pavers:{kind:60,color:[.63,.55,.51] as Color},asphalt:{kind:61,
 const distance=(a:Point,b:Point)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
 const dot=(a:Point,b:Point)=>a[0]*b[0]+a[1]*b[1];
 const move=(p:Point,n:Point,d:number):Point=>[p[0]+n[0]*d,p[1]+n[1]*d];
-// Distinct materials need a deterministic sub-centimetre ordering at overlaps.
-// Equal-depth unlike surfaces cause striped z-fighting at road junctions.
-const surfaceZ=(kind:number)=>kind===60?.045:kind===61?.035:kind===62?.04:.03;
-function hull(points:Point[]):Point[]{
- const sorted=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
- const cross=(a:Point,b:Point,c:Point)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
- const half=(list:Point[])=>{const result:Point[]=[];for(const p of list){while(result.length>=2&&cross(result.at(-2)!,result.at(-1)!,p)<=1e-9)result.pop();result.push(p);}return result;};
- return [...half(sorted).slice(0,-1),...half([...sorted].reverse()).slice(0,-1)];
-}
 
 /** Ground stays in the existing two geometry batches. Metre UVs are independent
  * of zoom and footprint dimensions. No centreline or lane arrow is inferred. */
@@ -74,22 +65,11 @@ export function addCampusSurfaces(mesh:MeshWriter,data:CampusSurfaces,project:(c
  // Shared mapped nodes with three or more incident street segments identify
  // junctions. Break side curbs there rather than barricading a crossing road.
  const nodes=new Map<string,{point:Point;neighbors:Set<string>;width:number}>();
- const ends=new Map<string,{point:Point;corners:Point[];ways:Set<string>;kind:number;color:Color}>();
  for(const f of data.features)if(f.geometry.type==='LineString')for(let i=0;i<f.geometry.coordinates.length;i++){
   const coordinate=f.geometry.coordinates[i],key=coordinate.join(','),node=nodes.get(key)??{point:project(coordinate),neighbors:new Set<string>(),width:0};
   node.width=Math.max(node.width,Number(f.properties.modeledWidth));
   for(const j of [i-1,i+1])if(j>=0&&j<f.geometry.coordinates.length)node.neighbors.add(f.geometry.coordinates[j].join(','));
   nodes.set(key,node);
-  if(i===0||i===f.geometry.coordinates.length-1){
-   const next=project(f.geometry.coordinates[i===0?1:i-1]),span=distance(node.point,next);
-   if(span>.001){
-    const n:Point=[-(next[1]-node.point[1])/span,(next[0]-node.point[0])/span],material=materials[f.properties.modeledSurface];
-    const end=ends.get(key)??{point:node.point,corners:[],ways:new Set<string>(),...material};
-    end.ways.add(f.properties.id);end.corners.push(move(node.point,n,Number(f.properties.modeledWidth)/2),move(node.point,n,-Number(f.properties.modeledWidth)/2));
-    if(surfaceZ(material.kind)>surfaceZ(end.kind)){end.kind=material.kind;end.color=material.color;}
-    ends.set(key,end);
-   }
-  }
  }
  const junctions=[...nodes.values()].filter(node=>node.neighbors.size>=3);
  const triangle=(a:Vertex,b:Vertex,c:Vertex,color:Color,kind:number,uv?:[Point,Point,Point])=>{
@@ -127,6 +107,10 @@ export function addCampusSurfaces(mesh:MeshWriter,data:CampusSurfaces,project:(c
    continue;
   }
   counts.streets++;
+  // The complete road network is now drawn by native, terrain-draped MapLibre
+  // lines/fills. Do not retain overlapping custom ribbons, pointed end hulls or
+  // duplicate material shading. Only independently evidenced curb relief stays.
+  if(typeof p.modeledCurbHeight!=='number'||!p.curbEvidence||p.curbEvidence==='unverified')continue;
   const path:Point[]=[];for(const point of points)if(!path.length||distance(point,path.at(-1)!)>.001)path.push(point);
   if(path.length<2)throw error(p.id,'has no nonzero street segment');
   const half=Number(p.modeledWidth)/2;
@@ -142,7 +126,6 @@ export function addCampusSurfaces(mesh:MeshWriter,data:CampusSurfaces,project:(c
   for(let i=1;i<path.length;i++){
    const a=path[i-1],b=path[i],n=normals[i-1],na=joins[i-1]??n,nb=joins[i]??n;
    const corners:[Point,Point,Point,Point]=[move(a,na,half),move(a,na,-half),move(b,nb,-half),move(b,nb,half)];
-   quad(corners.map(p=>[...p,surfaceZ(kind)]) as [Vertex,Vertex,Vertex,Vertex],color,kind,corners.map(uv) as [Point,Point,Point,Point]);
    // Only an evidenced curb gets relief. Leave mapped junctions and crossing
    // landings open; a raised sidewall must not barricade either route.
    if(typeof p.modeledCurbHeight==='number'&&p.curbEvidence&&p.curbEvidence!=='unverified'){
@@ -160,19 +143,6 @@ export function addCampusSurfaces(mesh:MeshWriter,data:CampusSurfaces,project:(c
      }
     }
    }
-  }
-  for(let i=1;i<path.length-1;i++)if(!joins[i]){
-   const point=path[i],a=normals[i-1],b=normals[i],cross=a[0]*b[1]-a[1]*b[0],side=cross>=0?-1:1;
-   const q=move(point,a,half*side),r=move(point,b,half*side);triangle([...point,surfaceZ(kind)],[...q,surfaceZ(kind)],[...r,surfaceZ(kind)],color,kind,[uv(point),uv(q),uv(r)]);
-  }
- }
- // Separate OSM ways often meet midway through a bend or traffic island fork.
- // Fill only the small convex join between their width offsets at that node.
- for(const end of ends.values())if(end.ways.size>1){
-  const boundary=hull(end.corners),z=surfaceZ(end.kind);
-  for(let i=1;i<boundary.length-1;i++){
-   const a=boundary[0],b=boundary[i],c=boundary[i+1];
-   triangle([...a,z],[...b,z],[...c,z],end.color,end.kind,[a,b,c]);
   }
  }
  return counts;

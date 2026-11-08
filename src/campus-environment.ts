@@ -1,5 +1,6 @@
 import type * as GeoJSON from 'geojson';
 import {addQuadPlantings} from './quad-plantings.ts';
+import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
 
 type Point = [number, number];
 type Vertex = [number, number, number];
@@ -56,12 +57,13 @@ export function environmentDimensions(properties:CampusEnvironment['features'][n
 }
 
 /** Solid low-poly crowns have interpolated normals; no alpha sprites or per-tree draw. */
-export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,project:(coordinate:readonly number[])=>Point):EnvironmentCounts {
+export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,project:(coordinate:readonly number[])=>Point,registerAnchor?:RegisterTerrainAnchor):EnvironmentCounts {
   const counts=emptyEnvironmentCounts();
-  const quadPlantings=addQuadPlantings(mesh,data,project);
+  const quadPlantings=addQuadPlantings(mesh,data,project,registerAnchor);
   Object.assign(counts,quadPlantings.counts);
-  const triangle=(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,tint,kind,ENVIRONMENT_BUILDING,undefined,normals);
-  const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND)=>mesh.quad(a,b,c,d,tint,kind,ENVIRONMENT_BUILDING);
+  let objectId=ENVIRONMENT_BUILDING;
+  const triangle=(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,tint,kind,objectId,undefined,normals);
+  const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND)=>mesh.quad(a,b,c,d,tint,kind,objectId);
   const box=(at:(u:number,v:number,z:number)=>Vertex,u0:number,u1:number,v0:number,v1:number,z0:number,z1:number,color:Color)=>{
     const a=at(u0,v0,z0),b=at(u1,v0,z0),c=at(u1,v1,z0),d=at(u0,v1,z0),e=at(u0,v0,z1),f=at(u1,v0,z1),g=at(u1,v1,z1),h=at(u0,v1,z1);
     quad(a,b,f,e,color,12);quad(b,c,g,f,color,12);quad(c,d,h,g,color,12);quad(d,a,e,h,color,12);quad(e,f,g,h,color,12);quad(d,c,b,a,color,12);
@@ -161,6 +163,9 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
   };
   for(const feature of data.features){
     const p=feature.properties;
+    const anchorPoints=feature.geometry.type==='Point'?[project(feature.geometry.coordinates)]:feature.geometry.coordinates.map(project);
+    const anchor:Point=[anchorPoints.reduce((s,p)=>s+p[0],0)/anchorPoints.length,anchorPoints.reduce((s,p)=>s+p[1],0)/anchorPoints.length];
+    objectId=registerAnchor?.(anchor)??ENVIRONMENT_BUILDING;
     if(p.kind==='bench'){counts.benches++;addBench(feature);continue;}
     if(feature.geometry.type!=='Point')continue;
     const [x,y]=project(feature.geometry.coordinates);

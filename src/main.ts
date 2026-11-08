@@ -9,7 +9,10 @@ import { createStyle } from './style.ts';
 import { MAX_MAP_ZOOM, PLACES, SCULPTURE_PLACES, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
 import { icon } from './icons.ts';
 import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
+import {CampusRoadLayer, CAMPUS_ROAD_SOURCE, CAMPUS_ROAD_PLAZA_SOURCE} from './campus-road-layer.ts';
+import {CAMPUS_TRAFFIC_SOURCE} from './campus-traffic.ts';
 import { enableMiddleMouseTilt } from './mouse-tilt.ts';
+import { enableTerrainRecovery } from './terrain-recovery.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
@@ -74,6 +77,7 @@ let buildingDetails: BuildingDetailsLayer | undefined;
 let churchInterior = false;
 let churchCeiling = false;
 let disposeMiddleMouseTilt: (() => void) | undefined;
+let disposeTerrainRecovery: (() => void) | undefined;
 let disposeKeyboardPan: (() => void) | undefined;
 const renderTimes: number[] = [];
 const motionRenderTimes: number[] = [];
@@ -347,12 +351,17 @@ async function loadCampus(): Promise<void> {
 function addBuildingDetailLayer(): void {
   if (!map || !campusData || map.getLayer('stanford-architectural-details')) return;
   buildingDetails = createBuildingDetailsLayer(campusData, message => showError(`Stanford building detail could not render. Retry to rebuild the campus layer. ${message}`, reloadRegionalMap));
+  if(map.getLayer(buildingDetails.groundLayer.id))map.removeLayer(buildingDetails.groundLayer.id);
+  map.addLayer(buildingDetails.groundLayer,'road-label');
   map.addLayer(buildingDetails, 'road-label');
   buildingDetails.setSelected(selectedId);
   buildingDetails.setInterior(churchInterior);buildingDetails.setCeiling(churchCeiling);
 }
 
 const quadArcadeVisibility=createQuadArcadeVisibility();
+const campusRoads=new CampusRoadLayer({onChange:stats=>{
+  if(stats.error)showError(stats.error,()=>campusRoads.retry());
+}});
 
 function addCampusLayers(): void {
   if (!map || !campusData || !campusBoundary) return;
@@ -445,6 +454,7 @@ function startMap(): void {
     canvas.setAttribute('aria-label', 'World map. Drag or use WASD and arrow keys to pan, scroll to zoom, right-drag to rotate, middle-drag to tilt.');
     canvas.setAttribute('role','region');
     disposeMiddleMouseTilt = enableMiddleMouseTilt(map);
+    disposeTerrainRecovery = enableTerrainRecovery(map);
     disposeKeyboardPan = enableHeldKeyboardPan(map);
     map.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: '<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a> · <a href="https://openmaptiles.org" target="_blank" rel="noreferrer">© OpenMapTiles</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>' }), 'bottom-right');
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
@@ -490,7 +500,12 @@ function startMap(): void {
       }
     });
     map.on('error', event => {
+      const sourceId='sourceId' in event?String(event.sourceId):'';
+      if([CAMPUS_ROAD_SOURCE,CAMPUS_ROAD_PLAZA_SOURCE,CAMPUS_TRAFFIC_SOURCE].includes(sourceId))return;
       const message = event.error?.message ?? '';
+      if(sourceId==='bay-area-terrain'||sourceId==='bay-area-hillshade'){
+        showError('Terrain elevation could not load. Check your connection and retry.',reloadRegionalMap);return;
+      }
       if (/WebGL|context|shader/i.test(message)) {
         showError('The 3D map could not start. Enable WebGL in your browser, then retry.', () => window.location.reload());
       } else if (/fetch|network|load|HTTP|AJAX/i.test(message)) {
@@ -507,6 +522,7 @@ function startMap(): void {
     updateCameraUi();
     scheduleLoadDeadline();
     map.setStyle(createStyle());
+    campusRoads.attach(map,'stanford-buildings');
     void loadCampus();
   } catch {
     showError('The map could not initialize. This experience needs a WebGL-capable browser. Enable hardware acceleration and retry.', () => window.location.reload());
@@ -537,6 +553,8 @@ Object.defineProperty(window, '__bayMap', {
     get sources() { return Object.freeze({ campus: sourceReady, tiles: tilesReady, successfulRegionalTiles }); },
     get rendering() { return Object.freeze({ frames: Object.freeze([...renderTimes]), motionFrames: Object.freeze([...motionRenderTimes]), pixelRatio: map?.getPixelRatio() ?? 0 }); },
     get details() { return buildingDetails?.stats ?? null; },
+    get roads() { return campusRoads.stats; },
+    get terrain() { return Object.freeze({enabled:Boolean(map?.getTerrain()),centerElevation:map?.getTerrain()?map.queryTerrainElevation(map.getCenter()):null}); },
     get errors() { return failed ? Object.freeze([el('error-message').textContent]) : Object.freeze([]); },
   }),
 });
@@ -547,7 +565,9 @@ function cleanup(): void {
   if (loadTimeout) clearTimeout(loadTimeout);
   pins.forEach(pin => pin.remove()); pins = [];
   disposeMiddleMouseTilt?.(); disposeMiddleMouseTilt = undefined;
+  disposeTerrainRecovery?.(); disposeTerrainRecovery = undefined;
   disposeKeyboardPan?.(); disposeKeyboardPan = undefined;
+  campusRoads.destroy();
   map?.remove(); map = undefined;
   buildingDetails = undefined;
 }

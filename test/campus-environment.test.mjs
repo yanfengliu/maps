@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {buildBuildingGeometry,BuildingGeometryBuilder,prepareBuildingDetails,projectLocal,VERTEX_FLOATS,MAX_DETAIL_TRIANGLES} from '../src/building-geometry.ts';
 import {validateCampusEnvironment,environmentDimensions,addCampusEnvironment} from '../src/campus-environment.ts';
 import {footprintClearance,estimateFacing} from '../tools/data/build-campus-environment.mjs';
+import {decodeTerrainObjectId,isTerrainObjectId} from '../src/terrain-grounding.ts';
 
 const load=name=>readFileSync(new URL('../public/data/'+name,import.meta.url));
 const bytes=load('stanford-environment.geojson'),environment=validateCampusEnvironment(JSON.parse(bytes));
@@ -65,7 +66,8 @@ test('all combined building and environment geometry stays finite within memory-
     assert.ok(mesh.slice(i,i+VERTEX_FLOATS).every(Number.isFinite));
     const id=mesh[i+12],kind=mesh[i+11];
     if(id<0){
-      assert.equal(id,-2,'environment may never use selected=-1, which would highlight every tree by default');
+      assert.ok(id===-5||isTerrainObjectId(id),'groundcover is draped and solid objects have a reserved unselectable terrain anchor; selected=-1 is forbidden');
+      if(isTerrainObjectId(id))assert.ok(decodeTerrainObjectId(id)<geometry.terrainAnchors.length/2,'every rigid object ID resolves to an actual anchor pair');
       assert.ok([10,11,12].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
       assert.ok(mesh[i+2]>=0&&mesh[i+2]<=28);environmentVertices++;
     }else{

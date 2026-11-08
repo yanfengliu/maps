@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    {
+      "file": "stanford-surfaces-roads-0.geojson",
+      "features": 1308,
+      "bytes": 921299,
+      "sha256": "3493061116ad1a3cf80d55b5955718a84a2a913e6b8a7ccc504fb51400806f28",
+      "counts": {
+        "streets": 1302,
+        "roadAreas": 6,
+        "streetSegments": 6835
+      }
+    },
+    {
+      "file": "stanford-surfaces-roads-1.geojson",
+      "features": 1433,
+      "bytes": 921405,
+      "sha256": "6219dc937fc07d64ecc5f8f2fec44c2bc8eb169f30fbd059dd764b88e03e3957",
+      "counts": {
+        "streets": 1429,
+        "roadAreas": 4,
+        "streetSegments": 5773
+      }
+    },
+    {
+      "file": "stanford-surfaces-roads-2.geojson",
+      "features": 294,
+      "bytes": 176560,
+      "sha256": "55f01cfe2cad996a06fb5dfde4ec51a23561a3a7ee112ce4e98e7f393cf08566",
+      "counts": {
+        "streets": 293,
+        "roadAreas": 1,
+        "streetSegments": 808
+      }
+    }
+  ],
+  "counts": {
+    "streets": 3024,
+    "roadAreas": 11,
+    "streetSegments": 13416
+  },
+  "bounds": [
+    -122.1896251,
+    37.4139576,
+    -122.1520754,
+    37.4434258
+  ],
+  "campusBoundary": "stanford-campus.geojson",
+  "campusBoundarySha256": "e8890575c26f83f0b6eec7beb710520b74fb400d7e8509b0814d64ead67ed9dc",
+  "inventory": {
+    "file": "stanford-surfaces-road-inventory.json",
+    "bytes": 273969,
+    "sha256": "dfd5f9173fa5c8a1b746b684f85d3b05d239fd2de0cf015f9fda74528d2d7733",
+    "candidates": 6822,
+    "decisions": {
+      "construction": 6,
+      "grade-separated-or-unsurveyed-level": 46,
+      "included-covered-ground": 22,
+      "included-ground": 2883,
+      "included-road-area": 11,
+      "included-steps-surface": 119,
+      "indoor": 20,
+      "outside-campus": 3715
+    }
+  },
+  "controls": {
+    "file": "stanford-surfaces-controls.geojson",
+    "bytes": 151138,
+    "sha256": "87b3c90e71471fcdd8cde952381d7f67aad910a3043b856567910c348c801fcb",
+    "counts": {
+      "stop": 306,
+      "traffic_signals": 39,
+      "directionUnknown": 21
+    }
+  },
+  "sourceProvenance": "stanford-provenance.json",
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "retainedTags": [
+    "name",
+    "highway",
+    "surface",
+    "width",
+    "lanes",
+    "lanes:forward",
+    "lanes:backward",
+    "lane_markings",
+    "access",
+    "foot",
+    "bicycle",
+    "bus",
+    "psv",
+    "motor_vehicle",
+    "motorcar",
+    "oneway",
+    "junction",
+    "sidewalk",
+    "sidewalk:both",
+    "sidewalk:left",
+    "sidewalk:right",
+    "crossing",
+    "crossing:markings",
+    "crossing:signals",
+    "crossing:island",
+    "footway",
+    "cycleway",
+    "tactile_paving",
+    "kerb",
+    "area",
+    "covered",
+    "tunnel",
+    "bridge",
+    "layer",
+    "level",
+    "indoor",
+    "service",
+    "tracktype",
+    "incline",
+    "step_count",
+    "ramp",
+    "ramp:bicycle",
+    "handrail",
+    "segregated",
+    "lit",
+    "noexit",
+    "construction"
+  ],
+  "retainedControlTags": [
+    "highway",
+    "direction",
+    "traffic_signals",
+    "traffic_signals:direction",
+    "traffic_signals:sound",
+    "traffic_signals:vibration",
+    "traffic_signals:button_operated",
+    "stop",
+    "traffic_sign",
+    "crossing",
+    "crossing:signals",
+    "crossing:markings",
+    "button_operated",
+    "red_turn:right",
+    "red_turn:left"
+  ],
+  "selection": "Every complete highway-tagged source way intersecting the mapped Stanford campus polygon is inventoried. Exterior ground routes, including mapped steps and covered ground passages, retain their complete original geometry beyond the campus boundary. Closed area=yes highway ways are polygons. Indoor, construction, bridge, tunnel and nonzero/unsurveyed-level routes are inventoried but not painted at ground level. No clipping, snapping, simplification or invented connections. Main Quad centerlines wholly within its paving polygon have pavedAreaId to avoid drawing fictitious contrasting paths.",
+  "limitations": "This covers the eligible roads present in the pinned extracts, not a claim that OSM is complete or every route is current or photographically checked. Surface unknowns stay unknown, explicit unpaved tags are retained; source width wins, otherwise class-estimate widths are unmeasured. The retained steps show mapped route coverage only, not surveyed stair elevations. Endpoint source-terminal-unverified means no other highway way shares that node in these extracts, not a verified physical dead end. Native rendering retains access-restricted routes as geometry, not permission to travel them. Traffic control nodes represent mapped control locations; physical pole positions and orientations are not established. Raw direction values forward/backward refer to source way direction, not global compass bearings.",
+  "references": [
+    {
+      "id": "stanford-bikeways-2024",
+      "url": "https://transportation.stanford.edu/sites/g/files/sbiybj27281/files/media/file/bikeways-map.pdf",
+      "date": "2024-11-05",
+      "supports": "Official map establishes campus-wide roads, bicycle and pedestrian circulation and restricted zones; not a survey of surface widths or per-segment materials."
+    },
+    {
+      "id": "stanford-pedestrian-zone",
+      "url": "https://transportation.stanford.edu/parking-stanford/where-park/parking-stanford-campus/pedestrian-zone-access",
+      "supports": "Official central-campus pedestrian zone includes permitted service/delivery access. Pedestrian streets must not receive invented general-traffic lane arrows."
+    },
+    {
+      "id": "jane-stanford-way-contractor",
+      "url": "https://www.mcguireandhester.com/jane-stanford-way-utility-replacement/",
+      "supports": "Primary project contractor describes asphalt walking mall used by buses and emergency vehicles. This does not justify assigning asphalt to every unmapped campus surface."
+    }
+  ]
+}

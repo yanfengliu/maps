@@ -1,3 +1,6 @@
+import {LANDSCAPE_HELPERS,LANDSCAPE_FRAGMENT} from './campus-landscape-materials.ts';
+import {emptyLandscapeCounts,type LandscapeCounts} from './campus-landscape.ts';
+import {ROOF_TILE_FRAGMENT} from './roof-materials.ts';
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { DETAIL_ORIGIN, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
 import { STADIUM_FIELD_HELPERS, STADIUM_FIELD_FRAGMENT } from './stadium-materials.ts';
@@ -12,6 +15,7 @@ import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environ
 import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
 import { ChurchTextures } from './church-textures.ts';
 import { churchAxes, churchWallMask } from './church-cutaway.ts';
+import {TerrainGrounding,TERRAIN_VERTEX_HELPERS,terrainTileMatrix} from './terrain-grounding.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
@@ -24,9 +28,13 @@ export interface BuildingDetailStats {
   triangles: number;
   bytes: number;
   textureBytes: number;
+  terrainTextureBytes:number;
+  terrainStatus:'disabled'|'loading'|'active';
+  terrainOffscreenDrawCalls:number;
   environment: EnvironmentCounts;
   sculptures: SculptureCounts;
   surfaces: SurfaceCounts;
+  landscape: LandscapeCounts;
   /** CPU geometry generation runs in the dedicated worker. */
   buildMs: number;
   /** Longest observed main-thread shader, upload, or ceiling-sort slice. */
@@ -43,6 +51,9 @@ export interface BuildingDetailStats {
 }
 
 export interface BuildingDetailsLayer extends CustomLayerInterface {
+  /** Add immediately before this layer; remove/recreate it with this layer.
+   * It shares the two geometry buffers and paints only ground into native DEM tiles. */
+  readonly groundLayer:CustomLayerInterface;
   setSelected(id: string | null): void;
   setInterior(enabled: boolean): void;
   setCeiling(visible: boolean): void;
@@ -69,8 +80,15 @@ out vec2 v_uv;
 out vec2 v_position;
 flat out float v_kind;
 flat out float v_wallVisible;
+flat out float v_groundSurface;
+uniform float u_groundPass;
+${TERRAIN_VERTEX_HELPERS}
 void main() {
-  gl_Position = u_matrix * vec4(a_position, 1.0);
+  float material=mod(a_kind,100.0);
+  v_groundSurface=(abs(a_building+5.0)<0.1||(abs(a_building+4.0)<0.1&&material<64.5))?1.0:0.0;
+  vec3 position=u_groundPass>0.5?vec3(a_position.xy,0.0):groundPosition(a_position,a_building);
+  if(u_groundPass>0.5)v_terrainAvailable=1.0;
+  gl_Position=u_groundPass>0.5&&v_groundSurface<0.5?vec4(2,2,2,1):u_matrix*vec4(position,1.0);
   float illumination = 0.72 + 0.28 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
   vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.18) : a_color;
   v_color = tint * illumination;
@@ -87,6 +105,10 @@ in vec2 v_uv;
 in vec2 v_position;
 flat in float v_kind;
 flat in float v_wallVisible;
+flat in float v_groundSurface;
+in float v_terrainAvailable;
+uniform float u_groundPass;
+uniform float u_drapeGround;
 uniform vec2 u_focus;
 uniform float u_radius;
 uniform sampler2D u_nave;
@@ -94,19 +116,16 @@ uniform sampler2D u_chancel;
 uniform float u_ceiling;
 out vec4 outColor;
 ${STADIUM_FIELD_HELPERS}
+${LANDSCAPE_HELPERS}
 void main() {
+  if(u_groundPass>0.5?v_groundSurface<0.5:(u_drapeGround>0.5&&v_groundSurface>0.5))discard;
+  if(v_terrainAvailable<0.999)discard;
   if (v_wallVisible < 0.5) discard;
   bool ceiling = v_kind > 28.9 && v_kind < 30.1;
   if (ceiling && u_ceiling<0.5) discard;
   vec3 tint = v_color;
-  if (v_kind < 0.5) {
-    // Shallow tile courses, kept quiet and anti-aliased as they recede.
-    float frequency = 1.45;
-    float footprint = max(fwidth(v_uv.x),fwidth(v_uv.y)) * frequency;
-    float course = abs(fract(v_uv.y * frequency) - 0.5);
-    float seam = 1.0 - smoothstep(0.015,0.055 + footprint,course);
-    tint *= 1.0 - 0.065 * seam * (1.0-smoothstep(0.3,0.8,footprint));
-  } else if ((v_kind < 8.5 && abs(v_kind - 2.0) > 0.1) || abs(v_kind-13.0)<0.1) {
+  ${ROOF_TILE_FRAGMENT}
+  if ((v_kind > 0.5 && v_kind < 8.5 && abs(v_kind - 2.0) > 0.1) || abs(v_kind-13.0)<0.1) {
     // Nearby elevations use meter-sized bays, recessed glazing and stone
     // surrounds. Main Quad's lower storey reads as a shaded arcade.
     float distanceToFocus = distance(v_position,u_focus);
@@ -176,14 +195,6 @@ void main() {
       vec3 foliage=vec3(0.29,0.39,0.26)+leaves;
       tint=mix(tint,foliage,ivy*0.89*detail);
     }
-  }
-  if(abs(v_kind-17.0)<0.1){
-    // Barrel tiles follow the wing's roof axes; fade below pixel resolution.
-    vec2 tiles=v_uv/vec2(0.24,0.42),aa=fwidth(tiles);
-    float fade=1.0-smoothstep(0.35,0.9,max(aa.x,aa.y));
-    float barrel=cos(fract(tiles.x)*6.2831853)*0.045;
-    float lap=1.0-smoothstep(0.015,0.045+aa.y,abs(fract(tiles.y)-0.5));
-    tint*=1.0+(barrel-lap*0.075)*fade;
   }
   if(abs(v_kind-14.0)<0.1 || abs(v_kind-18.0)<0.1 || abs(v_kind-20.0)<0.1){
     // Sandstone blocks have staggered joints and restrained face variation.
@@ -264,6 +275,8 @@ void main() {
   ${GARAGE_FRAGMENT}
   ${ENGINEERING_FRAGMENT}
 ${SURFACE_FRAGMENT}
+${HOOVER_FRAGMENT}
+${LANDSCAPE_FRAGMENT}
   if(abs(v_kind-29.0)<0.1 && v_color.r>v_color.g*1.5){
     // Long timber boards remain legible through the ghosted ceiling surface.
     float boards=v_uv.x/0.24,aa=max(fwidth(boards),0.002);
@@ -385,17 +398,21 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
-  const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0,terrainTextureBytes:0,terrainStatus:'disabled',terrainOffscreenDrawCalls:0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const photos = new ChurchTextures(() => map?.triggerRepaint());
+  const grounding=new TerrainGrounding(data);
+  let groundRevision=0;
   const releaseMeshes = () => {
     photos.dispose();state.textureBytes=0;
     if (context) for (const mesh of [roofs,facades,uploading?.roofs,uploading?.facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
     roofs=undefined;facades=undefined;uploading=undefined;transparentCeiling=undefined;state.ready=false;
+    groundRevision++;
   };
   const destroyGpu = () => {
     if (idleCompile !== undefined) { window.cancelIdleCallback(idleCompile); idleCompile = undefined; }
     if (compileTimer !== undefined) { clearTimeout(compileTimer); compileTimer = undefined; }
     if (context) {
+      grounding.dispose(context);state.terrainTextureBytes=0;state.terrainStatus='disabled';
       if (gpuProgram) context.deleteProgram(gpuProgram);
       if (compiling) { context.deleteProgram(compiling.program); compiling.shaders.forEach(value => context!.deleteShader(value)); }
     }
@@ -409,13 +426,14 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     if (compiling.parallel && !context.getProgramParameter(compiling.program, compiling.parallel.COMPLETION_STATUS_KHR)) { map?.triggerRepaint(); return; }
     const started = performance.now();
     if (!context.getProgramParameter(compiling.program, context.LINK_STATUS)) {
-      fail(`Campus detail GPU program could not link: ${context.getProgramInfoLog(compiling.program) ?? 'no GPU diagnostic'}`); return;
+      const diagnostics=compiling.shaders.map(shader=>context!.getShaderInfoLog?.(shader)).filter(Boolean).join(' ');
+      fail(`Campus detail GPU program could not link: ${context.getProgramInfoLog(compiling.program) ?? 'no GPU diagnostic'} ${diagnostics}`); return;
     }
     gpuProgram = compiling.program;
     compiling.shaders.forEach(value => context!.deleteShader(value));
     state.compileMs = performance.now() - compiling.started;
     compiling = undefined; state.shaderReady = true;
-    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel','u_sideWalls','u_endWalls']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
+    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel','u_sideWalls','u_endWalls','u_groundPass','u_drapeGround','u_terrainHeights','u_terrainAnchors','u_terrainBounds','u_terrainEnabled','u_terrainBuildingCount']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
     state.maxSliceMs = Math.max(state.maxSliceMs, performance.now() - started);
     map?.triggerRepaint();
   };
@@ -437,9 +455,29 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   };
   const lost = () => { destroyGpu(); };
   const restored = () => { if (!removed) { warmProgram(); map?.triggerRepaint(); } };
+  const groundLayer:CustomLayerInterface={
+    id:'stanford-ground-surfaces',type:'custom',renderingMode:'2d',
+    get terrainTileRevision(){return groundRevision;},
+    render(){/* With terrain disabled, the main 3D layer draws flat ground. */},
+    renderToTerrainTile(gl,options){
+      if(!map||removed||state.error||!state.ready||!gpuProgram||!roofs||!facades||grounding.status!=='active')return;
+      const {canonical,wrap=0}=options.tileID,tileMatrix=terrainTileMatrix(canonical.z,canonical.x,canonical.y,wrap);
+      gl.useProgram(gpuProgram);
+      const restoreGroundTextures=grounding.bind(gl,uniforms);
+      // WebGL validates active samplers even when their shader branch is off.
+      // Never leave photo samplers pointing at MapLibre's current tile target.
+      gl.uniform1i(uniforms.u_nave,2);gl.uniform1i(uniforms.u_chancel,2);
+      gl.uniformMatrix4fv(uniforms.u_matrix,false,tileMatrix);gl.uniform1f(uniforms.u_groundPass,1);gl.uniform1f(uniforms.u_drapeGround,0);gl.uniform1f(uniforms.u_terrainEnabled,0);
+      gl.uniform1f(uniforms.u_selected,-1);gl.uniform1f(uniforms.u_ceiling,0);gl.uniform2f(uniforms.u_sideWalls,1,1);gl.uniform2f(uniforms.u_endWalls,1,1);gl.uniform2f(uniforms.u_focus,0,0);gl.uniform1f(uniforms.u_radius,1600);
+      gl.disable(gl.DEPTH_TEST);gl.disable(gl.STENCIL_TEST);gl.disable(gl.CULL_FACE);gl.disable(gl.BLEND);gl.depthMask(false);
+      try{for(const mesh of [roofs,facades])if(mesh.vertices){gl.bindVertexArray(mesh.vao);gl.drawArrays(gl.TRIANGLES,0,mesh.vertices);state.terrainOffscreenDrawCalls++;}}
+      finally{gl.bindVertexArray(null);gl.depthMask(true);restoreGroundTextures();}
+    },
+  };
   return {
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
-    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}) }); },
+    groundLayer,
+    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
     setInterior(enabled) {
       if(interior===enabled)return;
@@ -447,7 +485,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       // Only one mesh pair is GPU-resident. Keep the shared program warm and
       // discard even a partial upload before replacing the campus with a room.
       releaseMeshes();pending=(interior?cachedInterior:cachedGeometry).get(data);
-      Object.assign(state,{mode:interior?'church-interior':'campus',ceiling:false,buildingCount:interior?1:data.features.length,roofTriangles:0,facadeTriangles:0,triangles:0,bytes:0,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),buildMs:0,uploadMs:0,uploadSlices:0,uploadWallMs:0,drawCalls:0,lastDrawDetail:'none',error:null});
+      Object.assign(state,{mode:interior?'church-interior':'campus',ceiling:false,buildingCount:interior?1:data.features.length,roofTriangles:0,facadeTriangles:0,triangles:0,bytes:0,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(),buildMs:0,uploadMs:0,uploadSlices:0,uploadWallMs:0,drawCalls:0,lastDrawDetail:'none',error:null});
       map?.triggerRepaint();
     },
     setCeiling(visible) { state.ceiling=interior&&visible;map?.triggerRepaint(); },
@@ -456,6 +494,16 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       removed = true; worker?.terminate(); worker = undefined; pending = undefined;
       map?.off('webglcontextlost', lost); map?.off('webglcontextrestored', restored);
       destroyGpu(); map = undefined; context = undefined;
+    },
+    prerender(gl,options){
+      state.terrainOffscreenDrawCalls=0;
+      if(!map||removed||state.error||map.getZoom()<14||options.defaultProjectionData.projectionTransition>0)return;
+      const view=map.getCenter().toArray(),worldOffset=Math.round((view[0]-DETAIL_ORIGIN[0])/360),focus=projectLocal([view[0]-worldOffset*360,view[1]]);
+      if(Math.hypot(...focus)>6000)return;
+      const started=performance.now();
+      try{grounding.setObjects(pending?.geometry.terrainAnchors);grounding.prerender(gl,options,Boolean(map.getTerrain?.()),worldOffset);state.terrainTextureBytes=grounding.bytes;state.terrainStatus=grounding.status;}
+      catch(error){fail(error instanceof Error?error.message:'Elevation sampling could not initialize. Retry terrain and campus detail.');}
+      finally{state.maxSliceMs=Math.max(state.maxSliceMs,performance.now()-started);}
     },
     render(gl: WebGL2RenderingContext, options: CustomRenderMethodInput) {
       state.drawCalls = 0; state.lastDrawDetail = 'none';
@@ -505,7 +553,8 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           if(interior)transparentCeiling=ceilingOrder(pending.geometry.roofs);
           const elapsed=performance.now()-started;state.uploadMs+=elapsed;state.maxSliceMs=Math.max(state.maxSliceMs,elapsed);
           Object.assign(state, { ready: true, roofTriangles: pending.geometry.roofTriangles, facadeTriangles: pending.geometry.facadeTriangles,
-            triangles: pending.geometry.triangles, bytes: gpuGeometryBytes(pending.geometry.roofs)+gpuGeometryBytes(pending.geometry.facades), environment:pending.geometry.environment,sculptures:pending.geometry.sculptures,surfaces:pending.geometry.surfaces??emptySurfaceCounts(), buildMs: pending.buildMs });
+            triangles: pending.geometry.triangles, bytes: gpuGeometryBytes(pending.geometry.roofs)+gpuGeometryBytes(pending.geometry.facades), environment:pending.geometry.environment,sculptures:pending.geometry.sculptures,surfaces:pending.geometry.surfaces??emptySurfaceCounts(),landscape:pending.geometry.landscape??emptyLandscapeCounts(), buildMs: pending.buildMs });
+          groundRevision++;map.triggerRepaint();
         } catch (error) { fail(error instanceof Error ? error.message : 'Campus GPU detail could not initialize.'); return; }
       }
       const main = options.defaultProjectionData.mainMatrix;
@@ -519,11 +568,16 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
         matrix[12 + row] = main[row] * (MERCATOR_ORIGIN[0]+worldOffset) + main[4 + row] * MERCATOR_ORIGIN[1] + main[12 + row];
       }
       gl.useProgram(gpuProgram!); gl.uniformMatrix4fv(uniforms.u_matrix, false, matrix); gl.uniform1f(uniforms.u_selected, interior?-1:selected); gl.uniform1f(uniforms.u_ceiling,state.ceiling?1:0);
+      const terrainEnabled=Boolean(map.getTerrain?.());
+      if(terrainEnabled&&grounding.status!=='active')return;
+      gl.uniform1f(uniforms.u_groundPass,0);gl.uniform1f(uniforms.u_drapeGround,terrainEnabled?1:0);
       const walls=interior?churchWallMask(wallAxes,map.getBearing?.()??0,map.getPitch?.()??0):[1,1,1,1];
       gl.uniform2f(uniforms.u_sideWalls,walls[0],walls[1]); gl.uniform2f(uniforms.u_endWalls,walls[2],walls[3]);
       gl.uniform2f(uniforms.u_focus, focus[0], focus[1]); gl.uniform1f(uniforms.u_radius, Math.max(450, 1600 / Math.pow(1.35, map.getZoom() - 16)));
       gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
       const restoreTextures=photos.ready?photos.bind(gl,uniforms):undefined;
+      const restoreTerrain=grounding.bind(gl,uniforms);
+      if(!photos.ready&&grounding.status==='active'){gl.uniform1i(uniforms.u_nave,2);gl.uniform1i(uniforms.u_chancel,2);}
       try{
         if(interior){
           // Ground and room surfaces write depth before any transparent ceiling.
@@ -545,7 +599,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           state.drawCalls = 1; state.lastDrawDetail = 'roofs';
           if (map.getZoom() >= 15.5) { gl.bindVertexArray(facades!.vao); gl.drawArrays(gl.TRIANGLES, 0, facades!.vertices); state.drawCalls = 2; state.lastDrawDetail = 'facades'; }
         }
-      }finally{gl.depthMask(true);gl.disable(gl.BLEND);gl.bindVertexArray(null);restoreTextures?.();}
+      }finally{gl.depthMask(true);gl.disable(gl.BLEND);gl.bindVertexArray(null);restoreTerrain();restoreTextures?.();}
     },
   };
 }

@@ -1,5 +1,6 @@
 import type * as GeoJSON from 'geojson';
 import earcut from 'earcut';
+import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
 
 type Point = [number, number];
 type Vertex = [number, number, number];
@@ -30,13 +31,13 @@ const cross=(a:Vertex,b:Vertex):Vertex=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2]
 const subtract=(a:Vertex,b:Vertex):Vertex=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
 const unit=(a:Vertex):Vertex=>{const length=Math.hypot(...a);return a.map(n=>n/length) as Vertex;};
 
-function sculptureWriter(mesh:MeshWriter,origin:Point,orientation:number,counts:SculptureCounts){
+function sculptureWriter(mesh:MeshWriter,origin:Point,orientation:number,counts:SculptureCounts,objectId=-2){
   const angle=orientation*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   const rotate=(p:Vertex):Vertex=>[c*p[0]-s*p[1],s*p[0]+c*p[1],p[2]];
   const at=(p:Vertex):Vertex=>{const q=rotate(p);return [origin[0]+q[0],origin[1]+q[1],q[2]];};
   const triangle=(a:Vertex,b:Vertex,d:Vertex,tint:Color,normals?:[Vertex,Vertex,Vertex])=>{
     if(Math.hypot(...cross(subtract(b,a),subtract(d,a)))<1e-8)return;
-    mesh.triangle(at(a),at(b),at(d),tint,12,-2,undefined,normals?.map(rotate) as [Vertex,Vertex,Vertex]|undefined);counts.triangles++;
+    mesh.triangle(at(a),at(b),at(d),tint,12,objectId,undefined,normals?.map(rotate) as [Vertex,Vertex,Vertex]|undefined);counts.triangles++;
   };
   const quad=(a:Vertex,b:Vertex,d:Vertex,e:Vertex,tint:Color)=>{triangle(a,b,d,tint);triangle(a,d,e,tint);};
   const box=(center:Vertex,size:Vertex,tint:Color)=>{
@@ -71,10 +72,10 @@ function sculptureWriter(mesh:MeshWriter,origin:Point,orientation:number,counts:
   return {triangle,quad,box,ellipsoid,tube};
 }
 
-export function addCampusSculptures(mesh:MeshWriter,data:CampusSculptures,project:(coordinate:readonly number[])=>Point):SculptureCounts {
+export function addCampusSculptures(mesh:MeshWriter,data:CampusSculptures,project:(coordinate:readonly number[])=>Point,registerAnchor?:RegisterTerrainAnchor):SculptureCounts {
   const counts=emptySculptureCounts();
   for(const feature of data.features){
-    const writer=sculptureWriter(mesh,project(feature.geometry.coordinates),feature.properties.orientation,counts);
+    const point=project(feature.geometry.coordinates),writer=sculptureWriter(mesh,point,feature.properties.orientation,counts,registerAnchor?.(point)??-2);
     if(feature.properties.model==='burghers-of-calais')addBurghers(writer);
     else addAngel(writer);
     counts.works++;counts.figures+=feature.properties.model==='burghers-of-calais'?6:1;

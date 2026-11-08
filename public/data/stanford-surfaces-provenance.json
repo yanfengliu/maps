@@ -74,7 +74,22 @@
     "kerb",
     "area",
     "covered",
-    "tunnel"
+    "tunnel",
+    "bridge",
+    "layer",
+    "level",
+    "indoor",
+    "service",
+    "tracktype",
+    "incline",
+    "step_count",
+    "ramp",
+    "ramp:bicycle",
+    "handrail",
+    "segregated",
+    "lit",
+    "noexit",
+    "construction"
   ],
   "selection": "Complete named Jane Stanford Way, Palm Drive, Lasuen Mall, Escondido Mall, Santa Teresa Street and Duena Street source ways entirely inside coreBounds, excluding construction and covered routes; Santa Teresa includes explicitly mapped zebra markings (way/1543344570 and node/4913257330, corroborated by crossing way/500221862); seven explicitly listed Memorial Court walks; mapped crossing nodes belonging to those selected ways. Inner Quad paving is an authored ground interpretation of relation/35820 inner way/27520214 with eight exact mapped wood outlines removed. No inferred crossing locations, resampled centerlines or random road markings.",
   "counts": {
@@ -396,8 +411,8 @@
   ],
   "outputs": {
     "stanford-surfaces.geojson": {
-      "bytes": 48535,
-      "sha256": "41367b6dc980c7d87d8d6f9addd0488eab88cf3217f841d1bf481bc0c782a8d3"
+      "bytes": 48595,
+      "sha256": "258132b0c2e257c9f0092096daade1d2ebcc5a49a7ed3aa2eb049f5f529e0af3"
     }
   },
   "featureGeometryHashes": {
@@ -483,5 +498,14 @@
     "node/6333452712": "b54b697e4b5ca62808b02bc0aa73d0dae94aa90d12d21134c3fbc851442e8275",
     "node/8416756850": "7a0303e12f5d43e401ae9ad9cd9d1700270817ca91f4e35cba575ad833581380",
     "node/8416756855": "a06ecacac92b56b6a6ab35cb0f195ea250770a152ea59abe33a3c3f8ad179c6a"
+  },
+  "campusRoads": {
+    "manifest": "stanford-surfaces-roads-manifest.json",
+    "counts": {
+      "streets": 3024,
+      "roadAreas": 11,
+      "streetSegments": 13416
+    },
+    "coverage": "Full eligible campus-intersecting highway way coverage uses native map layers; this small custom-mesh file is retained only for Quad paving and the previously evidenced curb/crossing detail."
   }
 }

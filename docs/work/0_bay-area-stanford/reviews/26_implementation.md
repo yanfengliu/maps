@@ -43,3 +43,32 @@ Read the final native observation records. All nine have an empty recorded appli
 The integration owner separately completed the full 223-test suite, build, typecheck and dependency audit, and drove the real browser controls/context-loss check. I did not duplicate those full gates or launch another browser/server. I independently inspected the retained real-browser pixels and records and ran the focused tests above. The earlier interrupted native run and preview-base setup error are not represented as successful runs; final records and the separate clean remainder evidence are the acceptance evidence. Publication/live-site verification remains the delivery owner's responsibility after this review.
 
 I created no browser, GUI or server process and made no implementation change. This report is the sole retained review output. The remaining architectural/botanical/surface estimates and inaccessible interior plans are disclosed scope limits, not claims of complete campus research or photographic validation.
+
+
+## Format correction — 2026-11-08
+
+The original report above is preserved unchanged. The work-document checker found its required section headings missing. The sections below index that existing review; they do not add a new review, change its findings, or transfer its coverage to the current terrain work.
+
+## Target
+
+Exact maps commit ab5b8275a1e60286a93e88acc4a63e6dab59c30b against 37529985710dbaea5191c6111718406d8bfc022f, as recorded in the original opening paragraph.
+
+## Reviewers and coverage
+
+The independent GPT-6 Astra reviewer at xhigh covered the integrated surfaces, planting, Hoover, ceiling, navigation and globe changes described in the preserved report. Root owned native acceptance and delivery. No second CLI review lane is claimed.
+
+## Reports
+
+The substantive authored report remains above under Disposition, Code and data examined, and its original verification/evidence sections. This correction preserves all original findings and reasons without abridgment.
+
+## Findings and disposition
+
+No material finding was recorded; F46 remained unused. The unused HOOVER_FRAGMENT import was explicitly retained as a minor nonblocking observation in that revision. Subsequent changes require their own review.
+
+## Verification
+
+The original report above records the checks and evidence against ab5b827. This correction is documentation-only and adds no new runtime verification claim.
+
+## Round outcome
+
+Closed with no material blocker and the acknowledged minor shader observation, as originally reported above. Later terrain changes are outside this round.

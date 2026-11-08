@@ -1,3 +1,5 @@
+import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
+import {roofTriangleUV} from './roof-materials.ts';
 import earcut from 'earcut';
 import type * as GeoJSON from 'geojson';
 import { buildingArchitecture, buildingMaterials, type BuildingArchitecture } from './building-architecture.ts';
@@ -18,6 +20,7 @@ import { addGarage } from './garage-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
+import {TerrainAnchorBuilder} from './terrain-grounding.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -108,6 +111,7 @@ class Mesh {
     const length = Math.hypot(...normal);
     if (length < 1e-8) return;
     const n = normal.map(v => v / length);
+    if(kind===0||kind===17)uv=roofTriangleUV(a,b,c);
     for (const [i, p] of [a, b, c].entries()) this.values.push(...p, ...(normals?.[i]??n), ...tint, ...(uv?.[i] ?? [p[0], p[1]]), kind, building);
   }
   quad(a: Vertex, b: Vertex, c: Vertex, d: Vertex, tint: Color, kind: number, building: number, uv?: [Point, Point, Point, Point]): void {
@@ -117,7 +121,10 @@ class Mesh {
 }
 
 export interface DetailGeometry {
+  /** Local x/y pairs for rigid furniture/sculpture origins, indexed by IDs <= -1000. */
+  terrainAnchors?:Float32Array;
   surfaces?: SurfaceCounts;
+  landscape?: LandscapeCounts;
   churchTextures?: boolean;
   roofs: Float32Array;
   facades: Float32Array;
@@ -300,14 +307,15 @@ export class BuildingGeometryBuilder {
   finish(): DetailGeometry {
     if (!this.done) throw new Error('Campus geometry is not complete. Finish its feature slices first.');
     if(this.completed)return this.completed;
-    const environment=this.environment?addCampusEnvironment(this.roofs,this.environment,projectLocal):emptyEnvironmentCounts();
+    const terrainAnchors=new TerrainAnchorBuilder();
+    const environment=this.environment?addCampusEnvironment(this.roofs,this.environment,projectLocal,terrainAnchors.add):emptyEnvironmentCounts();
     this.environment=undefined;
-    const sculptures=this.sculptures?addCampusSculptures(this.roofs,this.sculptures,projectLocal):emptySculptureCounts();
+    const sculptures=this.sculptures?addCampusSculptures(this.roofs,this.sculptures,projectLocal,terrainAnchors.add):emptySculptureCounts();
     this.sculptures=undefined;
     this.checkBudget('mapped campus trees, furniture and sculpture');
     const roofs = new Float32Array(this.roofs.values), facades = new Float32Array(this.facades.values);
     const roofTriangles = roofs.length / VERTEX_FLOATS / 3, facadeTriangles = facades.length / VERTEX_FLOATS / 3;
-    return this.completed={ roofs, facades, buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength, environment,sculptures };
+    return this.completed={ roofs, facades,terrainAnchors:terrainAnchors.finish(), buildings: this.data.features.length, roofTriangles, facadeTriangles, triangles: roofTriangles + facadeTriangles, bytes: roofs.byteLength + facades.byteLength, environment,sculptures };
   }
 }
 
@@ -323,9 +331,17 @@ export function appendCampusSurfaces(geometry: DetailGeometry, surfaces: CampusS
     triangles: geometry.triangles + additional, bytes: geometry.bytes + mesh.values.length * 4 };
 }
 
-export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures,surfaces?:CampusSurfaces): DetailGeometry {
+export function appendCampusLandscape(geometry:DetailGeometry,landscape:CampusLandscape,target:'roofs'|'facades'='roofs'):DetailGeometry {
+  const mesh=new Mesh(),counts=addCampusLandscape(mesh,landscape,projectLocal),additional=mesh.values.length/VERTEX_FLOATS/3;
+  if(geometry.triangles+additional>MAX_DETAIL_TRIANGLES)throw new Error('Campus landscape exceeds the shared geometry budget.');
+  const combined=new Float32Array(geometry[target].length+mesh.values.length);combined.set(geometry[target]);combined.set(mesh.values,geometry[target].length);
+  return {...geometry,[target]:combined,landscape:counts,roofTriangles:geometry.roofTriangles+(target==='roofs'?additional:0),facadeTriangles:geometry.facadeTriangles+(target==='facades'?additional:0),triangles:geometry.triangles+additional,bytes:geometry.bytes+mesh.values.length*4};
+}
+
+export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures,surfaces?:CampusSurfaces,landscape?:CampusLandscape): DetailGeometry {
   const builder = new BuildingGeometryBuilder(data,environment,sculptures);
   while (!builder.done) builder.step();
-  const geometry = builder.finish();
-  return surfaces ? appendCampusSurfaces(geometry,surfaces) : geometry;
+  let geometry = builder.finish();
+  if(surfaces)geometry=appendCampusSurfaces(geometry,surfaces);
+  return landscape?appendCampusLandscape(geometry,landscape):geometry;
 }

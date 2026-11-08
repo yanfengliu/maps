@@ -11,3 +11,19 @@ test('non-building coverage retains unknown furniture and separates surface evid
  assert.match(renderNonBuildings(report),/Bounded campus core/);assert.match(renderNonBuildings(report),/all 3 environment/);
  report.rows[0].name='<script>alert(1)</script>';assert.doesNotMatch(renderNonBuildings(report),/<script>/);
 });
+
+test('complete roads, traffic controls and lawns retain separate evidence without duplicate road identities',()=>{
+ const road=feature({id:'way/1',kind:'street',modeledSurface:'concrete',surfaceEvidence:'osm-tag',modeledWidth:2.4,widthSource:'class-estimate'});
+ const report=auditNonBuildings({environment:collection([]),sculptures:collection([]),surfaces:collection([road]),roads:collection([road,feature({id:'way/2',kind:'street',modeledSurface:'unknown'})]),controls:collection([feature({id:'node/3',controlType:'traffic_signals',directionStatus:'unknown',physicalPoleVerified:false})]),landscape:collection([feature({id:'way/4',kind:'grass',groundEvidence:'osm-landuse-grass'})]),provenance:{references:[]}});
+ assert.equal(report.rows.length,4);
+ assert.equal(new Set(report.rows.map(r=>r.id)).size,4);
+ assert.match(report.rows.find(r=>r.id==='node/3').limitations,/not a surveyed roadside pole/);
+ assert.match(report.rows.find(r=>r.id==='way/4').limitations,/not a current botanical survey/);
+ assert.ok(report.rows.every(r=>r.photographicAcceptance==='unverified'));
+});
+
+test('audit preserves prose limitations and complete native road scope',()=>{
+ const report=auditNonBuildings({environment:collection([]),sculptures:collection([]),surfaces:collection([]),provenance:{selection:'Core mesh',campusRoads:{coverage:'Full eligible mapped roads'},modelLimits:'Road widths remain estimates.'},landscapeProvenance:{modelLimits:'Plant seasons vary.'}});
+ assert.deepEqual(report.groundLimitations,['Road widths remain estimates.','Plant seasons vary.']);
+ assert.equal(report.scope,'Full eligible mapped roads Core mesh');
+});
