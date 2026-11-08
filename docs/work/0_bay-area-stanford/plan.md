@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Status: active
+Status: complete
 Owner: root integration
 Created: 2026-10-19
 Updated: 2026-11-07
@@ -100,6 +100,11 @@ The real Bay Area opens in a custom light map style. Stanford has 648 locally se
 
 ## Memorial Church interior, 2026-11-07
 
-Status: active. The owner requested a researched Memorial Church interior and selected a roof-removed cutaway. Root owns geometry, integration, visual acceptance and delivery; church_interior_references supplied read-only official/photo research; church_interior_integration supplied the mode/UI and lifecycle tests. Both workers have bounded scopes in isolated worktrees or ignored references. Base is fca2ba28ef91e48bd6f81e7234ffab22af1af94e.
+Status: complete. The owner requested a researched Memorial Church interior and selected a roof-removed cutaway. Root owns geometry, integration, visual acceptance and delivery; church_interior_references supplied read-only official/photo research; church_interior_integration supplied the mode/UI and lifecycle tests. Both workers have bounded scopes in isolated worktrees or ignored references. Base is fca2ba28ef91e48bd6f81e7234ffab22af1af94e.
 
 Acceptance: recognizable current nave/aisles, three arcade bays per side, crossing, curved pews/steps, chancel/altar, galleries and two distinct organ cases; references and uncertain proportions disclosed. Entry from church selection/search, whole/nave/altar/organ presets, roof-off default, optional ceiling structure, exit/search/overview recovery, mobile framing, source failure and context restoration must pass through real controls. Source footprints/heights stay unchanged. One mesh pair at a time preserves the 160k triangle, 24 MiB GPU geometry/material and two custom draw limits. No dependency, remote service or renderer is added. Independent review and required gates precede commit, main merge and push.
+
+
+### Memorial Church interior delivery
+
+The researched cutaway and caption repair are merged to main and pushed as 93d47facbcc2125151308b40f1dd1fb98543ae9e. Build, types, 103 tests and audit pass. Independent review 19 finds no P1/P2 issues; F43 is closed by a red/green navigation regression and actual browser transitions. Final desktop/mobile images and the offline visual gallery are retained under artifacts/church-interior-20261107/output/. All recorded task-owned headless browser, automation daemon, dev/preview server and child processes are closed, with an empty post-cleanup inventory. No shared browser or unrelated process was stopped. GitHub reports zero configured workflows, runs, checks and statuses for the delivered commit; no remote CI pass is claimed. Cleanup removes only the two owned temporary worktrees and branches after this documentation commit. No unmerged product work remains. Dimensions, decorative placement, gallery seating and pipe counts remain modeled estimates, as disclosed in the product and design.
