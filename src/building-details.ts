@@ -1,5 +1,6 @@
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { DETAIL_ORIGIN, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
+import { STADIUM_FIELD_HELPERS, STADIUM_FIELD_FRAGMENT } from './stadium-materials.ts';
 import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
 import { ChurchTextures } from './church-textures.ts';
@@ -84,6 +85,7 @@ uniform sampler2D u_nave;
 uniform sampler2D u_chancel;
 uniform float u_ceiling;
 out vec4 outColor;
+${STADIUM_FIELD_HELPERS}
 void main() {
   if (v_wallVisible < 0.5) discard;
   if (abs(v_kind-30.0)<0.1 && u_ceiling<0.5) discard;
@@ -232,11 +234,23 @@ void main() {
     float fade=1.0-smoothstep(0.08,0.22,max(fwidth(v_uv.x),fwidth(v_uv.y)));
     tint*=1.0-(relief*0.21+border*0.13)*fade;
   }
+  if(abs(v_kind-31.0)<0.1){
+    // Physical terraces supply the bowl profile. Metre-scale seat divisions
+    // and aligned concrete aisles add close detail without extra draw calls.
+    float aa=max(fwidth(v_uv.x),0.002);
+    float seat=abs(mod(v_uv.x+0.25,0.5)-0.25);
+    float seatFade=1.0-smoothstep(0.12,0.45,aa);
+    tint*=1.0-(1.0-smoothstep(0.012,0.025+aa,seat))*0.23*seatFade;
+    float aisleDistance=abs(mod(v_uv.x+6.0,12.0)-6.0);
+    float aisle=1.0-smoothstep(max(0.0,0.55-aa),0.65+aa,aisleDistance);
+    tint=mix(tint,vec3(0.58,0.57,0.53),aisle*(1.0-smoothstep(0.8,2.4,aa)));
+  }
   if(abs(v_kind-22.0)<0.1 || abs(v_kind-23.0)<0.1){
     vec3 photo=abs(v_kind-22.0)<0.1?texture(u_nave,v_uv).rgb:texture(u_chancel,v_uv).rgb;
     float gray=dot(photo,vec3(0.2126,0.7152,0.0722));
     tint=mix(photo,vec3(gray),0.14)*vec3(0.95,0.98,1.03);
   }
+  ${STADIUM_FIELD_FRAGMENT}
   outColor = vec4(tint,1.0);
 }`;
 
@@ -308,7 +322,7 @@ function advanceUpload(gl:WebGL2RenderingContext,job:MeshUpload,geometry:DetailG
   return true;
 }
 
-/** Mercator-only native layer: two batched draws, shared depth, no animation loop. */
+/** Campus-scale layer: adaptive globe has reached Mercator before detail draws. */
 export function createBuildingDetailsLayer(data: CampusData, onError?: (message: string) => void): BuildingDetailsLayer {
   const wallAxes = churchAxes(data);
   let map: MapLibreMap | undefined, context: WebGL2RenderingContext | undefined;
@@ -398,7 +412,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       if (!map || removed || state.error) return;
       warmProgram();
       if (compiling?.parallel) finishProgram();
-      if (state.error || map.getZoom() < 14) return;
+      if (state.error || map.getZoom() < 14 || options.defaultProjectionData.projectionTransition > 0) return;
       // Native map layers repeat around the dateline. Draw authored Stanford
       // detail in the same nearest world copy, without changing source points.
       const viewCenter=map.getCenter().toArray(),worldOffset=Math.round((viewCenter[0]-DETAIL_ORIGIN[0])/360);

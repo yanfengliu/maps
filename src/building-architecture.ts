@@ -1,5 +1,6 @@
 import type * as GeoJSON from 'geojson';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
+import { STADIUM_CONCOURSE_ID, STADIUM_PRESSBOX_IDS, STADIUM_SCOREBOARD_IDS, STADIUM_SEATING_IDS } from './stadium-architecture.ts';
 
 export type ArchitectureProfile = 'memorial-church' | 'quad' | 'quad-wing' | 'library' | 'tower' | 'residential' | 'institutional' | 'modern' | 'garage' | 'service' | 'open';
 export interface BuildingArchitecture {
@@ -17,6 +18,10 @@ const hooverParts = new Set(['way/1346548884','way/1346548885','way/1346548886',
 /** Authored material families, informed by the inspected Stanford photographs. */
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
+  if(STADIUM_SEATING_IDS.has(String(p.id)))return {wall:'#aaa99b',roof:'#7a1320'};
+  if(STADIUM_SCOREBOARD_IDS.has(String(p.id)))return {wall:'#252b2c',roof:'#252b2c'};
+  if(STADIUM_PRESSBOX_IDS.has(String(p.id)))return {wall:'#dedaca',roof:'#e0decc'};
+  if(p.id===STADIUM_CONCOURSE_ID)return {wall:'#c9c5af',roof:'#b9b9ac'};
   const flat=architecture.roofShape==='flat'||architecture.roofShape==='skillion';
   const wall=p.id==='way/232805733'?'#c8aaa0':profile==='memorial-church'?'#d8c29e':profile==='quad'||profile==='quad-wing'?'#cdb58e':profile==='library'?'#d1bd98':profile==='tower'?'#e0cba2'
     :profile==='modern'?'#d9ddd4':profile==='garage'?'#c9c9b9':profile==='service'?'#d0cdc0':profile==='residential'?'#dfcfb7':'#dbccb1';
@@ -33,6 +38,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
     : p.id === 'relation/35820' ? 'quad'
     : QUAD_WING_IDS.has(String(p.id)) ? 'quad-wing'
     : p.id === 'way/232805680' ? 'library'
+    : STADIUM_PRESSBOX_IDS.has(String(p.id)) ? 'modern'
+    : STADIUM_SCOREBOARD_IDS.has(String(p.id)) || p.id===STADIUM_CONCOURSE_ID ? 'open'
     : hooverParts.has(String(p.id)) || /tower/i.test(name) ? 'tower'
     : ['roof', 'steps', 'bridge', 'grandstand', 'stadium'].includes(type) ? 'open'
     : ['garage', 'parking'].includes(type) ? 'garage'

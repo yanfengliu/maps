@@ -1,5 +1,17 @@
 # Defect register
 
+## 2026-11-07 — Stadium stands rendered as generic roofs
+
+The owner requests more realistic stadium modeling. All skillion stand parts had used a generic northward slope and roof material. The sixteen mapped lower/upper stands now rise inward-to-outward as separate cardinal terraces, with aligned seat divisions/aisles, a ground-level football field, connected goalposts, pale pressbox and dark video boards. Generic surfaces are replaced within the existing budget. Emitted geometry tests cover every stand’s footprint, height, terrace direction and projected coverage, fixed UVs, field bounds and nondegenerate connected goalposts. A concave upper stand initially overfilled a pressbox notch; split clipped strips now preserve its opening. Native walls/caps collapse only after detail readiness and restore on loss, low zoom or church mode, while full-height invisible query volumes retain selection. Native QA additionally caught missing north-board supports and field art that faded out or read backward. Two estimated support columns meet the unchanged mapped board, and GPU pixel regressions retain readable end-zone/number/logo paint at overview resolution. Both faulty paint controls fail.
+
+## 2026-11-07 — Missing church entrance doors
+
+The owner reported no doors below the organ loft. The model had the loft and exterior shell but omitted the interior vestibule partition. The official room plan and a 2025 reverse-nave photograph show three timber door assemblies below fanlights. The partition, double central leaves, side doors, glazing, surrounds, hardware and trim now use entrance wall group 3. Emitted-triangle ray samples prove that the visible nave-facing surfaces are timber doors and blue glazing, and every attachment hides with the complete wall; both regressions fail against the previous model. Dimensions and ornamental patterns remain estimates.
+
+## 2026-11-07 — Flat world view and unwanted campus return
+
+The owner requests a globe, initial Stanford arrival, and removal of the building-card campus-return button. The style now selects MapLibre's native adaptive globe on every creation/recovery. Initial camera values are set to Stanford before style/tile loading; the former startup overview flight is removed. Executed startup/card handlers and renderer checks fail against the previous implementation. Desktop and phone World framing accounts for available screen space. Local custom detail draws only after the globe has transitioned to the campus-scale projection, and the covered Stanford marker hides behind the planet. The church entry button remains available.
+
 ## 2026-11-07 — Worldwide search interrupts IME composition
 
 Independent review found that composing Enter submitted a worldwide query, while composing arrows or Escape changed or dismissed suggestions. The search key handler now yields to active composition and the legacy key-code 229 signal before interpreting commands. An executed-callback regression covers both signals, all four composition keys, local suggestions and remote search; ordinary Enter resumes after composition. The test fails against the reviewed revision.

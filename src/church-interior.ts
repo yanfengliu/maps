@@ -309,6 +309,61 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   // Organ loft: redwood Fisk-Nanney case in the centre, original Murray-Harris
   // pipe groups at each side. Pipe counts below are a visible facade estimate.
   wall=3;
+  // The 2025 reverse-nave photo shows three timber doors and blue/gold
+  // semicircular fanlights in the vestibule partition below the loft front.
+  // This is an interior screen, not the church's outer entrance wall at y=0.
+  // Source: GualdimG, Interior of Stanford Memorial Church ... 04.jpg (Commons).
+  // Sizes, hinge relief and glazing patterns are authored estimates.
+  box(0,6.02,.12,22.4,.20,5.28,gold);
+  const iron:C=[.12,.13,.12],glass:C=[.47,.64,.73],amber:C=[.77,.69,.42];
+  for(const [cx,width] of [[-6.8,1.9],[0,2.9],[6.8,1.9]]){
+    const radius=width/2,head=3.28,leaves=cx===0?2:1,leafWidth=width/leaves;
+    kind=16;
+    box(cx,6.15,.16,width,.10,head-.16,darkOak);
+    for(let leaf=0;leaf<leaves;leaf++){
+      const x=cx-width/2+leafWidth*(leaf+.5);
+      // Raised panels, stiles and a centre meeting line read as a real door.
+      box(x,6.207,.35,leafWidth-.18,.035,2.70,oak);
+      for(const side of [-1,1])box(x+side*(leafWidth/2-.06),6.225,.16,.09,.04,head-.16,darkOak);
+      for(const z of [.22,1.07,2.98])box(x,6.225,z,leafWidth-.10,.04,.10,darkOak);
+      kind=2;
+      // Dark C-shaped straps echo the photographed ornamental iron hinges.
+      const hingeX=x+(leaf===0?-1:1)*(leafWidth*.16);
+      for(const z of [.65,2.65])for(let i=0;i<22;i++){
+        const a=(.15+i/22*1.70)*Math.PI,b=(.15+(i+1)/22*1.70)*Math.PI;
+        const point=(t:number,r:number):V=>[hingeX+Math.cos(t)*r,6.26,z+Math.sin(t)*r*.66];
+        quad(point(a,.30),point(b,.30),point(b,.35),point(a,.35),iron);
+      }
+      const pull=cx===0?x+(leaf===0?1:-1)*(leafWidth/2-.14):x+.20;
+      box(pull,6.25,1.28,.07,.08,.28,gold);
+      kind=16;
+    }
+    kind=2;
+    // The fanlight is opaque colored glass with lead divisions, so the solid
+    // partition behind it does not show through or create a separate mesh.
+    for(let i=0;i<40;i++){
+      const a=i*Math.PI/40,b=(i+1)*Math.PI/40;
+      tri([cx,6.20,head+.07],[cx+Math.cos(a)*radius,6.20,head+.07+Math.sin(a)*radius],[cx+Math.cos(b)*radius,6.20,head+.07+Math.sin(b)*radius],glass);
+    }
+    arch(cx,6.16,head+.07,radius+.04,.28,.24,false,stone);
+    for(const side of [-1,1])box(cx+side*(radius+.16),6.16,.12,.28,.24,head+.02,stone);
+    box(cx,6.18,head-.04,width+.60,.24,.13,ivory);
+    for(const r of [radius*.66,radius*.91])for(let i=0;i<40;i++){
+      const a=i*Math.PI/40,b=(i+1)*Math.PI/40;
+      const point=(t:number,n:number):V=>[cx+Math.cos(t)*n,6.215,head+.07+Math.sin(t)*n];
+      quad(point(a,r-.025),point(b,r-.025),point(b,r+.025),point(a,r+.025),iron);
+    }
+    const windowZ=head+.07+radius*.42;
+    box(cx,6.23,windowZ-radius*.28,.065,.025,radius*.55,amber);
+    box(cx,6.23,windowZ-.025,radius*.43,.025,.065,amber);
+    for(let i=0;i<32;i++){
+      const a=i*Math.PI/16,b=(i+1)*Math.PI/16,r=radius*.23;
+      const point=(t:number,n:number):V=>[cx+Math.cos(t)*n,6.23,windowZ+Math.sin(t)*n];
+      quad(point(a,r-.018),point(b,r-.018),point(b,r+.018),point(a,r+.018),iron);
+    }
+    box(cx,6.17,.12,width+.60,.30,.05,ivory);
+  }
+  kind=2;
   box(0, 3.3, 5.4, 22.4, 5.8, 0.42, stone); railing([-10.9, 6.2], [10.9, 6.2], 5.82);
   box(0, 2.3, 5.82, 11.9, 2.5, 9.1, fir);
   const pipeRank = (cx: number, cy: number, z: number, width: number, count: number, high: number, low: number, tint: C) => {

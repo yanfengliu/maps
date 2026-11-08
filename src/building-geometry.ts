@@ -8,6 +8,8 @@ import { addLandmarkAccents } from './landmark-accents.ts';
 import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
 import { addQuadArcade, addQuadWingElevation, QUAD_WING_IDS } from './quad-architecture.ts';
 import { quadRoof } from './quad-roof.ts';
+import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadium-geometry.ts';
+import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
@@ -174,6 +176,9 @@ export class BuildingGeometryBuilder {
         this.checkBudget(String(p.id));
         continue;
       }
+      if(addStadiumSeating(this.roofs,String(p.id),rings[0],building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
+      if(p.id===STADIUM_CONCOURSE_ID)addStadiumField(this.roofs,building,projectLocal);
+      if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       const vertices = rings.flat(), holes: number[] = [];
       let offset = rings[0].length;
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }

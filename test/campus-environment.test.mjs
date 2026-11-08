@@ -66,7 +66,9 @@ test('all combined building and environment geometry stays finite within approve
       assert.ok([10,11,12].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
       assert.ok(mesh[i+2]>=0&&mesh[i+2]<=28);environmentVertices++;
     }else{
-      assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=source.features[id].properties.height+0.0001);assert.ok(mesh[i+2]>=source.features[id].properties.base-0.0001);
+      assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=source.features[id].properties.height+0.0001);
+      if(kind===33){assert.equal(source.features[id].properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=source.features[id].properties.base);}
+      else assert.ok(mesh[i+2]>=source.features[id].properties.base-0.0001);
     }
   }
   assert.ok(environmentVertices>100000,'the render buffers must contain the sourced planting, not just report its count');

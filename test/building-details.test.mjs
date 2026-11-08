@@ -190,7 +190,10 @@ test('all 648 detailed buildings stay finite, under their source heights and wit
     for (let i = 0; i < mesh.length; i += VERTEX_FLOATS) {
       const feature = original.features[mesh[i + 12]];
       assert.ok(mesh[i + 2] <= feature.properties.height + 0.0001, feature.properties.id);
-      assert.ok(mesh[i + 2] >= feature.properties.base - 0.0001, feature.properties.id);
+      // A raised scoreboard's missing, photo-derived columns are explicit
+      // additions below its panel, not a changed source base or taller part.
+      if(mesh[i+11]===33){assert.equal(feature.properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=feature.properties.base);}
+      else assert.ok(mesh[i + 2] >= feature.properties.base - 0.0001, feature.properties.id);
     }
   }
 });

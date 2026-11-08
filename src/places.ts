@@ -1,3 +1,4 @@
+import { STADIUM_CENTER } from './stadium-architecture.ts';
 export type Position = [number, number];
 export interface Place {
   id: string;
@@ -24,6 +25,7 @@ export const STANFORD_CENTER: Position = [-122.1697, 37.4278];
 export const BAY_BOUNDS: [Position, Position] = [[-122.67, 37.20], [-121.69, 38.08]];
 export const PLACES: Place[] = [
   { id: 'stanford', name: 'Stanford University', subtitle: 'Campus · Stanford', center: STANFORD_CENTER, zoom: 15.8, campus: true },
+  { id: 'stanford-stadium', name: 'Stanford Stadium', subtitle: 'Football stadium · Stanford', center: STADIUM_CENTER, zoom: 17.6, campus: true },
   { id: 'san-francisco', name: 'San Francisco', subtitle: 'City · Northern peninsula', center: [-122.4194, 37.7749], zoom: 12.1 },
   { id: 'oakland', name: 'Oakland', subtitle: 'City · East Bay', center: [-122.2711, 37.8044], zoom: 12.1 },
   { id: 'san-jose', name: 'San José', subtitle: 'City · South Bay', center: [-121.8863, 37.3387], zoom: 12 },

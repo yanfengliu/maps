@@ -26,7 +26,7 @@ root.innerHTML = `
     <nav class="quick-places" aria-label="Featured places"><button id="explore-stanford" aria-label="Explore Stanford in 3D">${icon('campus')}<span>Stanford</span><small>3D</small></button><button id="explore-church" aria-label="Explore Memorial Church">Memorial Church</button></nav>
   </div>
   <section id="place-details" class="place-details" aria-label="Selected place actions" aria-live="polite" hidden></section>
-  <div class="map-caption"><span class="caption-dot"></span><span id="view-name">WORLD MAP</span></div>
+  <div class="map-caption"><span class="caption-dot"></span><span id="view-name">STANFORD UNIVERSITY · 3D CAMPUS</span></div>
   <nav class="map-controls" aria-label="Map navigation">
     <button id="compass" class="control compass" aria-label="Face north" title="Face north · drag to rotate"><span class="north">N</span><span class="compass-needle">${icon('compass')}</span></button>
     <div class="zoom-controls"><button id="zoom-in" class="control" aria-label="Zoom in" title="Zoom in">${icon('plus')}</button><button id="zoom-out" class="control" aria-label="Zoom out" title="Zoom out">${icon('minus')}</button></div>
@@ -106,7 +106,8 @@ function panelPadding(): { top: number; bottom: number; left: number; right: num
 function overview(animate = true): void {
   if (!map) return;
   search.value='';el('clear-search').hidden=true;closeSearch();search.blur();
-  map.flyTo({ center: [0,20], zoom: 1.5, padding: panelPadding(), pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0 });
+  const diameter=Math.max(180,Math.min(window.innerWidth-110,window.innerHeight-260,760));
+  map.flyTo({ center: [0,20], zoom: 1.5+Math.log2(diameter/430), padding: panelPadding(), pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0 });
   el('view-name').textContent = 'WORLD MAP';
   closeDetails();
 }
@@ -118,14 +119,14 @@ function goTo(place: Place): void {
   map.flyTo({ center: place.center, zoom: place.zoom, pitch: place.campus ? 58 : 0, bearing: place.campus ? -28 : 0,
     padding: window.innerWidth > 760 ? { top: 95, bottom: 180, left: 65, right: 85 } : { top: 125, bottom: 180, left: 20, right: 65 },
     duration: motionDuration(place.campus ? 2400 : 1800), essential: false });
-  el('view-name').textContent = place.campus ? 'STANFORD UNIVERSITY · 3D CAMPUS' : place.name.toUpperCase();
+  el('view-name').textContent = place.campus && place.id!=='stanford-stadium' ? 'STANFORD UNIVERSITY · 3D CAMPUS' : place.name.toUpperCase();
   closeSearch();
   search.blur();
   if (place.buildingId) {
     const feature = campusData?.features.find(f => f.properties?.id === place.buildingId);
     if (feature) showBuilding(feature.properties ?? {});
   } else if(place.sculptureId)showSculpture(place.sculptureId);
-  else if (place.campus) showCampus();
+  else if (place.id==='stanford') showCampus();
   else showCity(place);
 }
 
@@ -165,12 +166,11 @@ function showBuilding(properties: Record<string, unknown>): void {
   details.hidden = false;
   const height = Number(properties.height);
   const source = properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button></div>`;
+  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
-  el('building-campus').addEventListener('click', () => goTo(PLACES[0]));
   if(selectedId===CHURCH_ID){
     const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;
-    button.addEventListener('click',enterChurchInterior);el('building-campus').before(button);el('building-campus').className='text-action';
+    button.addEventListener('click',enterChurchInterior);details.append(button);
   }
 }
 
@@ -463,7 +463,7 @@ function startMap(): void {
   try {
     // Configure the visible region before loading any tiles. Waiting for `load`
     // first fetched a different view, then restarted the work for the overview.
-    map = new maplibregl.Map({ container: 'map', center: [0,20], zoom: 1.5,
+    map = new maplibregl.Map({ container: 'map', center: PLACES[0].center, zoom: PLACES[0].zoom, pitch: 58, bearing: -28,
       maxPitch: 65, minZoom: 0, maxZoom: MAX_MAP_ZOOM,
       canvasContextAttributes: { antialias:true },
       attributionControl: false, dragRotate: { around: 'center', movement: 'linear' }, rotateSpeed: 0.25, pitchSpeed: -0.25,
@@ -491,7 +491,7 @@ function startMap(): void {
         button.setAttribute('aria-label', 'Explore Stanford University');
         button.innerHTML = `<span class="pin-disc">${icon('campus')}</span><span class="pin-label">Stanford University<span>EXPLORE IN 3D</span></span>`;
         button.addEventListener('click', () => goTo(place));
-        pins.push(new maplibregl.Marker({ element: button, anchor: 'bottom-left', offset: [-18,6] }).setLngLat(place.center).addTo(map!));
+        pins.push(new maplibregl.Marker({ element: button, anchor: 'bottom-left', offset: [-18,6], opacityWhenCovered: 0 }).setLngLat(place.center).addTo(map!));
       }
       updateCameraUi();
     });
@@ -532,7 +532,7 @@ function startMap(): void {
     });
     map.on('style.load', () => { if (sourceReady) addCampusLayers(); });
     map.setPadding(panelPadding());
-    overview(false);
+    updateCameraUi();
     scheduleLoadDeadline();
     map.setStyle(createStyle());
     void loadCampus();
@@ -546,6 +546,7 @@ Object.defineProperty(window, '__bayMap', {
   configurable: false, writable: false,
   value: Object.freeze({
     get camera() { return map ? Object.freeze({ center: Object.freeze(map.getCenter().toArray()), zoom: map.getZoom(), pitch: map.getPitch(), bearing: normalizeBearing(map.getBearing()) }) : null; },
+    get projection() { return map?.getProjection()?.type ?? null; },
     get ready() { return Boolean(map?.isStyleLoaded() && sourceReady && tilesReady && successfulRegionalTiles > 0 && !failed); },
     get campusBuildings() { return campusData?.features.length ?? 0; },
     get heightSources() {

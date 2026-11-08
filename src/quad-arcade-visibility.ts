@@ -1,9 +1,10 @@
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { Map as MapLibreMap, ExpressionSpecification } from 'maplibre-gl';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
+import { STADIUM_SEATING_IDS } from './stadium-architecture.ts';
 
 type Surface = Pick<MapLibreMap,'getLayer'|'getZoom'|'setPaintProperty'|'getCanvas'>;
 
-/** Keep the complete native wall until the open-arcade mesh can replace it.
+/** Keep complete native shells until open arcades and seating can replace them.
  * Reset after recreating standard layers, including context restoration.
  */
 export function createQuadArcadeVisibility(){
@@ -16,8 +17,15 @@ export function createQuadArcadeVisibility(){
       if(detailed===hidden)return;
       hidden=detailed;
       map.setPaintProperty('stanford-buildings','fill-extrusion-height',detailed
-        ? ['case',['in',['get','id'],['literal',['relation/35820',...QUAD_WING_IDS]]],['+',['get','base'],0.02],['get','detailWallHeight']]
+        ? ['case',['in',['get','id'],['literal',['relation/35820',...QUAD_WING_IDS,...STADIUM_SEATING_IDS]]],['+',['get','base'],0.02],['get','detailWallHeight']]
         : ['get','detailWallHeight']);
+      if(map.getLayer('stanford-roofs')){
+        const capBase:ExpressionSpecification=detailed
+          ? ['case',['in',['get','id'],['literal',[...STADIUM_SEATING_IDS]]],['get','base'],['get','detailWallHeight']]
+          : ['get','detailWallHeight'];
+        map.setPaintProperty('stanford-roofs','fill-extrusion-base',capBase);
+        map.setPaintProperty('stanford-roofs','fill-extrusion-height',['+',capBase,0.05]);
+      }
       map.getCanvas().dataset.campusDetailReady=String(detailed);
     },
   };

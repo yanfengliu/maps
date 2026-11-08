@@ -27,6 +27,18 @@ function geometry(triangles=2){
   return {roofs,facades,buildings:1,roofTriangles:1,facadeTriangles:triangles-1,triangles,bytes:roofs.byteLength+facades.byteLength,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts()};
 }
 
+test('local detail waits for the adaptive globe transition and resumes without rebuilding',()=>{
+  const f=fixture();try{
+    const options={defaultProjectionData:{mainMatrix:new Array(16).fill(0),projectionTransition:0.5}};
+    f.layer.render(f.gl,options);assert.equal(f.workers.length,0);assert.equal(f.layer.stats.drawCalls,0);
+    options.defaultProjectionData.projectionTransition=0;
+    f.layer.render(f.gl,options);f.workers[0].onmessage({data:{geometry:geometry(3)}});f.ready();
+    assert.equal(f.layer.stats.drawCalls,2);
+    options.defaultProjectionData.projectionTransition=1;f.layer.render(f.gl,options);assert.equal(f.layer.stats.drawCalls,0);
+    options.defaultProjectionData.projectionTransition=0;f.layer.render(f.gl,options);assert.equal(f.layer.stats.drawCalls,2);assert.equal(f.workers.length,1);
+  }finally{f.close();}
+});
+
 test('renderer updates whole-wall visibility during camera rotation and clears it outside the interior',()=>{
   const data=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))),f=fixture(data);
   try{

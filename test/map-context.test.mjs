@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
 import {runInNewContext} from 'node:vm';
+import {PLACES} from '../src/places.ts';
 
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replaceAll('\r\n','\n');
 const handler=name=>stripTypeScriptTypes(source.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`))?.[0]??'');
@@ -23,12 +24,12 @@ test('church cutaway excludes only the church exterior, retaining campus, pickin
 test('map construction and world overview admit destinations outside the Bay Area at world scale',()=>{
   const construction=source.match(/map = new maplibregl\.Map\(\{[\s\S]*?\}\);/)?.[0];assert.ok(construction);
   let options;
-  runInNewContext(stripTypeScriptTypes(construction),{map:undefined,maplibregl:{Map:class {constructor(value){options=plain(value);}}},MAX_MAP_ZOOM:21.5,reducedMotion:{matches:false}});
+  runInNewContext(stripTypeScriptTypes(construction),{map:undefined,maplibregl:{Map:class {constructor(value){options=plain(value);}}},MAX_MAP_ZOOM:21.5,PLACES,reducedMotion:{matches:false}});
   assert.equal(options.maxBounds,undefined);assert.equal(options.minZoom,0);assert.equal(options.maxZoom,21.5);
   assert.equal(options.renderWorldCopies,true,'horizontal movement must still work when the viewport spans a whole world');
   const flights=[],caption={};
-  runInNewContext(`${handler('overview')}\noverview(false);`,{map:{flyTo:value=>flights.push(plain(value))},panelPadding:()=>({top:90,bottom:90,left:30,right:60}),motionDuration:n=>n,el:()=>caption,search:{value:'Paris',blur(){}},closeSearch(){},closeDetails(){}});
-  assert.deepEqual(flights[0].center,[0,20]);assert.ok(flights[0].zoom<=2);assert.equal(caption.textContent,'WORLD MAP');
+  runInNewContext(`${handler('overview')}\noverview(false);`,{window:{innerWidth:1600,innerHeight:1100},map:{flyTo:value=>flights.push(plain(value))},panelPadding:()=>({top:90,bottom:90,left:30,right:60}),motionDuration:n=>n,el:()=>caption,search:{value:'Paris',blur(){}},closeSearch(){},closeDetails(){}});
+  assert.deepEqual(flights[0].center,[0,20]);assert.ok(flights[0].zoom<3);assert.equal(caption.textContent,'WORLD MAP');
 });
 
 test('initial interface has compact search and shortcuts without a persistent information sidebar',()=>{
