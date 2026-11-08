@@ -1,5 +1,9 @@
 # Defect register
 
+## 2026-11-07 — Worldwide search interrupts IME composition
+
+Independent review found that composing Enter submitted a worldwide query, while composing arrows or Escape changed or dismissed suggestions. The search key handler now yields to active composition and the legacy key-code 229 signal before interpreting commands. An executed-callback regression covers both signals, all four composition keys, local suggestions and remote search; ordinary Enter resumes after composition. The test fails against the reviewed revision.
+
 ## 2026-11-07 — Church isolation and disconnected wall sections
 
 The owner reported that entering the church removed the rest of the map and that retained walls appeared disconnected. The former visibility function hid every campus extrusion and every symbol layer; the authored section omitted most outer walls and one clerestory. Native wall/roof filters now exclude only the church, retaining surrounding map context and labels. Every mapped church perimeter edge carries a full wall, both nave walls join their arcade spandrels, and complete east/west/entrance/rear assemblies include their attached art and trim. The camera cuts only near-facing groups, preserving opposite walls; overhead structures remain separately controlled. Executed-handler regressions cover entry/style reattachment/exit without global hiding, and an emitted-triangle oracle samples every source wall at multiple horizontal positions and heights. The old incomplete wall model fails. Renderer tests check wall masks while rotating and reset outside the interior. Source geometry and heights are unchanged.
