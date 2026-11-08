@@ -97,7 +97,7 @@ test('worker names each local input in its HTTP/JSON/network failure and a valid
     for(const [target,label] of [['stanford-sculptures.geojson','Campus sculpture'],['stanford-environment.geojson','Campus environment']])for(const mode of ['HTTP','JSON','network','valid']){
       const calls=[];messages.length=0;
       globalThis.fetch=async input=>{calls.push(input);if(!input.endsWith(target)||mode==='valid')return new Response(input.endsWith('stanford-environment.geojson')?JSON.stringify(empty):bytes);if(mode==='HTTP')return new Response('Missing',{status:503});if(mode==='JSON')return new Response('{');throw new Error('fixture network unavailable');};
-      await self.onmessage({data:empty});assert.equal(messages.length,1);assert.deepEqual(calls.sort(),['/data/stanford-environment.geojson','/data/stanford-sculptures.geojson']);
+      await self.onmessage({data:{data:empty,interior:false}});assert.equal(messages.length,1);assert.deepEqual(calls.sort(),['/data/stanford-environment.geojson','/data/stanford-sculptures.geojson']);
       if(mode==='valid'){assert.deepEqual(messages[0].geometry.sculptures,{works:2,figures:7,triangles:3820});assert.equal(messages[0].geometry.facades.length,0);continue;}
       const file=target.replace('.','\\.');
       assert.match(messages[0].error,new RegExp(mode==='HTTP'?`${label}.*HTTP 503.*${file}.*retry`:mode==='JSON'?`${label}.*${file}.*not valid JSON.*retry`:`${label}.*${file}.*could not load.*network unavailable.*retry`),`${target} ${mode}: ${messages[0].error}`);

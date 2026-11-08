@@ -108,6 +108,7 @@ class Mesh {
 }
 
 export interface DetailGeometry {
+  churchTextures?: boolean;
   roofs: Float32Array;
   facades: Float32Array;
   buildings: number;

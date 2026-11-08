@@ -1,5 +1,6 @@
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
+import type { VisibilitySpecification } from '@maplibre/maplibre-gl-style-spec';
 import type * as GeoJSON from 'geojson';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -13,6 +14,7 @@ import { describeBuildingArchitecture } from './building-architecture.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
+import { CHURCH_ID, churchInteriorLocation } from './church-interior.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -45,6 +47,12 @@ root.innerHTML = `
     <div class="tilt-control"><label for="tilt">TILT</label><input id="tilt" type="range" min="0" max="65" step="1" value="0" aria-label="Map tilt"/><span id="tilt-value">0°</span></div>
   </nav>
   <button id="bay-overview" class="overview-button" aria-label="Bay Area overview">${icon('bay')}<span>Bay Area</span></button>
+  <section id="church-controls" class="church-controls" aria-labelledby="church-controls-title" hidden>
+    <div class="church-controls-heading"><div><span class="eyebrow">INTERIOR CUTAWAY</span><h2 id="church-controls-title">Memorial Church</h2></div><button id="church-exit" class="icon-button" aria-label="Return to church exterior" title="Return to exterior">${icon('close')}</button></div>
+    <nav class="church-views" aria-label="Church interior views"><button data-church-view="whole" aria-pressed="true">Whole church</button><button data-church-view="nave" aria-pressed="false">Nave</button><button data-church-view="altar" aria-pressed="false">Altar</button><button data-church-view="organ" aria-pressed="false">Organs</button></nav>
+    <div class="church-controls-footer"><label><input id="church-ceiling" type="checkbox"/> Show ceiling structure</label><button id="church-about">About this model</button></div>
+    <p id="church-ready" role="status">Opening the interior…</p>
+  </section>
   <div id="map-status" class="map-status" role="status"><span class="loading-dot"></span>Opening the Bay…</div>
   <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="retry">Retry</button><button id="dismiss-error" aria-label="Dismiss error">${icon('close')}</button></div>
   <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, hold WASD to pan, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Regional map © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Only Stanford has 3D buildings. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
@@ -74,6 +82,9 @@ let pins: maplibregl.Marker[] = [];
 let cleaned = false;
 let campusEventsBound = false;
 let buildingDetails: BuildingDetailsLayer | undefined;
+let churchInterior = false;
+let churchCeiling = false;
+const interiorLabelVisibility = new Map<string,VisibilitySpecification|undefined>();
 let disposeMiddleMouseTilt: (() => void) | undefined;
 let disposeKeyboardPan: (() => void) | undefined;
 const renderTimes: number[] = [];
@@ -112,6 +123,7 @@ function overview(animate = true): void {
 
 function goTo(place: Place): void {
   if (!map) return;
+  setChurchInterior(false);
   map.flyTo({ center: place.center, zoom: place.zoom, pitch: place.campus ? 58 : 0, bearing: place.campus ? -28 : 0,
     padding: window.innerWidth > 760 ? { top: 20, bottom: 20, left: 360, right: 60 } : { top: 80, bottom: 200, left: 20, right: 55 },
     duration: motionDuration(place.campus ? 2400 : 1800), essential: false });
@@ -163,6 +175,7 @@ function showCity(place: Place): void {
 }
 
 function showBuilding(properties: Record<string, unknown>): void {
+  setChurchInterior(false);
   if (window.innerWidth <= 760) setSidebarCompact(false);
   selectedId = String(properties.id);
   updateSelection();
@@ -174,9 +187,14 @@ function showBuilding(properties: Record<string, unknown>): void {
   details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">${escapeHtml(describeBuildingArchitecture(architecture))}</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   el('building-campus').addEventListener('click', () => goTo(PLACES[0]));
+  if(selectedId===CHURCH_ID){
+    const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;
+    button.addEventListener('click',enterChurchInterior);el('building-campus').before(button);el('building-campus').className='text-action';
+  }
 }
 
 function closeDetails(): void {
+  setChurchInterior(false);
   selectedId = null;
   updateSelection();
   details.hidden = true;
@@ -189,6 +207,69 @@ function updateSelection(): void {
   map.setPaintProperty('stanford-roofs', 'fill-extrusion-color', ['case', ['==', ['get','id'], selectedId ?? ''], '#c56c3e', ['coalesce', ['get','detailRoofColor'], ['get','roofColor']]]);
   buildingDetails?.setSelected(selectedId);
 }
+
+/** The map owns both views. Native church caps must disappear with its exterior
+ * detail mesh, and recover even after a style retry or graphics restoration. */
+function syncChurchVisibility():void {
+  if(!map)return;
+  for(const id of [...BUILDING_PICK_LAYERS,'stanford-roofs'])if(map.getLayer(id))map.setLayoutProperty(id,'visibility',churchInterior?'none':'visible');
+  for(const layer of map.getStyle()?.layers??[])if(layer.type==='symbol'){
+    if(churchInterior){
+      if(!interiorLabelVisibility.has(layer.id))interiorLabelVisibility.set(layer.id,layer.layout?.visibility);
+      map.setLayoutProperty(layer.id,'visibility','none');
+    }else if(interiorLabelVisibility.has(layer.id))map.setLayoutProperty(layer.id,'visibility',interiorLabelVisibility.get(layer.id)??'visible');
+  }
+  if(!churchInterior)interiorLabelVisibility.clear();
+  quadArcadeVisibility.sync(map,Boolean(!churchInterior&&buildingDetails?.stats.ready));
+}
+
+function setChurchInterior(enabled:boolean):void {
+  if(churchInterior===enabled)return;
+  churchInterior=enabled;churchCeiling=false;
+  buildingDetails?.setInterior(enabled);buildingDetails?.setCeiling(false);
+  el<HTMLInputElement>('church-ceiling').checked=false;
+  el('church-controls').hidden=!enabled;root.classList.toggle('church-interior',enabled);
+  if(enabled)el('church-ready').textContent='Opening the interior…';
+  if(!enabled)el('view-name').textContent='STANFORD UNIVERSITY · 3D CAMPUS';
+  syncChurchVisibility();
+}
+
+function showInteriorInformation():void {
+  details.hidden=false;el('explore-content').hidden=true;
+  details.innerHTML=`<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-interior-info" aria-label="Collapse interior information">${icon('minus')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>Inside Memorial Church</h2><p class="detail-description">Follow the nave between sandstone arcades to the chancel. Explore the transept galleries and the two pipe organs above the entrance.</p><p class="data-note">Interior proportions and decoration are modeled from Stanford references; not a measured survey. The cutaway removes the roof and part of the walls so the rooms remain visible.</p><a class="text-action" href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a class="text-action" href="https://orsl.stanford.edu/sites/g/files/sbiybj15891/files/media/file/memchuself-guidedtourfy23.docx.pdf" target="_blank" rel="noreferrer">Stanford’s self-guided tour ↗</a><a class="text-action" href="/textures/ATTRIBUTION.md" target="_blank" rel="noreferrer">Artwork photos: King of Hearts & GualdimG (CC BY-SA 4.0)</a><button class="detail-action" id="church-campus">View the whole campus ${icon('arrow')}</button>`;
+  details.querySelector('.close-interior-info')?.addEventListener('click',()=>setSidebarCompact(true));
+  el('church-campus').addEventListener('click',()=>goTo(PLACES[0]));
+}
+
+function interiorView(view:string):void {
+  if(!map||!campusData||!churchInterior)return;
+  const views:Record<string,{x:number;y:number;zoom:number;bearing:number;pitch:number}>={
+    whole:{x:0,y:30,zoom:19.85,bearing:120,pitch:55},
+    nave:{x:0,y:21,zoom:20.2,bearing:120,pitch:60},
+    altar:{x:0,y:57,zoom:20.8,bearing:175,pitch:60},
+    organ:{x:0,y:-4,zoom:20.6,bearing:15,pitch:60}
+  };
+  const target=views[view];if(!target)return;
+  for(const button of root.querySelectorAll<HTMLButtonElement>('[data-church-view]'))button.setAttribute('aria-pressed',String(button.dataset.churchView===view));
+  const mobile=window.innerWidth<=760;
+  const zoom=view==='whole'?target.zoom+Math.min(0,Math.log2(Math.max(160,window.innerWidth-(mobile?90:180))/1000)):target.zoom-(mobile?1.25:0);
+  map.flyTo({center:churchInteriorLocation(campusData,target.x,target.y),zoom,bearing:target.bearing,pitch:target.pitch,
+    padding:mobile?{top:205,bottom:245,left:20,right:65}:{top:95,bottom:215,left:65,right:85},duration:motionDuration(1200)});
+}
+
+function enterChurchInterior():void {
+  if(!map||!campusData)return;
+  selectedId=CHURCH_ID;updateSelection();setChurchInterior(true);showInteriorInformation();setSidebarCompact(true);closeSearch();search.blur();
+  el('view-name').textContent='MEMORIAL CHURCH · INTERIOR';interiorView('whole');
+}
+
+for(const button of root.querySelectorAll<HTMLButtonElement>('[data-church-view]'))button.addEventListener('click',()=>interiorView(button.dataset.churchView!));
+el('church-about').addEventListener('click',()=>{showInteriorInformation();setSidebarCompact(false);});
+el('church-ceiling').addEventListener('change',()=>{churchCeiling=el<HTMLInputElement>('church-ceiling').checked;buildingDetails?.setCeiling(churchCeiling);});
+el('church-exit').addEventListener('click',()=>{
+  setSidebarCompact(false);
+  const place=allPlaces.find(value=>value.buildingId===CHURCH_ID);if(place)goTo(place);else goTo(PLACES[0]);
+});
 
 function closeSearch(): void {
   results.hidden = true;
@@ -306,6 +387,7 @@ function addBuildingDetailLayer(): void {
   buildingDetails = createBuildingDetailsLayer(campusData, message => showError(`Stanford building detail could not render. Retry to rebuild the campus layer. ${message}`, reloadRegionalMap));
   map.addLayer(buildingDetails, 'road-label');
   buildingDetails.setSelected(selectedId);
+  buildingDetails.setInterior(churchInterior);buildingDetails.setCeiling(churchCeiling);
 }
 
 const quadArcadeVisibility=createQuadArcadeVisibility();
@@ -317,6 +399,7 @@ function addCampusLayers(): void {
     // MapLibre restores standard layers after a lost context; custom layers
     // must be attached again even when their source already exists.
     addBuildingDetailLayer();
+    syncChurchVisibility();
     return;
   }
   map.addSource('stanford-campus', { type: 'geojson', data: campusBoundary });
@@ -344,6 +427,7 @@ function addCampusLayers(): void {
       const feature = event.features?.[0]; if (feature) showBuilding(feature.properties);
     });
   }
+  syncChurchVisibility();
 }
 
 function checkReady(): void {
@@ -391,6 +475,7 @@ function startMap(): void {
     // first fetched a different view, then restarted the work for the overview.
     map = new maplibregl.Map({ container: 'map', center: [-122.2,37.65], zoom: 9,
       maxPitch: 65, minZoom: 7, maxZoom: MAX_MAP_ZOOM, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
+      canvasContextAttributes: { antialias:true },
       attributionControl: false, dragRotate: { around: 'center', movement: 'linear' }, rotateSpeed: 0.25, pitchSpeed: -0.25,
       touchZoomRotate: true, pitchWithRotate: true,
       keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: false });
@@ -429,7 +514,11 @@ function startMap(): void {
     });
     map.on('move', updateCameraUi);
     map.on('render', () => {
-      quadArcadeVisibility.sync(map,Boolean(buildingDetails?.stats.ready));
+      quadArcadeVisibility.sync(map,Boolean(!churchInterior&&buildingDetails?.stats.ready));
+      if(churchInterior){
+        const message=buildingDetails?.stats.error?'Interior detail could not load. Use Retry above.':buildingDetails?.stats.ready?'Drag to pan · scroll to zoom · drag the compass to rotate':'Opening the interior…';
+        if(el('church-ready').textContent!==message)el('church-ready').textContent=message;
+      }
       const time = performance.now();
       renderTimes.push(time);
       if (renderTimes.length > 1800) renderTimes.shift();
@@ -481,6 +570,7 @@ Object.defineProperty(window, '__bayMap', {
       return new Set(map.queryRenderedFeatures({ layers: ['stanford-buildings'] }).map((f: MapGeoJSONFeature) => f.properties.id)).size;
     },
     get selectedBuilding() { return selectedId; },
+    get interior() { return Object.freeze({active:churchInterior,ceiling:churchCeiling}); },
     get sources() { return Object.freeze({ campus: sourceReady, tiles: tilesReady, successfulRegionalTiles }); },
     get rendering() { return Object.freeze({ frames: Object.freeze([...renderTimes]), motionFrames: Object.freeze([...motionRenderTimes]), pixelRatio: map?.getPixelRatio() ?? 0 }); },
     get details() { return buildingDetails?.stats ?? null; },

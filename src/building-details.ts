@@ -2,15 +2,19 @@ import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap 
 import { MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
 import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
+import { ChurchTextures } from './church-textures.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
+  mode: 'campus' | 'church-interior';
+  ceiling: boolean;
   ready: boolean;
   buildingCount: number;
   roofTriangles: number;
   facadeTriangles: number;
   triangles: number;
   bytes: number;
+  textureBytes: number;
   environment: EnvironmentCounts;
   sculptures: SculptureCounts;
   /** CPU geometry generation runs in the dedicated worker. */
@@ -30,10 +34,13 @@ export interface BuildingDetailStats {
 
 export interface BuildingDetailsLayer extends CustomLayerInterface {
   setSelected(id: string | null): void;
+  setInterior(enabled: boolean): void;
+  setCeiling(visible: boolean): void;
   readonly stats: Readonly<BuildingDetailStats>;
 }
 
 const cachedGeometry = new WeakMap<CampusData, { geometry: DetailGeometry; buildMs: number }>();
+const cachedInterior = new WeakMap<CampusData, { geometry: DetailGeometry; buildMs: number }>();
 const SHADER_APPROACH_ZOOM = 12;
 const vertexShader = `#version 300 es
 precision highp float;
@@ -66,8 +73,12 @@ in vec2 v_position;
 flat in float v_kind;
 uniform vec2 u_focus;
 uniform float u_radius;
+uniform sampler2D u_nave;
+uniform sampler2D u_chancel;
+uniform float u_ceiling;
 out vec4 outColor;
 void main() {
+  if (abs(v_kind-30.0)<0.1 && u_ceiling<0.5) discard;
   vec3 tint = v_color;
   if (v_kind < 0.5) {
     // Shallow tile courses, kept quiet and anti-aliased as they recede.
@@ -203,6 +214,21 @@ void main() {
     float grain=sin(v_uv.x*17.0+sin(v_uv.y*2.0));
     tint*=1.0+grain*0.045;
   }
+  if(abs(v_kind-24.0)<0.1){
+    vec2 p=vec2(mod(v_uv.x,0.48)-0.24,v_uv.y-0.24);
+    float angle=atan(p.y,p.x),r=length(p);
+    float leaf=0.12+0.055*cos(angle*6.0);
+    float aa=max(fwidth(r),0.003);
+    float relief=1.0-smoothstep(0.012,0.028+aa,abs(r-leaf));
+    float border=1.0-smoothstep(0.013,0.030+aa,min(abs(v_uv.y-0.045),abs(v_uv.y-0.43)));
+    float fade=1.0-smoothstep(0.08,0.22,max(fwidth(v_uv.x),fwidth(v_uv.y)));
+    tint*=1.0-(relief*0.21+border*0.13)*fade;
+  }
+  if(abs(v_kind-22.0)<0.1 || abs(v_kind-23.0)<0.1){
+    vec3 photo=abs(v_kind-22.0)<0.1?texture(u_nave,v_uv).rgb:texture(u_chancel,v_uv).rgb;
+    float gray=dot(photo,vec3(0.2126,0.7152,0.0722));
+    tint=mix(photo,vec3(gray),0.14)*vec3(0.95,0.98,1.03);
+  }
   outColor = vec4(tint,1.0);
 }`;
 
@@ -281,21 +307,26 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   let uploading:MeshUpload|undefined;
   let compiling: PendingProgram | undefined;
   let idleCompile: number | undefined, compileTimer: ReturnType<typeof setTimeout> | undefined;
-  let worker: Worker | undefined, removed = false, selected = -1;
+  let worker: Worker | undefined, removed = false, selected = -1, interior = false;
   let pending = cachedGeometry.get(data);
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
-  const state: BuildingDetailStats = { ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const photos = new ChurchTextures(() => map?.triggerRepaint());
+  const releaseMeshes = () => {
+    photos.dispose();state.textureBytes=0;
+    if (context) for (const mesh of [roofs,facades,uploading?.roofs,uploading?.facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
+    roofs=undefined;facades=undefined;uploading=undefined;state.ready=false;
+  };
   const destroyGpu = () => {
     if (idleCompile !== undefined) { window.cancelIdleCallback(idleCompile); idleCompile = undefined; }
     if (compileTimer !== undefined) { clearTimeout(compileTimer); compileTimer = undefined; }
     if (context) {
-      for (const mesh of [roofs, facades,uploading?.roofs,uploading?.facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
       if (gpuProgram) context.deleteProgram(gpuProgram);
       if (compiling) { context.deleteProgram(compiling.program); compiling.shaders.forEach(value => context!.deleteShader(value)); }
     }
-    compiling = undefined; roofs = undefined; facades = undefined; uploading=undefined;gpuProgram = undefined; state.ready = false; state.shaderReady = false;
+    releaseMeshes();compiling = undefined;gpuProgram = undefined;state.shaderReady = false;
   };
   const fail = (message: string) => {
     state.error = message; worker?.terminate(); worker = undefined; destroyGpu(); onError?.(message);
@@ -311,7 +342,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     compiling.shaders.forEach(value => context!.deleteShader(value));
     state.compileMs = performance.now() - compiling.started;
     compiling = undefined; state.shaderReady = true;
-    for (const name of ['u_matrix','u_selected','u_focus','u_radius']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
+    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
     state.maxSliceMs = Math.max(state.maxSliceMs, performance.now() - started);
     map?.triggerRepaint();
   };
@@ -337,6 +368,16 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
     get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
+    setInterior(enabled) {
+      if(interior===enabled)return;
+      interior=enabled;worker?.terminate();worker=undefined;
+      // Only one mesh pair is GPU-resident. Keep the shared program warm and
+      // discard even a partial upload before replacing the campus with a room.
+      releaseMeshes();pending=(interior?cachedInterior:cachedGeometry).get(data);
+      Object.assign(state,{mode:interior?'church-interior':'campus',ceiling:false,buildingCount:interior?1:data.features.length,roofTriangles:0,facadeTriangles:0,triangles:0,bytes:0,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),buildMs:0,uploadMs:0,uploadSlices:0,uploadWallMs:0,drawCalls:0,lastDrawDetail:'none',error:null});
+      map?.triggerRepaint();
+    },
+    setCeiling(visible) { state.ceiling=interior&&visible;map?.triggerRepaint(); },
     onAdd(owner, gl) { map = owner; context = gl; removed = false; owner.on('webglcontextlost', lost); owner.on('webglcontextrestored', restored); warmProgram(); },
     onRemove() {
       removed = true; worker?.terminate(); worker = undefined; pending = undefined;
@@ -355,20 +396,28 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       if (!state.ready) {
         if (!pending) {
           if (!worker) {
-            worker = new Worker(new URL('./building-worker.ts', import.meta.url), { type: 'module' });
-            worker.onmessage = (event: MessageEvent<{ geometry?: DetailGeometry; buildMs?: number; error?: string }>) => {
-              if (removed) return;
-              worker?.terminate(); worker = undefined;
+            const job = new Worker(new URL('./building-worker.ts', import.meta.url), { type: 'module' });
+            worker=job;
+            const cache=interior?cachedInterior:cachedGeometry;
+            job.onmessage = (event: MessageEvent<{ geometry?: DetailGeometry; buildMs?: number; error?: string }>) => {
+              if (removed || worker!==job) return;
+              job.terminate(); worker = undefined;
               if (event.data.error || !event.data.geometry) { fail(event.data.error ?? 'Campus geometry worker returned no mesh.'); return; }
               pending = { geometry: event.data.geometry, buildMs: event.data.buildMs ?? 0 };
-              cachedGeometry.set(data, pending); map?.triggerRepaint();
+              cache.set(data, pending); map?.triggerRepaint();
             };
-            worker.onerror = () => fail('Campus architectural detail could not load. Reload to retry its geometry worker.');
-            worker.postMessage(data);
+            job.onerror = () => { if(!removed&&worker===job)fail('Architectural detail could not load. Retry to rebuild its geometry worker.'); };
+            job.postMessage({data,interior});
           }
           return;
         }
         if (!state.shaderReady) return;
+        if(interior && pending.geometry.churchTextures){
+          const started=performance.now();
+          try{if(!photos.advance(gl))return;state.textureBytes=photos.bytes;}
+          catch(error){fail(error instanceof Error?error.message:'Church artwork could not initialize.');return;}
+          finally{state.maxSliceMs=Math.max(state.maxSliceMs,performance.now()-started);}
+        }
         if(!uploading){uploading={roofOffset:0,facadeOffset:0,started:performance.now()};state.uploadMs=0;state.uploadSlices=0;state.uploadWallMs=0;}
         const started = performance.now();
         try {
@@ -391,13 +440,14 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
         matrix[12 + row] = main[row] * MERCATOR_ORIGIN[0] + main[4 + row] * MERCATOR_ORIGIN[1] + main[12 + row];
       }
       const focus = projectLocal(map.getCenter().toArray());
-      gl.useProgram(gpuProgram!); gl.uniformMatrix4fv(uniforms.u_matrix, false, matrix); gl.uniform1f(uniforms.u_selected, selected);
+      gl.useProgram(gpuProgram!); gl.uniformMatrix4fv(uniforms.u_matrix, false, matrix); gl.uniform1f(uniforms.u_selected, interior?-1:selected); gl.uniform1f(uniforms.u_ceiling,state.ceiling?1:0);
       gl.uniform2f(uniforms.u_focus, focus[0], focus[1]); gl.uniform1f(uniforms.u_radius, Math.max(450, 1600 / Math.pow(1.35, map.getZoom() - 16)));
       gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
+      const restoreTextures=photos.ready?photos.bind(gl,uniforms):undefined;
       gl.bindVertexArray(roofs!.vao); gl.drawArrays(gl.TRIANGLES, 0, roofs!.vertices);
       state.drawCalls = 1; state.lastDrawDetail = 'roofs';
       if (map.getZoom() >= 15.5) { gl.bindVertexArray(facades!.vao); gl.drawArrays(gl.TRIANGLES, 0, facades!.vertices); state.drawCalls = 2; state.lastDrawDetail = 'facades'; }
-      gl.bindVertexArray(null);
+      gl.bindVertexArray(null);restoreTextures?.();
     },
   };
 }

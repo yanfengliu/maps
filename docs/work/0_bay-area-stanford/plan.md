@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Status: complete
+Status: active
 Owner: root integration
 Created: 2026-10-19
 Updated: 2026-11-07
@@ -97,3 +97,9 @@ Added 2026-10-30: the bench accuracy and campus sculpture increment is merged. T
 ### Accepted result
 
 The real Bay Area opens in a custom light map style. Stanford has 648 locally served footprint/part features, with 81 mapped height tags, 80 floor-count estimates and 487 default-height estimates. Main Quad courtyard holes and Hoover Tower's stepped mapped parts are retained. Search, mouse/keyboard controls, touch pan/pinch, compass, 2D/3D, tilt, building details, consistent desktop/mobile Bay returns and both regional/local-source Retry flows passed bounded real-control checks. Build, types, 13 unit/data tests and audit passed; the MapLibre chunk-size warning remains. The first increment is an exploratory campus massing model. Routing, physical-device/Safari verification and a broad performance claim are not part of this acceptance.
+
+## Memorial Church interior, 2026-11-07
+
+Status: active. The owner requested a researched Memorial Church interior and selected a roof-removed cutaway. Root owns geometry, integration, visual acceptance and delivery; church_interior_references supplied read-only official/photo research; church_interior_integration supplied the mode/UI and lifecycle tests. Both workers have bounded scopes in isolated worktrees or ignored references. Base is fca2ba28ef91e48bd6f81e7234ffab22af1af94e.
+
+Acceptance: recognizable current nave/aisles, three arcade bays per side, crossing, curved pews/steps, chancel/altar, galleries and two distinct organ cases; references and uncertain proportions disclosed. Entry from church selection/search, whole/nave/altar/organ presets, roof-off default, optional ceiling structure, exit/search/overview recovery, mobile framing, source failure and context restoration must pass through real controls. Source footprints/heights stay unchanged. One mesh pair at a time preserves the 160k triangle, 24 MiB GPU geometry/material and two custom draw limits. No dependency, remote service or renderer is added. Independent review and required gates precede commit, main merge and push.

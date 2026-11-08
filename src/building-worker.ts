@@ -1,6 +1,7 @@
 import { buildBuildingGeometry, type CampusData } from './building-geometry.ts';
 import { validateCampusEnvironment } from './campus-environment.ts';
 import { validateCampusSculptures } from './campus-sculptures.ts';
+import { buildChurchInterior } from './church-interior.ts';
 
 async function readLocalInput(file:string,label:string):Promise<unknown> {
   const input=`/data/${file}`;
@@ -12,15 +13,20 @@ async function readLocalInput(file:string,label:string):Promise<unknown> {
   catch{throw new Error(`${label} ${input} is not valid JSON. Restore the pinned input and retry campus detail.`);}
 }
 
-self.onmessage = async (event: MessageEvent<CampusData>) => {
+self.onmessage = async (event: MessageEvent<{data:CampusData;interior:boolean}>) => {
   try {
+    if(event.data.interior){
+      const started=performance.now(),geometry=buildChurchInterior(event.data.data);
+      self.postMessage({geometry,buildMs:performance.now()-started},{transfer:[geometry.roofs.buffer,geometry.facades.buffer]});
+      return;
+    }
     const [source,sculptureSource]=await Promise.all([
       readLocalInput('stanford-environment.geojson','Campus environment'),
       readLocalInput('stanford-sculptures.geojson','Campus sculpture')
     ]);
     const environment=validateCampusEnvironment(source),sculptures=validateCampusSculptures(sculptureSource);
     const started=performance.now();
-    const geometry = buildBuildingGeometry(event.data,environment,sculptures);
+    const geometry = buildBuildingGeometry(event.data.data,environment,sculptures);
     self.postMessage({ geometry, buildMs: performance.now() - started }, { transfer: [geometry.roofs.buffer, geometry.facades.buffer] });
   } catch (error) {
     self.postMessage({ error: error instanceof Error ? error.message : 'Campus geometry generation failed.' });
