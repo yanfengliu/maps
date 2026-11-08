@@ -29,9 +29,10 @@ export const APSE_BOTTOM: Point[] = [[846,516],[726,554],[613,575],[500,579],[38
 export const APSE_TOP: Point[] = [[828,330],[714,364],[606,383],[500,388],[394,383],[286,365],[186,329]];
 export const NAVE_MOSAIC: PhotoRegion = { size:[1280,853], corners:[[10,230],[420,348],[420,303],[10,99]] };
 
-/** Bound ordinary GPU triangle interpolation to a quarter source texel. Keeps
- * the existing shared vertex layout, shader and draw count intact. Coordinates
- * are in the wall's unit rectangle, so arch clipping uses the same projection. */
+/** Refine triangles whose UV edge-midpoint error exceeds 0.20 source pixels,
+ * with a depth cap of eight. Tests additionally sample interiors below 0.5 px;
+ * this is not a proven global error bound. Keeps the shared vertex layout and
+ * draw count. Wall-unit coordinates let arch clipping use the same mapping. */
 export function photoTriangles(region: PhotoRegion, triangle: [Point, Point, Point], emit: (p: [Point, Point, Point], uv: [Point, Point, Point]) => void) {
   const project = photoProjection(region);
   const split = (p: [Point, Point, Point], depth: number) => {

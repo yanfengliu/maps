@@ -37,3 +37,15 @@ The production held-key burst contains 364 motion frames, with p50 4.2 ms, p95 4
 ## Outcome
 
 Accepted with F43 closed by root and the disclosed visual limits. Main delivery, remote CI inspection and owned-resource cleanup are recorded in the plan and design after they complete.
+
+## Findings and disposition
+
+Formatting correction, 2026-11-07: the original record above used "Owner dispositions and verification" and "Outcome" rather than the allocator's required section names. Its report, dispositions and acceptance text are preserved unchanged. F43 was accepted and repaired in 93d47facbcc2125151308b40f1dd1fb98543ae9e as described above; no finding is added or reclassified by this correction.
+
+## Verification
+
+The original "Owner dispositions and verification" section above retains the actual checks, red/green caption case and limits for this round. This format correction adds no new technical verification claim.
+
+## Round outcome
+
+The original "Outcome" above remains the round conclusion: accepted with F43 closed by root and the disclosed visual limits. Delivery documentation is 7f49891c8ac9931041ecae2d0a6abcbedab1ee5d. This correction only makes the existing conclusion visible to the work-document checker.
