@@ -1,8 +1,9 @@
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
-import { MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
+import { DETAIL_ORIGIN, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
 import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
 import { ChurchTextures } from './church-textures.ts';
+import { churchAxes, churchWallMask } from './church-cutaway.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
@@ -52,17 +53,22 @@ layout(location=4) in float a_kind;
 layout(location=5) in float a_building;
 uniform mat4 u_matrix;
 uniform float u_selected;
+uniform vec2 u_sideWalls;
+uniform vec2 u_endWalls;
 out vec3 v_color;
 out vec2 v_uv;
 out vec2 v_position;
 flat out float v_kind;
+flat out float v_wallVisible;
 void main() {
   gl_Position = u_matrix * vec4(a_position, 1.0);
   float illumination = 0.72 + 0.28 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
   vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.18) : a_color;
   v_color = tint * illumination;
   v_uv = a_uv;
-  v_kind = a_kind;
+  float wall = floor(a_kind / 100.0);
+  v_kind = mod(a_kind,100.0);
+  v_wallVisible = wall < 0.5 ? 1.0 : wall < 1.5 ? u_sideWalls.x : wall < 2.5 ? u_sideWalls.y : wall < 3.5 ? u_endWalls.x : u_endWalls.y;
   v_position = a_position.xy;
 }`;
 const fragmentShader = `#version 300 es
@@ -71,6 +77,7 @@ in vec3 v_color;
 in vec2 v_uv;
 in vec2 v_position;
 flat in float v_kind;
+flat in float v_wallVisible;
 uniform vec2 u_focus;
 uniform float u_radius;
 uniform sampler2D u_nave;
@@ -78,6 +85,7 @@ uniform sampler2D u_chancel;
 uniform float u_ceiling;
 out vec4 outColor;
 void main() {
+  if (v_wallVisible < 0.5) discard;
   if (abs(v_kind-30.0)<0.1 && u_ceiling<0.5) discard;
   vec3 tint = v_color;
   if (v_kind < 0.5) {
@@ -302,6 +310,7 @@ function advanceUpload(gl:WebGL2RenderingContext,job:MeshUpload,geometry:DetailG
 
 /** Mercator-only native layer: two batched draws, shared depth, no animation loop. */
 export function createBuildingDetailsLayer(data: CampusData, onError?: (message: string) => void): BuildingDetailsLayer {
+  const wallAxes = churchAxes(data);
   let map: MapLibreMap | undefined, context: WebGL2RenderingContext | undefined;
   let gpuProgram: WebGLProgram | undefined, roofs: GpuMesh | undefined, facades: GpuMesh | undefined;
   let uploading:MeshUpload|undefined;
@@ -342,7 +351,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     compiling.shaders.forEach(value => context!.deleteShader(value));
     state.compileMs = performance.now() - compiling.started;
     compiling = undefined; state.shaderReady = true;
-    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
+    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel','u_sideWalls','u_endWalls']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
     state.maxSliceMs = Math.max(state.maxSliceMs, performance.now() - started);
     map?.triggerRepaint();
   };
@@ -390,9 +399,13 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       warmProgram();
       if (compiling?.parallel) finishProgram();
       if (state.error || map.getZoom() < 14) return;
+      // Native map layers repeat around the dateline. Draw authored Stanford
+      // detail in the same nearest world copy, without changing source points.
+      const viewCenter=map.getCenter().toArray(),worldOffset=Math.round((viewCenter[0]-DETAIL_ORIGIN[0])/360);
+      const focus=projectLocal([viewCenter[0]-worldOffset*360,viewCenter[1]]);
       // High zoom in another Bay Area city must not fetch or build Stanford's
       // environment. Six kilometres includes campus and its arrival context.
-      if(!pending&&!state.ready&&Math.hypot(...projectLocal(map.getCenter().toArray()))>6000)return;
+      if(!pending&&!state.ready&&Math.hypot(...focus)>6000)return;
       if (!state.ready) {
         if (!pending) {
           if (!worker) {
@@ -437,10 +450,11 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
         matrix[row] = main[row] * METERS_TO_MERCATOR;
         matrix[4 + row] = -main[4 + row] * METERS_TO_MERCATOR;
         matrix[8 + row] = main[8 + row] * METERS_TO_MERCATOR;
-        matrix[12 + row] = main[row] * MERCATOR_ORIGIN[0] + main[4 + row] * MERCATOR_ORIGIN[1] + main[12 + row];
+        matrix[12 + row] = main[row] * (MERCATOR_ORIGIN[0]+worldOffset) + main[4 + row] * MERCATOR_ORIGIN[1] + main[12 + row];
       }
-      const focus = projectLocal(map.getCenter().toArray());
       gl.useProgram(gpuProgram!); gl.uniformMatrix4fv(uniforms.u_matrix, false, matrix); gl.uniform1f(uniforms.u_selected, interior?-1:selected); gl.uniform1f(uniforms.u_ceiling,state.ceiling?1:0);
+      const walls=interior?churchWallMask(wallAxes,map.getBearing?.()??0,map.getPitch?.()??0):[1,1,1,1];
+      gl.uniform2f(uniforms.u_sideWalls,walls[0],walls[1]); gl.uniform2f(uniforms.u_endWalls,walls[2],walls[3]);
       gl.uniform2f(uniforms.u_focus, focus[0], focus[1]); gl.uniform1f(uniforms.u_radius, Math.max(450, 1600 / Math.pow(1.35, map.getZoom() - 16)));
       gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); gl.depthMask(true); gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
       const restoreTextures=photos.ready?photos.bind(gl,uniforms):undefined;

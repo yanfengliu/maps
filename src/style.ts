@@ -15,7 +15,7 @@ function road(id: string, classes: string[], color: string, width: number, minzo
 export function createStyle(): StyleSpecification {
   return {
     version: 8,
-    name: 'Bay Area · warm cartography',
+    name: 'World · warm cartography',
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: {
       openmaptiles: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
@@ -31,6 +31,9 @@ export function createStyle(): StyleSpecification {
         filter: ['in', ['get', 'class'], ['literal', ['cemetery','pitch','school','hospital']]],
         paint: { 'fill-color': ['match', ['get', 'class'], 'cemetery', '#d8e2ce', 'pitch', '#d3dfc3', 'hospital', '#f3e5e1', '#eae6d9'], 'fill-opacity': 0.65 } },
       { id: 'water', type: 'fill', source: 'openmaptiles', 'source-layer': 'water', paint: { 'fill-color': '#afd4e3' } },
+      { id: 'country-boundary', type: 'line', source: 'openmaptiles', 'source-layer': 'boundary',
+        filter: ['all',['==',['get','admin_level'],2],['!=',['get','maritime'],1]],
+        paint: { 'line-color':'#b6b9a9','line-width':['interpolate',['linear'],['zoom'],1,.5,6,1.2], 'line-opacity':.7 } },
       { id: 'waterways', type: 'line', source: 'openmaptiles', 'source-layer': 'waterway', minzoom: 10,
         paint: { 'line-color': '#afd4e3', 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.7, 16, 3] } },
       { id: 'regional-buildings-flat', type: 'fill', source: 'openmaptiles', 'source-layer': 'building', minzoom: 13.5,
@@ -55,7 +58,11 @@ export function createStyle(): StyleSpecification {
         filter: ['in', ['get', 'class'], ['literal', ['suburb','neighbourhood','quarter']]],
         layout: { 'text-field': labelName, 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-letter-spacing': 0.07, 'text-transform': 'uppercase' },
         paint: { 'text-color': '#99958a', 'text-halo-color': '#f8f6ef', 'text-halo-width': 1.5 } },
-      { id: 'city-label', type: 'symbol', source: 'openmaptiles', 'source-layer': 'place', minzoom: 7,
+      { id: 'country-label', type: 'symbol', source: 'openmaptiles', 'source-layer': 'place', maxzoom:7,
+        filter:['==',['get','class'],'country'],
+        layout:{'text-field':labelName,'text-font':['Noto Sans Regular'],'text-size':['interpolate',['linear'],['zoom'],0,10,4,13,7,16],'text-padding':6,'text-max-width':9,'text-letter-spacing':.04},
+        paint:{'text-color':'#747c6b','text-halo-color':'#f3f1e9','text-halo-width':1.5} },
+      { id: 'city-label', type: 'symbol', source: 'openmaptiles', 'source-layer': 'place', minzoom: 4,
         filter: ['in', ['get', 'class'], ['literal', ['city','town','village']]],
         layout: { 'text-field': labelName, 'text-font': ['Noto Sans Regular'], 'text-size': ['interpolate', ['linear'], ['zoom'], 7, 11, 10, 15, 13, 20], 'text-padding': 14, 'text-max-width': 10 },
         paint: { 'text-color': '#575b55', 'text-halo-color': '#faf8ef', 'text-halo-width': 2, 'text-halo-blur': 0.3 } },

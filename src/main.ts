@@ -1,61 +1,50 @@
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
-import type { VisibilitySpecification } from '@maplibre/maplibre-gl-style-spec';
 import type * as GeoJSON from 'geojson';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './styles.css';
 import { createStyle } from './style.ts';
-import { BAY_BOUNDS, MAX_MAP_ZOOM, PLACES, SCULPTURE_PLACES, STANFORD_CENTER, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
-import { campusIllustration, icon } from './icons.ts';
+import { MAX_MAP_ZOOM, PLACES, SCULPTURE_PLACES, buildingPlaces, normalizeBearing, searchPlaces, type Place } from './places.ts';
+import { icon } from './icons.ts';
 import { prepareBuildingDetails, createBuildingDetailsLayer, type BuildingDetailsLayer } from './building-details.ts';
 import { enableMiddleMouseTilt } from './mouse-tilt.ts';
-import { describeBuildingArchitecture } from './building-architecture.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
 import { CHURCH_ID, churchInteriorLocation } from './church-interior.ts';
+import { searchWorldPlaces } from './world-search.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 root.innerHTML = `
-  <div id="map" aria-label="Interactive Bay Area map"></div>
-  <aside class="sidebar" aria-label="Explore places">
-    <header class="brand"><div class="brand-mark">${icon('bay')}</div><div><span class="eyebrow">NORTHERN CALIFORNIA</span><h1>Bay Area</h1></div><button class="icon-button sidebar-toggle" aria-label="Collapse places" aria-expanded="true">${icon('minus')}</button></header>
-    <div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Search the Bay Area" autocomplete="off" aria-label="Search the Bay Area" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false"/><button id="clear-search" class="clear-search" aria-label="Clear search" hidden>${icon('close')}</button></div>
+  <div id="map" aria-label="Interactive world map"></div>
+  <div class="search-shell" role="search">
+    <div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Search places" autocomplete="off" aria-label="Search places" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false"/><button id="clear-search" class="clear-search" aria-label="Clear search" hidden>${icon('close')}</button></div>
     <div id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></div>
-    <button id="mobile-stanford" class="mobile-stanford-action" aria-label="Explore Stanford in 3D"><span class="quick-campus-icon">${icon('campus')}</span><span>Explore Stanford</span><span class="quick-3d">3D</span>${icon('arrow')}</button>
-    <div id="explore-content">
-      <div class="section-heading"><h2>Start exploring</h2><span class="small-caps">NORTHERN CALIFORNIA</span></div>
-      <button class="feature-card" id="explore-stanford" aria-label="Explore Stanford in 3D">
-        <div class="feature-visual"><span class="feature-badge">3D CAMPUS</span>${campusIllustration}</div>
-        <div class="feature-copy"><div><span class="eyebrow">THE PENINSULA</span><h3>Stanford University</h3><p>Sandstone, red roofs, and a new perspective.</p></div><span class="feature-arrow">${icon('arrow')}</span></div>
-      </button>
-      <div class="section-heading destinations-heading"><h2>Around the Bay</h2><span class="destination-count">3 places</span></div>
-      <div class="destination-list">${[PLACES[1], PLACES[2], PLACES[3]].map((p, i) => `<button class="destination" data-place="${p.id}"><span class="destination-icon destination-${i}">${icon(i === 1 ? 'bay' : 'campus')}</span><span><strong>${p.name}</strong><small>${p.subtitle.split(' · ')[1]}</small></span>${icon('chevron')}</button>`).join('')}</div>
-      <p class="scope-note"><span class="scope-dot"></span> A Bay Area map. A closer look at Stanford.</p>
-    </div>
-    <section id="place-details" class="place-details" aria-live="polite" hidden></section>
-    <footer class="sidebar-footer"><span>Bay Area · Stanford in 3D</span><button id="help-button" aria-label="Map controls and sources" aria-expanded="false">${icon('help')}</button></footer>
-  </aside>
-  <div class="map-caption"><span class="caption-dot"></span><span id="view-name">SAN FRANCISCO BAY AREA</span></div>
+    <nav class="quick-places" aria-label="Featured places"><button id="explore-stanford" aria-label="Explore Stanford in 3D">${icon('campus')}<span>Stanford</span><small>3D</small></button><button id="explore-church" aria-label="Explore Memorial Church">Memorial Church</button></nav>
+  </div>
+  <section id="place-details" class="place-details" aria-label="Selected place actions" aria-live="polite" hidden></section>
+  <div class="map-caption"><span class="caption-dot"></span><span id="view-name">WORLD MAP</span></div>
   <nav class="map-controls" aria-label="Map navigation">
     <button id="compass" class="control compass" aria-label="Face north" title="Face north · drag to rotate"><span class="north">N</span><span class="compass-needle">${icon('compass')}</span></button>
     <div class="zoom-controls"><button id="zoom-in" class="control" aria-label="Zoom in" title="Zoom in">${icon('plus')}</button><button id="zoom-out" class="control" aria-label="Zoom out" title="Zoom out">${icon('minus')}</button></div>
     <button id="toggle-3d" class="control mode-control" aria-label="Switch to 3D" aria-pressed="false">3D</button>
     <div class="tilt-control"><label for="tilt">TILT</label><input id="tilt" type="range" min="0" max="65" step="1" value="0" aria-label="Map tilt"/><span id="tilt-value">0°</span></div>
+    <button id="help-button" class="control" aria-label="Map controls and sources" aria-expanded="false">${icon('help')}</button>
   </nav>
-  <button id="bay-overview" class="overview-button" aria-label="Bay Area overview">${icon('bay')}<span>Bay Area</span></button>
+  <button id="world-overview" class="overview-button" aria-label="World overview">${icon('bay')}<span>World</span></button>
   <section id="church-controls" class="church-controls" aria-labelledby="church-controls-title" hidden>
     <div class="church-controls-heading"><div><span class="eyebrow">INTERIOR CUTAWAY</span><h2 id="church-controls-title">Memorial Church</h2></div><button id="church-exit" class="icon-button" aria-label="Return to church exterior" title="Return to exterior">${icon('close')}</button></div>
     <nav class="church-views" aria-label="Church interior views"><button data-church-view="whole" aria-pressed="true">Whole church</button><button data-church-view="nave" aria-pressed="false">Nave</button><button data-church-view="altar" aria-pressed="false">Altar</button><button data-church-view="organ" aria-pressed="false">Organs</button></nav>
     <div class="church-controls-footer"><label><input id="church-ceiling" type="checkbox"/> Show ceiling structure</label><button id="church-about">About this model</button></div>
     <p id="church-ready" role="status">Opening the interior…</p>
   </section>
-  <div id="map-status" class="map-status" role="status"><span class="loading-dot"></span>Opening the Bay…</div>
+  <section id="church-information" class="help-panel church-information" aria-label="About the church model" hidden><div class="help-title"><h2>Inside Memorial Church</h2><button id="close-church-information" class="icon-button" aria-label="Close church information">${icon('close')}</button></div><p>Interior proportions and decoration follow Stanford references and are modeled estimates. Walls facing the camera are cut away as you rotate; other walls remain complete.</p><a href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a href="/textures/ATTRIBUTION.md" target="_blank" rel="noreferrer">Artwork photo sources and licenses ↗</a></section>
+  <div id="map-status" class="map-status" role="status"><span class="loading-dot"></span>Opening the map…</div>
   <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="retry">Retry</button><button id="dismiss-error" aria-label="Dismiss error">${icon('close')}</button></div>
-  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, hold WASD to pan, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Regional map © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Only Stanford has 3D buildings. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
+  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, hold WASD to pan, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Map data © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Stanford is the first area modeled in detail. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
 `;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
@@ -71,6 +60,8 @@ let campusBoundary: GeoJSON.FeatureCollection | undefined;
 let selectedId: string | null = null;
 let visibleResults: Place[] = [];
 let activeResult = -1;
+let worldSearch: AbortController | undefined;
+let searchRevision = 0;
 let sourceReady = false;
 let tilesReady = false;
 let successfulRegionalTiles = 0;
@@ -84,7 +75,6 @@ let campusEventsBound = false;
 let buildingDetails: BuildingDetailsLayer | undefined;
 let churchInterior = false;
 let churchCeiling = false;
-const interiorLabelVisibility = new Map<string,VisibilitySpecification|undefined>();
 let disposeMiddleMouseTilt: (() => void) | undefined;
 let disposeKeyboardPan: (() => void) | undefined;
 const renderTimes: number[] = [];
@@ -109,23 +99,24 @@ el('dismiss-error').addEventListener('click', clearError);
 function motionDuration(duration = 1600): number { return reducedMotion.matches ? 0 : duration; }
 function panelPadding(): { top: number; bottom: number; left: number; right: number } {
   return window.innerWidth > 760
-    ? { top: 80, bottom: 65, left: 410, right: 110 }
-    : { top: 215, bottom: 105, left: 24, right: 64 };
+    ? { top: 95, bottom: 80, left: 65, right: 85 }
+    : { top: 125, bottom: 100, left: 20, right: 65 };
 }
 
 function overview(animate = true): void {
   if (!map) return;
-  if (window.innerWidth <= 760) setSidebarCompact(true);
-  map.fitBounds(BAY_BOUNDS, { padding: panelPadding(), absolutePadding: true, pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0, maxZoom: 10 });
-  el('view-name').textContent = 'SAN FRANCISCO BAY AREA';
+  search.value='';el('clear-search').hidden=true;closeSearch();search.blur();
+  map.flyTo({ center: [0,20], zoom: 1.5, padding: panelPadding(), pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0 });
+  el('view-name').textContent = 'WORLD MAP';
   closeDetails();
 }
 
 function goTo(place: Place): void {
   if (!map) return;
+  search.value=place.name;el('clear-search').hidden=false;
   setChurchInterior(false);
   map.flyTo({ center: place.center, zoom: place.zoom, pitch: place.campus ? 58 : 0, bearing: place.campus ? -28 : 0,
-    padding: window.innerWidth > 760 ? { top: 20, bottom: 20, left: 360, right: 60 } : { top: 80, bottom: 200, left: 20, right: 55 },
+    padding: window.innerWidth > 760 ? { top: 95, bottom: 180, left: 65, right: 85 } : { top: 125, bottom: 180, left: 20, right: 65 },
     duration: motionDuration(place.campus ? 2400 : 1800), essential: false });
   el('view-name').textContent = place.campus ? 'STANFORD UNIVERSITY · 3D CAMPUS' : place.name.toUpperCase();
   closeSearch();
@@ -136,28 +127,26 @@ function goTo(place: Place): void {
   } else if(place.sculptureId)showSculpture(place.sculptureId);
   else if (place.campus) showCampus();
   else showCity(place);
-  // On a phone the expanded panel covers the padded flight centre, so artwork flights keep it compact like other places; its card opens with Expand places.
-  if (window.innerWidth <= 760 && !place.buildingId) setSidebarCompact(true);
 }
 
 function showCampus(): void {
   selectedId = null;
   updateSelection();
   details.hidden = false;
-  el('explore-content').hidden = true;
-  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD, CALIFORNIA</span><h2>Stanford University</h2><p class="detail-description">A campus of sandstone arcades, red tile roofs, and tree-lined spaces. Move closer to explore its buildings.</p><div class="detail-stats"><span><strong>${campusData?.features.length.toLocaleString() ?? '—'}</strong>mapped footprints</span><span><strong>3D</strong>campus model</span></div><p class="data-note">Real map footprints. Heights use mapped tags where available and estimates elsewhere.</p><button class="detail-action" id="quad-view">Explore the Main Quad ${icon('arrow')}</button><button class="text-action" id="sculpture-view">Explore campus sculpture</button><p class="interaction-note">Click a building to learn more.</p>`;
+  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">FEATURED IN 3D</span><h2>Stanford University</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="quad-view">Main Quad ${icon('arrow')}</button><button class="detail-action" id="campus-church">Memorial Church ${icon('arrow')}</button><button class="text-action" id="sculpture-view">Sculpture</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   el('quad-view').addEventListener('click', () => {
     map?.flyTo({ center: [-122.1702,37.4276], zoom: 17.5, pitch: 60, bearing: -34, duration: motionDuration(1500) });
   });
   el('sculpture-view').addEventListener('click',()=>goTo(SCULPTURE_PLACES[0]));
+  el('campus-church').addEventListener('click',goToChurch);
 }
 
 function showSculpture(id:string):void {
   const place=SCULPTURE_PLACES.find(p=>p.sculptureId===id);
   if(!place)return;
-  selectedId=null;updateSelection();details.hidden=false;el('explore-content').hidden=true;
-  details.innerHTML=`<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">SCULPTURE · STANFORD UNIVERSITY</span><h2>${escapeHtml(place.name)}</h2><p class="detail-description">${escapeHtml(place.description)}</p><div class="detail-stats"><span><strong>${escapeHtml(place.material)}</strong>original material</span><span><strong>3D</strong>stylized model</span></div><p class="data-note">${escapeHtml(place.artist)}. Photo-based interpretation; proportions, orientation and individual figure placement are estimates.</p><a class="text-action" href="${escapeHtml(place.sourceUrl)}" target="_blank" rel="noreferrer">Read the Stanford source ↗</a><button class="detail-action" id="next-sculpture">Explore the other sculpture ${icon('arrow')}</button><button class="text-action" id="sculpture-campus">View the whole campus</button>`;
+  selectedId=null;updateSelection();details.hidden=false;
+  details.innerHTML=`<div class="detail-heading"><div><span class="eyebrow">${escapeHtml(place.artist)} · ${escapeHtml(place.material)}</span><h2>${escapeHtml(place.name)}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="next-sculpture">Other sculpture ${icon('arrow')}</button><button class="text-action" id="sculpture-campus">Campus</button><a class="text-action" href="${escapeHtml(place.sourceUrl)}" target="_blank" rel="noreferrer">Source ↗</a></div>`;
   details.querySelector('.close-details')?.addEventListener('click',closeDetails);
   el('next-sculpture').addEventListener('click',()=>goTo(SCULPTURE_PLACES.find(p=>p.sculptureId!==id)!));
   el('sculpture-campus').addEventListener('click',()=>goTo(PLACES[0]));
@@ -166,25 +155,17 @@ function showSculpture(id:string):void {
 function showCity(place: Place): void {
   selectedId = null;
   updateSelection();
-  details.hidden = false;
-  el('explore-content').hidden = true;
-  details.innerHTML = `<div class="detail-heading"><span class="detail-icon city">${icon('bay')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">${escapeHtml(place.subtitle)}</span><h2>${escapeHtml(place.name)}</h2><p class="detail-description">Explore the streets, parks, and shoreline. Stanford University is the first place brought into 3D.</p><button class="detail-action" id="city-stanford">Explore Stanford in 3D ${icon('arrow')}</button><button class="text-action" id="city-bay">Back to the Bay Area</button>`;
-  details.querySelector('.close-details')?.addEventListener('click', closeDetails);
-  el('city-stanford').addEventListener('click', () => goTo(PLACES[0]));
-  el('city-bay').addEventListener('click', () => overview());
+  details.hidden = true;
 }
 
 function showBuilding(properties: Record<string, unknown>): void {
   setChurchInterior(false);
-  if (window.innerWidth <= 760) setSidebarCompact(false);
   selectedId = String(properties.id);
   updateSelection();
   details.hidden = false;
-  el('explore-content').hidden = true;
   const height = Number(properties.height);
   const source = properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  const architecture = campusData?.features.find(feature => feature.properties?.id === selectedId)?.properties ?? properties;
-  details.innerHTML = `<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="detail-description">Part of the Stanford campus model, built from its mapped footprint.</p><div class="detail-stats"><span><strong>${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m` : '—'}</strong>${source}</span><span><strong>OSM</strong>source footprint</span></div><p class="data-note">${escapeHtml(describeBuildingArchitecture(architecture))}</p><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button>`;
+  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="building-campus">View the whole campus ${icon('arrow')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   el('building-campus').addEventListener('click', () => goTo(PLACES[0]));
   if(selectedId===CHURCH_ID){
@@ -198,7 +179,6 @@ function closeDetails(): void {
   selectedId = null;
   updateSelection();
   details.hidden = true;
-  el('explore-content').hidden = false;
 }
 
 function updateSelection(): void {
@@ -212,20 +192,15 @@ function updateSelection(): void {
  * detail mesh, and recover even after a style retry or graphics restoration. */
 function syncChurchVisibility():void {
   if(!map)return;
-  for(const id of [...BUILDING_PICK_LAYERS,'stanford-roofs'])if(map.getLayer(id))map.setLayoutProperty(id,'visibility',churchInterior?'none':'visible');
-  for(const layer of map.getStyle()?.layers??[])if(layer.type==='symbol'){
-    if(churchInterior){
-      if(!interiorLabelVisibility.has(layer.id))interiorLabelVisibility.set(layer.id,layer.layout?.visibility);
-      map.setLayoutProperty(layer.id,'visibility','none');
-    }else if(interiorLabelVisibility.has(layer.id))map.setLayoutProperty(layer.id,'visibility',interiorLabelVisibility.get(layer.id)??'visible');
-  }
-  if(!churchInterior)interiorLabelVisibility.clear();
+  for(const id of ['stanford-buildings','stanford-roofs'])if(map.getLayer(id))map.setFilter(id,churchInterior?['!=',['get','id'],CHURCH_ID]:null);
   quadArcadeVisibility.sync(map,Boolean(!churchInterior&&buildingDetails?.stats.ready));
 }
 
 function setChurchInterior(enabled:boolean):void {
   if(churchInterior===enabled)return;
   churchInterior=enabled;churchCeiling=false;
+  el('church-information').hidden=true;
+  if(enabled)details.hidden=true;
   buildingDetails?.setInterior(enabled);buildingDetails?.setCeiling(false);
   el<HTMLInputElement>('church-ceiling').checked=false;
   el('church-controls').hidden=!enabled;root.classList.toggle('church-interior',enabled);
@@ -234,10 +209,7 @@ function setChurchInterior(enabled:boolean):void {
 }
 
 function showInteriorInformation():void {
-  details.hidden=false;el('explore-content').hidden=true;
-  details.innerHTML=`<div class="detail-heading"><span class="detail-icon">${icon('campus')}</span><button class="icon-button close-interior-info" aria-label="Collapse interior information">${icon('minus')}</button></div><span class="eyebrow">STANFORD UNIVERSITY</span><h2>Inside Memorial Church</h2><p class="detail-description">Follow the nave between sandstone arcades to the chancel. Explore the transept galleries and the two pipe organs above the entrance.</p><p class="data-note">Interior proportions and decoration are modeled from Stanford references; not a measured survey. The cutaway removes the roof and part of the walls so the rooms remain visible.</p><a class="text-action" href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a class="text-action" href="https://orsl.stanford.edu/sites/g/files/sbiybj15891/files/media/file/memchuself-guidedtourfy23.docx.pdf" target="_blank" rel="noreferrer">Stanford’s self-guided tour ↗</a><a class="text-action" href="/textures/ATTRIBUTION.md" target="_blank" rel="noreferrer">Artwork photos: King of Hearts & GualdimG (CC BY-SA 4.0)</a><button class="detail-action" id="church-campus">View the whole campus ${icon('arrow')}</button>`;
-  details.querySelector('.close-interior-info')?.addEventListener('click',()=>setSidebarCompact(true));
-  el('church-campus').addEventListener('click',()=>goTo(PLACES[0]));
+  el('church-information').hidden=false;
 }
 
 function interiorView(view:string):void {
@@ -253,46 +225,76 @@ function interiorView(view:string):void {
   const mobile=window.innerWidth<=760;
   const zoom=view==='whole'?target.zoom+Math.min(0,Math.log2(Math.max(160,window.innerWidth-(mobile?90:180))/1000)):target.zoom-(mobile?1.25:0);
   map.flyTo({center:churchInteriorLocation(campusData,target.x,target.y),zoom,bearing:target.bearing,pitch:target.pitch,
-    padding:mobile?{top:205,bottom:245,left:20,right:65}:{top:95,bottom:215,left:65,right:85},duration:motionDuration(1200)});
+    padding:mobile?{top:125,bottom:245,left:20,right:65}:{top:95,bottom:215,left:65,right:85},duration:motionDuration(1200)});
 }
 
 function enterChurchInterior():void {
   if(!map||!campusData)return;
-  selectedId=CHURCH_ID;updateSelection();setChurchInterior(true);showInteriorInformation();setSidebarCompact(true);closeSearch();search.blur();
+  selectedId=CHURCH_ID;updateSelection();setChurchInterior(true);closeSearch();search.blur();
   el('view-name').textContent='MEMORIAL CHURCH · INTERIOR';interiorView('whole');
 }
 
 for(const button of root.querySelectorAll<HTMLButtonElement>('[data-church-view]'))button.addEventListener('click',()=>interiorView(button.dataset.churchView!));
-el('church-about').addEventListener('click',()=>{showInteriorInformation();setSidebarCompact(false);});
+el('church-about').addEventListener('click',showInteriorInformation);
+el('close-church-information').addEventListener('click',()=>{el('church-information').hidden=true;});
 el('church-ceiling').addEventListener('change',()=>{churchCeiling=el<HTMLInputElement>('church-ceiling').checked;buildingDetails?.setCeiling(churchCeiling);});
 el('church-exit').addEventListener('click',()=>{
-  setSidebarCompact(false);
   const place=allPlaces.find(value=>value.buildingId===CHURCH_ID);if(place)goTo(place);else goTo(PLACES[0]);
 });
 
 function closeSearch(): void {
+  worldSearch?.abort();worldSearch=undefined;searchRevision++;
   results.hidden = true;
+  results.removeAttribute('aria-busy');
   search.setAttribute('aria-expanded', 'false');
   search.removeAttribute('aria-activedescendant');
   activeResult = -1;
 }
 
 function renderResults(): void {
+  worldSearch?.abort();worldSearch=undefined;searchRevision++;
   el('clear-search').hidden = !search.value;
   visibleResults = searchPlaces(search.value, allPlaces);
   activeResult = -1;
   if (!search.value.trim()) { closeSearch(); return; }
+  drawResults();
+}
+
+function drawResults():void {
   results.hidden = false;
+  results.removeAttribute('aria-busy');
   search.setAttribute('aria-expanded', 'true');
   search.removeAttribute('aria-activedescendant');
   results.innerHTML = visibleResults.length
     ? visibleResults.map((place, index) => `<button class="search-result" id="result-${index}" role="option" aria-selected="false" data-result="${index}" tabindex="-1"><span class="result-icon">${icon(place.campus ? 'campus' : 'bay')}</span><span><strong>${escapeHtml(place.name)}</strong><small>${escapeHtml(place.subtitle)}</small></span>${icon('chevron')}</button>`).join('')
-    : `<div class="no-results"><strong>No places found</strong><span>Try a Bay Area city or a Stanford building, like Hoover Tower.</span></div>`;
+    : `<div class="no-results"><strong>No matching places in this list</strong><span>Search worldwide for a city, address or landmark.</span></div>`;
+  results.insertAdjacentHTML('beforeend',`<button id="search-world" class="search-world">Search worldwide ${icon('search')}</button><p class="search-credit"><a href="https://photon.komoot.io" target="_blank" rel="noreferrer">Photon</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a></p>`);
   results.querySelectorAll<HTMLElement>('[data-result]').forEach(button => button.addEventListener('click', () => goTo(visibleResults[Number(button.dataset.result)])));
+  el('search-world').addEventListener('click',()=>{void submitWorldSearch();});
+}
+
+async function submitWorldSearch():Promise<void> {
+  const query=search.value.trim();if(!query)return;
+  worldSearch?.abort();const controller=new AbortController();worldSearch=controller;
+  const revision=++searchRevision;activeResult=-1;visibleResults=[];
+  results.hidden=false;results.setAttribute('aria-busy','true');search.setAttribute('aria-expanded','true');search.removeAttribute('aria-activedescendant');
+  results.innerHTML='<p class="no-results" role="status">Searching worldwide…</p>';
+  try {
+    const places=await searchWorldPlaces(query,{signal:controller.signal});
+    if(controller.signal.aborted||revision!==searchRevision)return;
+    visibleResults=places;drawResults();
+    if(!places.length)results.querySelector('.no-results')!.innerHTML='<strong>No places found</strong><span>Try a more specific city, address or landmark.</span>';
+  } catch(error) {
+    if(controller.signal.aborted||revision!==searchRevision)return;
+    results.innerHTML=`<div class="no-results" role="alert"><strong>Search could not finish</strong><span>${escapeHtml(error instanceof Error?error.message:'Check your connection and try again.')}</span></div><button id="retry-search" class="search-world">Retry search ${icon('search')}</button>`;
+    el('retry-search').addEventListener('click',()=>{void submitWorldSearch();});
+  } finally {
+    if(revision===searchRevision){worldSearch=undefined;results.removeAttribute('aria-busy');}
+  }
 }
 
 search.addEventListener('input', renderResults);
-search.addEventListener('focus', () => { setSidebarCompact(false); renderResults(); });
+search.addEventListener('focus', renderResults);
 search.addEventListener('keydown', event => {
   if (event.key === 'Escape') { closeSearch(); search.blur(); return; }
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -303,16 +305,14 @@ search.addEventListener('keydown', event => {
     results.querySelectorAll('[role="option"]').forEach((button,index) => button.setAttribute('aria-selected', String(index === activeResult)));
     search.setAttribute('aria-activedescendant', `result-${activeResult}`);
   }
-  if (event.key === 'Enter' && visibleResults.length) { event.preventDefault(); goTo(visibleResults[Math.max(0, activeResult)]); }
+  if (event.key === 'Enter') { event.preventDefault(); if(visibleResults.length)goTo(visibleResults[Math.max(0, activeResult)]);else void submitWorldSearch(); }
 });
 el('clear-search').addEventListener('click', () => { search.value = ''; renderResults(); search.focus(); });
 document.addEventListener('pointerdown', event => { if (!(event.target as HTMLElement).closest('.search-wrap, .search-results')) closeSearch(); });
 el('explore-stanford').addEventListener('click', () => goTo(PLACES[0]));
-el('mobile-stanford').addEventListener('click', () => goTo(PLACES[0]));
-root.querySelectorAll<HTMLElement>('[data-place]').forEach(button => button.addEventListener('click', () => {
-  const place = PLACES.find(p => p.id === button.dataset.place); if (place) goTo(place);
-}));
-el('bay-overview').addEventListener('click', () => overview());
+function goToChurch():void { const place=allPlaces.find(p=>p.buildingId===CHURCH_ID); if(place)goTo(place);else goTo(PLACES[0]); }
+el('explore-church').addEventListener('click',goToChurch);
+el('world-overview').addEventListener('click', () => overview());
 el('zoom-in').addEventListener('click', () => map?.zoomIn({ duration: motionDuration(300) }));
 el('zoom-out').addEventListener('click', () => map?.zoomOut({ duration: motionDuration(300) }));
 el('toggle-3d').addEventListener('click', () => map?.easeTo({ pitch: map.getPitch() > 5 ? 0 : 58, duration: motionDuration(700) }));
@@ -337,20 +337,10 @@ el('compass').addEventListener('pointerup', () => {
 el('compass').addEventListener('pointercancel', () => { compassDrag = undefined; });
 el('compass').addEventListener('click', event => { if (event.detail === 0) map?.easeTo({ bearing: 0, duration: motionDuration(500) }); });
 
-const sidebarToggle = root.querySelector<HTMLButtonElement>('.sidebar-toggle')!;
-function setSidebarCompact(compact: boolean): void {
-  const sidebar = root.querySelector('.sidebar')!;
-  sidebar.classList.toggle('compact', compact);
-  sidebarToggle.setAttribute('aria-expanded', String(!compact));
-  sidebarToggle.setAttribute('aria-label', compact ? 'Expand places' : 'Collapse places');
-  sidebarToggle.innerHTML = icon(compact ? 'plus' : 'minus');
-}
-sidebarToggle.addEventListener('click', () => setSidebarCompact(!root.querySelector('.sidebar')!.classList.contains('compact')));
-if (window.innerWidth <= 760) setSidebarCompact(true);
 function setHelp(open: boolean): void { el('help-panel').hidden = !open; el('help-button').setAttribute('aria-expanded', String(open)); }
 el('help-button').addEventListener('click', () => setHelp(Boolean(el('help-panel').hidden)));
 el('close-help').addEventListener('click', () => setHelp(false));
-document.addEventListener('keydown', event => { if (event.key === 'Escape') setHelp(false); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') {setHelp(false);el('church-information').hidden=true;} });
 
 async function fetchJson(path: string): Promise<unknown> {
   const response = await fetch(path);
@@ -472,14 +462,14 @@ function startMap(): void {
   try {
     // Configure the visible region before loading any tiles. Waiting for `load`
     // first fetched a different view, then restarted the work for the overview.
-    map = new maplibregl.Map({ container: 'map', center: [-122.2,37.65], zoom: 9,
-      maxPitch: 65, minZoom: 7, maxZoom: MAX_MAP_ZOOM, maxBounds: [[-123.5,36.7],[-120.8,38.9]],
+    map = new maplibregl.Map({ container: 'map', center: [0,20], zoom: 1.5,
+      maxPitch: 65, minZoom: 0, maxZoom: MAX_MAP_ZOOM,
       canvasContextAttributes: { antialias:true },
       attributionControl: false, dragRotate: { around: 'center', movement: 'linear' }, rotateSpeed: 0.25, pitchSpeed: -0.25,
       touchZoomRotate: true, pitchWithRotate: true,
-      keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: false });
+      keyboard: true, fadeDuration: reducedMotion.matches ? 0 : 200, renderWorldCopies: true });
     const canvas = map.getCanvas();
-    canvas.setAttribute('aria-label', 'Bay Area map. Drag or use WASD and arrow keys to pan, scroll to zoom, right-drag to rotate, middle-drag to tilt.');
+    canvas.setAttribute('aria-label', 'World map. Drag or use WASD and arrow keys to pan, scroll to zoom, right-drag to rotate, middle-drag to tilt.');
     canvas.setAttribute('role','region');
     disposeMiddleMouseTilt = enableMiddleMouseTilt(map);
     disposeKeyboardPan = enableHeldKeyboardPan(map);
@@ -579,6 +569,7 @@ Object.defineProperty(window, '__bayMap', {
 
 function cleanup(): void {
   if (cleaned) return; cleaned = true;
+  worldSearch?.abort();worldSearch=undefined;searchRevision++;
   if (loadTimeout) clearTimeout(loadTimeout);
   pins.forEach(pin => pin.remove()); pins = [];
   disposeMiddleMouseTilt?.(); disposeMiddleMouseTilt = undefined;

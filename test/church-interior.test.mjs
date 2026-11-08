@@ -18,7 +18,7 @@ test('church detail stays within the mapped footprint and height, with finite un
     assert.ok(Math.abs(Math.hypot(v[3],v[4],v[5])-1)<1e-6);
     assert.equal(v[12],data.features.indexOf(church));
     if(v[11]===30)ceiling++;
-    if(v[11]===22||v[11]===23){photos++;assert.ok(v[9]>=0&&v[9]<=1&&v[10]>=0&&v[10]<=1);}
+    if(v[11]%100===22||v[11]%100===23){photos++;assert.ok(v[11]>=100,'wall artwork belongs to its whole-wall cutaway group');assert.ok(v[9]>=0&&v[9]<=1&&v[10]>=0&&v[10]<=1);}
   }
   assert.ok(ceiling>0);assert.ok(photos>0);assert.equal(JSON.stringify(data),before);
 });
@@ -50,13 +50,31 @@ test('church camera targets follow the source frame and missing or malformed chu
   assert.throws(()=>buildChurchInterior(invalid),/invalid dimensions/);
 });
 
+test('cutaway contains complete connected perimeter walls, grouped for whole-wall visibility',()=>{
+  const walls=[];
+  for(let i=0;i<mesh.facades.length;i+=39){
+    const p=[0,13,26].map(j=>Array.from(mesh.facades.subarray(i+j,i+j+13)));
+    if(p[0][11]<100)continue;
+    assert.ok(p.every(v=>Math.floor(v[11]/100)===Math.floor(p[0][11]/100)),'a wall triangle has one cutaway group');
+    walls.push(p);
+  }
+  assert.deepEqual([...new Set(walls.map(t=>Math.floor(t[0][11]/100)))].sort(),[1,2,3,4]);
+  const dot=(a,b)=>a.reduce((s,n,i)=>s+n*b[i],0),sub=(a,b)=>a.slice(0,3).map((n,i)=>n-b[i]);
+  const contains=(t,p)=>{const [a,b,c]=t,ab=sub(b,a),ac=sub(c,a),ap=sub(p,a),d00=dot(ab,ab),d01=dot(ab,ac),d11=dot(ac,ac),d20=dot(ap,ab),d21=dot(ap,ac),det=d00*d11-d01*d01;if(det<1e-9)return false;const u=(d11*d20-d01*d21)/det,v=(d00*d21-d01*d20)/det;return u>=-1e-5&&v>=-1e-5&&u+v<=1.00001&&Math.abs(dot(ap,a.slice(3,6)))<1e-4;};
+  const ring=rings[0];
+  for(let i=0;i<ring.length;i++)for(const t of [.1,.5,.9])for(const z of [1.2,4.5,8.8]){
+    const a=ring[i],b=ring[(i+1)%ring.length],p=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,z];
+    assert.ok(walls.some(face=>contains(face,p)),`source wall ${i} at ${t}/${z} must be complete before camera clipping`);
+  }
+});
+
 test('rendered nave mosaic follows the rectified wall calibration throughout both original triangles',()=>{
   const origin=projectLocal(churchInteriorLocation(data,0,0)), east=projectLocal(churchInteriorLocation(data,1,0)), inward=projectLocal(churchInteriorLocation(data,0,1));
   const toLocal=v=>[(v[0]-origin[0])*(east[0]-origin[0])+(v[1]-origin[1])*(east[1]-origin[1]),(v[0]-origin[0])*(inward[0]-origin[0])+(v[1]-origin[1])*(inward[1]-origin[1]),v[2]];
   const triangles=[];
   for(let i=0;i<mesh.facades.length;i+=39){
     const vertices=[0,13,26].map(j=>Array.from(mesh.facades.subarray(i+j,i+j+13))),p=vertices.map(toLocal);
-    if(vertices.every(v=>v[11]===22)&&p.every(v=>Math.abs(v[0]-7.58)<1e-4&&v[2]>=9.299&&v[2]<=12.201))triangles.push({p,vertices});
+    if(vertices.every(v=>v[11]===122)&&p.every(v=>Math.abs(v[0]-7.58)<1e-4&&v[2]>=9.299&&v[2]<=12.201))triangles.push({p,vertices});
   }
   const cross=(a,b,c)=>(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]);
   const project=photoProjection(NAVE_MOSAIC);
@@ -75,7 +93,7 @@ test('rendered nave mosaic follows the rectified wall calibration throughout bot
 test('all rendered apse facets unwrap the same horizontal cornices without baked camera tilt',()=>{
   const counts=Array(6).fill(0);
   for(let i=0;i<mesh.facades.length;i+=13){
-    const p=mesh.facades.subarray(i,i+13); if(p[11]!==23||p[2]<5.001)continue;
+    const p=mesh.facades.subarray(i,i+13); if(p[11]!==423||p[2]<5.001)continue;
     let matched=false;
     for(let j=0;j<6;j++){
       const a=rings[0][24+j],b=rings[0][25+j],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);

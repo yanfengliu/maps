@@ -21,7 +21,7 @@ function harness() {
     return result;
   };
   const window = Object.assign(target(), { performance: { now: () => now } });
-  const document = Object.assign(target(), { defaultView: window, hidden: false });
+  const document = Object.assign(target(), { defaultView: window, hidden: false, activeElement: null });
   const canvas = Object.assign(target(), { ownerDocument: document, focus: () => {}, clientWidth: 1200, clientHeight: 800, getBoundingClientRect: () => ({left: 0, top: 0, width: 1200, height: 800}) });
   const manager = {
     _handlers: [{ handlerName: 'nativeMouse', handler: { isActive: () => false }, allowed: undefined }],
@@ -48,11 +48,14 @@ function harness() {
     }
     emit('render');
   };
-  const key = (type, value, props = {}, eventTarget = type === 'keyup' ? window : canvas) => {
+  const key = (type, value, props = {}, eventTarget = type === 'keyup' ? window : document) => {
     const event = Object.assign(new Event(type, { cancelable: true }), { key: value, altKey: false, ctrlKey: false, metaKey: false, repeat: false, isComposing: false }, props);
     eventTarget.dispatchEvent(event);
     return event;
   };
+  // EventTarget has no DOM tree. The document is the keyboard capture target;
+  // activeElement models focus independently of the map canvas.
+  const focus = element => { document.activeElement = element; document.dispatchEvent(new Event('focusin')); };
   const native = (type, props = {}) => {
     const event = Object.assign(new Event(type.replace('Window', ''), { cancelable: true }), { button: 1, buttons: 4, clientY: 200 }, props);
     for (const { handler } of manager._handlers) if (handler.isEnabled?.()) {
@@ -62,9 +65,42 @@ function harness() {
     return event;
   };
   const dispose = enableHeldKeyboardPan(map);
-  return { map, manager, key, native, step, emit, results, window, document, canvas, dispose, counts, events,
+  return { map, manager, key, focus, native, step, emit, results, window, document, canvas, dispose, counts, events,
     get pending() { return pending; }, get frameRequests() { return frameRequests; } };
 }
+
+test('WASD works with page, view-button, checkbox and slider focus without focusing the canvas', () => {
+  const h = harness();
+  for (const element of [null, {tagName:'BUTTON'}, {tagName:'INPUT',type:'checkbox'}, {tagName:'INPUT',type:'range'}, {tagName:'A'}]) {
+    h.focus(element);
+    for (const key of ['w','a','s','d']) {
+      assert.equal(h.key('keydown',key).defaultPrevented,true);
+      const count=h.results.length;h.step(20);
+      assert.equal(h.results.length,count+1);assert.equal(h.results.at(-1).panDelta.mag(),11.2);
+      h.key('keyup',key);h.step(20);assert.equal(h.pending,false);
+    }
+  }
+  h.dispose();h.step(16);
+});
+
+test('typing targets keep WASD text and focus into them releases held movement', () => {
+  const h=harness();
+  for(const element of [{tagName:'INPUT',type:'search'},{tagName:'INPUT',type:'text'},{tagName:'INPUT',type:'number'},{tagName:'TEXTAREA'},{tagName:'SELECT'},{tagName:'SPAN',isContentEditable:true},{tagName:'DIV',closest:()=>({getAttribute:()=> 'textbox'})}]) {
+    h.focus(null);h.key('keydown','w');h.step(20);const count=h.results.length;
+    h.focus(element);h.step(20);assert.equal(h.pending,false);assert.equal(h.results.length,count);
+    assert.equal(h.key('keydown','w').defaultPrevented,false);h.step(20);assert.equal(h.results.length,count);
+    h.key('keyup','w');
+  }
+  h.dispose();h.step(16);
+});
+
+test('focus changes between map controls preserve a held key; entering text or composition clears it', () => {
+  const h=harness();h.focus({tagName:'BUTTON'});h.key('keydown','d');h.step(20);
+  h.focus({tagName:'INPUT',type:'checkbox'});h.step(20);assert.equal(h.results.length,2);
+  h.document.dispatchEvent(new Event('compositionstart'));h.step(20);assert.equal(h.pending,false);
+  h.focus(null);h.key('keyup','d');h.key('keydown','d');h.step(20);assert.equal(h.results.length,3);
+  h.dispose();h.step(16);
+});
 
 test('one keydown drives later native frames at 560px/s, then release drains one final frame', () => {
   const h = harness();
@@ -130,9 +166,9 @@ test('pointer and wheel input never pause held movement, in either input order',
   h.dispose(); h.step(16);
 });
 
-test('focus loss, hidden visibility and native reset clear held input', () => {
+test('window focus loss, hidden visibility and native reset clear held input', () => {
   const h = harness();
-  for (const target of [h.canvas, h.window, h.document]) {
+  for (const target of [h.window, h.document]) {
     h.key('keydown', 'a'); h.step(10);
     if (target === h.document) { h.document.hidden = true; target.dispatchEvent(new Event('visibilitychange')); }
     else target.dispatchEvent(new Event('blur'));

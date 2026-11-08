@@ -3,6 +3,7 @@ import { projectLocal, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, type 
 import { emptyEnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts } from './campus-sculptures.ts';
 import { photoTriangles, APSE_BOTTOM, APSE_TOP, NAVE_MOSAIC, type PhotoRegion, type PhotoCorners } from './church-artwork.ts';
+import { WALL_KIND_STRIDE } from './church-cutaway.ts';
 
 export const CHURCH_ID = 'way/836474103';
 type V = [number, number, number];
@@ -13,8 +14,8 @@ const floor: C = [0.79, 0.76, 0.65], red: C = [0.50, 0.16, 0.16], metal: C = [0.
 
 // Reference: Stanford's current layout and FY23 self-guided tour, and the
 // 2019 interior/2011 organ photographs cited in design.md. This is an authored
-// architectural section, not a measured interior survey. The west wall and
-// west clerestory are cut away; the source footprint and height are unchanged.
+// architectural section, not a measured interior survey. Complete wall groups
+// are cut away by camera direction; the source footprint/height are unchanged.
 function frame(data: CampusData) {
   const index = data.features.findIndex(f => f.properties?.id === CHURCH_ID), feature = data.features[index];
   if (!feature || feature.geometry.type !== 'Polygon') throw new Error('Memorial Church footprint is unavailable.');
@@ -39,13 +40,13 @@ export function churchInteriorLocation(data: CampusData, x: number, y: number): 
 
 export function buildChurchInterior(data: CampusData): DetailGeometry {
   const { index, at, local } = frame(data), opaque: number[] = [], overhead: number[] = [];
-  let kind = 2;
+  let kind = 2, wall = 0;
   const tri = (a: V, b: V, c: V, color: C, uv?: [Point, Point, Point]) => {
     const p = [at(a), at(b), at(c)], ab = p[1].map((n, i) => n - p[0][i]), ac = p[2].map((n, i) => n - p[0][i]);
     const n = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]], length = Math.hypot(...n);
     if (length < 1e-8) return;
     const target = kind === 30 ? overhead : opaque;
-    for (let i = 0; i < 3; i++) target.push(...p[i], ...n.map(v => v / length), ...color, ...(uv?.[i] ?? [[a,b,c][i][0]+[a,b,c][i][1], [a,b,c][i][2]]), kind, index);
+    for (let i = 0; i < 3; i++) target.push(...p[i], ...n.map(v => v / length), ...color, ...(uv?.[i] ?? [[a,b,c][i][0]+[a,b,c][i][1], [a,b,c][i][2]]), kind + wall * WALL_KIND_STRIDE, index);
   };
   const quad = (a: V, b: V, c: V, d: V, color: C, uv?: [Point, Point, Point, Point]) => {
     tri(a, b, c, color, uv ? [uv[0], uv[1], uv[2]] : undefined); tri(a, c, d, color, uv ? [uv[0], uv[2], uv[3]] : undefined);
@@ -109,8 +110,17 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   polygon(local, 0.12, floor);
   for (let i = 0; i < local.length; i++) {
     const a = local[i], b = local[(i + 1) % local.length];
+    const y=(a[1]+b[1])/2,x=(a[0]+b[0])/2;
+    wall=y<6.5?3:y>46?4:x>0?1:2;
     beam([...a, 0.5], [...b, 0.5], 0.32, 0.76, stone);
+    // All source edges carry a complete wall. Apse faces are authored below.
+    if(i<24||i>30){
+      const top=y<6.5?16.9:y<29.3?9.4:13;
+      quad([...a,.12],[...b,.12],[...b,top],[...a,top],gold);
+      beam([...a,top],[...b,top],.20,.16,ivory);
+    }
   }
+  wall=0;
   box(0, 24.4, 0.135, 1.8, 41.4, 0.025, red);
   for (const x of [-8.5, 8.5]) box(x, 17.7, 0.138, 0.10, 26.0, 0.012, gold);
   for (let y = 7; y < 30; y += 1.3) for (const x of [-10.3, 10.3]) box(x, y, 0.14, 2.7, 0.025, 0.006, [0.70, 0.67, 0.57]);
@@ -145,6 +155,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   // Three nave arches on each side, two intermediate free-standing columns.
   const naveSpring = 5.65, bayRadius = 3.20;
   for (const side of [-1, 1]) {
+    wall=side>0?1:2;
     for (const y of [7.0, 14.4, 21.8, 29.2]) column(side * 7.65, y, 0.12, 0.53, naveSpring - 0.12);
     for (const y of [10.7, 18.1, 25.5]) {
       arch(side * 7.65, y, naveSpring, bayRadius, 0.46, 0.70, true);
@@ -153,6 +164,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
       for (let j = 0; j <= 16; j++) { const a = j * Math.PI / 16; const cy = y + Math.cos(a) * (bayRadius + 0.28), cz = naveSpring + Math.sin(a) * (bayRadius + 0.28); const r = 0.075; quad([side * 7.27, cy - r, cz], [side * 7.27, cy, cz + r], [side * 7.27, cy + r, cz], [side * 7.27, cy, cz - r], gold); }
     }
   }
+  wall=0;
   // Four compound crossing piers carry the much larger transverse arches.
   for (const x of [-7.65, 7.65]) for (const y of [29.2, 46.1]) {
     column(x, y, 0.12, 0.87, 8.45);
@@ -190,8 +202,9 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   }
   // Curved apse wall uses the mapped facets; repeated small niches are open.
   for (let i = 24; i < 31; i++) {
+    wall=4;
     const a = local[i], b = local[i + 1], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
-    quad([...a, 1.2], [...b, 1.2], [...b, 13.0], [...a, 13.0], gold);
+    quad([...a, .12], [...b, .12], [...b, 13.0], [...a, 13.0], gold);
     beam([...a, 5.0], [...b, 5.0], 0.18, 0.22, ivory); beam([...a, 12.8], [...b, 12.8], 0.22, 0.24, ivory);
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / length, uy = (b[1] - a[1]) / length;
     if (Math.abs(mx) > 2) for (const offset of [-0.70, 0.70]) {
@@ -203,12 +216,12 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
       cylinder(x+uy*0.23,y-ux*0.23,1.30,0.24,0.16,ivory,12);cylinder(x+uy*0.23,y-ux*0.23,1.46,0.035,1.05,ivory,6);
     }
   }
+  wall=0;
   // Pulpit left from the visitor's view (east), brass lectern opposite.
   cylinder(6.45, 46.9, 1.23, 0.58, 1.25, stone, 10, 0.95); cylinder(6.45, 46.9, 2.48, 1.10, 0.80, ivory, 12); cylinder(6.45, 46.9, 3.28, 1.15, 0.13, gold, 12);
   cylinder(-6.45, 47.0, 1.23, 0.53, 0.18, gold); cylinder(-6.45, 47.0, 1.41, 0.08, 1.55, gold, 10); beam([-6.9, 46.7, 2.92], [-6.0, 47.2, 3.18], 0.55, 0.08, gold);
 
-  // East aisle retains the full wall and arched glazed bays. The western wall
-  // is deliberately sectioned at the sill so the pews can be inspected.
+  // Art, glazing, trim and their supporting walls share one cutaway group.
   const window = (cx: number, cy: number, bottom: number, top: number, radius: number, side: boolean, corners: PhotoCorners) => {
     const spring = top - radius, point = (x: number, z: number): V => side ? [cx, cy + x, z] : [cx + x, cy, z];
     const savedKind=kind;kind=22;
@@ -223,6 +236,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
     for (const s of [-1, 1]) beam(point(s * (radius + 0.14), bottom), point(s * (radius + 0.14), spring), 0.20, 0.18, ivory);
     for (let i = 1; i < 4; i++) { const z = bottom + (top - bottom) * i / 4; beam(point(-radius, z), point(radius, z), 0.04, 0.045, darkOak); }
   };
+  wall=1;
   quad([12.0, 6.5, 0.9], [12.0, 29.2, 0.9], [12.0, 29.2, 9.4], [12.0, 6.5, 9.4], gold);
   window(11.95,10.7,2.1,8.2,1.18,true,[[85,613],[145,592],[134,400],[83,391]]);
   window(11.95,25.5,2.1,8.2,1.9,true,[[353,551],[404,530],[400,377],[352,366]]);
@@ -230,7 +244,35 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   photoQuad([11.94,15.6,3.0],[11.94,20.6,3.0],[11.94,20.6,6.6],[11.94,15.6,6.6],
     {size:[1280,853],corners:[[217,572],[309,558],[309,470],[217,461]]});
   kind=2;
-  quad([7.65, 6.5, 9.3], [7.65, 29.2, 9.3], [7.65, 29.2, 16.9], [7.65, 6.5, 16.9], gold);
+  for(const side of [-1,1]){
+    wall=side>0?1:2;
+    const x=side*7.65;
+    quad([x,6.5,9.3],[x,29.2,9.3],[x,29.2,16.9],[x,6.5,16.9],gold);
+    // Continuous spandrels join the upper wall to the three real round arches.
+    for(const cy of [10.7,18.1,25.5])for(let j=0;j<48;j++){
+      const r=bayRadius+.46, y0=Math.max(6.5,cy-r+j*2*r/48),y1=Math.min(29.2,cy-r+(j+1)*2*r/48);
+      const z=(y:number)=>Math.min(9.3,naveSpring+Math.sqrt(Math.max(0,r*r-(y-cy)**2)));
+      if(y1>y0)quad([x,y0,z(y0)],[x,y1,z(y1)],[x,y1,9.32],[x,y0,9.32],gold);
+    }
+    // Return jambs and top cornice give each wall a connected visible edge.
+    for(const y of [6.5,29.2])beam([x,y,5.65],[x,y,16.9],.3,.3,stone);
+    beam([x,6.5,16.9],[x,29.2,16.9],.3,.18,ivory);
+    if(side<0){
+      quad([-12,6.5,.9],[-12,29.2,.9],[-12,29.2,9.4],[-12,6.5,9.4],gold);
+      // Opposite-wall panels use the opposite side of the same source photo.
+      window(-11.95,10.7,2.1,8.2,1.18,true,[[1193,614],[1140,591],[1143,401],[1194,391]]);
+      window(-11.95,25.5,2.1,8.2,1.9,true,[[933,552],[874,529],[879,377],[932,367]]);
+      const westWindows:PhotoCorners[]=[[[1213,116],[1167,137],[1167,0],[1213,0]],[[1040,202],[1017,213],[1017,99],[1040,87]],[[985,226],[968,235],[968,147],[985,138]],[[912,272],[901,277],[901,219],[912,212]],[[885,285],[877,290],[877,240],[885,234]]];
+      for(let i=0;i<5;i++)window(-7.60,8.5+i*4.4,12.4,16.25,.82,true,westWindows[i]);
+      kind=22;
+      photoQuad([-11.94,15.6,3],[-11.94,20.6,3],[-11.94,20.6,6.6],[-11.94,15.6,6.6],
+        {size:[1280,853],corners:[[1064,572],[973,558],[973,470],[1064,461]]});
+      photoQuad([-7.58,6.5,9.3],[-7.58,29.2,9.3],[-7.58,29.2,12.2],[-7.58,6.5,12.2],
+        {size:[1280,853],corners:[[1270,230],[860,348],[860,303],[1270,99]]});
+      kind=2;
+    }
+  }
+  wall=1;
   const upperWindows:PhotoCorners[]=[[[67,116],[113,137],[113,0],[67,0]],[[240,202],[263,213],[263,99],[240,87]],[[295,226],[312,235],[312,147],[295,138]],[[368,272],[379,277],[379,219],[368,212]],[[395,285],[403,290],[403,240],[395,234]]];
   for (let i = 0; i < 5; i++) window(7.60, 8.5 + i * 4.4, 12.4, 16.25, 0.82, true,upperWindows[i]);
   // Licensed photographic regions keep the narrative mosaics recognizable.
@@ -241,6 +283,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   kind = 22;
   photoQuad([7.58, 6.5, 9.3], [7.58, 29.2, 9.3], [7.58, 29.2, 12.2], [7.58, 6.5, 12.2], NAVE_MOSAIC);
   kind = 23;
+  wall=4;
   for (let i = 24; i < 30; i++) {
     const a=local[i],b=local[i+1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
     const nx=(b[1]-a[1])/length*0.045,ny=-(b[0]-a[0])/length*0.045;
@@ -251,6 +294,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   photoQuad([-2.0,59.35,2.8],[2.0,59.35,2.8],[2.0,59.35,5.0],[-2.0,59.35,5.0],
     { size:[960,720], corners:[[560,659],[445,658],[447,595],[560,594]] });
   kind=2;
+  wall=0;
 
   // Galleries sit over the transepts, with pale carved rails and visible stair
   // flights behind the crossing piers. Their front edge remains open below.
@@ -264,6 +308,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
 
   // Organ loft: redwood Fisk-Nanney case in the centre, original Murray-Harris
   // pipe groups at each side. Pipe counts below are a visible facade estimate.
+  wall=3;
   box(0, 3.3, 5.4, 22.4, 5.8, 0.42, stone); railing([-10.9, 6.2], [10.9, 6.2], 5.82);
   box(0, 2.3, 5.82, 11.9, 2.5, 9.1, fir);
   const pipeRank = (cx: number, cy: number, z: number, width: number, count: number, high: number, low: number, tint: C) => {
@@ -301,7 +346,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   }
   // Ceiling is independently switchable. Its construction follows the open
   // timber nave and chancel and the shallow crossing dome, not a gothic vault.
-  kind = 30;
+  wall=0;kind = 30;
   for (const side of [-1, 1]) {
     // Open framing preserves the cutaway even when overhead structure is on.
     for (let i = 1; i < 6; i++) beam([side * i * 1.27, 5.5, 21.4 - i * 0.73], [side * i * 1.27, 29.2, 21.4 - i * 0.73], 0.13, 0.16, darkOak);

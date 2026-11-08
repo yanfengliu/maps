@@ -1,7 +1,7 @@
 import { Point, type Handler, type HandlerResult, type Map as MapLibreMap } from 'maplibre-gl';
 import { activeZoomAnchor, registerInputHandler } from './input-handler.ts';
 
-/** Pan in screen pixels while a map-focused WASD key is held, alongside gestures. */
+/** Pan in screen pixels while WASD is held anywhere outside text entry. */
 export function enableHeldKeyboardPan(map: MapLibreMap): () => void {
   const canvas = map.getCanvas();
   const document = canvas.ownerDocument;
@@ -50,8 +50,17 @@ export function enableHeldKeyboardPan(map: MapLibreMap): () => void {
     held.clear();
     registration.requestFrame();
   };
+  const textEntry = (target: EventTarget | null): boolean => {
+    const element = target as HTMLElement | null;
+    if (!element) return false;
+    if (element.isContentEditable || element.closest?.('[role="textbox"], [role="searchbox"], [role="combobox"]')) return true;
+    if (element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') return true;
+    return element.tagName === 'INPUT' && !['button','checkbox','color','file','hidden','image','radio','range','reset','submit'].includes((element as HTMLInputElement).type);
+  };
+  const editing = (event: Event): boolean => textEntry(document.activeElement) || event.composedPath().some(textEntry);
   const keydown = (event: KeyboardEvent): void => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) { clear(); return; }
+    if (!enabled || disposed) return;
+    if (editing(event) || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) { clear(); return; }
     const key = event.key.toLowerCase();
     if (!keys.has(key)) return;
     event.preventDefault(); event.stopPropagation();
@@ -67,9 +76,11 @@ export function enableHeldKeyboardPan(map: MapLibreMap): () => void {
     if (!wasMoving) previousTime = ownerWindow.performance.now();
     registration.requestFrame();
   };
+  const focus = (event: FocusEvent): void => { if (editing(event)) clear(); };
   const visibility = (): void => { if (document.hidden) clear(); };
-  canvas.addEventListener('keydown', keydown, { capture: true });
-  canvas.addEventListener('blur', clear);
+  document.addEventListener('keydown', keydown, { capture: true });
+  document.addEventListener('focusin', focus);
+  document.addEventListener('compositionstart', clear);
   ownerWindow.addEventListener('keyup', keyup);
   ownerWindow.addEventListener('blur', clear);
   document.addEventListener('visibilitychange', visibility);
@@ -77,8 +88,9 @@ export function enableHeldKeyboardPan(map: MapLibreMap): () => void {
     if (disposed) return;
     disposed = true;
     registration.dispose();
-    canvas.removeEventListener('keydown', keydown, { capture: true });
-    canvas.removeEventListener('blur', clear);
+    document.removeEventListener('keydown', keydown, { capture: true });
+    document.removeEventListener('focusin', focus);
+    document.removeEventListener('compositionstart', clear);
     ownerWindow.removeEventListener('keyup', keyup);
     ownerWindow.removeEventListener('blur', clear);
     document.removeEventListener('visibilitychange', visibility);

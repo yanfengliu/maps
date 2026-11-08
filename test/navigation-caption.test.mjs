@@ -13,7 +13,7 @@ const handlers=stripTypeScriptTypes(names.map(name=>{
 }).join('\n'));
 
 for(const [name,action,caption] of [
-  ['Bay overview','overview(false)','SAN FRANCISCO BAY AREA'],
+  ['world overview','overview(false)','WORLD MAP'],
   ['city search',"goTo({name:'San Francisco',center:[-122.4,37.7],zoom:12,campus:false})",'SAN FRANCISCO'],
   ['church exterior',"goTo({name:'Memorial Church',buildingId:'church',center:[-122.17,37.42],zoom:18,campus:true})",'STANFORD UNIVERSITY · 3D CAMPUS']
 ])test(`leaving the church through ${name} restores the destination caption and exterior mode`,()=>{
