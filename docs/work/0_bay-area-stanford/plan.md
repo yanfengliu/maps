@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Status: active
+Status: complete
 Owner: root integration
 Created: 2026-10-19
 Updated: 2026-11-07
@@ -33,7 +33,7 @@ The comparison selected the straight-skeleton topology candidate. The independen
 
 Two verification-instrument corrections require independent review: the old assertion that every concave wing has exactly four normals encoded the incorrect bounding-box roof; the replacement checks bidirectional agreement with every real source-edge plane and preserves the existing area/holes assertions. A new frontage test initially guessed at least ten wing edges; source inspection established eight edges across the six photographed north wings, so it now asserts those six identities and checks actual open/recessed geometry on every eligible segment. The original failed run is retained with the final evidence. Browser inspection found a separate exact-double signature defect: unchanged published coordinates project up to 1.77 nanometres differently between Node and Chromium. Only the signature canonicalization may tolerate that numeric noise; rendered coordinates, source hashes, planar coverage and 1 mm change rejection stay strict.
 
-Implementation and verification are complete: [review 17](reviews/17_implementation.md) accepted the roof method and instrument corrections and found elevated picking regression F42; [review 18](reviews/18_implementation.md) accepted its invisible-query-layer repair and the native floor correction. All 82 tests, build, types, audit, native desktop/phone production views and graphics recovery pass within [the recorded measurement bounds](design.md#quad-roof-continuity-and-facade-correction-2026-11-07). Source data, dependencies and archive are unchanged. Delivery and final worktree removal are pending the final integration step.
+Implementation and verification are complete: [review 17](reviews/17_implementation.md) accepted the roof method and instrument corrections and found elevated picking regression F42; [review 18](reviews/18_implementation.md) accepted its invisible-query-layer repair and the native floor correction. All 82 tests, build, types, audit, native desktop/phone production views and graphics recovery pass within [the recorded measurement bounds](design.md#quad-roof-continuity-and-facade-correction-2026-11-07). Implementation `40f962fa31a3f643138025fbab806d3eae744272` is merged to main and pushed, with matching remote SHA. GitHub reports zero configured workflows, runs or checks for this revision; no remote CI pass is claimed. Source data, dependencies and archive are unchanged. Useful prototype/review/visual evidence is retained outside the disposable worktrees; no additional product scope is queued.
 
 ### Current increment: Quad surfaces and architectural detail
 

@@ -4,6 +4,8 @@
 
 F42 repair and native-floor ordering on the same base `acbdece4313e64050cc253b981587c93ff2cd276`. The exact final source/test/tool target is the eighteen-file manifest in ignored `artifacts/quad-roofs-20261107/output/review-18/`, SHA256 `88286da9fe3ebf92416e1b46a545a9e7f7a9ec00bbbb898590afe8395c0530f1`. Copies of every reviewed file are retained there. The first implementation commit containing this record binds these bytes; ordinary Git line-ending conversion is not a code change. Documentation written after review is root-authored.
 
+Integration binding: the reviewed implementation is `40f962fa31a3f643138025fbab806d3eae744272`, merged to main and pushed. All eighteen committed source/test/tool files match the reviewed working-copy bytes after normalizing Git line endings. Subsequent edits to this record and the plan are documentation only.
+
 ## Reviewers and coverage
 
 The same independent GPT-6 Astra reviewer inspected the five changed/added files, checked all eighteen live/snapshot hashes, reran focused picking and visibility tests, inspected native images and read the graphics-loss/restoration observations. No writes or persistent processes were created. Review 17's roof, provenance and instrument-correction judgments remain binding.
