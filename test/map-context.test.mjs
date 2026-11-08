@@ -49,3 +49,16 @@ test('closing search aborts the pending worldwide query and stale completion can
   runInNewContext('closeSearch();',context);assert.equal(signal.aborted,true);assert.equal(results.hidden,true);
   resolve([{name:'Paris'}]);await context.pending;assert.equal(drawn,0);assert.equal(results.hidden,true);assert.equal(attributes.has('aria-busy'),false);
 });
+
+test('IME composition owns search Enter, arrows and Escape until normal submission resumes',()=>{
+  const listener=source.match(/search\.addEventListener\('keydown', event => \{[\s\S]*?\n\}\);/)?.[0];assert.ok(listener);
+  for(const suggestions of [[],[{id:'local',name:'Tokyo'}]])for(const composition of [{isComposing:true,keyCode:13},{isComposing:false,keyCode:229}]){
+    let keydown;const calls=[];
+    const context={search:{addEventListener:(_,callback)=>keydown=callback,blur:()=>calls.push('blur'),setAttribute:()=>calls.push('active')},results:{hidden:false,querySelectorAll:()=>[]},visibleResults:suggestions,activeResult:-1,closeSearch:()=>calls.push('close'),renderResults:()=>calls.push('render'),goTo:()=>calls.push('navigate'),submitWorldSearch:()=>calls.push('submit')};
+    runInNewContext(listener,context);
+    for(const key of ['Enter','ArrowDown','ArrowUp','Escape'])keydown({key,...composition,preventDefault:()=>calls.push('prevented')});
+    assert.deepEqual(calls,[],'composition must not submit, select, dismiss or cancel native input');assert.equal(context.activeResult,-1);
+    keydown({key:'Enter',isComposing:false,keyCode:13,preventDefault:()=>calls.push('prevented')});
+    assert.deepEqual(calls,['prevented',suggestions.length?'navigate':'submit']);
+  }
+});

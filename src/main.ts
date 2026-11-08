@@ -296,6 +296,7 @@ async function submitWorldSearch():Promise<void> {
 search.addEventListener('input', renderResults);
 search.addEventListener('focus', renderResults);
 search.addEventListener('keydown', event => {
+  if (event.isComposing || event.keyCode === 229) return;
   if (event.key === 'Escape') { closeSearch(); search.blur(); return; }
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
     event.preventDefault();
