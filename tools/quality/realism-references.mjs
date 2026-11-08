@@ -22,7 +22,7 @@ export const REALISM_REFERENCES = [
     [source(page?`${survey}#page=${page}`:'https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID=02-660','document','2016 survey / undated ADA'),source(photoId?`https://campus-map.stanford.edu/images_repo/bldg/${photoId}/${photoId}-1.jpg`:`${survey}#page=${page}`,'photo',photoId?'undated':'2016')],
     {expected:{facadeFamily,roofShape}})),
   record('roth-garage',['way/232841898'],'Roth Way Garage','Four stories; open roof deck and parking marks; rounded slab fronts, exposed round columns and open elevations.',
-    'Ten-metre envelope, deck spacing, parking layout and column placement are estimates. Internal ramps, rooftop furniture and unphotographed elevations remain unresolved.',
+    'Ten-metre envelope, deck spacing, parking layout and column placement are estimates. Ramp geometry now connects the floors; its exact location and traffic plan, rooftop furniture and unphotographed elevations remain unverified.',
     [source('https://chemistry.stanford.edu/about/maps-location-parking','document'),source(`${transport}Newsletter/Hospital-Transportation-Newsletter-September-14-2023.pdf#page=2`,'photo','2023-09-13'),source('https://www.top1000funds.com/wp-content/uploads/2023/08/Parking-options-near-Hoover.pdf#page=7')],{expected:{floors:4}}),
   record('stock-farm-garage',['way/26249768'],'Stock Farm Garage','Official staff packet identifies Level 4 as rooftop and a ramp from Level 3.',
     'Four deck levels are documented. Exact facade, column positions, ramps, rooftop furniture and ten-metre envelope are not surveyed; no photographic facade match is claimed.',

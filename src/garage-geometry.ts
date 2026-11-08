@@ -1,6 +1,7 @@
 import earcut from 'earcut';
 import type * as GeoJSON from 'geojson';
 import {garageProfile} from './garage-architecture.ts';
+import {garageCirculation} from './garage-circulation.ts';
 type Point=[number,number];type Vertex=[number,number,number];type Color=[number,number,number];
 interface MeshWriter {triangle(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind:number,building:number,uv?:[Point,Point,Point]):void;quad(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind:number,building:number,uv?:[Point,Point,Point,Point]):void}
 const signedArea=(ring:Point[])=>ring.reduce((sum,p,i)=>{const q=ring[(i+1)%ring.length];return sum+p[0]*q[1]-q[0]*p[1];},0)/2;
@@ -17,14 +18,64 @@ export function addGarage(roofs:MeshWriter,facades:MeshWriter,rings:Point[][],bu
  const across:Point=[-axis[1],axis[0]],origin=ring[0];
  const uv=(p:Point):Point=>[(p[0]-origin[0])*across[0]+(p[1]-origin[1])*across[1],(p[0]-origin[0])*axis[0]+(p[1]-origin[1])*axis[1]];
  const concrete:Color=properties?.id==='way/232841898'?[.78,.73,.60]:properties?.id==='way/324983017'?[.81,.79,.75]:[.75,.74,.68];
- const slab=(z:number,kind:number,tint:Color)=>{for(let i=0;i<triangles.length;i+=3){const [a,b,c]=triangles.slice(i,i+3).map(j=>vertices[j]);roofs.triangle([...a,z],[...b,z],[...c,z],tint,kind,building,[uv(a),uv(b),uv(c)]);}};
+ const slab=(z:number,kind:number,tint:Color,opening?:Point[])=>{const points=opening?vertices.concat(opening):vertices,indices=opening?earcut(points.flat(),holes.concat(vertices.length),2):triangles;for(let i=0;i<indices.length;i+=3){const [a,b,c]=indices.slice(i,i+3).map(j=>points[j]);roofs.triangle([...a,z],[...b,z],[...c,z],tint,kind,building,[uv(a),uv(b),uv(c)]);}};
  if(profile.kind==='screened'){
   slab(height,43,[.56,.59,.49]);
   for(const [ri,r] of rings.entries())for(let i=0;i<r.length;i++){const a=r[i],b=r[(i+1)%r.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]),direction=(signedArea(r)>0?1:-1)*(ri?-1:1),at=(p:Point,z:number):Vertex=>[p[0]+direction*(b[1]-a[1])/length*.045,p[1]-direction*(b[0]-a[0])/length*.045,z];facades.quad(at(a,base),at(b,base),at(b,height),at(a,height),[.65,.66,.62],42,building,[[0,0],[length,0],[length,height-base],[0,height-base]]);}
   return true;
  }
  const top=height-.9,rise=(top-base)/(profile.levels-1);
- for(let level=0;level<profile.levels;level++)slab(base+level*rise+(level===0?.06:0),level===profile.levels-1?41:9,level===profile.levels-1?[.50,.51,.48]:[.40,.40,.36]);
+ const plan=garageCirculation(rings,rise),[u0,u1,v0,v1]=plan.bounds,[ru0,ru1,rv0,rv1]=plan.ramp;
+ const atPlan=(u:number,v:number,z:number):Vertex=>[...plan.unproject([u,v]),z];
+ const deckZ=(level:number)=>base+level*rise+(level===0?.06:0);
+ for(let level=0;level<profile.levels;level++)slab(deckZ(level),level===profile.levels-1?41:9,level===profile.levels-1?[.61,.61,.56]:[.43,.43,.39],level?plan.opening:undefined);
+ // Continuous inclined slabs, open at both landings. The upper slab is cut
+ // away, rather than hiding a ramp beneath a solid cap.
+ for(let level=0;level<profile.levels-1;level++){
+  const z0=deckZ(level),z1=deckZ(level+1);
+  roofs.quad(atPlan(ru0,rv0,z0),atPlan(ru1,rv0,z0),atPlan(ru1,rv1,z1),atPlan(ru0,rv1,z1),[.49,.49,.44],44,building,[[0,0],[7.2,0],[7.2,rv1-rv0],[0,rv1-rv0]]);
+  for(const u of [ru0,ru1]){
+   // Side curbs follow the incline; no crosswise wall blocks either end.
+   facades.quad(atPlan(u,rv0,z0),atPlan(u,rv1,z1),atPlan(u,rv1,z1+.55),atPlan(u,rv0,z0+.55),concrete,2,building);
+  }
+ }
+ // Guard the rooftop well's exposed sides and its low end, leaving the high
+ // landing open for cars to enter/exit the descending ramp.
+ for(const [a,b] of [[[ru0,rv0],[ru0,rv1]],[[ru1,rv0],[ru1,rv1]],[[ru0,rv0],[ru1,rv0]]] as [Point,Point][]){
+  facades.quad(atPlan(...a,top),atPlan(...b,top),atPlan(...b,top+.9),atPlan(...a,top+.9),concrete,2,building);
+ }
+ const paint:Color=[.86,.72,.36];
+ const line=(a:Point,b:Point,z:number|((p:Point)=>number),width=.09)=>{
+  const length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<.001)return;
+  const du=-(b[1]-a[1])/length*width/2,dv=(b[0]-a[0])/length*width/2;
+  const corners:Point[]=[[a[0]+du,a[1]+dv],[b[0]+du,b[1]+dv],[b[0]-du,b[1]-dv],[a[0]-du,a[1]-dv]];
+  if(corners.some(p=>!plan.contains(p)))return;
+  roofs.quad(...corners.map(p=>atPlan(...p,typeof z==='number'?z:z(p))) as [Vertex,Vertex,Vertex,Vertex],paint,45,building);
+ };
+ const arrow=(u:number,v:number,direction:1|-1,z:number|((p:Point)=>number))=>{
+  line([u,v-.9*direction],[u,v+.9*direction],z,.16);
+  line([u,v+.9*direction],[u-.6,v+.25*direction],z,.16);
+  line([u,v+.9*direction],[u+.6,v+.25*direction],z,.16);
+ };
+ // Finite stalls stop before the eight-metre cross aisles, the ramp well and
+ // source edges. Directions alternate across aisles instead of repeating the
+ // same one-way arrow over the entire roof.
+ for(const {u,direction} of plan.aisles){
+  for(let v=v0+8;v<=v1-8;v+=2.6)for(const side of [-1,1]){
+   const a:Point=[u+side*3,v],b:Point=[Math.max(u0+.2,Math.min(u1-.2,u+side*8)),v];
+   if(Math.max(a[0],b[0])>ru0-.6&&Math.min(a[0],b[0])<ru1+.6&&v>rv0-5&&v<rv1+5)continue;
+   line(a,b,top+.012);
+  }
+  for(let v=v0+12;v<v1-10;v+=18)arrow(u,v,direction,top+.012);
+ }
+ // Paired arrows on the ramp, and a centre divider, make up/down operation
+ // legible without labeling a speculative floor plan as an exact survey.
+ for(let level=0;level<profile.levels-1;level++){
+  const z0=deckZ(level),z1=deckZ(level+1),middle=(ru0+ru1)/2;
+  const z=(p:Point)=>z0+(z1-z0)*(p[1]-rv0)/(rv1-rv0)+.015;
+  line([middle,rv0+.5],[middle,rv1-.5],z,.12);
+  for(const [u,direction] of [[middle-1.8,1],[middle+1.8,-1]] as [number,1|-1][])arrow(u,(rv0+rv1)/2,direction,z);
+ }
  for(const [ri,r] of rings.entries()){
   const direction=(signedArea(r)>0?1:-1)*(ri?-1:1);let perimeter=0;
   for(let i=0;i<r.length;i++){

@@ -1,3 +1,4 @@
+import { publicAsset } from './public-assets.ts';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
 import type * as GeoJSON from 'geojson';
@@ -41,10 +42,10 @@ root.innerHTML = `
     <div class="church-controls-footer"><label><input id="church-ceiling" type="checkbox"/> Show ceiling structure</label><button id="church-about">About this model</button></div>
     <p id="church-ready" role="status">Opening the interior…</p>
   </section>
-  <section id="church-information" class="help-panel church-information" aria-label="About the church model" hidden><div class="help-title"><h2>Inside Memorial Church</h2><button id="close-church-information" class="icon-button" aria-label="Close church information">${icon('close')}</button></div><p>Interior proportions and decoration follow Stanford references and are modeled estimates. Walls facing the camera are cut away as you rotate; other walls remain complete.</p><a href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a href="/textures/ATTRIBUTION.md" target="_blank" rel="noreferrer">Artwork photo sources and licenses ↗</a></section>
+  <section id="church-information" class="help-panel church-information" aria-label="About the church model" hidden><div class="help-title"><h2>Inside Memorial Church</h2><button id="close-church-information" class="icon-button" aria-label="Close church information">${icon('close')}</button></div><p>Interior proportions and decoration follow Stanford references and are modeled estimates. Walls facing the camera are cut away as you rotate; other walls remain complete.</p><a href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a href="${publicAsset('textures/ATTRIBUTION.md')}" target="_blank" rel="noreferrer">Artwork photo sources and licenses ↗</a></section>
   <div id="map-status" class="map-status" role="status"><span class="loading-dot"></span>Opening the map…</div>
   <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="retry">Retry</button><button id="dismiss-error" aria-label="Dismiss error">${icon('close')}</button></div>
-  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, hold WASD to pan, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Map data © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Stanford is the first area modeled in detail. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="/data/stanford-provenance.json" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
+  <section id="help-panel" class="help-panel" aria-label="Map controls and sources" hidden><div class="help-title"><h2>A map to move through</h2><button id="close-help" class="icon-button" aria-label="Close map help">${icon('close')}</button></div><dl><dt>Pan</dt><dd>Drag, hold WASD to pan, or use arrow keys</dd><dt>Zoom</dt><dd>Scroll, pinch, + / −, or double-click</dd><dt>Rotate & tilt</dt><dd>Right-drag or Ctrl-drag to rotate; middle-drag vertically to tilt; two-finger rotate on touch</dd><dt>Keyboard</dt><dd>Option/Alt + ← / → rotates; Shift + ↑ / ↓ tilts</dd><dt>North</dt><dd>Click the compass. Drag it to rotate.</dd></dl><p>Map data © OpenStreetMap contributors, OpenMapTiles and OpenFreeMap. Search uses Photon's OpenStreetMap index; coverage is incomplete. Press Enter to search worldwide, or select a local suggestion. Stanford is the first area modeled in detail. Footprints come from OpenStreetMap; untagged heights are estimates.</p><a href="${publicAsset('data/stanford-provenance.json')}" target="_blank" rel="noreferrer">Campus data provenance ↗</a></section>
 `;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
@@ -268,7 +269,7 @@ function drawResults():void {
   search.removeAttribute('aria-activedescendant');
   results.innerHTML = visibleResults.length
     ? visibleResults.map((place, index) => `<button class="search-result" id="result-${index}" role="option" aria-selected="false" data-result="${index}" tabindex="-1"><span class="result-icon">${icon(place.campus ? 'campus' : 'bay')}</span><span><strong>${escapeHtml(place.name)}</strong><small>${escapeHtml(place.subtitle)}</small></span>${icon('chevron')}</button>`).join('')
-    : `<div class="no-results"><strong>No matching places in this list</strong><span>Search worldwide for a city, address or landmark.</span></div>`;
+    : `<div class="no-results"><strong>No matching places in this list</strong><span>Press Enter to search worldwide for a city, address or landmark.</span></div>`;
   results.insertAdjacentHTML('beforeend',`<button id="search-world" class="search-world">Search worldwide ${icon('search')}</button><p class="search-credit"><a href="https://photon.komoot.io" target="_blank" rel="noreferrer">Photon</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a></p>`);
   results.querySelectorAll<HTMLElement>('[data-result]').forEach(button => button.addEventListener('click', () => goTo(visibleResults[Number(button.dataset.result)])));
   el('search-world').addEventListener('click',()=>{void submitWorldSearch();});
@@ -284,7 +285,7 @@ async function submitWorldSearch():Promise<void> {
     const places=await searchWorldPlaces(query,{signal:controller.signal});
     if(controller.signal.aborted||revision!==searchRevision)return;
     visibleResults=places;drawResults();
-    if(!places.length)results.querySelector('.no-results')!.innerHTML='<strong>No places found</strong><span>Try a more specific city, address or landmark.</span>';
+    if(!places.length)results.querySelector('.no-results')!.innerHTML='<strong>No places found</strong><span>Try adding a city or street. Some places are missing from OpenStreetMap.</span>';
   } catch(error) {
     if(controller.signal.aborted||revision!==searchRevision)return;
     results.innerHTML=`<div class="no-results" role="alert"><strong>Search could not finish</strong><span>${escapeHtml(error instanceof Error?error.message:'Check your connection and try again.')}</span></div><button id="retry-search" class="search-world">Retry search ${icon('search')}</button>`;
@@ -307,7 +308,7 @@ search.addEventListener('keydown', event => {
     results.querySelectorAll('[role="option"]').forEach((button,index) => button.setAttribute('aria-selected', String(index === activeResult)));
     search.setAttribute('aria-activedescendant', `result-${activeResult}`);
   }
-  if (event.key === 'Enter') { event.preventDefault(); if(visibleResults.length)goTo(visibleResults[Math.max(0, activeResult)]);else void submitWorldSearch(); }
+  if (event.key === 'Enter') { event.preventDefault(); if(activeResult >= 0 && visibleResults[activeResult])goTo(visibleResults[activeResult]);else void submitWorldSearch(); }
 });
 el('clear-search').addEventListener('click', () => { search.value = ''; renderResults(); search.focus(); });
 document.addEventListener('pointerdown', event => { if (!(event.target as HTMLElement).closest('.search-wrap, .search-results')) closeSearch(); });
@@ -345,7 +346,7 @@ el('close-help').addEventListener('click', () => setHelp(false));
 document.addEventListener('keydown', event => { if (event.key === 'Escape') {setHelp(false);el('church-information').hidden=true;} });
 
 async function fetchJson(path: string): Promise<unknown> {
-  const response = await fetch(path);
+  const response = await fetch(publicAsset(path));
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   if (!response.headers.get('content-type')?.includes('json')) throw new Error(`${path}: expected a GeoJSON file`);
   return response.json();

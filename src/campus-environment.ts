@@ -67,20 +67,18 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
     const p=feature.properties,stone:Color=p.material==='stone'?[0.64,0.62,0.57]:[0.73,0.72,0.67];
     if(feature.geometry.type==='LineString'){
       const points=feature.geometry.coordinates.map(project),closed=points.length>2&&Math.hypot(points[0][0]-points.at(-1)![0],points[0][1]-points.at(-1)![1])<0.01;
-      // As at a point, a mapped way of unknown seating material is a flat neutral marker along its real path, not an invented solid seat.
-      const derived=p.benchModel==='quad-seat-wall',solid=derived||p.material==='stone'||p.material==='concrete'||p.material==='wood';
-      const tone:Color=p.material==='wood'?[0.61,0.54,0.43]:stone;
-      const width=derived?0.50:solid?0.48:0.38,half=width/2;
+      // A mapped bench is seating even when its material is unknown. Keep that
+      // uncertainty in a neutral, untextured seat, not a misleading ground mark.
+      // Fallback dimensions and supports are estimates; source tags stay untouched.
+      const derived=p.benchModel==='quad-seat-wall',known=derived||p.material==='stone'||p.material==='concrete'||p.material==='wood';
+      const tone:Color=p.material==='wood'?[0.61,0.54,0.43]:known?stone:[0.58,0.60,0.57];
+      const width=derived?0.50:known?0.48:0.38,half=width/2,bottom=known?0:0.40;
       const normals=points.map((point,i)=>{
         const previous=points[i===0?(closed?points.length-2:0):i-1],next=points[i===points.length-1?(closed?1:i):i+1];
         const normal=(a:Point,b:Point):Point=>{const d=Math.hypot(b[0]-a[0],b[1]-a[1]);return d>0?[(-(b[1]-a[1])/d),(b[0]-a[0])/d]:[0,0];};
         const a=normal(previous,point),b=normal(point,next),x=a[0]+b[0],y=a[1]+b[1],den=x*b[0]+y*b[1];
         return Math.abs(den)>0.25?[x/den,y/den] as Point:(i===0?b:a);
       });
-      if(!solid){
-        for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];quad([a[0]+na[0]*half,a[1]+na[1]*half,0.025],[a[0]-na[0]*half,a[1]-na[1]*half,0.025],[b[0]-nb[0]*half,b[1]-nb[1]*half,0.025],[b[0]+nb[0]*half,b[1]+nb[1]*half,0.025],[0.58,0.60,0.57],12);}
-        return;
-      }
       // One back runs the whole way, on the side opposite the modeled facing read against the way's length-weighted normal.
       // A facing within about 15 degrees of the way's overall line gives no side, so a bent way's back goes on its outer side,
       // seats facing into the bend, and a straight way's on its right. Either side remains an estimate without a direction tag.
@@ -93,7 +91,21 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
       for(let i=1;i<points.length;i++){
         const a=points[i-1],b=points[i],na=normals[i-1],nb=normals[i];
         const al:Vertex=[a[0]+na[0]*half,a[1]+na[1]*half,0.45],ar:Vertex=[a[0]-na[0]*half,a[1]-na[1]*half,0.45],bl:Vertex=[b[0]+nb[0]*half,b[1]+nb[1]*half,0.45],br:Vertex=[b[0]-nb[0]*half,b[1]-nb[1]*half,0.45];
-        quad(al,ar,br,bl,tone,12);quad([al[0],al[1],0],[bl[0],bl[1],0],bl,al,tone,12);quad([br[0],br[1],0],[ar[0],ar[1],0],ar,br,tone,12);
+        quad(al,ar,br,bl,tone,12);quad([al[0],al[1],bottom],[bl[0],bl[1],bottom],bl,al,tone,12);quad([br[0],br[1],bottom],[ar[0],ar[1],bottom],ar,br,tone,12);
+        if(!known){
+          quad([bl[0],bl[1],bottom],[br[0],br[1],bottom],[ar[0],ar[1],bottom],[al[0],al[1],bottom],tone,12);
+          const length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+          if(length>0.02){
+            const dx=(b[0]-a[0])/length,dy=(b[1]-a[1])/length;
+            // Two solid supports per span, with no more than 2.4 m between them.
+            const supports=Math.max(2,Math.ceil(length/2.4)+1),inset=Math.min(0.24,length/4);
+            const at=(u:number,v:number,z:number):Vertex=>[a[0]+dx*u-dy*v,a[1]+dy*u+dx*v,z];
+            for(let s=0;s<supports;s++){
+              const u=inset+(length-2*inset)*s/(supports-1),radius=Math.min(0.07,length/8);
+              box(at,u-radius,u+radius,-half*0.82,half*0.82,0,bottom,tone);
+            }
+          }
+        }
         if(p.backrest==='yes'){
           // The line fixes the actual length/shape. Facing and this back's width/height remain estimates.
           // The 9 cm back is centred on the seat's mitred edge, so neighbouring segments share its corners and bends leave no gap.
@@ -106,18 +118,15 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
           if(i===points.length-1&&!closed)face(bi(0.45),bo(0.45),bo(0.91),bi(0.91));
         }
       }
-      if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],tone,12);}
+      if(!closed)for(const i of [0,points.length-1]){const a=points[i],n=normals[i];quad([a[0]-n[0]*half,a[1]-n[1]*half,bottom],[a[0]+n[0]*half,a[1]+n[1]*half,bottom],[a[0]+n[0]*half,a[1]+n[1]*half,0.45],[a[0]-n[0]*half,a[1]-n[1]*half,0.45],tone,12);}
       return;
     }
     const [x,y]=project(feature.geometry.coordinates),angle=-benchFacing(p)*Math.PI/180;
     const at=(u:number,v:number,z:number):Vertex=>[x+Math.cos(angle)*u-Math.sin(angle)*v,y+Math.sin(angle)*u+Math.cos(angle)*v,z];
     const photographed=p.benchModel==='courtyard-teak',wood=p.material==='wood'||photographed;
-    if(!wood&&p.material!=='concrete'&&p.material!=='stone'){
-      // An unsurveyed bench is a flat neutral map marker, not an invented wood/metal design.
-      quad(at(-0.8,-0.19,0.025),at(0.8,-0.19,0.025),at(0.8,0.19,0.025),at(-0.8,0.19,0.025),[0.58,0.60,0.57],12);return;
-    }
-    const seat:Color=wood?[0.61,0.54,0.43]:stone,frame:Color=photographed?seat:[0.48,0.49,0.46];
-    const half=photographed?0.915:0.90;
+    const known=wood||p.material==='concrete'||p.material==='stone';
+    const seat:Color=wood?[0.61,0.54,0.43]:known?stone:[0.58,0.60,0.57],frame:Color=photographed?seat:[0.48,0.49,0.46];
+    const half=photographed?0.915:known?0.90:0.80,depth=known?0.24:0.19;
     if(photographed){
       for(let i=0;i<5;i++)box(at,-half,half,-0.25+i*0.105,-0.165+i*0.105,0.42,0.46,seat);
       for(const u of [-0.81,0.81])for(const v of [-0.23,0.23])box(at,u-0.045,u+0.045,v-0.045,v+0.045,0,v<0?0.94:0.67,seat);
@@ -128,10 +137,10 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
         box(at,u-0.055,u+0.055,-0.24,0.08,0.67,0.73,seat);box(at,u-0.055,u+0.055,0.08,0.22,0.66,0.72,seat);box(at,u-0.055,u+0.055,0.22,0.29,0.63,0.70,seat);
       }
     }else{
-      box(at,-half,half,-0.24,0.24,0.41,0.46,seat);
+      box(at,-half,half,-depth,depth,0.41,0.46,seat);
       // Source material identifies the seating only. Neutral supports are explicitly modeled, not tagged metal/wood.
-      for(const u of [-0.64,0.64])box(at,u-0.08,u+0.08,-0.20,0.20,0,0.41,frame);
-      if(p.backrest==='yes')box(at,-half,half,-0.27,-0.20,0.46,0.91,seat);
+      for(const u of [-0.64,0.64])box(at,u-0.08,u+0.08,-depth*5/6,depth*5/6,0,0.41,frame);
+      if(p.backrest==='yes')box(at,-half,half,-depth-0.03,-depth+0.04,0.46,0.91,seat);
     }
   };
   const cylinder=(x:number,y:number,radius:number,bottom:number,top:number,tint:Color,sides=6)=>{

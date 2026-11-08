@@ -1,6 +1,6 @@
-# Bay Area Maps
+# World Maps
 
-An Apple Maps-inspired exploration of San Francisco Bay, with 3D campus buildings at Stanford University. The regional map uses custom warm cartography over OpenFreeMap's OpenMapTiles data. Regional buildings stay flat; only the supplied Stanford footprints are extruded.
+An Apple Maps-inspired world map that starts at Stanford University, the first campus with authored 3D detail. The regional map uses custom warm cartography over OpenFreeMap's OpenMapTiles data. Regional buildings stay flat; only the supplied Stanford footprints are extruded.
 
 ## Run locally
 
@@ -24,15 +24,15 @@ npm run audit
 
 ## Explore
 
-The first view frames the Bay's coast from San Francisco to San José. Choose **Explore Stanford in 3D** to fly into the campus. Click a campus building for its source height information. Search covers curated Bay destinations, named campus buildings, **The Burghers of Calais** and **Angel of Grief**; it is a local index rather than an internet geocoder. The campus sculpture action opens the first artwork; its card links the other work and the reference source. On mobile an artwork flight keeps the panel compact so the work stays in view; expand the panel for its card.
+The app starts at Stanford. **World** zooms out to a globe, and the Stanford and Memorial Church shortcuts return to the detailed campus. Click buildings for their source height information, or open Memorial Church's roofless interior while the surrounding map remains visible.
 
-On mobile, the places panel starts compact so the Bay stays visible, with search and a direct **Explore Stanford** action. Expand the panel to browse places and building details. The overview uses absolute viewport padding so returning to the Bay restores the same framing after visiting another place.
+Typing shows local campus suggestions. Press **Enter** or **Search worldwide** to query Photon's OpenStreetMap index; click a suggestion or select one with the arrow keys and press Enter to navigate directly. Worldwide search is not a complete index of real places. Missing businesses, addresses and landmarks may return no results. Requests are explicit, paced and cached; the public service has no availability guarantee. See [Photon's service policy](https://github.com/komoot/photon#demo-server).
 
 - Drag to pan, scroll or pinch to zoom, and double-click to move closer.
 - Right-drag or Ctrl-drag gently rotates and tilts. Middle-drag up/down adjusts tilt without changing bearing. Touch supports two-finger rotation and tilt.
-- Hold WASD to pan continuously while the map has focus; release to stop. Mouse drag, rotation, middle-button tilt and wheel zoom work at the same time as held WASD. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
+- Hold WASD to pan continuously in every map mode; release to stop. Text inputs keep normal typing behavior. Mouse drag, rotation, middle-button tilt and wheel zoom work at the same time as held WASD. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
 - Click the compass to face north; drag it horizontally to rotate or vertically to tilt.
-- The 2D/3D button and tilt slider change perspective. **Bay Area** returns to the coast overview.
+- The 2D/3D button and tilt slider change perspective. **World** returns to the globe.
 
 Reduced motion is respected. A WebGL-capable browser is required. Loading failures show a retry action rather than silently substituting a made-up map.
 
@@ -42,7 +42,7 @@ The campus uses real OpenStreetMap footprints, including multipolygons and court
 
 Original source geometry, heights and provenance stay intact. A render-only subtraction removes the church from the overlapping Main Quad outline so both models remain visible while all original courtyard areas stay empty. Most ordinary buildings still use estimated architectural profiles.
 
-The campus environment uses 726 mapped tree positions, 80 lamps and 196 seating feature assemblies: 163 original bench points, 25 mapped bench paths and eight explicitly derived Quad seat walls. Known seating materials and photo-supported forms have solid geometry; 127 material-unknown points and 23 material-unknown bench paths remain flat neutral markers on their mapped positions. Bench dimensions, absent facing and the side of a path's back remain estimates. See the [bench source and model bounds](docs/work/0_bay-area-stanford/design.md#stanford-bench-accuracy--2026-10-20). Palms, broadleaf trees and conifers retain distinct batched silhouettes and modeled sizes. Historic sandstone/tile, Roble's pink stone/ivy and modern light roofs retain separate materials. The [environment and material record](docs/work/0_bay-area-stanford/campus-environment.md) describes tree and lamp selection, exclusions and model limits.
+The campus environment uses 726 mapped tree positions, 80 lamps and 196 seating feature assemblies: 163 original bench points, 25 mapped bench paths and eight explicitly derived Quad seat walls. Known seating materials and photo-supported forms have solid geometry; 127 material-unknown points and 23 material-unknown bench paths use neutral, untextured raised seats with solid supports at their mapped positions. These fallback designs remain unverified estimates, with backs only when tagged. Bench dimensions, absent facing and the side of a path's back remain estimates. See the [bench source and model bounds](docs/work/0_bay-area-stanford/design.md#stanford-bench-accuracy--2026-10-20). Palms, broadleaf trees and conifers retain distinct batched silhouettes and modeled sizes. Historic sandstone/tile, Roble's pink stone/ivy and modern light roofs retain separate materials. The [environment and material record](docs/work/0_bay-area-stanford/campus-environment.md) describes tree and lamp selection, exclusions and model limits.
 
 Two [photo-grounded outdoor sculptures](docs/work/0_bay-area-stanford/design.md#stanford-sculpture-increment) use mapped location anchors: the Burghers' six separate bronze figures/plinths and the Angel's bowed pose, long wings, altar and steps. Their proportions, poses and orientation are stylized estimates. Buildings, seating, planting and sculpture share the existing two GPU batches and lazy sliced upload; this remains an illustrated map, not a mesh scan or physical survey.
 
@@ -51,6 +51,12 @@ Architectural geometry is generated in a worker only when approaching campus, th
 Map data: [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), [OpenMapTiles](https://openmaptiles.org/), and [OpenFreeMap](https://openfreemap.org/). Attribution also appears on the map. The public service and its current source metadata are used as documented in the [OpenFreeMap quick start](https://openfreemap.org/quick_start/); dated tile URLs are not hardcoded.
 
 For headless verification, `window.__bayMap` is a frozen object with read-only getters: `camera` (`center`, `zoom`, `pitch`, `bearing`), `ready`, `campusBuildings`, `renderedBuildings`, `heightSources`, `sources`, `selectedBuilding`, `errors`, `details` (lazy geometry/shader readiness, build/upload timing, triangles/bytes and current draw calls), and `rendering` (bounded render-event timestamps, motion timestamps and pixel ratio). It exposes no MapLibre instance or camera setters. `ready` requires local campus data, a loaded style, settled tile requests, at least one successful regional tile event, and no active reported error; architectural readiness is separately reported by `details.ready`. Browser flow checks must still use real controls and inspect the rendered map. Render-event cadence is not display-refresh telemetry.
+
+## GitHub Pages
+
+The [published map](https://yanfengliu.github.io/maps/) is built by `.github/workflows/pages.yml` after main changes or a manual run. The workflow uses Node 24, runs types/tests/audit/build, and publishes only `dist/`. Source photographs retained for research, screenshots, local logs and development dependencies are not included. Basemap tiles and worldwide search remain external services.
+
+For the same project-path build locally, run `npm run build -- --base=/maps/` and `npm run preview -- --base=/maps/`, then open the printed URL with `/maps/`. Public data, worker inputs, artwork and attribution links all use Vite's deployment prefix. The default build still works at `/`.
 
 ## Previous project
 

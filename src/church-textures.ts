@@ -1,3 +1,5 @@
+import { publicAsset } from './public-assets.ts';
+
 /** Decode the credited local photographs asynchronously; upload one per frame.
  * Release both textures and pending decodes on exit or context loss. */
 export class ChurchTextures {
@@ -32,7 +34,7 @@ export class ChurchTextures {
           throw error;
         }
       };
-      void Promise.allSettled(['/textures/church-nave.jpg', '/textures/church-chancel.jpg'].map(load)).then(results => {
+      void Promise.allSettled(['textures/church-nave.jpg', 'textures/church-chancel.jpg'].map(path => load(publicAsset(path)))).then(results => {
         const images = results.flatMap(r => r.status === 'fulfilled' && r.value ? [r.value] : []);
         if (this.job !== job) { images.forEach(image => image.close()); return; }
         const error = results.find(r => r.status === 'rejected');

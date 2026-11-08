@@ -78,3 +78,12 @@ Correction: source-edge straight-skeleton faces give continuous shared ridges wi
 Symptom: the owner repeatedly finds incorrect stadium, laboratory, roof and garage geometry. Cause: academic names selected a generic glass profile, garages inherited opaque shells, generic roofs still used sampled triangles, and passing geometry/build tests had no complete photographic-evidence inventory or current-render comparison record.
 
 Correction: exact source-backed profiles for researched structures; shared planar campus roofs; genuinely open garage decks with native-shell fallback and picking; referenced stadium elevation components. Add a full 648-part evidence inventory, current-implementation/image-bound comparisons and a repeatable real-control capture probe. Tests cover the defect classes, source preservation, complete roof coverage, stale/false evidence claims, GPU allocation and recovery. Unknown appearances remain explicitly unverified; the audit is not a claim that every campus building is now realistic. [Design and limitations](../work/0_bay-area-stanford/design.md#campus-realism-verification-and-structural-corrections).
+
+
+## 2026-11-08 - Garage circulation and flattened seating
+
+Open garage reconstruction passed geometry validity checks while solid upper slabs blocked floor-to-floor vehicle travel and a repeating shader painted every aisle in one direction. Physical ramps now connect deck elevations through cut openings; finite paint stops at turning lanes and opposing aisle arrows connect through cross aisles. Tests inspect emitted triangles for endpoint continuity, unobstructed wells, clearance, landing barriers and actual painted arrow direction. Stanford references establish ramps and mixed directions; precise routing remains an estimated reconstruction, not a verified floor plan.
+
+Unknown bench material incorrectly removed seating height and supports, leaving ground dashes. Neutral supported seats now preserve mapped bench identity, path, position and facing while unknown design/material remain unknown. Regressions cover all unknown bench points/ways and reject the previous flat geometry. No exact-area photo was established for the four reported benches; their design is explicitly unverified.
+
+Submitted search could silently choose the first local suggestion instead of querying the world. Enter now performs worldwide search unless a suggestion is explicitly selected. Regression covers local-match coexistence, explicit keyboard choice and IME input; live Photon searches verify external results.

@@ -34,7 +34,7 @@ test('map construction and world overview admit destinations outside the Bay Are
 
 test('initial interface has compact search and shortcuts without a persistent information sidebar',()=>{
   const template=source.match(/root\.innerHTML = `[\s\S]*?\n`;/)?.[0];assert.ok(template);
-  const root={};runInNewContext(template,{root,icon:()=>'<svg></svg>',campusIllustration:'<svg></svg>',PLACES:Array.from({length:4},(_,i)=>({id:String(i),name:'Place',subtitle:'City · Region'}))});
+  const root={};runInNewContext(template,{root,publicAsset:path=>'/'+path,icon:()=>'<svg></svg>',campusIllustration:'<svg></svg>',PLACES:Array.from({length:4},(_,i)=>({id:String(i),name:'Place',subtitle:'City · Region'}))});
   assert.doesNotMatch(root.innerHTML,/<aside\b|class="sidebar"|id="explore-content"/);
   assert.match(root.innerHTML,/aria-label="Search places"/);assert.match(root.innerHTML,/aria-label="World overview"/);
   assert.match(root.innerHTML,/id="explore-stanford"/);assert.match(root.innerHTML,/id="explore-church"/);
@@ -60,6 +60,17 @@ test('IME composition owns search Enter, arrows and Escape until normal submissi
     for(const key of ['Enter','ArrowDown','ArrowUp','Escape'])keydown({key,...composition,preventDefault:()=>calls.push('prevented')});
     assert.deepEqual(calls,[],'composition must not submit, select, dismiss or cancel native input');assert.equal(context.activeResult,-1);
     keydown({key:'Enter',isComposing:false,keyCode:13,preventDefault:()=>calls.push('prevented')});
-    assert.deepEqual(calls,['prevented',suggestions.length?'navigate':'submit']);
+    assert.deepEqual(calls,['prevented','submit']);
   }
+});
+
+
+test('Enter searches worldwide even when local matches exist; only an explicitly selected suggestion navigates',()=>{
+  const listener=source.match(/search\.addEventListener\('keydown', event => \{[\s\S]*?\n\}\);/)?.[0];
+  let keydown;const calls=[];const place={id:'local',name:'Stanford'};
+  const context={search:{addEventListener:(_,fn)=>keydown=fn,setAttribute(){}},results:{hidden:false,querySelectorAll:()=>[]},visibleResults:[place],activeResult:-1,goTo:p=>calls.push(p.id),submitWorldSearch:()=>calls.push('world')};
+  runInNewContext(listener,context);
+  const press=key=>keydown({key,preventDefault(){}});
+  press('Enter');assert.deepEqual(calls,['world']);
+  press('ArrowDown');press('Enter');assert.deepEqual(calls,['world','local']);
 });

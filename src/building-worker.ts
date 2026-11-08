@@ -2,9 +2,10 @@ import { buildBuildingGeometry, type CampusData } from './building-geometry.ts';
 import { validateCampusEnvironment } from './campus-environment.ts';
 import { validateCampusSculptures } from './campus-sculptures.ts';
 import { buildChurchInterior } from './church-interior.ts';
+import { publicAsset } from './public-assets.ts';
 
 async function readLocalInput(file:string,label:string):Promise<unknown> {
-  const input=`/data/${file}`;
+  const input=publicAsset(`data/${file}`);
   let response:Response;
   try {response=await fetch(input,{signal:AbortSignal.timeout(15_000)});}
   catch(error){throw new Error(`${label} ${input} could not load: ${error instanceof Error?error.message:'network failure'}. Check the local input and retry campus detail.`);}

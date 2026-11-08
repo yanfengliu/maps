@@ -95,10 +95,23 @@ test('numeric and cardinal bench direction is seated facing, with the back behin
   }
 });
 
-test('mapped unknown seats are neutral flat markers; wood/concrete/backrests and photographed teak remain distinct',()=>{
+function assertSupportedSeat(mesh,top,label){
+  const points=mesh.flatMap(t=>t.points);
+  assert.ok(points.some(p=>p[2]===0),label+' must have supports reaching the ground');
+  assert.ok(points.some(p=>p[2]===top),label+' must have a raised seat at normal seating height');
+  const supports=mesh.filter(t=>t.points.every(p=>p[2]<=0.41));
+  assert.ok(supports.some(({points:[a,b,c]})=>a[2]!==b[2]||a[2]!==c[2]),label+' support sides must have physical height');
+  assert.ok(supports.some(({points:[a,b,c]})=>a[2]===b[2]&&b[2]===c[2]&&Math.abs((b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]))>0.001),label+' supports need solid depth and caps');
+}
+test('mapped unknown seats are supported neutral seating; wood/concrete/backrests and photographed teak remain distinct',()=>{
   const unknown=benchTriangles(fixtureBench({material:undefined,backrest:undefined}));
-  assert.equal(unknown.length,2);assert.ok(unknown.flatMap(t=>t.points).every(p=>p[2]===0.025));
+  assertSupportedSeat(unknown,0.46,'unknown point bench');
+  assert.ok(unknown.flatMap(t=>t.points).every(p=>p[2]<=0.46),'an untagged backrest must stay unknown');
   assert.ok(unknown.every(t=>t.tint[0]<t.tint[1]),'unknown material must not silently receive brown wood');
+  const backed=benchTriangles(fixtureBench({material:undefined,backrest:'yes',direction:'N'}));
+  assert.ok(backed.flatMap(t=>t.points).some(p=>p[2]===0.91&&p[1]<0),'a known backrest is retained despite unknown material');
+  // Restoring the former flat marker must fail the functional seating oracle.
+  assert.throws(()=>assertSupportedSeat([{points:[[-.8,-.19,.025],[.8,-.19,.025],[.8,.19,.025]]}],0.46,'old flat marker'),/supports reaching the ground/);
   const concrete=benchTriangles(fixtureBench({material:'concrete',backrest:'no'}));
   assert.ok(concrete.flatMap(t=>t.points).every(p=>p[2]<=0.46));assert.ok(concrete.some(t=>t.tint[0]>0.7));
   const wood=benchTriangles(fixtureBench({backrest:'no'}));assert.ok(wood.flatMap(t=>t.points).every(p=>p[2]<=0.46));
@@ -143,14 +156,14 @@ test('all bench solids and ribbons clear building material, preserve mapped curv
 });
 
 const fixtureWay=(properties,coordinates=[[-122.1697,37.4278],[-122.16968,37.4278],[-122.16966,37.42782]])=>({type:'Feature',properties:{id:'way/123',version:1,kind:'bench',modeledFacing:0,...properties},geometry:{type:'LineString',coordinates}});
-test('bench ways of unknown material are flat neutral markers on their mapped path; known materials stay solid in their own tone',()=>{
+test('bench ways of unknown material are supported neutral seats on their mapped paths; source material and backrests stay distinct',()=>{
   for(const backrest of [undefined,'no','yes']){
     const way=fixtureWay({backrest}),mesh=benchTriangles(way);
-    assert.equal(mesh.length,(way.geometry.coordinates.length-1)*2,'one flat quad a segment');
-    assert.ok(mesh.flatMap(t=>t.points).every(p=>p[2]===0.025),`backrest=${backrest}: an unknown-material way must not gain a seat or back`);
-    assert.ok(mesh.every(t=>t.tint[0]<t.tint[1]),'unknown material keeps the neutral marker tone');
+    assertSupportedSeat(mesh,0.45,'unknown bench way');
+    assert.equal(Math.max(...mesh.flatMap(t=>t.points).map(p=>p[2])),backrest==='yes'?0.91:0.45,'only a tagged backrest receives a back');
+    assert.ok(mesh.every(t=>t.tint[0]<t.tint[1]),'unknown material keeps a neutral tone');
     const line=way.geometry.coordinates.map(projectLocal);
-    for(const p of mesh.flatMap(t=>t.points))assert.ok(line.slice(1).some((b,i)=>distance(p,line[i],b)<0.3),'the marker follows the mapped path, its 0.19 m half-width mitred at bends');
+    for(const p of mesh.flatMap(t=>t.points))assert.ok(line.slice(1).some((b,i)=>distance(p,line[i],b)<0.36),'seat, supports and back follow the mapped path with mitred bends');
   }
   const tones={wood:[0.61,0.54,0.43],concrete:[0.73,0.72,0.67],stone:[0.64,0.62,0.57]};
   for(const [material,tone] of Object.entries(tones)){
@@ -159,9 +172,23 @@ test('bench ways of unknown material are flat neutral markers on their mapped pa
     assert.ok(mesh.every(t=>t.tint.every((v,i)=>v===tone[i])),material+' way keeps its own tone');
   }
   const ways=environment.features.filter(f=>f.geometry.type==='LineString'&&f.properties.benchModel!=='quad-seat-wall');
-  const flat=ways.filter(f=>benchTriangles(f).every(t=>t.points.every(p=>p[2]===0.025)));
-  assert.equal(ways.length,25);assert.equal(flat.length,23);
-  assert.ok(flat.every(f=>!['wood','concrete','stone'].includes(f.properties.material)),'only unknown-material ways are flat');
+  assert.equal(ways.length,25);
+  for(const way of ways.filter(f=>!['wood','concrete','stone'].includes(f.properties.material)))assertSupportedSeat(benchTriangles(way),0.45,way.properties.id);
+});
+
+test('all mapped bench identities remain seating, including the four reported Memorial Court ground marks',()=>{
+  const before=JSON.stringify(environment),benches=environment.features.filter(f=>f.properties.kind==='bench');
+  for(const feature of benches){
+    const mesh=benchTriangles(feature),points=mesh.flatMap(t=>t.points);
+    assert.ok(points.some(p=>p[2]>=0.40&&p[2]<=0.50),feature.properties.id+' is not a raised seat');
+    assert.ok(points.some(p=>p[2]===0),feature.properties.id+' has no ground connection');
+  }
+  for(const id of ['node/6527823597','node/6527823598','node/6527823599','node/6527823600']){
+    const feature=benches.find(f=>f.properties.id===id);
+    assert.equal(feature.properties.material,undefined);assert.equal(feature.properties.backrest,undefined);
+    assertSupportedSeat(benchTriangles(feature),0.46,id);
+  }
+  assert.equal(JSON.stringify(environment),before,'rendering must not turn estimated dimensions/material into source tags');
 });
 
 test('a tagged backrest runs one side of a whole bench way: opposite the modeled facing, or a bent way\'s outer side where that facing runs along it',()=>{
