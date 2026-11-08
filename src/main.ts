@@ -12,6 +12,7 @@ import { enableMiddleMouseTilt } from './mouse-tilt.ts';
 import { describeBuildingArchitecture } from './building-architecture.ts';
 import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
+import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -330,15 +331,16 @@ function addCampusLayers(): void {
   map.addLayer({ id: 'stanford-roofs', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
     paint: { 'fill-extrusion-color': ['coalesce', ['get','detailRoofColor'], ['get','roofColor']], 'fill-extrusion-height': ['+', ['get','detailWallHeight'], 0.05], 'fill-extrusion-base': ['get','detailWallHeight'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false } }, 'road-label');
   addBuildingDetailLayer();
+  map.addLayer(quadPickingLayer(), 'road-label');
   map.addLayer({ id: 'stanford-names', type: 'symbol', source: 'stanford', minzoom: 16,
     filter: ['all', ['has','name'], ['!=', ['get','name'], null]],
     layout: { 'text-field': ['get','name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-max-width': 10, 'text-padding': 8, 'text-offset': [0,0.8] },
     paint: { 'text-color': '#765a44', 'text-halo-color': '#fff9eb', 'text-halo-width': 1.8 } });
   if (!campusEventsBound) {
     campusEventsBound = true;
-    map.on('mouseenter','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = 'pointer'; });
-    map.on('mouseleave','stanford-buildings', () => { if (map) map.getCanvas().style.cursor = ''; });
-    map.on('click','stanford-buildings', event => {
+    map.on('mouseenter',BUILDING_PICK_LAYERS, () => { if (map) map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave',BUILDING_PICK_LAYERS, () => { if (map) map.getCanvas().style.cursor = ''; });
+    map.on('click',BUILDING_PICK_LAYERS, event => {
       const feature = event.features?.[0]; if (feature) showBuilding(feature.properties);
     });
   }

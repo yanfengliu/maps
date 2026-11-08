@@ -1,6 +1,6 @@
 # Bay Area map and Stanford 3D
 
-Status: complete
+Status: active
 Owner: root integration
 Created: 2026-10-19
 Updated: 2026-11-07
@@ -20,6 +20,20 @@ Navigation means camera movement and finding places: pan, zoom, rotation, tilt, 
 The former Shibuya project remains on `codex/shibuya-archive-2026-10-19` at `e93f56711a5b629481c1512a89058c2823017840`. Do not alter it or its retained local resources.
 
 ## Approach
+
+### Current correction: roof continuity and arcade appearance
+
+The owner rejected the 2026-11-07 result in a new screenshot of the Main Quad: roof bands have pinched, zigzag peaks, and repeated flat facade arches still look artificial. Base `acbdece4313e64050cc253b981587c93ff2cd276` is the retained failed visual baseline; earlier overlap and courtyard regressions remain binding. Root owns `codex/quad-roofs-20261107` in ignored `artifacts/quad-roofs-20261107/wt`.
+
+Fixed reproduction before comparing mechanisms: use the unchanged published Quad relation, all nine part exclusions and the resulting three components; render the actual Main Quad flight, one settled zoom-in and 49-degree tilt at 1056×1013, plus close oblique and opposite views. Keep the owner's supplied image and prior gallery as counterevidence. Geometry acceptance also includes a straight 100×10 m bar, an L-shaped wing, a courtyard ring, translated/rotated versions, and a held-out real concave wing. Roofs must have continuous ridges and valleys with consistent pitch, no interior troughs caused by input triangulation, exact footprint-area coverage, empty courtyards, finite geometry within source height, complete edge closure and the existing total 160k-triangle / 24 MiB / two-draw budgets. Facades must distinguish real open arcades from closed rooms without repeated opaque arch-shaped decals. Review source photographs and inspect native images before acceptance.
+
+Disqualifiers: merely increasing subdivisions or adding texture to the same sampled height field; flattening all roofs; fixing only the marked corner; changing source coordinates or covering courtyards; raising budgets or hiding failures; claiming a general roof method while leaving its concave/holes subproblem unsolved; adding a major dependency or changing source formats without authorization. Compare distinct mechanisms independently, preserve compact attempt evidence here, then independently review the integrated candidate. No fleet policy or frozen historical record changes.
+
+The comparison selected the straight-skeleton topology candidate. The independent analytic candidate used a continuous six-plane finite-segment envelope, passed its fixed numerical fixtures and retained 156,074 total scene triangles / 24,347,544 bytes, but took approximately 508 ms and normalized pitch separately across the three components. The selected method solves exact source-edge planes over a compact offline-authored topology, passed the same bar/L/courtyard classes plus a held-out East Wing, and retained 154,460 triangles / 24,095,760 bytes before facade integration. It gives all three low components one pitch, preserves actual concave wing eaves and leaves more room for physical facade geometry. No app dependency, source coordinate, height or budget changed. The pinned BSD-3 Python authoring tool remains offline; only reviewed connectivity ships. Candidate sources, measurements and unsuccessful intermediate results remain under ignored `artifacts/quad-roofs-20261107/`.
+
+Two verification-instrument corrections require independent review: the old assertion that every concave wing has exactly four normals encoded the incorrect bounding-box roof; the replacement checks bidirectional agreement with every real source-edge plane and preserves the existing area/holes assertions. A new frontage test initially guessed at least ten wing edges; source inspection established eight edges across the six photographed north wings, so it now asserts those six identities and checks actual open/recessed geometry on every eligible segment. The original failed run is retained with the final evidence. Browser inspection found a separate exact-double signature defect: unchanged published coordinates project up to 1.77 nanometres differently between Node and Chromium. Only the signature canonicalization may tolerate that numeric noise; rendered coordinates, source hashes, planar coverage and 1 mm change rejection stay strict.
+
+Implementation and verification are complete: [review 17](reviews/17_implementation.md) accepted the roof method and instrument corrections and found elevated picking regression F42; [review 18](reviews/18_implementation.md) accepted its invisible-query-layer repair and the native floor correction. All 82 tests, build, types, audit, native desktop/phone production views and graphics recovery pass within [the recorded measurement bounds](design.md#quad-roof-continuity-and-facade-correction-2026-11-07). Source data, dependencies and archive are unchanged. Delivery and final worktree removal are pending the final integration step.
 
 ### Current increment: Quad surfaces and architectural detail
 

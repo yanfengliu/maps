@@ -1,4 +1,5 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
+import { QUAD_WING_IDS } from './quad-architecture.ts';
 
 type Surface = Pick<MapLibreMap,'getLayer'|'getZoom'|'setPaintProperty'|'getCanvas'>;
 
@@ -15,7 +16,7 @@ export function createQuadArcadeVisibility(){
       if(detailed===hidden)return;
       hidden=detailed;
       map.setPaintProperty('stanford-buildings','fill-extrusion-height',detailed
-        ? ['case',['==',['get','id'],'relation/35820'],['+',['get','base'],0.1],['get','detailWallHeight']]
+        ? ['case',['in',['get','id'],['literal',['relation/35820',...QUAD_WING_IDS]]],['+',['get','base'],0.02],['get','detailWallHeight']]
         : ['get','detailWallHeight']);
       map.getCanvas().dataset.campusDetailReady=String(detailed);
     },

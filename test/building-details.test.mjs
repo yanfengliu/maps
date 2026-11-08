@@ -7,6 +7,9 @@ import { createBuildingDetailsLayer } from '../src/building-details.ts';
 import { buildingArchitecture, describeBuildingArchitecture } from '../src/building-architecture.ts';
 import { composeMainQuad } from '../src/compose-building-parts.ts';
 import { QUAD_WING_IDS, isArcadeEdge } from '../src/quad-architecture.ts';
+import { isOpenQuadFront } from '../src/quad-fronts.ts';
+import { evaluateRoofSkeleton, orientRoofRings } from '../src/roof-skeleton.ts';
+import { QUAD_ROOF_PROFILES } from '../src/quad-roof-profile.ts';
 import { isSimpleRing } from '../tools/data/fetch-stanford.mjs';
 
 const original = JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson', import.meta.url), 'utf8'));
@@ -47,7 +50,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailArcadeCourt, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
@@ -231,7 +234,7 @@ test('Hoover dome remains 87m with a curved silhouette and Main Quad gets arcade
   assert.equal(Math.max(...heights), 87);
   assert.ok(heights.size > 8);
   let arcadeVertices = 0;
-  for (let i = 0; i < geometry.facades.length; i += VERTEX_FLOATS) if (geometry.facades[i + 12] === quad && geometry.facades[i + 11] === 3) arcadeVertices++;
+  for (let i = 0; i < geometry.facades.length; i += VERTEX_FLOATS) if (geometry.facades[i + 12] === quad && geometry.facades[i + 11] === 14) arcadeVertices++;
   assert.ok(arcadeVertices > 500);
 });
 
@@ -265,7 +268,13 @@ test('named Quad wings have source-clipped planar roofs and complete fitted wind
       normals.add([...mesh.slice(i+3,i+6)].map(n=>n.toFixed(4)).join(','));
       for(const j of [0,1,2])assert.ok(mesh[i+j*VERTEX_FLOATS+2]<=12.00001);
     }
-    assert.equal(normals.size,4,'a hip roof has four stable plane normals rather than tessellation spikes');
+    const rings=orientRoofRings(feature.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))),model=evaluateRoofSkeleton(rings,QUAD_ROOF_PROFILES[`${feature.properties.id}/0`]);
+    const pitch=(feature.properties.detailRoofHeight-feature.properties.detailWallHeight-0.07)/model.maximumTime;
+    const expectedNormals=rings.flatMap(ring=>ring.map((a,i)=>{const b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]),n=[pitch*(b[1]-a[1])/length,-pitch*(b[0]-a[0])/length,1],size=Math.hypot(...n);return n.map(v=>v/size);}));
+    const actualNormals=[...normals].map(value=>value.split(',').map(Number));
+    const same=(a,b)=>a.every((v,i)=>Math.abs(v-b[i])<0.00011);
+    for(const normal of actualNormals)assert.ok(expectedNormals.some(expected=>same(normal,expected)),'every rendered roof normal belongs to an exact source-edge hip plane');
+    for(const expected of expectedNormals)assert.ok(actualNormals.some(normal=>same(normal,expected)),'each mapped edge has its own continuous roof plane, including concave notches');
     const roofArea=roof.reduce((sum,t)=>sum+area(t),0),sourceArea=source.reduce((sum,t)=>sum+area(t),0);
     assert.ok(Math.abs(roofArea-sourceArea)<0.02,'clipped roof preserves all mapped notches and holes');
     assert.ok(Math.abs(intersect(roof,source)-roofArea)<0.02,'roof does not span outside the wing');
@@ -299,9 +308,10 @@ test('Inner Quad arcades replace flat wall faces with recessed walks, segmented 
   assert.equal(isArcadeEdge([0,1],[10,1],[[0,0],[10,0],[10,10],[0,10]]),false,'nearby parallel walls are not source courtyard edges');
 });
 
-test('every non-arcade Quad boundary retains a solid wall when native extrusion is hidden, including short corners',()=>{
-  const index=detailed.features.findIndex(f=>f.properties.id==='relation/35820'),feature=detailed.features[index],mesh=geometry.facades;
-  const court=feature.properties.detailArcadeCourt.slice(0,-1).map(projectLocal);
+test('every non-arcade Quad and named wing boundary retains a full solid wall when native extrusion is hidden, including short corners',()=>{
+ for(const [index,feature] of detailed.features.entries()){
+  if(feature.properties.id!=='relation/35820'&&!QUAD_WING_IDS.has(feature.properties.id))continue;
+  const mesh=geometry.facades;
   const triangles=[];
   for(let i=0;i<mesh.length;i+=VERTEX_FLOATS*3)if(mesh[i+12]===index)triangles.push([0,1,2].map(j=>[...mesh.slice(i+j*VERTEX_FLOATS,i+j*VERTEX_FLOATS+3)]));
   const cross=(a,b,p)=>(b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);
@@ -310,18 +320,19 @@ test('every non-arcade Quad boundary retains a solid wall when native extrusion 
     const points=ring.slice(0,-1).map(projectLocal);
     for(let i=0;i<points.length;i++){
       const a=points[i],b=points[(i+1)%points.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
-      if(isArcadeEdge(a,b,court))continue;
+      if(isOpenQuadFront(a,b,feature.properties.detailArcadeEdges))continue;
       if(length<1.8)short++;
       const u=[(b[0]-a[0])/length,(b[1]-a[1])/length];
       const faces=triangles.filter(tri=>tri.every(p=>Math.abs(Math.abs((p[0]-a[0])*u[1]-(p[1]-a[1])*u[0])-0.045)<0.001))
         .map(tri=>tri.map(p=>[(p[0]-a[0])*u[0]+(p[1]-a[1])*u[1],p[2]]));
-      for(const fraction of [.2,.5,.8])for(const z of [.25,3,6]){
+      for(const fraction of [.2,.5,.8])for(const z of [.25,3,feature.properties.detailWallHeight-.2]){
         const sample=[length*fraction,z];
         assert.ok(faces.some(tri=>{const signs=tri.map((p,j)=>cross(p,tri[(j+1)%3],sample));return signs.every(s=>s>=-0.0001)||signs.every(s=>s<=0.0001);}),`uncovered ${length.toFixed(3)} m edge ${JSON.stringify(a)} at ${fraction}/${z}`);
       }
     }
   }
-  assert.equal(short,10,'exercise every short edge in the reviewed source');
+  if(feature.properties.id==='relation/35820')assert.equal(short,10,'exercise every short edge in the reviewed parent source');
+ }
 });
 
 function gpu() {

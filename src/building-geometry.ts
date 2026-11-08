@@ -6,7 +6,9 @@ import { composeBuildingParts } from './compose-building-parts.ts';
 import { addCampusEnvironment, emptyEnvironmentCounts, type CampusEnvironment, type EnvironmentCounts } from './campus-environment.ts';
 import { addLandmarkAccents } from './landmark-accents.ts';
 import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
-import { addQuadArcade, addQuadWingElevation, isArcadeEdge, quadWingRoof } from './quad-architecture.ts';
+import { addQuadArcade, addQuadWingElevation, QUAD_WING_IDS } from './quad-architecture.ts';
+import { quadRoof } from './quad-roof.ts';
+import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
 export type Point = [number, number];
@@ -46,6 +48,8 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 /** Derived geometry hints are estimates; the original source height is retained. */
 export function prepareBuildingDetails(data: CampusData): CampusData {
   const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
+  const sourceQuad=data.features.find(feature=>feature.properties?.id==='relation/35820');
+  const detailArcadeEdges=sourceQuad?.geometry.type==='Polygon'?quadArcadeEdges(sourceQuad.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))):[];
   return { ...data, features: data.features.map(feature => {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
@@ -59,6 +63,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof,
+      ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
       ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };
   }) };
 }
@@ -160,7 +165,7 @@ export class BuildingGeometryBuilder {
     const architecture = p.detailArchitecture as BuildingArchitecture;
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
     const shape = architecture.roofShape;
-    for (const polygon of polygons) {
+    for (const [component, polygon] of polygons.entries()) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
       if (architecture.profile === 'memorial-church') {
@@ -173,9 +178,9 @@ export class BuildingGeometryBuilder {
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
       const indices = earcut(vertices.flat(), holes, 2);
       let roofTriangles: [Point, Point, Point][] = [];
-      const depth = architecture.profile==='quad-wing'?0:shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : p.id === 'relation/35820' ? 2 : 1;
+      const depth = architecture.profile==='quad-wing'||architecture.profile==='quad'?0:shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : 1;
       for (let i = 0; i < indices.length; i += 3) subdivide(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], depth, roofTriangles);
-      const wingRoof=architecture.profile==='quad-wing'?quadWingRoof(rings[0],roofTriangles):undefined;
+      const wingRoof=architecture.profile==='quad-wing'||architecture.profile==='quad'?quadRoof(String(p.id),component,rings):undefined;
       if(wingRoof)roofTriangles=wingRoof.triangles;
       const minY = Math.min(...vertices.map(v => v[1])), maxY = Math.max(...vertices.map(v => v[1]));
       let ridgeAxis: Point = [0, 1], longest = 0;
@@ -188,7 +193,7 @@ export class BuildingGeometryBuilder {
       if (shape === 'gabled') roofTriangles = splitAtRidge(roofTriangles, ridgeAxis, ridgeMiddle);
       const distances = new Map<Point, number>();
       let maximumDistance = 0;
-      if (!['flat','skillion','gabled'].includes(shape)) for (const triangle of roofTriangles) for (const point of triangle) {
+      if (!wingRoof&&!['flat','skillion','gabled'].includes(shape)) for (const triangle of roofTriangles) for (const point of triangle) {
         if (!distances.has(point)) distances.set(point, distanceToRings(point, rings));
         maximumDistance = Math.max(maximumDistance, distances.get(point)!);
       }
@@ -205,29 +210,29 @@ export class BuildingGeometryBuilder {
       for (const [a, b, c] of roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
         const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
-        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],roofTint,wingRoof?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],roofTint,wingRoof&&architecture.profile==='quad-wing'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile==='quad-wing'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
         for (let i = 0; i < ring.length; i++) {
           const a = ring[i], b = ring[(i + 1) % ring.length];
           const dx = b[0] - a[0], dy = b[1] - a[1], length = Math.hypot(dx, dy);
-          if (length < (architecture.profile==='quad'?0.00001:0.4)) continue;
+          if (length < (architecture.profile==='quad'||architecture.profile==='quad-wing'?0.00001:0.4)) continue;
           const nx = outward * dy / length, ny = -outward * dx / length;
           const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
-          const arcade=architecture.profile==='quad'&&isArcadeEdge(a,b,(p.detailArcadeCourt as GeoJSON.Position[]??[]).slice(0,-1).map(projectLocal));
-          if(arcade){
+          const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
+          if(architecture.profile==='quad-wing'&&length>1.8){
+            addQuadWingElevation(this.facades,a,b,[nx,ny],base,wall,building,wallTint,String(p.id),arcade);
+          }else if(arcade){
             addQuadArcade(this.facades,a,b,[nx,ny],base,wall,building,wallTint);
-          }else if(architecture.profile==='quad-wing'&&length>1.8){
-            addQuadWingElevation(this.facades,a,b,[nx,ny],base,wall,building,wallTint,String(p.id));
-          }else if(architecture.profile==='quad'&&length<=1.8){
+          }else if((architecture.profile==='quad'||architecture.profile==='quad-wing')&&length<=1.8){
             // The native parent is hidden for open arcades. Short returns
             // still need solid walls even though they cannot fit a window bay.
             this.facades.quad(at(a,base),at(b,base),at(b,wall-0.12),at(a,wall-0.12),wallTint,14,building,[[0,0],[length,0],[length,wall-base-0.12],[0,wall-base-0.12]]);
           }else if (wall > base + 1 && length > 1.8) {
             const libraryFront = architecture.profile==='library' && ringIndex===0 && (i===14 || i===15);
             const robleFront=p.id==='way/232805733'&&ringIndex===0&&nx*0.49+ny*0.87>0.7;
-            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 3 : robleFront?13:architecture.profile === 'residential' ? 4
+            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 20 : robleFront?13:architecture.profile === 'residential' ? 4
               : architecture.profile === 'modern' ? 5 : architecture.profile === 'garage' ? 6
               : architecture.profile === 'service' || architecture.profile === 'open' || architecture.floors === 0 ? 2
               : architecture.profile === 'tower' ? 7 : 1;

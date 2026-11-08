@@ -52,7 +52,7 @@ flat out float v_kind;
 void main() {
   gl_Position = u_matrix * vec4(a_position, 1.0);
   float illumination = 0.72 + 0.28 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
-  vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.6) : a_color;
+  vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.18) : a_color;
   v_color = tint * illumination;
   v_uv = a_uv;
   v_kind = a_kind;
@@ -155,22 +155,23 @@ void main() {
     float lap=1.0-smoothstep(0.015,0.045+aa.y,abs(fract(tiles.y)-0.5));
     tint*=1.0+(barrel-lap*0.075)*fade;
   }
-  if(abs(v_kind-14.0)<0.1 || abs(v_kind-18.0)<0.1){
+  if(abs(v_kind-14.0)<0.1 || abs(v_kind-18.0)<0.1 || abs(v_kind-20.0)<0.1){
     // Sandstone blocks have staggered joints and restrained face variation.
     // Dimensions are in metres, so close views gain detail without crawling
     // one-pixel brick lines at the campus overview.
-    vec2 masonry=vec2(v_uv.x/0.72+mod(floor(v_uv.y/0.34),2.0)*0.5,v_uv.y/0.34);
+    vec2 masonry=vec2(v_uv.x/1.05+mod(floor(v_uv.y/0.45),2.0)*0.5,v_uv.y/0.45);
     vec2 cell=fract(masonry),aa=max(fwidth(masonry),vec2(0.006));
     float joint=min(min(cell.x,1.0-cell.x),min(cell.y,1.0-cell.y));
     float fade=1.0-smoothstep(0.30,0.8,max(aa.x,aa.y));
     float variation=fract(sin(dot(floor(masonry),vec2(12.9898,78.233)))*43758.5453)-0.5;
-    tint*=1.0+variation*0.055*fade;
-    tint*=1.0-(1.0-smoothstep(0.008,0.025+max(aa.x,aa.y),joint))*0.16*fade;
+    tint*=1.0+variation*0.025*fade;
+    tint*=1.0-(1.0-smoothstep(0.008,0.025+max(aa.x,aa.y),joint))*0.065*fade;
     if(abs(v_kind-18.0)<0.1){
       float x=mod(v_uv.x,5.2)-2.6,y=v_uv.y;
-      float arch=max(abs(x)-1.64,y>2.55?length(vec2(x,y-2.55))-1.64:-1.0);
-      float lower=(1.0-smoothstep(-0.025,0.025,arch))*smoothstep(0.15,0.25,y);
-      float ring=(1.0-smoothstep(0.23,0.28,arch))-lower;
+      // Closed room elevations have rectangular windows. Open front arcades
+      // are real geometry; this material is used only above their openings.
+      float lower=(1.0-smoothstep(1.10,1.16,abs(x)))*smoothstep(0.95,1.02,y)*(1.0-smoothstep(4.45,4.52,y));
+      float ring=(1.0-smoothstep(1.22,1.28,abs(x)))*step(0.83,y)*(1.0-step(4.64,y))-lower;
       float upper=step(6.2,y)*(1.0-step(9.0,y))*(1.0-smoothstep(1.65,1.72,abs(x)));
       float surround=step(6.05,y)*(1.0-step(9.16,y))*(1.0-smoothstep(1.78,1.84,abs(x)));
       vec3 glass=mix(vec3(0.23,0.30,0.28),vec3(0.43,0.49,0.43),smoothstep(1.0,9.0,y));
@@ -182,11 +183,19 @@ void main() {
       tint=mix(tint,v_color*1.07,clamp(max(vertical,transom)*upper,0.0,1.0));
       float lowerFrame=max(1.0-smoothstep(0.025,0.055,abs(x)),1.0-smoothstep(0.035,0.07,abs(y-2.5)));
       tint=mix(tint,vec3(0.18,0.22,0.20),lowerFrame*lower);
-      // Radial stone joints distinguish the arch ring from ordinary courses.
-      float angle=atan(max(0.0,y-2.55),x);
-      float wedge=abs(fract(angle/3.14159265*13.0)-0.5);
-      tint*=1.0-(1.0-smoothstep(0.015,0.06+fwidth(angle),wedge))*ring*0.13;
+    }else if(abs(v_kind-20.0)<0.1){
+      float x=mod(v_uv.x,3.8)-1.9,y=v_uv.y;
+      float opening=(1.0-smoothstep(0.64,0.70,abs(x)))*smoothstep(0.65,0.70,y)*(1.0-smoothstep(2.7,2.75,y));
+      vec3 glass=mix(vec3(0.24,0.30,0.27),vec3(0.41,0.46,0.39),y/3.6);
+      tint=mix(tint,glass,opening*0.9);
+      float frame=max(1.0-smoothstep(0.025,0.055,abs(x)),1.0-smoothstep(0.025,0.055,abs(y-2.22)));
+      tint=mix(tint,v_color*1.04,frame*opening);
     }
+  }else if(abs(v_kind-21.0)<0.1){
+    // Divided windows sit in the recessed corridor wall, not in the arch.
+    float border=1.0-smoothstep(0.025,0.045,min(min(v_uv.x,1.0-v_uv.x),min(v_uv.y,1.0-v_uv.y)));
+    float frame=max(border,max(1.0-smoothstep(0.018,0.035,abs(v_uv.x-0.5)),1.0-smoothstep(0.018,0.035,abs(v_uv.y-0.79))));
+    tint=mix(v_color,vec3(0.57,0.53,0.43),frame);
   }else if(abs(v_kind-15.0)<0.1){
     float edge=abs(fract(v_uv.x/0.7)-0.5);
     tint*=0.88+0.12*smoothstep(0.0,0.5,edge);
