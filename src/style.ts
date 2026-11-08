@@ -19,8 +19,9 @@ export function createStyle(): StyleSpecification {
     projection: { type: 'globe' },
     sky: {
       'sky-color': ['interpolate', ['linear'], ['zoom'], 0, '#132735', 7, '#b7d4df', 12, '#dce7e6'],
-      'horizon-color': '#d5e9ed', 'sky-horizon-blend': 0.25,
-      'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.8, 8, 0.5, 12, 0],
+      'horizon-color': '#829da9', 'sky-horizon-blend': 0.08,
+      // A faint limb preserves globe depth without bleaching coastal cartography.
+      'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.16, 4, 0.12, 7, 0.04, 10, 0],
     },
     glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: {

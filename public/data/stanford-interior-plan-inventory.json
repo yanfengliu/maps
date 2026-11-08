@@ -1,0 +1,92 @@
+{
+  "reviewed": "2026-11-08",
+  "scope": "Bounded search of official Stanford/Hoover visitor, library, planning and athletics sources plus the public University Archives finding aid. This is not a complete campus search and not a claim that absent plans do not exist.",
+  "buildings": [
+    {
+      "name": "Hoover Tower",
+      "status": "no-current-public-plan-found",
+      "sources": [
+        {
+          "url": "https://www.hoover.org/visit-us-hoover-tower",
+          "type": "visitor description",
+          "supports": "Rotunda, galleries, observation deck and 14th-floor carillon; no room geometry."
+        },
+        {
+          "url": "https://oac.cdlib.org/findaid/ark%3A%2F13030%2Ftf0489n48r_aspace_ref1406_3dl/hierarchy?hierarchy=true&key=-right&offset=10",
+          "type": "archival catalog",
+          "supports": "Lists 1967 basement and first-floor renovation drawings in boxes 41/42; no digitized drawing was obtained. Historical catalog entries cannot establish current layout."
+        }
+      ],
+      "decision": "Exterior refinement only. Do not infer a multi-floor interior from floor count."
+    },
+    {
+      "name": "Cantor Arts Center",
+      "status": "public-plan-found-awaiting-visual-access",
+      "sources": [
+        {
+          "url": "https://museum.stanford.edu/sites/default/files/inline-files/Cantor_map_for_website_12-18-24-A.pdf",
+          "type": "official visitor floor plan",
+          "supports": "First and second floors, gallery numbers, lobby/courtyard/terraces, stairs and elevators."
+        }
+      ],
+      "verification": "Cached PDF text retrieved. Official current and earlier plan downloads returned Cloudflare 403 in raw HTTP and normal headless Chrome; the screenshot tool supplied no image bytes. No current plan geometry was visually inspected. Details: stanford-cantor-reference.json.",
+      "decision": "Do not construct walls until a current plan image is inspectable. The footprint and courtyard were verified, but they do not establish interior wall positions."
+    },
+    {
+      "name": "Stanford Stadium",
+      "status": "public-circulation-plan-found",
+      "sources": [
+        {
+          "url": "https://gostanford.com/facilities/stanford-stadium",
+          "type": "official facility page",
+          "supports": "Links gameday map and identifies accessible concourses and facilities."
+        },
+        {
+          "url": "https://storage.googleapis.com/stanford-prod/2025/09/11/NAVrzn3RTv80HUnZKRRFTrbtpUsQjzOGhW0JYLtw.pdf",
+          "type": "official gameday map",
+          "supports": "Seating sections, outer circulation ring, tunnel A-H positions, skybox and service locations. Reviewed as a rendered page; no room subdivision or dimensional section."
+        }
+      ],
+      "decision": "Supports a later circulation/concourse refinement; cannot establish press-box suite interiors or private room layouts."
+    },
+    {
+      "name": "Green Library",
+      "status": "no-public-floor-plan-obtained",
+      "sources": [
+        {
+          "url": "https://library.stanford.edu/libraries/cecil-h-green-library",
+          "type": "official library page",
+          "supports": "Space names and visitor information, no dimensional floor plan obtained."
+        },
+        {
+          "url": "https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID=03-200",
+          "type": "official access description",
+          "supports": "Bing Wing floor uses and accessible routes; linked site-access map is not an interior floor plan."
+        },
+        {
+          "url": "https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID=03-210",
+          "type": "official access description",
+          "supports": "East Wing level uses and wing connections, not wall geometry."
+        }
+      ],
+      "decision": "Continue plan research before constructing rooms; named floors do not establish wall positions."
+    },
+    {
+      "name": "Main Quad",
+      "status": "no-public-interior-plan-obtained",
+      "sources": [
+        {
+          "url": "https://campus-map.stanford.edu/?srch=370-370",
+          "type": "official campus map",
+          "supports": "Public map and building search; Stanford Login offered for community information. No current usable interior drawing obtained."
+        },
+        {
+          "url": "https://architectplanning.stanford.edu/guidelines-plans-and-reports",
+          "type": "official preservation guidance",
+          "supports": "Main Quad Exterior Guidelines address exterior treatment, not internal room layouts."
+        }
+      ],
+      "decision": "Public campus outline and exterior guidelines are insufficient to invent rooms across individual Quad wings."
+    }
+  ]
+}

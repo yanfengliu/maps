@@ -1,4 +1,5 @@
 import type * as GeoJSON from 'geojson';
+import {addQuadPlantings} from './quad-plantings.ts';
 
 type Point = [number, number];
 type Vertex = [number, number, number];
@@ -57,6 +58,8 @@ export function environmentDimensions(properties:CampusEnvironment['features'][n
 /** Solid low-poly crowns have interpolated normals; no alpha sprites or per-tree draw. */
 export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,project:(coordinate:readonly number[])=>Point):EnvironmentCounts {
   const counts=emptyEnvironmentCounts();
+  const quadPlantings=addQuadPlantings(mesh,data,project);
+  Object.assign(counts,quadPlantings.counts);
   const triangle=(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND,normals?:[Vertex,Vertex,Vertex])=>mesh.triangle(a,b,c,tint,kind,ENVIRONMENT_BUILDING,undefined,normals);
   const quad=(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind=ENVIRONMENT_VERTEX_KIND)=>mesh.quad(a,b,c,d,tint,kind,ENVIRONMENT_BUILDING);
   const box=(at:(u:number,v:number,z:number)=>Vertex,u0:number,u1:number,v0:number,v1:number,z0:number,z1:number,color:Color)=>{
@@ -162,6 +165,9 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
     if(feature.geometry.type!=='Point')continue;
     const [x,y]=project(feature.geometry.coordinates);
     if(p.kind==='tree'){
+      // The dated botanical reference supersedes incomplete OSM tree rendering
+      // only inside the eight Quad rings. The original source stays untouched.
+      if(quadPlantings.containsMappedTree(feature.geometry.coordinates))continue;
       const {type,height,radius,seed}=environmentDimensions(p);counts.trees++;
       const bark:Color=type==='palm'?[0.56,0.48,0.35]:[0.45,0.40,0.31];
       const trunk=type==='palm'?0.35:0.19+seed*0.09;

@@ -15,6 +15,8 @@ import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadi
 import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
 import { referenceGarageHeight } from './garage-architecture.ts';
 import { addGarage } from './garage-geometry.ts';
+import { addHoover } from './hoover-geometry.ts';
+import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
@@ -115,6 +117,7 @@ class Mesh {
 }
 
 export interface DetailGeometry {
+  surfaces?: SurfaceCounts;
   churchTextures?: boolean;
   roofs: Float32Array;
   facades: Float32Array;
@@ -185,6 +188,7 @@ export class BuildingGeometryBuilder {
       if(p.id===STADIUM_CONCOURSE_ID)addStadiumField(this.roofs,building,projectLocal);
       if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       if(addGarage(this.roofs,this.facades,rings,building,p,base,height)){this.checkBudget(String(p.id));continue;}
+      if(addHoover(this.roofs,this.facades,String(p.id),rings[0],building,height)){this.checkBudget(String(p.id));continue;}
       const vertices = rings.flat(), holes: number[] = [];
       let offset = rings[0].length;
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
@@ -307,8 +311,21 @@ export class BuildingGeometryBuilder {
   }
 }
 
-export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures): DetailGeometry {
+export function appendCampusSurfaces(geometry: DetailGeometry, surfaces: CampusSurfaces, target: 'roofs'|'facades' = 'roofs'): DetailGeometry {
+  const mesh = new Mesh(), counts = addCampusSurfaces(mesh, surfaces, projectLocal);
+  const additional = mesh.values.length / VERTEX_FLOATS / 3;
+  if (geometry.triangles + additional > MAX_DETAIL_TRIANGLES) throw new Error('Campus paving exceeds the shared geometry budget.');
+  const combined = new Float32Array(geometry[target].length + mesh.values.length);
+  combined.set(geometry[target]); combined.set(mesh.values, geometry[target].length);
+  return { ...geometry, [target]: combined, surfaces: counts,
+    roofTriangles: geometry.roofTriangles + (target === 'roofs' ? additional : 0),
+    facadeTriangles: geometry.facadeTriangles + (target === 'facades' ? additional : 0),
+    triangles: geometry.triangles + additional, bytes: geometry.bytes + mesh.values.length * 4 };
+}
+
+export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures,surfaces?:CampusSurfaces): DetailGeometry {
   const builder = new BuildingGeometryBuilder(data,environment,sculptures);
   while (!builder.done) builder.step();
-  return builder.finish();
+  const geometry = builder.finish();
+  return surfaces ? appendCampusSurfaces(geometry,surfaces) : geometry;
 }

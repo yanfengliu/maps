@@ -1,5 +1,6 @@
 import type * as GeoJSON from 'geojson';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
+import { HOOVER_PART_IDS, HOOVER_DESCRIPTION } from './hoover-architecture.ts';
 import { garageProfile, describeGarage } from './garage-architecture.ts';
 import { ENGINEERING_REFERENCES, UNVERIFIED_ACADEMIC_IDS } from './engineering-architecture.ts';
 import { STADIUM_CONCOURSE_ID, STADIUM_PRESSBOX_IDS, STADIUM_SCOREBOARD_IDS, STADIUM_SEATING_IDS } from './stadium-architecture.ts';
@@ -17,7 +18,6 @@ export interface BuildingArchitecture {
   roofSource: 'osm-roof-shape' | 'estimated' | 'reference-profile' | 'official-description';
 }
 const BRAUN_MUSIC_ID='relation/12460152';
-const hooverParts = new Set(['way/1346548884','way/1346548885','way/1346548886','way/1346548887','way/1346548888','way/1346548889','way/1346548890','way/1346548891']);
 
 /** Authored material families, informed by the inspected Stanford photographs. */
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
@@ -50,7 +50,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
     : p.id === 'way/232805680' ? 'library'
     : STADIUM_PRESSBOX_IDS.has(String(p.id)) ? 'modern'
     : STADIUM_SCOREBOARD_IDS.has(String(p.id)) || p.id===STADIUM_CONCOURSE_ID ? 'open'
-    : hooverParts.has(String(p.id)) || /tower/i.test(name) ? 'tower'
+    : HOOVER_PART_IDS.has(String(p.id)) || /tower/i.test(name) ? 'tower'
     : ['roof', 'steps', 'bridge', 'grandstand', 'stadium'].includes(type) ? 'open'
     : ['garage', 'parking'].includes(type) ? 'garage'
     : p.id === 'way/232805733' || ['dormitory', 'apartments', 'residential', 'house', 'detached'].includes(type) ? 'residential'
@@ -77,6 +77,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   const garage=describeGarage(p);if(garage)return garage;
   if(p.id===BRAUN_MUSIC_ID)return 'Stanford describes first and second floors and a flat photovoltaic roof at Braun Music Center. The model retains its courtyard openings and narrow tiled perimeter; panel layout, roof edging, window spacing and unsurveyed dimensions are estimates.';
   const detail = p.detailArchitecture as BuildingArchitecture | undefined;

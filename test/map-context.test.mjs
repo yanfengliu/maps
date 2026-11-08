@@ -21,23 +21,21 @@ test('church cutaway excludes only the church exterior, retaining campus, pickin
   context.churchInterior=false;sync();for(const id of ['stanford-buildings','stanford-roofs'])assert.equal(filters.get(id),null);assert.equal(arcade.at(-1),true);assert.deepEqual(visibility,[]);
 });
 
-test('map construction and world overview admit destinations outside the Bay Area at world scale',()=>{
+test('map construction admits destinations outside the Bay Area and native zoom to world scale',()=>{
   const construction=source.match(/map = new maplibregl\.Map\(\{[\s\S]*?\}\);/)?.[0];assert.ok(construction);
   let options;
   runInNewContext(stripTypeScriptTypes(construction),{map:undefined,maplibregl:{Map:class {constructor(value){options=plain(value);}}},MAX_MAP_ZOOM:21.5,PLACES,reducedMotion:{matches:false}});
   assert.equal(options.maxBounds,undefined);assert.equal(options.minZoom,0);assert.equal(options.maxZoom,21.5);
   assert.equal(options.renderWorldCopies,true,'horizontal movement must still work when the viewport spans a whole world');
-  const flights=[],caption={};
-  runInNewContext(`${handler('overview')}\noverview(false);`,{window:{innerWidth:1600,innerHeight:1100},map:{flyTo:value=>flights.push(plain(value))},panelPadding:()=>({top:90,bottom:90,left:30,right:60}),motionDuration:n=>n,el:()=>caption,search:{value:'Paris',blur(){}},closeSearch(){},closeDetails(){}});
-  assert.deepEqual(flights[0].center,[0,20]);assert.ok(flights[0].zoom<3);assert.equal(caption.textContent,'WORLD MAP');
 });
 
-test('initial interface has compact search and shortcuts without a persistent information sidebar',()=>{
+test('initial interface has free search and map controls without fixed destinations or a persistent information panel',()=>{
   const template=source.match(/root\.innerHTML = `[\s\S]*?\n`;/)?.[0];assert.ok(template);
   const root={};runInNewContext(template,{root,publicAsset:path=>'/'+path,icon:()=>'<svg></svg>',campusIllustration:'<svg></svg>',PLACES:Array.from({length:4},(_,i)=>({id:String(i),name:'Place',subtitle:'City · Region'}))});
   assert.doesNotMatch(root.innerHTML,/<aside\b|class="sidebar"|id="explore-content"/);
-  assert.match(root.innerHTML,/aria-label="Search places"/);assert.match(root.innerHTML,/aria-label="World overview"/);
-  assert.match(root.innerHTML,/id="explore-stanford"/);assert.match(root.innerHTML,/id="explore-church"/);
+  assert.match(root.innerHTML,/aria-label="Search places"/);assert.doesNotMatch(root.innerHTML,/world-overview|view-name|class="map-caption"/);
+  assert.doesNotMatch(root.innerHTML,/explore-stanford|explore-church|quick-places|Featured places/);
+  assert.match(root.innerHTML,/id="zoom-out"/);assert.match(root.innerHTML,/id="compass"/);
   assert.match(root.innerHTML,/id="place-details"[^>]*hidden/);assert.match(root.innerHTML,/id="church-information"[^>]*hidden/);
 });
 

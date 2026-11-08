@@ -1,0 +1,487 @@
+{
+  "schemaVersion": 1,
+  "derivedFromFetchedAt": "2026-10-20T06:13:20.820Z",
+  "source": "Existing pinned OpenStreetMap API 0.6 bounded extracts",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0",
+  "licenseUrl": "https://www.openstreetmap.org/copyright",
+  "sourceProvenance": "stanford-provenance.json",
+  "sources": [
+    {
+      "file": "stanford-tile-0.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.415,-122.17,37.43",
+      "retrievedAt": "2026-10-20T06:13:03.983Z",
+      "bytes": 6102739,
+      "sha256": "e6f62d694951dce27966d09b848dc71bebb8118cc6a88622bca9b8c2bc022e4f"
+    },
+    {
+      "file": "stanford-tile-1.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.415,-122.15,37.43",
+      "retrievedAt": "2026-10-20T06:13:08.989Z",
+      "bytes": 9091436,
+      "sha256": "91aeef00c42c735f4816f7e3efe7e2744243f03f4514ea5d12fd03b318c16530"
+    },
+    {
+      "file": "stanford-tile-2.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.19,37.43,-122.17,37.445",
+      "retrievedAt": "2026-10-20T06:13:15.430Z",
+      "bytes": 11279941,
+      "sha256": "f5d50e363c49bc25d43fcfa6b50f00b7ca6092af5044d079b7e89300224af656"
+    },
+    {
+      "file": "stanford-tile-3.osm",
+      "url": "https://www.openstreetmap.org/api/0.6/map?bbox=-122.17,37.43,-122.15,37.445",
+      "retrievedAt": "2026-10-20T06:13:20.820Z",
+      "bytes": 9361675,
+      "sha256": "39d69eb404469082f93d924ad80ec52802a7a2eaa35fab6f041ef0b1e88ff635"
+    }
+  ],
+  "coreBounds": [
+    -122.174,
+    37.424,
+    -122.165,
+    37.432
+  ],
+  "retainedTags": [
+    "name",
+    "highway",
+    "surface",
+    "width",
+    "lanes",
+    "lanes:forward",
+    "lanes:backward",
+    "lane_markings",
+    "access",
+    "foot",
+    "bicycle",
+    "bus",
+    "psv",
+    "motor_vehicle",
+    "motorcar",
+    "oneway",
+    "junction",
+    "sidewalk",
+    "sidewalk:both",
+    "sidewalk:left",
+    "sidewalk:right",
+    "crossing",
+    "crossing:markings",
+    "crossing:signals",
+    "crossing:island",
+    "footway",
+    "cycleway",
+    "tactile_paving",
+    "kerb",
+    "area",
+    "covered",
+    "tunnel"
+  ],
+  "selection": "Complete named Jane Stanford Way, Palm Drive, Lasuen Mall, Escondido Mall, Santa Teresa Street and Duena Street source ways entirely inside coreBounds, excluding construction and covered routes; Santa Teresa includes explicitly mapped zebra markings (way/1543344570 and node/4913257330, corroborated by crossing way/500221862); seven explicitly listed Memorial Court walks; mapped crossing nodes belonging to those selected ways. Inner Quad paving is an authored ground interpretation of relation/35820 inner way/27520214 with eight exact mapped wood outlines removed. No inferred crossing locations, resampled centerlines or random road markings.",
+  "counts": {
+    "plazas": 1,
+    "streets": 65,
+    "crossings": 16,
+    "streetSegments": 320
+  },
+  "excluded": [
+    {
+      "id": "way/8949170",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/8958410",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/8965915",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/23693355",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/25292362",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/27833029",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/27833035",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/31705613",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/34539116",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/34539117",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/48162361",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/48162362",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/164126512",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/164126513",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/256750252",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/396869269",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/396883088",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/396887094",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/396887095",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/396887096",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/408590187",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/413736744",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/413736750",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/430280113",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/430280114",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/430280115",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/430280116",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/430280117",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/435715054",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/460597952",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/460597953",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/481335237",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/481335238",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/481335239",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/539102969",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/580337077",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/580337102",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/596052106",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/608684500",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/619117702",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/619322360",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112784",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112785",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112786",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112787",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112788",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/630112789",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/673453011",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/673453013",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/676064527",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/676064532",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/678227662",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/689431791",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/694397329",
+      "reason": "construction-or-covered-route"
+    },
+    {
+      "id": "way/788704673",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/918547145",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/918547146",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/1017389193",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/1017389194",
+      "reason": "outside-bounded-core"
+    },
+    {
+      "id": "way/1315637157",
+      "reason": "outside-bounded-core"
+    }
+  ],
+  "modelLimits": "This is bounded campus-core ground detail, not a survey or exhaustive campus surface inventory. Coordinates and retained source tags are unchanged. Widths with widthSource=class-estimate, crosswalk width, curb dimensions (0.10 m low-curb interpretation only along the four photographed Oval/Palm Drive segments), texture scale and joint patterns are estimates. Unknown source surfaces remain unknown except the documented Memorial Court and Lasuen photographic interpretations. The 2023 Lasuen image establishes asphalt in that corridor; extending that material across selected Lasuen segments is an inference, not per-segment photographic verification. Crossing positions are mapped; only explicit crossing:markings supplies a paint style. Missing/unmarked tags never imply zebra stripes. Recent construction may have changed some segments.",
+  "mainQuad": {
+    "outer": "way/27520214",
+    "holes": [
+      "way/30775532",
+      "way/30775534",
+      "way/30775535",
+      "way/30775536",
+      "way/30775539",
+      "way/30775540",
+      "way/30775541",
+      "way/30775542"
+    ],
+    "sourceVersions": {
+      "relation/35820": 14,
+      "way/27520214": 18,
+      "way/30775532": 6,
+      "way/30775534": 6,
+      "way/30775535": 5,
+      "way/30775536": 5,
+      "way/30775539": 5,
+      "way/30775540": 4,
+      "way/30775541": 4,
+      "way/30775542": 5
+    },
+    "limitations": "Courtyard ring is a building-relation void, not an OSM surface polygon; paving assignment is an authored interpretation of inspected photographs and Stanford preservation text. Eight planting holes remain empty. Pattern and unit dimensions are not a measured paving plan."
+  },
+  "references": [
+    {
+      "id": "stanford-main-quad-pavers",
+      "url": "https://stanfordmag.org/contents/progress-meets-preservation",
+      "date": "2015-03",
+      "observed": "Stanford preservation account identifies historic red-and-white pavers around Main Quad; does not supply present-day measured layout."
+    },
+    {
+      "id": "stanford-quad-aerial-2008",
+      "url": "https://web.stanford.edu/~siegelr/stanford/1000feet.html",
+      "image": "https://web.stanford.edu/~siegelr/stanford/1000feet/IMG_4990%20sunlight%20on%20the%20quad%20resized.jpg",
+      "date": "2008-05-17",
+      "observed": "Inspected image: continuous muted rose paving throughout Inner Quad around eight planting islands; Memorial Court has pale crossed walks around lawn triangles. Historic photograph, not current surface condition."
+    },
+    {
+      "id": "stanford-quad-paving-close-2013",
+      "url": "https://web.stanford.edu/~siegelr/stanford/quad.html",
+      "image": "https://web.stanford.edu/~siegelr/stanford/quad/IMG_8273%20cleaning%20the%20quad%20%208-23-13.JPG",
+      "date": "2013-08-23",
+      "observed": "Inspected close photograph at the Quad gateway: muted rose and gray small rounded rectangular interlocking or cobble-like pavers with dark joints. Unit dimensions and exact bond are unmeasured. Covered-arcade red/cream diagonal tiles are a separate surface and must not be applied across the open courtyard."
+    },
+    {
+      "id": "stanford-oval-aerial-2019",
+      "url": "https://web.stanford.edu/~siegelr/stanford/1000feet.html",
+      "image": "https://web.stanford.edu/~siegelr/flying/heli-flyover2019/0T1A6621%20the%20oval%20-%20stanford%20from%20helicopter%2006-23-2019%20Canon%20EOS%207D%20Mark%20II.jpg",
+      "date": "2019-06-23",
+      "observed": "Inspected image: dark asphalt Oval roadway and Jane Stanford Way, pale sidewalks/curbs and distinct marked crossings. Does not establish current crossing paint at every mapped node."
+    },
+    {
+      "id": "stanford-lasuen-2023",
+      "url": "https://fsl.stanford.edu/how-join",
+      "image": "https://fsl.stanford.edu/sites/g/files/sbiybj23256/files/styles/breakpoint_2xl_2x/public/media/image/20230823_stanford_summer_n6a9412_0.jpg?itok=xB3t2NSa",
+      "date": "2023-08-23",
+      "observed": "Inspected Stanford photograph: Lasuen sign, dark asphalt circulation lane, pale concrete walks, brick edging and concrete tree planters. Does not justify paving the entire mall in brick."
+    },
+    {
+      "id": "stanford-circulation-project-2023",
+      "url": "https://news.stanford.edu/stories/2023/01/navigating-campus-construction",
+      "date": "2023-01",
+      "observed": "University report describes Lasuen/Escondido circulation and roundabout changes; retained construction-tagged ways are excluded from normal surfaced routes."
+    }
+  ],
+  "outputs": {
+    "stanford-surfaces.geojson": {
+      "bytes": 48535,
+      "sha256": "41367b6dc980c7d87d8d6f9addd0488eab88cf3217f841d1bf481bc0c782a8d3"
+    }
+  },
+  "featureGeometryHashes": {
+    "derived/main-quad-paving": "647129fec619e26581f7e49949f3fbae4439cac0051587805bea43c31c56a994",
+    "way/8949167": "588f73e27288268029a3bf3bc5e65356f779acdd2dfd6609b0d188f3cdbf2d35",
+    "way/23693327": "9840a13d482102d0eb799b62b1f6d6abf83ca3001198a713aeb0a7542235e359",
+    "way/23693550": "e6734f3649b129199e31445f884d4d8c3f06bd0905cb1acc1734cd90043f778b",
+    "way/25292875": "fadc4e243b066bf4e7c5c61c597a05c36a49f2f23bb6a830c9b25f14c87dc7bc",
+    "way/25292876": "9f541772eab356a70ec88029c601ac8d10762fc31b04d6d892907cfe23345ab2",
+    "way/26249908": "01c9c11a0bdd669e8b8977e0ad8cd00ffb9e9beaa0320523e4e2c6eeb9a53ac1",
+    "way/30775546": "80918c4d5a81131106440b275f1dfada721a579f7317014257f412d6e7a11a6e",
+    "way/30775550": "056018ae99f13d5f3d9be9ee1ae89475f41db4163b6e39e7d88d83b1ca830c70",
+    "way/30775863": "d27878ba7a94274decb3e9883f318ba03e987704866892e509983a5b3d6e3cba",
+    "way/30775885": "0b8275de3a6673444952a906f6454490eda84dd52b7e8e7bda24c5cb5e14c51e",
+    "way/30775896": "2db441b28d7ce26214e144d1ad2dd3cc10106da0e8a06a3a845c8ea04ed2f3b7",
+    "way/30775897": "4d133e89f8f2307d431ff9920f5f776a45e9732a0606e37ddc37f2764884dd63",
+    "way/30775898": "bdd9b01280f8759fc8461ae7e15726f522ca7593cc577827f9ec7ad3840c39b9",
+    "way/30776052": "68385224664a651056e3b1d2b0ba2a00b9aceabeab4182ef24e89750b76f22fd",
+    "way/31011817": "250e18f5fd3501dd1c3b632306befa6de65ed298c1df54a62c9435f4b3905527",
+    "way/31705912": "738b680a35127e76bca83e8dae1ae230d3c6fd4f03fcdf254a682e06526a43f1",
+    "way/31712068": "a8984396d04f189c21ef100e451fac5ff8b3feb9a99df09c5d7ef8a8733a6b4f",
+    "way/413736756": "f30886b2fe49781821344e184af9a2e993dc247b3146ea8824e1455b997fce6d",
+    "way/441658681": "3069f3e2af63fc4129a29228aa2541a1355a4d28bdce4a3b42def38d88b81c12",
+    "way/481335230": "06ce72cde732b56672f83874e965e066536d9354c14a603a3177934dabb0e996",
+    "way/481335231": "d8ba810840a05dac7292bfe892a381646741c5c266eb14d675fba1c08365395e",
+    "way/481335233": "240d9009c31cfd506c02bf882904e17ade2dc472b163250fa79fbe9ed3d87a4c",
+    "way/481335234": "a3b385650c1d96f2a3a37da4a42ce68a6f041532ad4ad79191ed82adb5c63368",
+    "way/481335236": "8457b135a2a1f135609e7877ad4e12c91405ac793330e22c89a54d84b8dc79dc",
+    "way/481335240": "dd0873f4a9f245e763f47cd5abd86899c33b254239a593e01746ff14276de686",
+    "way/481335241": "32be270dc18108fc96044d54737fb0013aa6b5bf7447fd4379237c22020db589",
+    "way/481335249": "b74589293d618e646c40a3b027d7bc527eff1f8c52da7c5d6f2f8e6a08fba22e",
+    "way/579967726": "c7fc444f498fbad838722ac251f510c679c418e244c38aa99e075d80dbde658e",
+    "way/580337058": "5c6e80a8f4f821a9e3de3dbc9f67de4238e3e36bcd6c45926f56ed58bfd44b21",
+    "way/580337059": "fafbccb5ae449b7bf768e4bf8af3de0e52df650fe4b63badd5a502ade07e076a",
+    "way/580337103": "bfd371395c11b6de12bd1b545605edbbd7101d6abc517fde74119df14196ad98",
+    "way/580337104": "e07567d119b3ac556d29ef5ca65a61e0669d3ea5a9f50b9c67e78d52fc9f2e32",
+    "way/591686696": "4d59f6bc79bfd51e8c90e9ddc033e0c5f20899f40b5d3ce7e716436acb318cb4",
+    "way/608784173": "d59ee71d5800ebce5dcc0301b30ea535b23ab919289fd8303cb0fd3758233627",
+    "way/609390405": "0ed1a2c9996098e2e9e1e64f50a7fa8bf9f42d8c2cee9296aa34a5ef2fd1dc2e",
+    "way/609390406": "08aec6640fc65bcaaa1553821c2de4c4292221dc781a01ca1699c6655c53edf5",
+    "way/676154806": "b9541c1821fd98a9a9357a5c01d6bab268bba5de6fe38819090c1e3378277e77",
+    "way/684201072": "ecfb06dcb4a6ef6aa82510d7773a435204186e1cabb68a606456a0a402cd5e9d",
+    "way/684201074": "ef6bbf1be71aa8114626eee71e0db9f137340e1ade33fc2807d411b07ef07cca",
+    "way/689427789": "8f4bfadaad9cd966fda4d90dd522209001cf376b4702d57400ff20e8c2fbcf96",
+    "way/689427791": "86ce6bea04879382f97ac880a8ba558090464354767d5f3453ba25397502011f",
+    "way/694397330": "1ad850817def01f78194d58f5e11b389e76780444d98f71742d15caa44b9b89c",
+    "way/696196333": "a8dcf08192d1f4a0e76441a47ce40d9b32a9bd2bbf64d76da672af98a3e0cd23",
+    "way/696196334": "046a68c33c7354a63a4ad34156a7f52cce88a8d72cce5af0874c3e555c91f64d",
+    "way/696199096": "5f5df14e7ca9b13bda5502a8279c822fb3ac784d5ff4e8244a1ab87ccd94d11b",
+    "way/696250797": "3633a0ba6dc06bd32d29a34428be52a101a972c4f2c7e974f97f278bd6fee564",
+    "way/696250998": "faeb28f5bbefc0fc9d28f011f4a3f18d37eea1911f1a90ca1dd54e6754540354",
+    "way/1202688964": "c69be31794b6cea21ebfdd5178f61a327121204fffc7d1acf35baab9770dd248",
+    "way/1302914388": "0d7859c9999a43b8dc07e08b4e01f6c47af61932e2016912a1fc761cbd721a71",
+    "way/1498080761": "e1a42a1f9315a619b3c3c16157cbc56619c7d429980b609e7dda8c15242250a6",
+    "way/1498080762": "f14fd586b6de21c6883b52f18014a48a3b89486f9ff0124d163a2ad10e0946ed",
+    "way/1498080763": "cf1a9299fbae3266fac6f0d808cb84c4cf1020634ad50075c319af529d316ad5",
+    "way/1498080764": "f2986a31ed9640e2431c44fcf9aa6f18245c27fda7525093eae69e35fae92df9",
+    "way/1498080765": "290e11f01b1dafd5d37411bea743ec4ed6361447779b8a5cdb508d6663a96f0b",
+    "way/1498080766": "883f26c74d233e27c0b440ea3889bd799706f69efdc674cfcb2d4b141c4f41f1",
+    "way/1498080767": "71c3a2dcb453ae18c2742c77e5f607be0e5dd9aa86c73678bcf1ce0a3f69113d",
+    "way/1498080768": "e7d1198b0cbd2f9661c546721e929791d497ed801920710c10f430b52688e458",
+    "way/1543344570": "dfbe5b37473ab2b904fb8f19058ba5181eb8f726c6aa7e580d4ef46cbaec300f",
+    "way/1543344571": "fca0b38fc9bfeb02923e88029a002079a002913cddc2efdb3083875c864b55c2",
+    "way/1543344572": "9f390ea1d8fa82fd6f4446f111a6c84b55b488d10bc699842d19a9b6a83828f1",
+    "way/1543344574": "9cdb7c08682980108568a0d965ea850ce7ed8ca6c21c760a560fedd55636e6d2",
+    "way/1543344576": "e09cfce8f62bf9cab05ef06523f9caa5ebd22bb279b8adbec019c68df603c7f4",
+    "way/1543344577": "b973409cde7c96d4d95723cfe638e841e94233eed95b36f7c691648fb9483d35",
+    "way/1543344578": "b6f84fe2086392e4b0a58e264b82c347a2b755521904b8c54c6f5828d3d431af",
+    "way/1543344580": "76034733f966af58cece001138655762daa4c98398972e2e8587246d4c3b65ab",
+    "node/256566748": "0b3967d85917367f2f693c4420ab1d0d2efabb97087d1849886e10e06f8f747f",
+    "node/256568429": "1bb821359a838698881e85142a6fd8b54f766aa59f107327741cd0c709488633",
+    "node/340333379": "94844cb763f021e6f97ca7f1222b0318877f49a7760256cc17136f2d6571e4d8",
+    "node/522171022": "1dc5768f61bfff47125a0097bf28524c85f8d0a552e3dde40aefe5a2eb68e7be",
+    "node/522171042": "23e40667450f1cd1abfb3110ab723bccef9e40bbfc62f00a281eb1c25ea110cb",
+    "node/522172277": "f99f94459cbee0af22aa149f3d3d9d1629f2eafe4d3df59c762044c6deaaaf88",
+    "node/522172286": "5adeddc931e25ec2795bc1eca4c1a0e172af66fa1bb5e7bb5b40dd9b7c0c5f68",
+    "node/4742672891": "a3ed90fd19d18b24685b844e3e6114c9a1923a1502e799c529e9ff283eb3735b",
+    "node/4913257330": "94b8a413667baede136041bd9177acd2c569287c7206cb469a406ad675e73119",
+    "node/5060845981": "16b7e5784d51116255cb11bd83907e26e20de3028ca6ac29909dc1131241bdda",
+    "node/5553314726": "ac254f165cdc8b2b4b931694cea9756e64d0da3cf5e450ab24b3864eaba51b1b",
+    "node/5553314728": "ebdbc1753bc66cf0f4cbcffa754dc370a1e14b7ca1647831c66041161538ebc7",
+    "node/6294620381": "303d622f892e4c56a0aa25dfd4e30d1f483a95e3d7f9fed9a7f69f2821af412d",
+    "node/6333452712": "b54b697e4b5ca62808b02bc0aa73d0dae94aa90d12d21134c3fbc851442e8275",
+    "node/8416756850": "7a0303e12f5d43e401ae9ad9cd9d1700270817ca91f4e35cba575ad833581380",
+    "node/8416756855": "a06ecacac92b56b6a6ab35cb0f195ea250770a152ea59abe33a3c3f8ad179c6a"
+  }
+}

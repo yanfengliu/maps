@@ -1,0 +1,96 @@
+{
+  "reviewed": "2026-11-08",
+  "status": "awaiting-current-plan-image",
+  "buildingIds": [
+    "relation/12236339"
+  ],
+  "sourceGeometry": {
+    "file": "stanford-buildings.geojson",
+    "sha256": "a27c564f8c7472bfddafd28e3328cffdf12acadb2f9854da1f1e429fd1d41d2f",
+    "id": "relation/12236339",
+    "osmVersion": 1,
+    "height": 10,
+    "heightSource": "estimated",
+    "outerVertexCount": 52,
+    "innerRingVertexCounts": [
+      12
+    ],
+    "approximateAreaSquareMetres": 4264.09,
+    "innerVoidAreaSquareMetres": 466.81,
+    "longestEdgeIndex": 46,
+    "longestEdgeEndpoints": [
+      [
+        -122.1712336,
+        37.4330709
+      ],
+      [
+        -122.1713241,
+        37.432796
+      ]
+    ],
+    "longestEdgeBearingDegreesClockwiseNorth": 194.65012,
+    "axisBoundsMetres": [
+      103.851,
+      71.693
+    ],
+    "alignmentWarning": "Longest-edge axes are a geometric frame only. Entry side and individual gallery locations have not been visually registered to the current visitor plan."
+  },
+  "sources": [
+    {
+      "url": "https://museum.stanford.edu/sites/default/files/inline-files/Cantor_map_for_website_12-18-24-A.pdf",
+      "date": "2024-12-18",
+      "type": "official current published visitor floor plan",
+      "retrieved": "Cached web text lists first/second-floor galleries, room numbers, courtyard, stair and elevator labels. Visual plan unavailable in this session.",
+      "limit": "Direct HTTP and normal headless Chrome returned Cloudflare HTTP 403. Web screenshot tool returned only an ImageDisplayed text placeholder, without image content."
+    },
+    {
+      "url": "https://museum.stanford.edu/sites/default/files/2023-07/2023_7_CantorMap.pdf",
+      "date": "2023-07",
+      "type": "official earlier visitor plan",
+      "retrieved": "Indexed text only; direct download met the same Cloudflare challenge."
+    },
+    {
+      "url": "https://museum.stanford.edu/sites/default/files/images/2023-07/2023julymap.jpeg",
+      "date": "2023-07",
+      "type": "official earlier plan image",
+      "retrieved": "Image search located it; direct image download met Cloudflare challenge."
+    },
+    {
+      "url": "https://museum.stanford.edu/sites/default/files/2021-10/Cantor_Map.pdf",
+      "date": "2021-10",
+      "type": "official historical visitor plan",
+      "retrieved": "Indexed text only; direct download met Cloudflare challenge."
+    },
+    {
+      "url": "https://hci.stanford.edu/courses/cs147/2015/au/projects/learning/cantour/presentations/2-POV/Report.pdf",
+      "date": "2015",
+      "type": "Stanford student project report with photographed historical plan",
+      "retrieved": "Search result identifies photographed museum handout; unsuitable to establish current interior geometry."
+    },
+    {
+      "url": "https://www.martinibot.com/blog/1430",
+      "type": "historical designer case study",
+      "retrieved": "Image search exposes an earlier handout plan; no current-layout confirmation."
+    }
+  ],
+  "decision": "No interior wall, doorway, stair, elevator or gallery geometry authored. Do not construct a current interior from labels or an unverified older floor plan. A visually accessible copy of the current public visitor plan is required before tracing and source registration.",
+  "implementationContractForLater": {
+    "function": "buildCantorInterior(data: CampusData, floor: 1 | 2): DetailGeometry",
+    "nativePartsToHide": [
+      "relation/12236339"
+    ],
+    "planFloors": [
+      1,
+      2
+    ],
+    "estimatedRatherThanSurveyed": [
+      "Dimensions derived by aligning visitor diagram to pinned footprint",
+      "Wall heights, thicknesses and floor-to-floor spacing"
+    ],
+    "excluded": [
+      "Invented artworks",
+      "Unshown private rooms",
+      "Unverified current partition layout"
+    ]
+  }
+}

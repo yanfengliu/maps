@@ -1,4 +1,5 @@
 import {OPEN_GARAGE_IDS} from '../src/garage-architecture.ts';
+import {HOOVER_PART_IDS} from '../src/hoover-architecture.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createExpression, featureFilter} from '@maplibre/maplibre-gl-style-spec';
@@ -30,7 +31,7 @@ test('open arcades and stadium stands retain full-height picking across native c
    else assert.ok(pick>feature.properties.detailWallHeight,'the whole modeled roof silhouette remains queryable');
    if(ready&&zoom>=15.5)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
   }
-  for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
-  assert.equal(count,30,'scope adds four open garages and the stadium walkway to the Quad and seating');
+  for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
+  assert.equal(count,38,'scope includes the eight custom Hoover parts with the Quad, stadium and open garages');
  }
 });

@@ -39,7 +39,7 @@ test('interior plus its photo allocations respects the original GPU budget with 
   assert.equal(mesh.bytes,mesh.roofs.byteLength+mesh.facades.byteLength);
   const photoBytes=1280*853*4+960*720*4;assert.ok(mesh.bytes+photoBytes<24*1024*1024);
   assert.equal(mesh.buildings,1);assert.equal(mesh.churchTextures,true);
-  for(let i=11;i<mesh.roofs.length;i+=13)assert.equal(mesh.roofs[i],30,'roof-off switch must remove all overhead panels');
+  for(let i=11;i<mesh.roofs.length;i+=13)assert.ok(mesh.roofs[i]===29||mesh.roofs[i]===30,'roof-off switch must remove all ceiling surfaces and framing');
 });
 
 test('church camera targets follow the source frame and missing or malformed church input fails clearly',()=>{

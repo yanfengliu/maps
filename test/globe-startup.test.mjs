@@ -23,7 +23,7 @@ test('initial camera opens on Stanford before the globe style requests tiles, wi
   assert.deepEqual(options.center,PLACES[0].center);assert.equal(options.zoom,PLACES[0].zoom);
   assert.equal(options.pitch,58);assert.equal(options.bearing,-28);assert.equal(options.maxBounds,undefined);
   assert.deepEqual(calls,['construct','padding','ui','style','campus']);
-  assert.match(source,/id="view-name">STANFORD UNIVERSITY · 3D CAMPUS</);
+  assert.doesNotMatch(source,/id="view-name"|id="world-overview"/);
   assert.equal(createStyle().projection.type,'globe','every recreated style retains the globe');
 });
 
@@ -39,15 +39,11 @@ test('building cards omit the campus return action while keeping church interior
 });
 
 
-test('World overview frames the globe within desktop and phone viewports without regional bounds',()=>{
-  const zooms=[];
-  for(const [width,height] of [[1600,1100],[1056,1013],[390,844],[320,568]]){
-    const flights=[],context={window:{innerWidth:width,innerHeight:height},map:{flyTo:value=>flights.push(plain(value))},search:{value:'Stanford',blur(){}},el:()=>({}),closeSearch(){},panelPadding:()=>({}),motionDuration:value=>value,closeDetails(){}};
-    runInNewContext(`${handler('overview')}\noverview(false);`,context);
-    assert.equal(flights.length,1);const camera=flights[0];assert.deepEqual(camera.center,[0,20]);assert.equal(camera.pitch,0);assert.equal(camera.bearing,0);assert.equal(camera.duration,0);assert.ok(Number.isFinite(camera.zoom)&&camera.zoom>=0&&camera.zoom<3);
-    zooms.push(camera.zoom);
-  }
-  assert.ok(zooms[0]>zooms[2]&&zooms[2]>zooms[3],'smaller screens need a wider globe view');
+test('the native zoom-out control remains available after removing the World shortcut',()=>{
+  const listener=source.match(/el\('zoom-out'\)\.addEventListener\('click',[^\n]+/);assert.ok(listener);
+  let click;const calls=[];runInNewContext(listener[0],{el:id=>{assert.equal(id,'zoom-out');return {addEventListener:(_,fn)=>click=fn};},map:{zoomOut:options=>calls.push(plain(options))},motionDuration:()=>0});
+  click();assert.deepEqual(calls,[{duration:0}]);assert.equal(createStyle().projection.type,'globe');
+  assert.doesNotMatch(source,/el\('world-overview'\)|el\('view-name'\)|function overview\(/,'removed controls leave no dead DOM references');
 });
 
 

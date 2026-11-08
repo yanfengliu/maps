@@ -24,10 +24,8 @@ root.innerHTML = `
   <div class="search-shell" role="search">
     <div class="search-wrap">${icon('search')}<input id="search" type="search" placeholder="Search places" autocomplete="off" aria-label="Search places" role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false"/><button id="clear-search" class="clear-search" aria-label="Clear search" hidden>${icon('close')}</button></div>
     <div id="search-results" class="search-results" role="listbox" aria-label="Search results" hidden></div>
-    <nav class="quick-places" aria-label="Featured places"><button id="explore-stanford" aria-label="Explore Stanford in 3D">${icon('campus')}<span>Stanford</span><small>3D</small></button><button id="explore-church" aria-label="Explore Memorial Church">Memorial Church</button></nav>
   </div>
   <section id="place-details" class="place-details" aria-label="Selected place actions" aria-live="polite" hidden></section>
-  <div class="map-caption"><span class="caption-dot"></span><span id="view-name">STANFORD UNIVERSITY · 3D CAMPUS</span></div>
   <nav class="map-controls" aria-label="Map navigation">
     <button id="compass" class="control compass" aria-label="Face north" title="Face north · drag to rotate"><span class="north">N</span><span class="compass-needle">${icon('compass')}</span></button>
     <div class="zoom-controls"><button id="zoom-in" class="control" aria-label="Zoom in" title="Zoom in">${icon('plus')}</button><button id="zoom-out" class="control" aria-label="Zoom out" title="Zoom out">${icon('minus')}</button></div>
@@ -35,11 +33,10 @@ root.innerHTML = `
     <div class="tilt-control"><label for="tilt">TILT</label><input id="tilt" type="range" min="0" max="65" step="1" value="0" aria-label="Map tilt"/><span id="tilt-value">0°</span></div>
     <button id="help-button" class="control" aria-label="Map controls and sources" aria-expanded="false">${icon('help')}</button>
   </nav>
-  <button id="world-overview" class="overview-button" aria-label="World overview">${icon('bay')}<span>World</span></button>
   <section id="church-controls" class="church-controls" aria-labelledby="church-controls-title" hidden>
     <div class="church-controls-heading"><div><span class="eyebrow">INTERIOR CUTAWAY</span><h2 id="church-controls-title">Memorial Church</h2></div><button id="church-exit" class="icon-button" aria-label="Return to church exterior" title="Return to exterior">${icon('close')}</button></div>
     <nav class="church-views" aria-label="Church interior views"><button data-church-view="whole" aria-pressed="true">Whole church</button><button data-church-view="nave" aria-pressed="false">Nave</button><button data-church-view="altar" aria-pressed="false">Altar</button><button data-church-view="organ" aria-pressed="false">Organs</button></nav>
-    <div class="church-controls-footer"><label><input id="church-ceiling" type="checkbox"/> Show ceiling structure</label><button id="church-about">About this model</button></div>
+    <div class="church-controls-footer"><label><input id="church-ceiling" type="checkbox"/> Show transparent ceiling</label><button id="church-about">About this model</button></div>
     <p id="church-ready" role="status">Opening the interior…</p>
   </section>
   <section id="church-information" class="help-panel church-information" aria-label="About the church model" hidden><div class="help-title"><h2>Inside Memorial Church</h2><button id="close-church-information" class="icon-button" aria-label="Close church information">${icon('close')}</button></div><p>Interior proportions and decoration follow Stanford references and are modeled estimates. Walls facing the camera are cut away as you rotate; other walls remain complete.</p><a href="https://orsl.stanford.edu/memorial-church-layout" target="_blank" rel="noreferrer">Stanford’s interior plan ↗</a><a href="${publicAsset('textures/ATTRIBUTION.md')}" target="_blank" rel="noreferrer">Artwork photo sources and licenses ↗</a></section>
@@ -104,15 +101,6 @@ function panelPadding(): { top: number; bottom: number; left: number; right: num
     : { top: 125, bottom: 100, left: 20, right: 65 };
 }
 
-function overview(animate = true): void {
-  if (!map) return;
-  search.value='';el('clear-search').hidden=true;closeSearch();search.blur();
-  const diameter=Math.max(180,Math.min(window.innerWidth-110,window.innerHeight-260,760));
-  map.flyTo({ center: [0,20], zoom: 1.5+Math.log2(diameter/430), padding: panelPadding(), pitch: 0, bearing: 0, duration: animate ? motionDuration(1700) : 0 });
-  el('view-name').textContent = 'WORLD MAP';
-  closeDetails();
-}
-
 function goTo(place: Place): void {
   if (!map) return;
   search.value=place.name;el('clear-search').hidden=false;
@@ -120,38 +108,23 @@ function goTo(place: Place): void {
   map.flyTo({ center: place.center, zoom: place.zoom, pitch: place.campus ? 58 : 0, bearing: place.campus ? -28 : 0,
     padding: window.innerWidth > 760 ? { top: 95, bottom: 180, left: 65, right: 85 } : { top: 125, bottom: 180, left: 20, right: 65 },
     duration: motionDuration(place.campus ? 2400 : 1800), essential: false });
-  el('view-name').textContent = place.campus && place.id!=='stanford-stadium' ? 'STANFORD UNIVERSITY · 3D CAMPUS' : place.name.toUpperCase();
   closeSearch();
   search.blur();
   if (place.buildingId) {
     const feature = campusData?.features.find(f => f.properties?.id === place.buildingId);
     if (feature) showBuilding(feature.properties ?? {});
   } else if(place.sculptureId)showSculpture(place.sculptureId);
-  else if (place.id==='stanford') showCampus();
   else showCity(place);
-}
-
-function showCampus(): void {
-  selectedId = null;
-  updateSelection();
-  details.hidden = false;
-  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">FEATURED IN 3D</span><h2>Stanford University</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="quad-view">Main Quad ${icon('arrow')}</button><button class="detail-action" id="campus-church">Memorial Church ${icon('arrow')}</button><button class="text-action" id="sculpture-view">Sculpture</button></div>`;
-  details.querySelector('.close-details')?.addEventListener('click', closeDetails);
-  el('quad-view').addEventListener('click', () => {
-    map?.flyTo({ center: [-122.1702,37.4276], zoom: 17.5, pitch: 60, bearing: -34, duration: motionDuration(1500) });
-  });
-  el('sculpture-view').addEventListener('click',()=>goTo(SCULPTURE_PLACES[0]));
-  el('campus-church').addEventListener('click',goToChurch);
 }
 
 function showSculpture(id:string):void {
   const place=SCULPTURE_PLACES.find(p=>p.sculptureId===id);
   if(!place)return;
   selectedId=null;updateSelection();details.hidden=false;
-  details.innerHTML=`<div class="detail-heading"><div><span class="eyebrow">${escapeHtml(place.artist)} · ${escapeHtml(place.material)}</span><h2>${escapeHtml(place.name)}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="next-sculpture">Other sculpture ${icon('arrow')}</button><button class="text-action" id="sculpture-campus">Campus</button><a class="text-action" href="${escapeHtml(place.sourceUrl)}" target="_blank" rel="noreferrer">Source ↗</a></div>`;
+  details.className='place-details place-details--sculpture';
+  details.innerHTML=`<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(place.name)}</h2><p class="place-context">${escapeHtml(place.artist)} · ${escapeHtml(place.material)}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div><div class="place-actions"><button class="detail-action" id="next-sculpture">Next sculpture ${icon('arrow')}</button><a class="text-action" href="${escapeHtml(place.sourceUrl)}" target="_blank" rel="noreferrer">About this artwork ↗</a></div>`;
   details.querySelector('.close-details')?.addEventListener('click',closeDetails);
   el('next-sculpture').addEventListener('click',()=>goTo(SCULPTURE_PLACES.find(p=>p.sculptureId!==id)!));
-  el('sculpture-campus').addEventListener('click',()=>goTo(PLACES[0]));
 }
 
 function showCity(place: Place): void {
@@ -165,10 +138,11 @@ function showBuilding(properties: Record<string, unknown>): void {
   selectedId = String(properties.id);
   updateSelection();
   details.hidden = false;
+  details.className='place-details place-details--building';
   const referencedHeight=properties.heightSource==='estimated'&&Number(properties.detailRoofHeight)>Number(properties.height);
   const height = Number(referencedHeight?properties.detailRoofHeight:properties.height);
   const source = referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
+  details.innerHTML = `<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="place-context">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   if(selectedId===CHURCH_ID){
     const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;
@@ -233,7 +207,7 @@ function interiorView(view:string):void {
 function enterChurchInterior():void {
   if(!map||!campusData)return;
   selectedId=CHURCH_ID;updateSelection();setChurchInterior(true);closeSearch();search.blur();
-  el('view-name').textContent='MEMORIAL CHURCH · INTERIOR';interiorView('whole');
+  interiorView('whole');
 }
 
 for(const button of root.querySelectorAll<HTMLButtonElement>('[data-church-view]'))button.addEventListener('click',()=>interiorView(button.dataset.churchView!));
@@ -312,10 +286,6 @@ search.addEventListener('keydown', event => {
 });
 el('clear-search').addEventListener('click', () => { search.value = ''; renderResults(); search.focus(); });
 document.addEventListener('pointerdown', event => { if (!(event.target as HTMLElement).closest('.search-wrap, .search-results')) closeSearch(); });
-el('explore-stanford').addEventListener('click', () => goTo(PLACES[0]));
-function goToChurch():void { const place=allPlaces.find(p=>p.buildingId===CHURCH_ID); if(place)goTo(place);else goTo(PLACES[0]); }
-el('explore-church').addEventListener('click',goToChurch);
-el('world-overview').addEventListener('click', () => overview());
 el('zoom-in').addEventListener('click', () => map?.zoomIn({ duration: motionDuration(300) }));
 el('zoom-out').addEventListener('click', () => map?.zoomOut({ duration: motionDuration(300) }));
 el('toggle-3d').addEventListener('click', () => map?.easeTo({ pitch: map.getPitch() > 5 ? 0 : 58, duration: motionDuration(700) }));

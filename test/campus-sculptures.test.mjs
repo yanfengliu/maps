@@ -58,10 +58,11 @@ test('actual sculpture mesh distinguishes six separately supported bronze poses 
 
 test('integrated building/environment/sculpture mesh preserves source data and memory-derived triangle cap / 24MiB GPU / two buffers',()=>{
   const source=JSON.parse(read('stanford-buildings.geojson')),before=JSON.stringify(source);
-  const g=buildBuildingGeometry(prepareBuildingDetails(source),JSON.parse(read('stanford-environment.geojson')),data);
+  const g=buildBuildingGeometry(prepareBuildingDetails(source),JSON.parse(read('stanford-environment.geojson')),data,JSON.parse(read('stanford-surfaces.geojson')));
   assert.equal(JSON.stringify(source),before);assert.equal(g.buildings,648);
   assert.ok(MAX_DETAIL_TRIANGLES*3*GPU_VERTEX_BYTES<=MAX_GPU_GEOMETRY_BYTES);assert.ok(g.triangles<MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(g.roofs)+gpuGeometryBytes(g.facades)<=MAX_GPU_GEOMETRY_BYTES);
   assert.deepEqual(g.sculptures,{works:2,figures:7,triangles:3820});
+  assert.deepEqual(g.surfaces,{plazas:1,streets:65,crossings:16,markings:3,triangles:1363});
   assert.equal(g.roofs.length+g.facades.length,g.triangles*VERTEX_FLOATS*3);
   assert.equal(sha(read('stanford-buildings.geojson')),'a27c564f8c7472bfddafd28e3328cffdf12acadb2f9854da1f1e429fd1d41d2f');
   const only=buildBuildingGeometry(empty,undefined,data);
@@ -95,10 +96,10 @@ test('worker names each local input in its HTTP/JSON/network failure and a valid
   try{
     await import('../src/building-worker.ts');
     // Each mode breaks one input and serves the other intact, so a message must name the input that failed.
-    for(const [target,label] of [['stanford-sculptures.geojson','Campus sculpture'],['stanford-environment.geojson','Campus environment']])for(const mode of ['HTTP','JSON','network','valid']){
+    for(const [target,label] of [['stanford-sculptures.geojson','Campus sculpture'],['stanford-environment.geojson','Campus environment'],['stanford-surfaces.geojson','Campus paving']])for(const mode of ['HTTP','JSON','network','valid']){
       const calls=[];messages.length=0;
-      globalThis.fetch=async input=>{calls.push(input);if(!input.endsWith(target)||mode==='valid')return new Response(input.endsWith('stanford-environment.geojson')?JSON.stringify(empty):bytes);if(mode==='HTTP')return new Response('Missing',{status:503});if(mode==='JSON')return new Response('{');throw new Error('fixture network unavailable');};
-      await self.onmessage({data:{data:empty,interior:false}});assert.equal(messages.length,1);assert.deepEqual(calls.sort(),['/data/stanford-environment.geojson','/data/stanford-sculptures.geojson']);
+      globalThis.fetch=async input=>{calls.push(input);if(!input.endsWith(target)||mode==='valid')return new Response(!input.endsWith('stanford-sculptures.geojson')?JSON.stringify(empty):bytes);if(mode==='HTTP')return new Response('Missing',{status:503});if(mode==='JSON')return new Response('{');throw new Error('fixture network unavailable');};
+      await self.onmessage({data:{data:empty,interior:false}});assert.equal(messages.length,1);assert.deepEqual(calls.sort(),['/data/stanford-environment.geojson','/data/stanford-sculptures.geojson','/data/stanford-surfaces.geojson']);
       if(mode==='valid'){assert.deepEqual(messages[0].geometry.sculptures,{works:2,figures:7,triangles:3820});assert.equal(messages[0].geometry.facades.length,0);continue;}
       const file=target.replace('.','\\.');
       assert.match(messages[0].error,new RegExp(mode==='HTTP'?`${label}.*HTTP 503.*${file}.*retry`:mode==='JSON'?`${label}.*${file}.*not valid JSON.*retry`:`${label}.*${file}.*could not load.*network unavailable.*retry`),`${target} ${mode}: ${messages[0].error}`);

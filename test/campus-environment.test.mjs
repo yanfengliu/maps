@@ -57,7 +57,9 @@ test('mapped roots and furniture stay outside actual building material, preserve
 
 test('all combined building and environment geometry stays finite within memory-derived triangle cap and 24MiB GPU in two buffers',()=>{
   assert.equal(geometry.buildings,648);assert.ok(geometry.triangles<MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(geometry.roofs)+gpuGeometryBytes(geometry.facades)<=MAX_GPU_GEOMETRY_BYTES);
-  assert.deepEqual(geometry.environment,{trees:726,palms:337,broadleaf:363,conifers:26,benches:196,lamps:80});
+  // Source remains 726 mapped trees; 13 incomplete Quad palms are superseded
+  // in rendering by 102 separately attributed botanical reference plantings.
+  assert.deepEqual(geometry.environment,{trees:815,palms:347,broadleaf:438,conifers:30,benches:196,lamps:80});
   let environmentVertices=0;
   for(const mesh of [geometry.roofs,geometry.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS){
     assert.ok(mesh.slice(i,i+VERTEX_FLOATS).every(Number.isFinite));

@@ -23,17 +23,19 @@ export async function verifyRealism(page,{directory}) {
  await go('Roth Way Garage');
  const start=await page.evaluate(()=>performance.now());await page.keyboard.down('d');await page.waitForTimeout(900);await page.keyboard.up('d');await page.waitForTimeout(250);
  const motion=await page.evaluate(start=>{const gl=document.querySelector('canvas').getContext('webgl2'),ext=gl.getExtension('WEBGL_debug_renderer_info');return {frames:window.__bayMap.rendering.motionFrames.filter(t=>t>=start),gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'unknown'};},start);
- await page.getByRole('button',{name:'Explore Memorial Church',exact:true}).click();await page.waitForTimeout(500);await page.getByRole('button',{name:'Explore the interior',exact:true}).click();await ready();
+ await go('Memorial Church');await page.getByRole('button',{name:'Explore the interior',exact:true}).click();await ready();
  await page.getByRole('button',{name:'Organs',exact:true}).click();await capture('church-organs');
  const before=(await state()).camera.center;await page.keyboard.down('w');await page.waitForTimeout(180);await page.keyboard.up('w');if(JSON.stringify(before)===JSON.stringify((await state()).camera.center))throw new Error('Church WASD failed');
- await page.getByRole('checkbox',{name:'Show ceiling structure'}).check();await capture('church-ceiling');
+ await page.getByRole('checkbox',{name:'Show transparent ceiling'}).check();await capture('church-ceiling');
  // Exercise graphics loss through a temporary actual control, never camera APIs.
  await page.evaluate(()=>{const b=document.createElement('button');b.id='qa-recovery';b.textContent='Test graphics recovery';Object.assign(b.style,{position:'fixed',top:'130px',left:'24px',zIndex:100});b.onclick=()=>{const e=document.querySelector('canvas').getContext('webgl2').getExtension('WEBGL_lose_context');e.loseContext();setTimeout(()=>e.restoreContext(),400);};document.body.append(b);});
  try{await page.getByRole('button',{name:'Test graphics recovery',exact:true}).click();await page.waitForTimeout(1000);await ready();}finally{await page.locator('#qa-recovery').evaluate(e=>e.remove());}
  await capture('church-recovered');
  await go('Roth Way Garage');await capture('garage-after-interior');
  await page.setViewportSize({width:390,height:844});await go('Roth Way Garage');await capture('phone-garage');
- await page.getByRole('button',{name:'World overview',exact:true}).click();await page.waitForTimeout(600);await page.screenshot({path:directory+'/phone-globe.png'});
- if((await state()).camera.zoom>3)throw new Error('World did not reach globe');
+ await page.getByRole('slider',{name:'Map tilt',exact:true}).fill('0');
+ for(let i=0;i<25&&(await state()).camera.zoom>.6;i++)await page.getByRole('button',{name:'Zoom out',exact:true}).click();
+ await page.waitForTimeout(600);await page.screenshot({path:directory+'/phone-globe.png'});
+ if((await state()).camera.zoom>1)throw new Error('Native zoom-out did not reach globe');
  return {records,motion};
 }

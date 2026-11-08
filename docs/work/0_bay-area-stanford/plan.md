@@ -1,9 +1,34 @@
 # Bay Area map and Stanford 3D
 
-Status: complete
+Status: active
 Owner: root integration
 Created: 2026-10-19
-Updated: 2026-11-07
+Updated: 2026-11-08
+
+## Current request tracker
+
+The owner asks for one tracked list and coordinated delivery. Root owns this list, integration, native visual acceptance, independent review and publishing. A completed implementation is not accepted until its rendered result is inspected; an inventory check is never a claim of photographic realism. New requests extend this list rather than replacing earlier requests.
+
+| Request | Status | Owner / next acceptance evidence |
+| --- | --- | --- |
+| Publish to GitHub Pages; explain asset size | Delivered at 3752998 | Root: live project-path requests and controls pass; first artifact 3.47 MB raw, about 1.43 MB summed gzip, excluding external basemap tiles. |
+| Worldwide search and honest coverage | Delivered, coverage incomplete | Root: submitted Stanford and Nairobi reach the remote provider; local suggestions do not intercept Enter. No complete real-world index is claimed. |
+| Globe, Stanford startup, WASD across modes, remove persistent left panel and redundant campus button | Delivered; retain regressions | Root: existing native controls and unit checks; repeat affected paths in new acceptance. |
+| Memorial Church interior, connected cutaway walls, upright art, entrance doors, surrounding map retained | Delivered within recorded reference limits | Root: preserve church cutaway and exterior context in each new mesh integration. |
+| Main Quad / landmark detail, malformed roofs, engineering buildings and stadium exterior | Earlier bounded refinements delivered; broader realism remains open | Root: per-building source/visual audit, without declaring all 648 parts photo-verified. |
+| Garage floor connections and coherent arrows; unexplained ground dashes | Delivered at c33cd7e | Root: all four garages and the four reported benches inspected; ramp locations and unknown furniture design remain estimates. |
+| Research and model actual campus pavement, streets, bricks, curbs and markings | Implemented in isolated workers; integration and visual acceptance in progress | ground_furniture: pinned source data and references; garage_circulation: surface mesh/materials; root: integration, native views and report. |
+| Reduce excessive globe lighting / horizon glare | In progress | Root: reduce atmospheric washout; inspect full globe and tilted regional coast views, desktop and phone. |
+| Refine Hoover Tower against real appearance | In progress | ground_furniture: public references and bounded tower model in hoover worktree; root: integration and multi-angle inspection. |
+| Remove the fixed featured-place navigation menu | In progress; supersedes earlier redesign request | garage_circulation: remove campus menu and fixed shortcut navigation; preserve free map/search navigation and contextual building/interior actions; root verifies desktop/phone. |
+| Remove bottom campus/world banner and World button | In progress | garage_circulation: remove both; retain globe navigation by normal zoom and preserve attribution. |
+| Show complete transparent church ceiling when enabled | In progress | church_entrance_doors: ceiling worktree; root: integrate translucent geometry, inspect from opposite views and verify off/on/mode transitions. |
+| Explain and correct missing trees in the Quad planting circles | Integrated; native acceptance in progress | Root: reconcile all eight circles against Stanford's 2025-10-17 Inner Quad Tree Map and its removed-dove-tree update, preserve distinction between mapped source coordinates and plan-derived placement. No empty circle is accepted merely because OSM has no tree node. |
+| Find public building floor plans and model supported interiors | Research in progress | ground_furniture: public plan inventory for priority landmarks; Cantor current plan text is accessible but its drawing is blocked by the source website. No speculative rooms built; inspect a current plan image before tracing. Absence of plans is recorded, not filled with invented rooms. |
+| Systematically self-verify buildings and non-building elements | Building inventory delivered; non-building inventory in progress | Root: source coverage, structural checks, fixed/opposite/random native views, explicit unverified records and reference-linked comparisons. 579 building parts lacked individual references at the last published audit. |
+| Mobile preview guidance | Answered; mobile app verification remains required | Root: responsive pane-width preview, actual phone URL, and headless 390x844 acceptance; no unverified dedicated browser device button claimed. |
+
+Delivery order: publish the integrated ground, glare, tower, planting, ceiling and navigation corrections after native acceptance and review; implement additional interiors as visually inspectable public plans establish their geometry. Each milestone gets gates, independent review, live verification and a status update here. The coordinator remains in this chat through the queued work.
 
 Migration note: this plan restructures the original `docs/work/0_bay-area-stanford/plan.md` into the current plan format. The original is git blob `59b480ca55168d5b434dbd14bf0a5e4d5fa9dbed`, 4,844 bytes, SHA-256 `fc9836d5c98d292e1aeb75678b5eab21af837679cc78674e2649e5779af2fd39`. It entered `main` in integration merge `7c6097e18efd712d741f66772588ee5acc3a3741` and is unchanged through `7e43b5d056da66512c1ab0556ebc27568b42887b`. `git show 7c6097e:docs/work/0_bay-area-stanford/plan.md` recovers it. Its metadata line was split: `Started` became `Created`, `Owner` is unchanged, `Base` opens Implementation steps and the status sentences are quoted under Outcome. Every other original sentence and table row is kept word for word, and the subheadings are original headings. Paragraphs marked "Migration note", and the list after one, are added. In the original's text, "this increment" and "this acceptance" mean the first increment. The `plan.md` line citations in `reviews/1_integrated-review.md` and `reviews/2_focused-review.md` use the original's line numbers, which are the same at plan base `9995b1b`.
 
@@ -167,3 +192,10 @@ Acceptance: project-path production assets and workers load, exterior/interior/g
 
 
 Revision c33cd7e6af5e3e6b3eaae5a1fba70adae415ec4c passes review 25 with no material findings. Native checks additionally reach the four reported benches using real WASD and inspect all four open garages. Pages is enabled with workflow publishing at https://yanfengliu.github.io/maps/; artifact deployment and live acceptance follow the main push. The owner adds researched campus pavement, streets, markings and brick surfaces; this is the next implementation increment, not a claim that c33cd7e includes it.
+
+
+### Researched campus ground surfaces, 2026-11-08
+
+Status: in progress. The owner explicitly asks for actual campus streets, pavement, markings and brick detail instead of thin abstract lines, and asks that appearance be researched. This increment starts from the published c33cd7e implementation with review record 3752998. Root owns integration, worker/church context, verification inventory and native acceptance; ground_furniture owns pinned surface data and primary photographic research in the surfaces worktree; garage_circulation owns bounded metre-scale surface geometry/materials in surface-mesh. The previous reviewed publication proceeds independently.
+
+Acceptance: Main Quad paving with all eight planting holes; distinct researched asphalt streets, paved malls and sidewalks around Main Quad, Memorial Court, Jane Stanford Way, Palm Drive and adjoining malls; only supported markings, no invented lane arrows on pedestrian malls. Physical surface widths and joints must scale in metres, survive close/opposite views and remain present in church mode. Preserve exact mapped coordinates and tags; reference-backed material differs from inferred width/pattern dimensions. Add non-building coverage/limitations, source/data and emitted-geometry regressions, preserve budgets and two draws, review the integrated revision, then publish and verify the updated site.

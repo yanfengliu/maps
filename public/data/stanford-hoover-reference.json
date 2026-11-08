@@ -1,0 +1,75 @@
+{
+  "reviewed": "2026-11-08",
+  "scope": "Hoover Tower exterior, eight pinned OSM parts; bounded primary-source photograph comparison, not a floor or elevation survey.",
+  "sourceGeometry": {
+    "file": "stanford-buildings.geojson",
+    "sha256": "a27c564f8c7472bfddafd28e3328cffdf12acadb2f9854da1f1e429fd1d41d2f",
+    "ids": [
+      "way/1346548884",
+      "way/1346548885",
+      "way/1346548886",
+      "way/1346548887",
+      "way/1346548888",
+      "way/1346548889",
+      "way/1346548890",
+      "way/1346548891"
+    ],
+    "unchanged": [
+      "coordinates",
+      "height",
+      "base",
+      "OSM versions and tags"
+    ],
+    "renderOnly": "Overlapping parts are stacked at their exposed architectural levels. Every part retains its mapped maximum height; tower tip remains 87 m."
+  },
+  "references": [
+    {
+      "id": "stanford-architect",
+      "page": "https://architectplanning.stanford.edu/hoover-tower",
+      "inspectedImageSha256": "f1e1fda3bf10446ec86832b2d9e474c0dd141a3cebaef0764e24f29ed966aa6a",
+      "observation": "Smooth shaft, three recessed panels per visible face, paired arch windows below octagonal crown, red dome and pale lantern."
+    },
+    {
+      "id": "siegel-close",
+      "page": "https://web.stanford.edu/~siegelr/stanford/hootow.html",
+      "inspectedImageSha256": "15054225abc0ccb56bdafc0da5391799c5502f555a22932fef76af14e41e0858",
+      "observation": "Open crown arches, outward-bowed protective iron grilles, fluted piers and a relief crest. Unmeasured carving simplified to a small boss."
+    },
+    {
+      "id": "siegel-aerial-2011",
+      "page": "https://web.stanford.edu/~siegelr/stanford/hootow.html",
+      "inspectedImageSha256": "254a05784f7c705dd568a2c861000d5e50dbadbd3eab27c1fae4afe63a092059",
+      "observation": "Stacked tower massing, lower wings and sparse shaft. Photo is dated 2011; not a current full-elevation survey."
+    },
+    {
+      "id": "hoover-entry-2025",
+      "page": "https://www.hoover.org/visit-us-hoover-tower",
+      "inspectedImageSha256": "28209fffabc6299f6788da6ab2a83ab873e4e730cbd237fc14c4f21362e0a247",
+      "observation": "Front portal, projecting entrance mass, small tiled polygonal cap, horizontal bands and small upper-level wing windows."
+    },
+    {
+      "id": "siegel-parapet-2016",
+      "page": "https://web.stanford.edu/~siegelr/stanford/hootow.html",
+      "inspectedImageSha256": "eebc06ff509c11d2d5a1ca98acb30daa2329492e521fe29dd60ca22a21bc070f",
+      "observation": "Stepped plaster parapet and shallow relief; inspected but exact ornament not reconstructed."
+    }
+  ],
+  "materialEvidence": {
+    "url": "https://architectplanning.stanford.edu/hoover-tower",
+    "finding": "Stanford identifies pigmented cement stucco and a deliberately plain shaft, not exposed ashlar masonry; observation deck and carillon are on the 14th floor."
+  },
+  "estimated": [
+    "Window dimensions, vertical positions and mirrored treatment on unphotographed elevations",
+    "Wall thickness, relief depth, grille bar spacing and bowed cage depth",
+    "Colors under neutral renderer lighting; photographs have varying sun and exposure",
+    "Crown interior surface shading; no exact carillon or interior layout is asserted",
+    "Entrance door subdivision and lower-wing window spacing",
+    "Dome profile between mapped eave perimeter and mapped top height"
+  ],
+  "notModeled": [
+    "Detailed figurative carvings",
+    "Interior floors, rooms, stairs, lift or bell arrangement without an inspected current floor plan",
+    "Unseen lower-wing facade decoration or openings invented from generic building type"
+  ],
+  "assetPolicy": "Reference photographs are kept only in ignored local evidence. No photograph or copyrighted floor-plan PDF is redistributed in the app."
+}

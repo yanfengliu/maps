@@ -45,7 +45,7 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
     const p = [at(a), at(b), at(c)], ab = p[1].map((n, i) => n - p[0][i]), ac = p[2].map((n, i) => n - p[0][i]);
     const n = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]], length = Math.hypot(...n);
     if (length < 1e-8) return;
-    const target = kind === 30 ? overhead : opaque;
+    const target = kind === 29 || kind === 30 ? overhead : opaque;
     for (let i = 0; i < 3; i++) target.push(...p[i], ...n.map(v => v / length), ...color, ...(uv?.[i] ?? [[a,b,c][i][0]+[a,b,c][i][1], [a,b,c][i][2]]), kind + wall * WALL_KIND_STRIDE, index);
   };
   const quad = (a: V, b: V, c: V, d: V, color: C, uv?: [Point, Point, Point, Point]) => {
@@ -399,11 +399,63 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
     box(0, 4.80 + manual * 0.055, 6.66 + manual * 0.12, 1.5, 0.22, 0.035, ivory);
     for (let key = 0; key < 24; key++) if (key % 7 !== 2 && key % 7 !== 6) box(-0.72 + key * 0.06, 4.83 + manual * 0.055, 6.70 + manual * 0.12, 0.025, 0.11, 0.025, darkOak);
   }
-  // Ceiling is independently switchable. Its construction follows the open
-  // timber nave and chancel and the shallow crossing dome, not a gothic vault.
-  wall=0;kind = 30;
+  // Complete ceiling panels follow the pitched timber nave/chancel and shallow
+  // crossing dome in the retained 2025/2007 interior photographs. The outer
+  // rooms have neutral lower ceilings where the sources do not show decoration.
+  // Exact profiles are estimates; all panels stay inside the source footprint.
+  // Material 29 is the transparent skin; material 30 retains its visible frame.
+  wall=0;kind=29;
+  const xs=[...new Set([...Array.from({length:31},(_,i)=>-30+i*2),-7.65,7.65])].sort((a,b)=>a-b);
+  const ys=[...new Set([...Array.from({length:32},(_,i)=>-2+i*2),6.5,29.3,37.65,46,51])].sort((a,b)=>a-b);
+  const clip=(polygon:Point[],axis:0|1,bound:number,sign:number):Point[]=>{
+    const result:Point[]=[];
+    for(let i=0;i<polygon.length;i++){
+      const a=polygon[i],b=polygon[(i+1)%polygon.length],da=(a[axis]-bound)*sign,db=(b[axis]-bound)*sign;
+      if(da>=0)result.push(a);
+      if((da>=0)!==(db>=0)){const t=da/(da-db);result.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
+    }
+    return result;
+  };
+  const profile=(x:number,y:number,region:number):number=>{
+    if(region===0)return Math.max(16.9,21.4-Math.abs(x)*4.5/7.65);
+    if(region===1)return 21.4-Math.abs(x)*4.5/7.65;
+    if(region===2)return 9.4;
+    if(region===3)return 22-5.1*Math.min(1,(x/7.65)**2+((y-37.65)/8.35)**2);
+    if(region===4)return Math.max(13,19.8-Math.hypot(Math.abs(x)-7.65,y-37.65)*6.8/16.7);
+    return Math.max(13,19.8-Math.hypot(x/9,(y-51)/8.73)*6.8);
+  };
+  const regionAt=(x:number,y:number)=>y<6.5?0:y<29.3?(Math.abs(x)<7.65?1:2):y<46?(Math.abs(x)<7.65?3:4):5;
+  const skinEdges=new Map<string,{a:V;b:V}>();
+  const panel=(a:V,b:V,c:V,color:C,region:number)=>{
+    tri(a,b,c,color,[a,b,c].map(p=>region===4?[p[1],p[0]]:[p[0],p[1]]) as [Point,Point,Point]);
+    for(const [p,q] of [[a,b],[b,c],[c,a]]){
+      const key=(v:V)=>`${Math.round(v[0]*1e6)},${Math.round(v[1]*1e6)}`;
+      const [u,v]=key(p)<key(q)?[p,q]:[q,p],edge=`${key(u)}:${key(v)}`,other=skinEdges.get(edge);
+      if(other){
+        // A lower aisle meets the nave clerestory, and adjacent roof forms meet
+        // over the crossing arches. Close those steps instead of leaving gaps.
+        if(Math.abs(other.a[2]-u[2])+Math.abs(other.b[2]-v[2])>1e-6)quad(other.a,other.b,v,u,stone);
+        skinEdges.delete(edge);
+      }else skinEdges.set(edge,{a:u,b:v});
+    }
+  };
+  const ceilingIndices=earcut(local.flat());
+  for(let i=0;i<ceilingIndices.length;i+=3){
+    const triangle=ceilingIndices.slice(i,i+3).map(index=>local[index]);
+    const minX=Math.min(...triangle.map(p=>p[0])),maxX=Math.max(...triangle.map(p=>p[0])),minY=Math.min(...triangle.map(p=>p[1])),maxY=Math.max(...triangle.map(p=>p[1]));
+    for(let xi=0;xi<xs.length-1;xi++)for(let yi=0;yi<ys.length-1;yi++){
+      if(xs[xi]>=maxX||xs[xi+1]<=minX||ys[yi]>=maxY||ys[yi+1]<=minY)continue;
+      let piece=clip(triangle,0,xs[xi],1);piece=clip(piece,0,xs[xi+1],-1);piece=clip(piece,1,ys[yi],1);piece=clip(piece,1,ys[yi+1],-1);
+      if(piece.length<3)continue;
+      const region=regionAt((xs[xi]+xs[xi+1])/2,(ys[yi]+ys[yi+1])/2);
+      const points=piece.map(([x,y]):V=>[x,y,profile(x,y,region)]);
+      const color=region===2?ivory:region===3?gold:region===5&&points.every(p=>p[2]===13)?ivory:fir;
+      for(let p=1;p<points.length-1;p++)panel(points[0],points[p],points[p+1],color,region);
+    }
+  }
+  // Framing is independently readable through the translucent ceiling skin.
+  kind = 30;
   for (const side of [-1, 1]) {
-    // Open framing preserves the cutaway even when overhead structure is on.
     for (let i = 1; i < 6; i++) beam([side * i * 1.27, 5.5, 21.4 - i * 0.73], [side * i * 1.27, 29.2, 21.4 - i * 0.73], 0.13, 0.16, darkOak);
     for (const y of [7.1, 14.4, 21.8, 28.7]) { beam([side * 7.65, y, 16.7], [0, y, 21.1], 0.38, 0.50, darkOak); beam([side * 7.65, y, 16.7], [side * 4.9, y, 16.7], 0.45, 0.40, fir); beam([side * 7.3, y, 14.8], [side * 4.9, y, 16.7], 0.32, 0.40, fir); }
   }
