@@ -1,5 +1,6 @@
 import earcut from 'earcut';
 import { STADIUM_CONCOURSE_ID, STADIUM_SEATING_IDS, STADIUM_PRESSBOX_IDS, STADIUM_SCOREBOARD_IDS } from './stadium-architecture.ts';
+import { addStadiumElevation } from './stadium-elevation.ts';
 type Point=[number,number];type Vertex=[number,number,number];type Color=[number,number,number];
 interface MeshWriter {triangle(a:Vertex,b:Vertex,c:Vertex,tint:Color,kind:number,building:number,uv?:[Point,Point,Point]):void;quad(a:Vertex,b:Vertex,c:Vertex,d:Vertex,tint:Color,kind:number,building:number,uv?:[Point,Point,Point,Point]):void}
 // The two vertices on each mapped field-facing edge. This prevents every
@@ -94,6 +95,7 @@ export function addStadiumField(mesh:MeshWriter,building:number,project:(p:Point
 /** Flat concrete concourse, pale pressbox and black video boards replace
  * generic terracotta roofs. The exact mapped holes/base/height are retained. */
 export function addStadiumStructure(roofs:MeshWriter,facades:MeshWriter,id:string,rings:Point[][],building:number,base:number,height:number,center:Point):boolean{
+ if(addStadiumElevation(roofs,facades,id,rings,building,base,height))return true;
  const concourse=id===STADIUM_CONCOURSE_ID,press=STADIUM_PRESSBOX_IDS.has(id),screen=STADIUM_SCOREBOARD_IDS.has(id);
  if(!concourse&&!press&&!screen)return false;
  const concrete:Color=concourse?[.73,.73,.67]:screen?[.12,.15,.16]:[.87,.85,.79],cap:Color=screen?[.12,.15,.16]:[.84,.83,.76];

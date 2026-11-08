@@ -49,3 +49,12 @@ test('World overview frames the globe within desktop and phone viewports without
   }
   assert.ok(zooms[0]>zooms[2]&&zooms[2]>zooms[3],'smaller screens need a wider globe view');
 });
+
+
+test('building cards disclose the referenced parking height without relabelling mapped heights',()=>{
+ for(const [heightSource,detailRoofHeight,expected] of [['estimated',16,'16 m · Estimated from reference floors'],['osm-height',16,'10 m · Mapped height'],['estimated',9,'10 m · Estimated height']]){
+  const details={querySelector:()=>({addEventListener(){}})},context={details,selectedId:null,CHURCH_ID:'church',setChurchInterior(){},updateSelection(){},closeDetails(){},escapeHtml:String,icon:()=>''};
+  runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:'way/324983017',height:10,heightSource:'${heightSource}',detailRoofHeight:${detailRoofHeight}});`,context);
+  assert.ok(details.innerHTML.includes(expected));
+ }
+});

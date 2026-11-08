@@ -1,6 +1,7 @@
 import type { FillExtrusionLayerSpecification } from 'maplibre-gl';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
-import { STADIUM_SEATING_IDS } from './stadium-architecture.ts';
+import { STADIUM_SEATING_IDS, STADIUM_OPEN_PART_IDS } from './stadium-architecture.ts';
+import { OPEN_GARAGE_IDS } from './garage-architecture.ts';
 
 export const BUILDING_PICK_LAYERS=['stanford-buildings','stanford-building-picking'];
 
@@ -10,6 +11,6 @@ export const BUILDING_PICK_LAYERS=['stanford-buildings','stanford-building-picki
  */
 export function quadPickingLayer():FillExtrusionLayerSpecification {
   return {id:BUILDING_PICK_LAYERS[1],type:'fill-extrusion',source:'stanford',minzoom:13.5,
-    filter:['in',['get','id'],['literal',['relation/35820',...QUAD_WING_IDS,...STADIUM_SEATING_IDS]]],
+    filter:['in',['get','id'],['literal',['relation/35820',...QUAD_WING_IDS,...STADIUM_SEATING_IDS,...STADIUM_OPEN_PART_IDS,...OPEN_GARAGE_IDS]]],
     paint:{'fill-extrusion-height':['get','detailRoofHeight'],'fill-extrusion-base':['get','base'],'fill-extrusion-opacity':0}};
 }

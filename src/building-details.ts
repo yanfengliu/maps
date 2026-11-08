@@ -1,6 +1,10 @@
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
 import { DETAIL_ORIGIN, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, projectLocal, type CampusData, type DetailGeometry } from './building-geometry.ts';
 import { STADIUM_FIELD_HELPERS, STADIUM_FIELD_FRAGMENT } from './stadium-materials.ts';
+import { STADIUM_ELEVATION_FRAGMENT } from './stadium-elevation.ts';
+import { GARAGE_FRAGMENT } from './garage-materials.ts';
+import { ENGINEERING_FRAGMENT } from './engineering-materials.ts';
+import { GPU_VERTEX_BYTES, MAX_GPU_GEOMETRY_BYTES, gpuGeometryBytes, packGpuVertices } from './gpu-geometry.ts';
 import { emptyEnvironmentCounts, type EnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.ts';
 import { ChurchTextures } from './church-textures.ts';
@@ -251,6 +255,9 @@ void main() {
     tint=mix(photo,vec3(gray),0.14)*vec3(0.95,0.98,1.03);
   }
   ${STADIUM_FIELD_FRAGMENT}
+  ${STADIUM_ELEVATION_FRAGMENT}
+  ${GARAGE_FRAGMENT}
+  ${ENGINEERING_FRAGMENT}
   outColor = vec4(tint,1.0);
 }`;
 
@@ -293,9 +300,9 @@ function allocateMesh(gl: WebGL2RenderingContext, values: Float32Array): GpuMesh
     throw new Error('Campus detail GPU buffers could not be allocated.');
   }
   try {
-    gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, values.byteLength, gl.STATIC_DRAW);
-    for (const [attribute, size, offset] of [[0,3,0],[1,3,3],[2,3,6],[3,2,9],[4,1,11],[5,1,12]]) {
-      gl.enableVertexAttribArray(attribute); gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, VERTEX_FLOATS * 4, offset * 4);
+    gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer); gl.bufferData(gl.ARRAY_BUFFER, gpuGeometryBytes(values), gl.STATIC_DRAW);
+    for (const [attribute, size, offset] of [[0,3,0],[1,3,12],[2,3,24],[3,2,28],[4,1,36],[5,1,40]]) {
+      gl.enableVertexAttribArray(attribute); gl.vertexAttribPointer(attribute, size, attribute===2?gl.UNSIGNED_BYTE:gl.FLOAT, attribute===2, GPU_VERTEX_BYTES, offset);
     }
     return { vao, buffer, vertices: values.length / VERTEX_FLOATS };
   } catch (error) {
@@ -303,21 +310,22 @@ function allocateMesh(gl: WebGL2RenderingContext, values: Float32Array): GpuMesh
   } finally { gl.bindVertexArray(null); gl.bindBuffer(gl.ARRAY_BUFFER, null); }
 }
 
-const UPLOAD_SLICE_FLOATS=1024*1024/Float32Array.BYTES_PER_ELEMENT;
+const UPLOAD_SLICE_VERTICES=Math.floor(1024*1024/GPU_VERTEX_BYTES);
 interface MeshUpload {roofs?:GpuMesh;facades?:GpuMesh;roofOffset:number;facadeOffset:number;started:number}
 /** One allocation or at most 1 MiB transfer per render callback. */
 function advanceUpload(gl:WebGL2RenderingContext,job:MeshUpload,geometry:DetailGeometry):boolean {
+  if(gpuGeometryBytes(geometry.roofs)+gpuGeometryBytes(geometry.facades)>MAX_GPU_GEOMETRY_BYTES)throw new Error('Campus detail exceeds the 24 MiB GPU geometry limit.');
   if(!job.roofs){job.roofs=allocateMesh(gl,geometry.roofs);return false;}
-  if(job.roofOffset<geometry.roofs.length){
-    const end=Math.min(geometry.roofs.length,job.roofOffset+UPLOAD_SLICE_FLOATS);
-    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.roofs.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.roofOffset*4,geometry.roofs.subarray(job.roofOffset,end));job.roofOffset=end;}
+  if(job.roofOffset<geometry.roofs.length/VERTEX_FLOATS){
+    const end=Math.min(geometry.roofs.length/VERTEX_FLOATS,job.roofOffset+UPLOAD_SLICE_VERTICES);
+    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.roofs.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.roofOffset*GPU_VERTEX_BYTES,packGpuVertices(geometry.roofs,job.roofOffset,end));job.roofOffset=end;}
     finally{gl.bindBuffer(gl.ARRAY_BUFFER,null);}return false;
   }
   if(!job.facades){job.facades=allocateMesh(gl,geometry.facades);return false;}
-  if(job.facadeOffset<geometry.facades.length){
-    const end=Math.min(geometry.facades.length,job.facadeOffset+UPLOAD_SLICE_FLOATS);
-    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.facades.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.facadeOffset*4,geometry.facades.subarray(job.facadeOffset,end));job.facadeOffset=end;}
-    finally{gl.bindBuffer(gl.ARRAY_BUFFER,null);}return job.facadeOffset===geometry.facades.length;
+  if(job.facadeOffset<geometry.facades.length/VERTEX_FLOATS){
+    const end=Math.min(geometry.facades.length/VERTEX_FLOATS,job.facadeOffset+UPLOAD_SLICE_VERTICES);
+    try{gl.bindBuffer(gl.ARRAY_BUFFER,job.facades.buffer);gl.bufferSubData(gl.ARRAY_BUFFER,job.facadeOffset*GPU_VERTEX_BYTES,packGpuVertices(geometry.facades,job.facadeOffset,end));job.facadeOffset=end;}
+    finally{gl.bindBuffer(gl.ARRAY_BUFFER,null);}return job.facadeOffset===geometry.facades.length/VERTEX_FLOATS;
   }
   return true;
 }
@@ -453,7 +461,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           if(!complete){map.triggerRepaint();return;}
           roofs=uploading.roofs;facades=uploading.facades;state.uploadWallMs=performance.now()-uploading.started;uploading=undefined;
           Object.assign(state, { ready: true, roofTriangles: pending.geometry.roofTriangles, facadeTriangles: pending.geometry.facadeTriangles,
-            triangles: pending.geometry.triangles, bytes: pending.geometry.bytes, environment:pending.geometry.environment,sculptures:pending.geometry.sculptures, buildMs: pending.buildMs });
+            triangles: pending.geometry.triangles, bytes: gpuGeometryBytes(pending.geometry.roofs)+gpuGeometryBytes(pending.geometry.facades), environment:pending.geometry.environment,sculptures:pending.geometry.sculptures, buildMs: pending.buildMs });
         } catch (error) { fail(error instanceof Error ? error.message : 'Campus GPU detail could not initialize.'); return; }
       }
       const main = options.defaultProjectionData.mainMatrix;

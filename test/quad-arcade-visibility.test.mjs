@@ -1,9 +1,10 @@
+import {OPEN_GARAGE_IDS} from '../src/garage-architecture.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createExpression } from '@maplibre/maplibre-gl-style-spec';
 import { createQuadArcadeVisibility } from '../src/quad-arcade-visibility.ts';
 import { QUAD_WING_IDS } from '../src/quad-architecture.ts';
-import { STADIUM_SEATING_IDS } from '../src/stadium-architecture.ts';
+import { STADIUM_SEATING_IDS, STADIUM_OPEN_PART_IDS } from '../src/stadium-architecture.ts';
 
 test('open arcades switch only the Quad family after upload, with full fallback on loss, zoom-out and style recreation',()=>{
   let zoom=19,layer=true,paint;
@@ -34,13 +35,13 @@ test('open arcades switch only the Quad family after upload, with full fallback 
 });
 
 
-test('stadium seating replaces native walls and caps only while detailed terraces are ready',()=>{
+test('open garages, stadium walkway and seating replace native walls and caps only while detailed terraces are ready',()=>{
   let zoom=17.6;const paint=new Map(),map={getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,key,value)=>paint.set(id+':'+key,value)};
   const controller=createQuadArcadeVisibility();
   const evaluate=(id,key,building,base)=>{const expression=createExpression(paint.get(id+':'+key),'layers[0].paint.'+key);assert.equal(expression.result,'success');return expression.value.evaluate({zoom},{properties:{id:building,base,detailWallHeight:28}});};
   for(const [nextZoom,ready]of [[17.6,false],[17.6,true],[14,true],[17.6,true],[17.6,false]]){
     zoom=nextZoom;controller.sync(map,ready);const detailed=ready&&zoom>=15.5;
-    for(const id of STADIUM_SEATING_IDS)for(const base of [0,14]){
+    for(const id of [...STADIUM_SEATING_IDS,...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS])for(const base of [0,14]){
       assert.equal(evaluate('stanford-buildings','fill-extrusion-height',id,base),detailed?base+.02:28);
       assert.equal(evaluate('stanford-roofs','fill-extrusion-base',id,base),detailed?base:28);
       assert.equal(evaluate('stanford-roofs','fill-extrusion-height',id,base),detailed?base+.05:28.05);

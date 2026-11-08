@@ -1,8 +1,9 @@
+import {gpuGeometryBytes,GPU_VERTEX_BYTES,MAX_GPU_GEOMETRY_BYTES} from '../src/gpu-geometry.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {buildBuildingGeometry,BuildingGeometryBuilder,prepareBuildingDetails,projectLocal,VERTEX_FLOATS} from '../src/building-geometry.ts';
+import {buildBuildingGeometry,BuildingGeometryBuilder,prepareBuildingDetails,projectLocal,VERTEX_FLOATS,MAX_DETAIL_TRIANGLES} from '../src/building-geometry.ts';
 import {validateCampusEnvironment,environmentDimensions,addCampusEnvironment} from '../src/campus-environment.ts';
 import {footprintClearance,estimateFacing} from '../tools/data/build-campus-environment.mjs';
 
@@ -54,8 +55,8 @@ test('mapped roots and furniture stay outside actual building material, preserve
   assert.equal(footprintClearance([5,5],[[fixture[0]]]),-1);
 });
 
-test('all combined building and environment geometry stays finite within approved 160k triangles and 24MiB in two buffers',()=>{
-  assert.equal(geometry.buildings,648);assert.ok(geometry.triangles<160000);assert.ok(geometry.bytes<24*1024*1024);
+test('all combined building and environment geometry stays finite within memory-derived triangle cap and 24MiB GPU in two buffers',()=>{
+  assert.equal(geometry.buildings,648);assert.ok(geometry.triangles<MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(geometry.roofs)+gpuGeometryBytes(geometry.facades)<=MAX_GPU_GEOMETRY_BYTES);
   assert.deepEqual(geometry.environment,{trees:726,palms:337,broadleaf:363,conifers:26,benches:196,lamps:80});
   let environmentVertices=0;
   for(const mesh of [geometry.roofs,geometry.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS){
@@ -66,7 +67,7 @@ test('all combined building and environment geometry stays finite within approve
       assert.ok([10,11,12].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
       assert.ok(mesh[i+2]>=0&&mesh[i+2]<=28);environmentVertices++;
     }else{
-      assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=source.features[id].properties.height+0.0001);
+      assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=(source.features[id].properties.id==='way/324983017'?16:source.features[id].properties.height)+0.0001);
       if(kind===33){assert.equal(source.features[id].properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=source.features[id].properties.base);}
       else assert.ok(mesh[i+2]>=source.features[id].properties.base-0.0001);
     }

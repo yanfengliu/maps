@@ -164,8 +164,9 @@ function showBuilding(properties: Record<string, unknown>): void {
   selectedId = String(properties.id);
   updateSelection();
   details.hidden = false;
-  const height = Number(properties.height);
-  const source = properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
+  const referencedHeight=properties.heightSource==='estimated'&&Number(properties.detailRoofHeight)>Number(properties.height);
+  const height = Number(referencedHeight?properties.detailRoofHeight:properties.height);
+  const source = referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
   details.innerHTML = `<div class="detail-heading"><div><span class="eyebrow">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</span><h2>${escapeHtml(properties.name || 'Campus building')}</h2></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   if(selectedId===CHURCH_ID){

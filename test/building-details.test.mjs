@@ -1,3 +1,4 @@
+import {gpuGeometryBytes,GPU_VERTEX_BYTES,MAX_GPU_GEOMETRY_BYTES} from '../src/gpu-geometry.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -54,8 +55,9 @@ test('render preparation leaves source objects and metadata unchanged; only the 
     assert.deepEqual(properties, original.features[index].properties);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
-    assert.ok(detailWallHeight >= properties.base && detailWallHeight < properties.height, properties.id);
-    assert.ok(detailRoofHeight>detailWallHeight && detailRoofHeight<=properties.height,properties.id);
+    const envelope=properties.id==='way/324983017'?16:properties.height;
+    assert.ok(detailWallHeight >= properties.base && detailWallHeight < envelope, properties.id);
+    assert.ok(detailRoofHeight>detailWallHeight && detailRoofHeight<=envelope,properties.id);
     assert.equal(typeof detailArchitecture.profile, 'string');
   });
 });
@@ -114,7 +116,7 @@ test('facade profiles retain mapped floor counts and distinguish explicit zero, 
 });
 
 test('emitted facade rows follow two recorded floors even when the height would fit many more', () => {
-  const fixture={type:'FeatureCollection',features:[{type:'Feature',properties:{id:'test/two-floors',building:'university',height:30,base:0,'osm:building:levels':'2'},geometry:{type:'Polygon',coordinates:[[[-122.17,37.427],[-122.1698,37.427],[-122.1698,37.4272],[-122.17,37.4272],[-122.17,37.427]]]}}]};
+  const fixture={type:'FeatureCollection',features:[{type:'Feature',properties:{id:'test/two-floors',building:'university',height:30,base:0,'osm:building:levels':'2','osm:roof:shape':'flat'},geometry:{type:'Polygon',coordinates:[[[-122.17,37.427],[-122.1698,37.427],[-122.1698,37.4272],[-122.17,37.4272],[-122.17,37.427]]]}}]};
   const mesh=buildBuildingGeometry(prepareBuildingDetails(fixture)).facades;
   let highestUv=0;
   for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+11]===1)highestUv=Math.max(highestUv,mesh[i+10]);
@@ -179,17 +181,17 @@ test('modern Memorial Church has a separate multilevel roof silhouette, seven fr
   assert.match(describeBuildingArchitecture(detailed.features[index].properties),/three entrance arches.*central arched window.*24 m source height is estimated/);
 });
 
-test('all 648 detailed buildings stay finite, under their source heights and within the triangle budget', () => {
+test('all 648 detailed buildings stay finite, under mapped or explicitly referenced height envelopes and within the triangle budget', () => {
   assert.equal(geometry.buildings, 648);
   assert.ok(geometry.triangles > 50_000 && geometry.triangles <= MAX_DETAIL_TRIANGLES);
   assert.equal(geometry.triangles, geometry.roofTriangles + geometry.facadeTriangles);
-  assert.ok(geometry.bytes < 24 * 1024 * 1024);
+  assert.ok(gpuGeometryBytes(geometry.roofs)+gpuGeometryBytes(geometry.facades) <= MAX_GPU_GEOMETRY_BYTES);
   for (const mesh of [geometry.roofs, geometry.facades]) {
     assert.equal(mesh.length % (VERTEX_FLOATS * 3), 0);
     assert.ok(mesh.every(Number.isFinite));
     for (let i = 0; i < mesh.length; i += VERTEX_FLOATS) {
       const feature = original.features[mesh[i + 12]];
-      assert.ok(mesh[i + 2] <= feature.properties.height + 0.0001, feature.properties.id);
+      assert.ok(mesh[i + 2] <= (feature.properties.id==='way/324983017'?16:feature.properties.height) + 0.0001, feature.properties.id);
       // A raised scoreboard's missing, photo-derived columns are explicit
       // additions below its panel, not a changed source base or taller part.
       if(mesh[i+11]===33){assert.equal(feature.properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=feature.properties.base);}

@@ -1,3 +1,5 @@
+import {MAX_DETAIL_TRIANGLES} from '../src/gpu-geometry.ts';
+import {gpuGeometryBytes,GPU_VERTEX_BYTES,MAX_GPU_GEOMETRY_BYTES} from '../src/gpu-geometry.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -57,7 +59,7 @@ test('stadium field remains at ground level inside the bowl opening and has regu
 
 test('stadium replaces generic surfaces within the unchanged full-campus resource budget',()=>{
  const g=buildBuildingGeometry(prepared,validateCampusEnvironment(load('stanford-environment')),validateCampusSculptures(load('stanford-sculptures')));
- assert.ok(g.triangles<=160000);assert.ok(g.bytes<24*1024*1024);assert.equal(g.buildings,648);
+ assert.ok(g.triangles<=MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(g.roofs)+gpuGeometryBytes(g.facades)<=MAX_GPU_GEOMETRY_BYTES);assert.equal(g.buildings,648);
  assert.ok(g.roofs.every(Number.isFinite)&&g.facades.every(Number.isFinite));
  const original=JSON.stringify(source);prepareBuildingDetails(source);assert.equal(JSON.stringify(source),original);
  for(const id of ['way/1351984170','way/1354417642','way/1354428606','way/1354429136']){

@@ -8,8 +8,13 @@ import { addLandmarkAccents } from './landmark-accents.ts';
 import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
 import { addQuadArcade, addQuadWingElevation, QUAD_WING_IDS } from './quad-architecture.ts';
 import { quadRoof } from './quad-roof.ts';
+import { campusRoof, addBraunSolar, BRAUN_MUSIC_ID } from './campus-roof.ts';
+import { engineeringRoofOffset } from './engineering-architecture.ts';
+import { addEngineeringElevation, addEngineeringMonitors } from './engineering-geometry.ts';
 import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadium-geometry.ts';
 import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
+import { referenceGarageHeight } from './garage-architecture.ts';
+import { addGarage } from './garage-geometry.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
@@ -19,9 +24,9 @@ type Color = [number, number, number];
 
 export const DETAIL_ORIGIN: Point = [-122.1697, 37.4278];
 export const VERTEX_FLOATS = 13;
-// 160k × three vertices × 13 float32 values remains below the 24 MiB cap.
-// The extra margin covers mapped bench forms and two authored sculpture works.
-export const MAX_DETAIL_TRIANGLES = 160_000;
+// RGB8 upload allows richer surfaces inside the same 24 MiB GPU allocation.
+import { MAX_DETAIL_TRIANGLES } from './gpu-geometry.ts';
+export { MAX_DETAIL_TRIANGLES } from './gpu-geometry.ts';
 const CIRCUMFERENCE = 40_075_016.68557849;
 const ORIGIN_LAT = DETAIL_ORIGIN[1] * Math.PI / 180;
 export const METERS_TO_MERCATOR = 1 / (CIRCUMFERENCE * Math.cos(ORIGIN_LAT));
@@ -55,9 +60,9 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
   return { ...data, features: data.features.map(feature => {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
-    const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : Number(p?.height);
+    const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
     const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
-      ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : Number(p?.height) - roofRise(p);
+      ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
     let geometry = feature.geometry;
     if(quad && quadParts.length){
       if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
@@ -179,14 +184,17 @@ export class BuildingGeometryBuilder {
       if(addStadiumSeating(this.roofs,String(p.id),rings[0],building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       if(p.id===STADIUM_CONCOURSE_ID)addStadiumField(this.roofs,building,projectLocal);
       if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
+      if(addGarage(this.roofs,this.facades,rings,building,p,base,height)){this.checkBudget(String(p.id));continue;}
       const vertices = rings.flat(), holes: number[] = [];
       let offset = rings[0].length;
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }
       const indices = earcut(vertices.flat(), holes, 2);
       let roofTriangles: [Point, Point, Point][] = [];
-      const depth = architecture.profile==='quad-wing'||architecture.profile==='quad'?0:shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : 1;
+      const depth = architecture.profile==='quad-wing'||architecture.profile==='quad'||shape==='hipped'||p.id===BRAUN_MUSIC_ID?0:shape === 'dome' ? 3 : ['gabled','flat','skillion'].includes(shape) ? 0 : 1;
       for (let i = 0; i < indices.length; i += 3) subdivide(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], depth, roofTriangles);
-      const wingRoof=architecture.profile==='quad-wing'||architecture.profile==='quad'?quadRoof(String(p.id),component,rings):undefined;
+      const braun=p.id===BRAUN_MUSIC_ID;
+      const campusModel=shape==='hipped'&&!['quad','quad-wing'].includes(architecture.profile)||braun?campusRoof(String(p.id),component,rings):undefined;
+      const wingRoof=architecture.profile==='quad-wing'||architecture.profile==='quad'?quadRoof(String(p.id),component,rings):campusModel;
       if(wingRoof)roofTriangles=wingRoof.triangles;
       const minY = Math.min(...vertices.map(v => v[1])), maxY = Math.max(...vertices.map(v => v[1]));
       let ridgeAxis: Point = [0, 1], longest = 0;
@@ -211,13 +219,16 @@ export class BuildingGeometryBuilder {
         if (shape === 'dome') fraction = Math.sin(fraction * Math.PI / 2);
         // A small lift avoids z fighting with the native eave cap, while every
         // generated vertex remains below or at the original source height.
-        return [point[0], point[1], Math.min(height, wall + 0.07 + (height - wall - 0.07) * fraction)];
+        const roofPeak=height-engineeringRoofOffset(String(p.id),wall,height);
+        return [point[0], point[1], Math.min(roofPeak, wall + 0.07 + (roofPeak - wall - 0.07) * fraction)];
       };
       for (const [a, b, c] of roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
         const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
-        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],roofTint,wingRoof&&architecture.profile==='quad-wing'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile==='quad-wing'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
+        const deck=braun&&campusModel?.flat(tri);
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],braun&&!deck?color('#b77d60'):roofTint,deck?9:wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
+      if(braun)addBraunSolar(this.roofs,rings,building,height);
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
         for (let i = 0; i < ring.length; i++) {
@@ -227,7 +238,9 @@ export class BuildingGeometryBuilder {
           const nx = outward * dy / length, ny = -outward * dx / length;
           const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
-          if(architecture.profile==='quad-wing'&&length>1.8){
+          if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){
+            // Reference-specific workshop and concrete-frame bays.
+          }else if(architecture.profile==='quad-wing'&&length>1.8){
             addQuadWingElevation(this.facades,a,b,[nx,ny],base,wall,building,wallTint,String(p.id),arcade);
           }else if(arcade){
             addQuadArcade(this.facades,a,b,[nx,ny],base,wall,building,wallTint);
@@ -238,7 +251,7 @@ export class BuildingGeometryBuilder {
           }else if (wall > base + 1 && length > 1.8) {
             const libraryFront = architecture.profile==='library' && ringIndex===0 && (i===14 || i===15);
             const robleFront=p.id==='way/232805733'&&ringIndex===0&&nx*0.49+ny*0.87>0.7;
-            const kind = libraryFront ? 8 : architecture.profile === 'quad' ? 20 : robleFront?13:architecture.profile === 'residential' ? 4
+            const kind = architecture.facadeFamily==='unverified'||architecture.facadeFamily==='aggregate'?1:libraryFront ? 8 : architecture.profile === 'quad' ? 20 : robleFront?13:architecture.profile === 'residential' ? 4
               : architecture.profile === 'modern' ? 5 : architecture.profile === 'garage' ? 6
               : architecture.profile === 'service' || architecture.profile === 'open' || architecture.floors === 0 ? 2
               : architecture.profile === 'tower' ? 7 : 1;
@@ -270,6 +283,7 @@ export class BuildingGeometryBuilder {
         }
       }
       addLandmarkAccents(this.facades,String(p.id),rings[0],building,base,wall,wallTint);
+      addEngineeringMonitors(this.roofs,String(p.id),rings,building,wall,height,roofTint);
       // Keep malformed/unbounded future inputs from allocating an unlimited mesh.
       this.checkBudget(String(p.id));
     }

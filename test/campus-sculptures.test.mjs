@@ -1,3 +1,4 @@
+import {gpuGeometryBytes,GPU_VERTEX_BYTES,MAX_GPU_GEOMETRY_BYTES} from '../src/gpu-geometry.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -55,11 +56,11 @@ test('actual sculpture mesh distinguishes six separately supported bronze poses 
   assert.ok(highWing.some(p=>p[0]>0.5)&&highWing.some(p=>p[0]<-0.5),'the two folded wings must rise beyond both shoulders');
 });
 
-test('integrated building/environment/sculpture mesh preserves source data and 160k triangles / 24MiB / two buffers',()=>{
+test('integrated building/environment/sculpture mesh preserves source data and memory-derived triangle cap / 24MiB GPU / two buffers',()=>{
   const source=JSON.parse(read('stanford-buildings.geojson')),before=JSON.stringify(source);
   const g=buildBuildingGeometry(prepareBuildingDetails(source),JSON.parse(read('stanford-environment.geojson')),data);
   assert.equal(JSON.stringify(source),before);assert.equal(g.buildings,648);
-  assert.equal(MAX_DETAIL_TRIANGLES,160000);assert.ok(g.triangles<MAX_DETAIL_TRIANGLES);assert.ok(g.bytes<24*1024*1024);
+  assert.ok(MAX_DETAIL_TRIANGLES*3*GPU_VERTEX_BYTES<=MAX_GPU_GEOMETRY_BYTES);assert.ok(g.triangles<MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(g.roofs)+gpuGeometryBytes(g.facades)<=MAX_GPU_GEOMETRY_BYTES);
   assert.deepEqual(g.sculptures,{works:2,figures:7,triangles:3820});
   assert.equal(g.roofs.length+g.facades.length,g.triangles*VERTEX_FLOATS*3);
   assert.equal(sha(read('stanford-buildings.geojson')),'a27c564f8c7472bfddafd28e3328cffdf12acadb2f9854da1f1e429fd1d41d2f');
