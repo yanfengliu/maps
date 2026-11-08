@@ -230,7 +230,6 @@ function setChurchInterior(enabled:boolean):void {
   el<HTMLInputElement>('church-ceiling').checked=false;
   el('church-controls').hidden=!enabled;root.classList.toggle('church-interior',enabled);
   if(enabled)el('church-ready').textContent='Opening the interior…';
-  if(!enabled)el('view-name').textContent='STANFORD UNIVERSITY · 3D CAMPUS';
   syncChurchVisibility();
 }
 
