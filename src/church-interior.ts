@@ -2,6 +2,7 @@ import earcut from 'earcut';
 import { projectLocal, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, type CampusData, type DetailGeometry, type Point } from './building-geometry.ts';
 import { emptyEnvironmentCounts } from './campus-environment.ts';
 import { emptySculptureCounts } from './campus-sculptures.ts';
+import { photoTriangles, APSE_BOTTOM, APSE_TOP, NAVE_MOSAIC, type PhotoRegion, type PhotoCorners } from './church-artwork.ts';
 
 export const CHURCH_ID = 'way/836474103';
 type V = [number, number, number];
@@ -48,6 +49,13 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
   };
   const quad = (a: V, b: V, c: V, d: V, color: C, uv?: [Point, Point, Point, Point]) => {
     tri(a, b, c, color, uv ? [uv[0], uv[1], uv[2]] : undefined); tri(a, c, d, color, uv ? [uv[0], uv[2], uv[3]] : undefined);
+  };
+  const photoTriangle = (region: PhotoRegion, points: [Point, Point, Point], position: (p: Point) => V) => {
+    photoTriangles(region, points, (p, uv) => tri(position(p[0]), position(p[1]), position(p[2]), gold, uv));
+  };
+  const photoQuad = (a: V, b: V, c: V, d: V, region: PhotoRegion) => {
+    const position = ([u, v]: Point): V => a.map((n, i) => (n * (1 - u) + b[i] * u) * (1 - v) + (d[i] * (1 - u) + c[i] * u) * v) as V;
+    photoTriangle(region, [[0,0],[1,0],[1,1]], position); photoTriangle(region, [[0,0],[1,1],[0,1]], position);
   };
   const box = (x: number, y: number, z: number, w: number, d: number, h: number, color: C) => {
     const a: V = [x - w / 2, y - d / 2, z], b: V = [x + w / 2, y - d / 2, z], c: V = [x + w / 2, y + d / 2, z], e: V = [x - w / 2, y + d / 2, z];
@@ -201,40 +209,47 @@ export function buildChurchInterior(data: CampusData): DetailGeometry {
 
   // East aisle retains the full wall and arched glazed bays. The western wall
   // is deliberately sectioned at the sill so the pews can be inspected.
-  const window = (cx: number, cy: number, bottom: number, top: number, radius: number, side: boolean, photo: [number,number,number,number]) => {
+  const window = (cx: number, cy: number, bottom: number, top: number, radius: number, side: boolean, corners: PhotoCorners) => {
     const spring = top - radius, point = (x: number, z: number): V => side ? [cx, cy + x, z] : [cx + x, cy, z];
     const savedKind=kind;kind=22;
-    const uv=(x:number,z:number):Point=>[(photo[0]+(x/radius+1)*0.5*(photo[2]-photo[0]))/1280,(photo[3]-(z-bottom)/(top-bottom)*(photo[3]-photo[1]))/853];
-    quad(point(-radius,bottom),point(radius,bottom),point(radius,spring),point(-radius,spring),gold,[uv(-radius,bottom),uv(radius,bottom),uv(radius,spring),uv(-radius,spring)]);
-    for(let i=0;i<24;i++){const a=i*Math.PI/24,b=(i+1)*Math.PI/24,x0=Math.cos(a)*radius,z0=spring+Math.sin(a)*radius,x1=Math.cos(b)*radius,z1=spring+Math.sin(b)*radius;tri(point(0,spring),point(x0,z0),point(x1,z1),gold,[uv(0,spring),uv(x0,z0),uv(x1,z1)]);}
+    const region:PhotoRegion={size:[1280,853],corners};
+    const wall=(x:number,z:number):Point=>[(x/radius+1)*0.5,(z-bottom)/(top-bottom)];
+    const position=([u,v]:Point)=>point((u*2-1)*radius,bottom+v*(top-bottom));
+    photoTriangle(region,[wall(-radius,bottom),wall(radius,bottom),wall(radius,spring)],position);
+    photoTriangle(region,[wall(-radius,bottom),wall(radius,spring),wall(-radius,spring)],position);
+    for(let i=0;i<24;i++){const a=i*Math.PI/24,b=(i+1)*Math.PI/24,x0=Math.cos(a)*radius,z0=spring+Math.sin(a)*radius,x1=Math.cos(b)*radius,z1=spring+Math.sin(b)*radius;photoTriangle(region,[wall(0,spring),wall(x0,z0),wall(x1,z1)],position);}
     kind=savedKind;
     arch(cx, cy, spring, radius + 0.03, 0.22, 0.18, side);
     for (const s of [-1, 1]) beam(point(s * (radius + 0.14), bottom), point(s * (radius + 0.14), spring), 0.20, 0.18, ivory);
     for (let i = 1; i < 4; i++) { const z = bottom + (top - bottom) * i / 4; beam(point(-radius, z), point(radius, z), 0.04, 0.045, darkOak); }
   };
   quad([12.0, 6.5, 0.9], [12.0, 29.2, 0.9], [12.0, 29.2, 9.4], [12.0, 6.5, 9.4], gold);
-  window(11.95,10.7,2.1,8.2,1.18,true,[85,405,140,613]);
-  window(11.95,25.5,2.1,8.2,1.9,true,[350,375,402,540]);
+  window(11.95,10.7,2.1,8.2,1.18,true,[[85,613],[145,592],[134,400],[83,391]]);
+  window(11.95,25.5,2.1,8.2,1.9,true,[[353,551],[404,530],[400,377],[352,366]]);
   kind=22;
-  quad([11.94,15.6,3.0],[11.94,20.6,3.0],[11.94,20.6,6.6],[11.94,15.6,6.6],gold,[[217/1280,572/853],[309/1280,558/853],[309/1280,470/853],[217/1280,461/853]]);
+  photoQuad([11.94,15.6,3.0],[11.94,20.6,3.0],[11.94,20.6,6.6],[11.94,15.6,6.6],
+    {size:[1280,853],corners:[[217,572],[309,558],[309,470],[217,461]]});
   kind=2;
   quad([7.65, 6.5, 9.3], [7.65, 29.2, 9.3], [7.65, 29.2, 16.9], [7.65, 6.5, 16.9], gold);
-  const upperWindows:[number,number,number,number][]=[[67,0,113,136],[240,91,263,213],[295,141,312,234],[368,214,379,276],[395,234,403,287]];
+  const upperWindows:PhotoCorners[]=[[[67,116],[113,137],[113,0],[67,0]],[[240,202],[263,213],[263,99],[240,87]],[[295,226],[312,235],[312,147],[295,138]],[[368,272],[379,277],[379,219],[368,212]],[[395,285],[403,290],[403,240],[395,234]]];
   for (let i = 0; i < 5; i++) window(7.60, 8.5 + i * 4.4, 12.4, 16.25, 0.82, true,upperWindows[i]);
   // Licensed photographic regions keep the narrative mosaics recognizable.
-  // UV remapping is an illustrative approximation, not an orthophoto survey.
+  // Rectify planar photos before the map camera projects them again. Curved
+  // apse strips instead follow shared, measured image cornices. Pixel control
+  // points remain authored estimates rather than an orthophoto survey.
   // Image bytes and attribution are in public/textures/ATTRIBUTION.md.
   kind = 22;
-  quad([7.58, 6.5, 9.3], [7.58, 29.2, 9.3], [7.58, 29.2, 12.2], [7.58, 6.5, 12.2], gold,
-    [[0.01, 0.27], [0.32, 0.42], [0.32, 0.34], [0.01, 0.12]]);
+  photoQuad([7.58, 6.5, 9.3], [7.58, 29.2, 9.3], [7.58, 29.2, 12.2], [7.58, 6.5, 12.2], NAVE_MOSAIC);
   kind = 23;
   for (let i = 24; i < 30; i++) {
     const a=local[i],b=local[i+1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
     const nx=(b[1]-a[1])/length*0.045,ny=-(b[0]-a[0])/length*0.045;
-    const uv=(p:Point,z:number):Point=>[0.52-p[0]/24.5,0.795-(z-5.0)/8.0*0.29];
-    quad([a[0]+nx,a[1]+ny,5.0],[b[0]+nx,b[1]+ny,5.0],[b[0]+nx,b[1]+ny,13.0],[a[0]+nx,a[1]+ny,13.0],gold,[uv(a,5),uv(b,5),uv(b,13),uv(a,13)]);
+    const j=i-24;
+    photoQuad([a[0]+nx,a[1]+ny,5.0],[b[0]+nx,b[1]+ny,5.0],[b[0]+nx,b[1]+ny,12.8],[a[0]+nx,a[1]+ny,12.8],
+      { size:[960,720], corners:[APSE_BOTTOM[j],APSE_BOTTOM[j+1],APSE_TOP[j+1],APSE_TOP[j]], curved:true });
   }
-  quad([-2.0,59.35,2.8],[2.0,59.35,2.8],[2.0,59.35,5.0],[-2.0,59.35,5.0],gold,[[0.588,0.92],[0.465,0.92],[0.465,0.815],[0.588,0.815]]);
+  photoQuad([-2.0,59.35,2.8],[2.0,59.35,2.8],[2.0,59.35,5.0],[-2.0,59.35,5.0],
+    { size:[960,720], corners:[[560,659],[445,658],[447,595],[560,594]] });
   kind=2;
 
   // Galleries sit over the transepts, with pale carved rails and visible stair

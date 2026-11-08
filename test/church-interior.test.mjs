@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildChurchInterior, churchInteriorLocation, CHURCH_ID } from '../src/church-interior.ts';
 import { projectLocal, distanceToRings, VERTEX_FLOATS, MAX_DETAIL_TRIANGLES } from '../src/building-geometry.ts';
+import { photoProjection, NAVE_MOSAIC, APSE_BOTTOM, APSE_TOP } from '../src/church-artwork.ts';
 
 const data=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))),before=JSON.stringify(data);
 const church=data.features.find(f=>f.properties.id===CHURCH_ID),rings=church.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal)),mesh=buildChurchInterior(data);
@@ -47,4 +48,45 @@ test('church camera targets follow the source frame and missing or malformed chu
   assert.throws(()=>buildChurchInterior({type:'FeatureCollection',features:[]}),/footprint is unavailable/);
   const invalid=structuredClone(data);invalid.features.find(f=>f.properties.id===CHURCH_ID).properties.height=0;
   assert.throws(()=>buildChurchInterior(invalid),/invalid dimensions/);
+});
+
+test('rendered nave mosaic follows the rectified wall calibration throughout both original triangles',()=>{
+  const origin=projectLocal(churchInteriorLocation(data,0,0)), east=projectLocal(churchInteriorLocation(data,1,0)), inward=projectLocal(churchInteriorLocation(data,0,1));
+  const toLocal=v=>[(v[0]-origin[0])*(east[0]-origin[0])+(v[1]-origin[1])*(east[1]-origin[1]),(v[0]-origin[0])*(inward[0]-origin[0])+(v[1]-origin[1])*(inward[1]-origin[1]),v[2]];
+  const triangles=[];
+  for(let i=0;i<mesh.facades.length;i+=39){
+    const vertices=[0,13,26].map(j=>Array.from(mesh.facades.subarray(i+j,i+j+13))),p=vertices.map(toLocal);
+    if(vertices.every(v=>v[11]===22)&&p.every(v=>Math.abs(v[0]-7.58)<1e-4&&v[2]>=9.299&&v[2]<=12.201))triangles.push({p,vertices});
+  }
+  const cross=(a,b,c)=>(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1]);
+  const project=photoProjection(NAVE_MOSAIC);
+  for(const u of [.03,.13,.33,.5,.73,.97])for(const v of [.03,.2,.5,.78,.97]){
+    const probe=[7.58,6.5+u*22.7,9.3+v*2.9],hits=[];
+    for(const {p,vertices} of triangles){
+      const area=cross(...p),w=[cross(probe,p[1],p[2])/area,cross(p[0],probe,p[2])/area,cross(p[0],p[1],probe)/area];
+      if(w.some(n=>n< -1e-5))continue;
+      hits.push([9,10].map(k=>vertices.reduce((sum,p,i)=>sum+p[k]*w[i],0)));
+    }
+    assert.ok(hits.length,'every mosaic sample must have actual rendered geometry');
+    for(const hit of hits){const expected=project([u,v]);assert.ok(Math.hypot((hit[0]-expected[0])*1280,(hit[1]-expected[1])*853)<.5,'rendered wall must remove the photo perspective to subpixel accuracy');}
+  }
+});
+
+test('all rendered apse facets unwrap the same horizontal cornices without baked camera tilt',()=>{
+  const counts=Array(6).fill(0);
+  for(let i=0;i<mesh.facades.length;i+=13){
+    const p=mesh.facades.subarray(i,i+13); if(p[11]!==23||p[2]<5.001)continue;
+    let matched=false;
+    for(let j=0;j<6;j++){
+      const a=rings[0][24+j],b=rings[0][25+j],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
+      const distance=Math.abs(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/length;
+      const u=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(length*length);
+      if(Math.abs(distance-.045)>1e-4||u< -1e-5||u>1.00001)continue;
+      const expected=photoProjection({size:[960,720],curved:true,corners:[APSE_BOTTOM[j],APSE_BOTTOM[j+1],APSE_TOP[j+1],APSE_TOP[j]]})([u,(p[2]-5)/7.8]);
+      assert.ok(Math.hypot((p[9]-expected[0])*960,(p[10]-expected[1])*720)<.01,'cornice calibration must reach the emitted mesh');
+      matched=true;counts[j]++;break;
+    }
+    assert.ok(matched,'every upper apse photo vertex belongs to a calibrated source facet');
+  }
+  assert.ok(counts.every(n=>n>6));
 });
