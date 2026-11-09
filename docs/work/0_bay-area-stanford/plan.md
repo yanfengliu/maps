@@ -3,7 +3,7 @@
 Status: active
 Owner: root integration
 Created: 2026-10-19
-Updated: 2026-11-08
+Updated: 2026-11-09
 
 ## Current request tracker
 
@@ -34,7 +34,9 @@ The owner asks for one tracked list and coordinated delivery. Root owns this lis
 | Real terrain elevation throughout the Bay Area | Delivered at d6d6456; F46 closed by review 28 | Root: complete camera-independent campus DEM passes cold arrival, held offscreen tile, Retry and actual context recovery. Regional terrain remains true scale. Review 28 closes F46 with no new material finding. |
 | Stanford Hospital / Lucile Packard complex: apparent roof defect and generic modeling | Primary reference audit complete; implementation open | Root: identified six hospital/connector features, compared architect photographs and public floor maps, and distinguished planned renovations from existing buildings. No source footprint overlap found. Patient blocks/podium, Packard pavilions/atrium, exact height registration and reported seam remain to implement/verify. |
 | Hollow ring-shaped Quad tree crowns | Delivered at d6d6456; close/opposite views and review 28 accepted | Root: fifteen fan palms now have pleated individual fans and closed growing points, supported by Stanford species photographs. Hollow-ring regressions reject the former geometry; budget/placement unchanged. Foliage remains simplified. |
-| Latest demo and automatic refresh | Delivered; hidden server intentionally retained | Root: http://127.0.0.1:5174/ runs main with Vite HMR; temporary stylesheet update produced js-update and was restored. Pages automatically deploys pushes to main. Server identity/logs stay in ignored task output. |
+| Improve loading speed | Accepted in review29; delivery pending | Root: paired detail readiness improves 24.7% cold / 23.2% warm; stable engine chunk survives app-only updates. First-tile/road timing tradeoffs are explicit in the design. |
+| Oval road slivers and displaced edges | Accepted in review29; delivery pending | Root + oval_road_fix: all exact source widths stay consistent across terrain tile zooms; close/opposite/steep, graphics restore and Retry pass. Whole-class binder/cancellation checks preserve source and curb geometry. |
+| Latest demo and automatic refresh | Running; hidden server intentionally retained | Root: http://127.0.0.1:5174/ serves main with Vite HMR. Restarted after the owner found it stopped; HTTP 200 checked. Current identity/logs: artifacts/loading-roads-20261108/output/live-server.json. Pages deploys main pushes. |
 | Mobile preview guidance | Answered; mobile app verification remains required | Root: responsive pane-width preview, actual phone URL, and headless 390x844 acceptance; no unverified dedicated browser device button claimed. |
 
 The tracker above is the current status; the original-plan and earlier-increment sections below retain historical scope and outcomes.
@@ -228,3 +230,7 @@ The user-requested live local demo is http://127.0.0.1:5174/ and its Vite websoc
 
 
 Delivery: d6d6456f0e151cde9ede2dbb3020ce45a5993f54 is merged to main and pushed. [Pages run 42570024476](https://github.com/yanfengliu/maps/actions/runs/42570024476) completed build and deploy successfully. The live https://yanfengliu.github.io/maps/ asset names match the locally verified production build. Live startup, lawn/flowers, church transparent ceiling and 390×844 phone checks pass with no app/GL errors. Evidence: output/pages-live-result.log, output/pages-asset-match.json and live-published screenshots. The live local server was repointed to primary main at the same 5174 URL, verified healthy, and remains by explicit user request. Task browser/preview processes are closed. Worker handoff patches and files are preserved under output/handoffs before removing their worktrees; no unmerged product work is being abandoned.
+
+### Loading and terrain-road repair, 2026-11-09
+
+Root owns integration; oval_road_fix delivered the bounded renderer/lifecycle change. Review29 accepts exact code 2a71a5c0571838d47087ffcbd96a4747814d27b2 against f473fa04cf41e08e2301ccc98c68b7f358431440, with no material findings. All 284 tests, types, Pages-base build and audit pass. Native fixed/opposite/steep Oval views, terrain graphics recovery, failed road-source Retry and desktop/phone church controls pass. [Design and performance limits](design.md#faster-campus-startup-and-continuous-terrain-roads--2026-11-09) retain paired measurements and cache proof. Main integration, publication and cleanup remain pending. The requested primary-main HMR demo is restarted at port 5174; other realism todos stay open.
