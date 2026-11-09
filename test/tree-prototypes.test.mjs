@@ -121,6 +121,57 @@ test('broadleaf branch sprays are distributed bent surfaces with several orienta
   }
 });
 
+// Measure actual emitted coordinates at a representative 12.2 m / 3.7 m
+// height-to-radius ratio. Vertex normals alone can hide a physically thin card.
+function clusterVolumeMetrics(faces){
+  const groups=new Map(),upAreas=[],sideAreas=[],allAreas=[];
+  for(const face of faces){
+    const group=Math.floor((face.uv[0][1]+1.001)/4),list=groups.get(group)??[];list.push(face);groups.set(group,list);
+    const [a,b,c]=face.points.map(p=>[p[0],p[1],p[2]*3.3]),u=b.map((v,i)=>v-a[i]),v=c.map((n,i)=>n-a[i]),cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],area=Math.hypot(...cross),vertical=Math.abs(cross[2])/area;
+    allAreas.push(area);if(vertical>.65)upAreas.push(area);if(vertical<.45)sideAreas.push(area);
+  }
+  const depths=[];
+  for(const faces of groups.values()){
+    const points=[...new Map(faces.flatMap(t=>t.points).map(p=>[p.join(','),[p[0],p[1],p[2]*3.3]])).values()],mean=[0,1,2].map(k=>points.reduce((s,p)=>s+p[k],0)/points.length);
+    const matrix=[0,1,2].map(i=>[0,1,2].map(j=>points.reduce((s,p)=>s+(p[i]-mean[i])*(p[j]-mean[j]),0)/points.length));
+    // Jacobi eigenvalues of the symmetric covariance matrix: the smallest
+    // variance measures thickness independently of camera or arbitrary axes.
+    for(let step=0;step<12;step++){
+      let p=0,q=1;for(const [i,j] of [[0,2],[1,2]])if(Math.abs(matrix[i][j])>Math.abs(matrix[p][q])){p=i;q=j;}
+      if(Math.abs(matrix[p][q])<1e-12)break;
+      const a=matrix[p][p],b=matrix[p][q],d=matrix[q][q],angle=.5*Math.atan2(2*b,d-a),c=Math.cos(angle),s=Math.sin(angle);
+      matrix[p][p]=c*c*a-2*s*c*b+s*s*d;matrix[q][q]=s*s*a+2*s*c*b+c*c*d;matrix[p][q]=matrix[q][p]=0;
+      for(let k=0;k<3;k++)if(k!==p&&k!==q){const x=matrix[k][p],y=matrix[k][q];matrix[k][p]=matrix[p][k]=c*x-s*y;matrix[k][q]=matrix[q][k]=s*x+c*y;}
+    }
+    const eigenvalues=[matrix[0][0],matrix[1][1],matrix[2][2]].sort((a,b)=>a-b);depths.push(eigenvalues[0]/eigenvalues[2]);
+  }
+  const sum=a=>a.reduce((s,v)=>s+v,0),area=sum(allAreas);
+  return {depths,upArea:sum(upAreas)/area,sideArea:sum(sideAreas)/area};
+}
+
+function rejectedUprightSheetFixture(variant){
+  // Exact geometry family rejected in review30/F47: eight near-vertical
+  // four-triangle sprays, +-0.27 tilt and only0.12 depth at their center.
+  const sites=[[[ -.43,-.13,.61],.49,.22],[[.43,-.18,.66],.51,.23],[[-.26,.37,.70],.52,.23],[[.25,.32,.77],.47,.21],[[-.24,-.34,.79],.49,.20],[[.39,.10,.53],.44,.22],[[.01,-.08,.87],.43,.13],[[-.12,-.38,.53],.46,.20]],faces=[];
+  for(let j=0;j<sites.length;j++){
+    const [base,w,h]=sites[j],angle=j*2.399963+variant*.49,tilt=.27*Math.sin(j*1.9+variant),u=[Math.cos(angle),Math.sin(angle),0],v=[-Math.sin(angle)*Math.sin(tilt),Math.cos(angle)*Math.sin(tilt),Math.cos(tilt)],n=[Math.sin(angle)*Math.cos(tilt),-Math.cos(angle)*Math.cos(tilt),Math.sin(tilt)],center=[base[0]+(variant-1)*.018,base[1],base[2]],offset=j*4;
+    const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,y])=>center.map((c,i)=>c+u[i]*w*x+v[i]*h*y)),middle=center.map((c,i)=>c+n[i]*.12),uv=[[-1,offset-1],[1,offset-1],[1,offset+1],[-1,offset+1]];
+    for(let k=0;k<4;k++)faces.push({points:[middle,corners[k],corners[(k+1)%4]],uv:[[0,offset],uv[k],uv[(k+1)%4]]});
+  }
+  return faces;
+}
+
+test('broadleaf clusters have substantial depth and upward foliage rather than the rejected lacy upright sheets',()=>{
+  const substantial=m=>m.depths.every(ratio=>ratio>.12)&&m.upArea>.20&&m.sideArea>.15;
+  for(let variant=0;variant<TREE_VARIANTS.broadleaf;variant++){
+    const leaves=treePrototype('broadleaf',variant).triangles.filter(t=>t.kind===TREE_MATERIAL.leaf),metrics=clusterVolumeMetrics(leaves);
+    assert.ok(substantial(metrics),`every spatial cluster needs thickness and the crown needs upper and side foliage: ${JSON.stringify(metrics)}`);
+    const old=clusterVolumeMetrics(rejectedUprightSheetFixture(variant));
+    assert.equal(substantial(old),false,'negative control: the exact rejected near-vertical sheet family must fail');
+    assert.ok(old.depths.every(ratio=>ratio<.04)&&old.upArea<.01,'the control must exercise shallow, consistently upright foliage rather than an unrelated malformed mesh');
+  }
+});
+
 test('scaled instances preserve independent terrain anchors, immutable templates and normalized transformed normals',()=>{
   for(const p of prototypes){
     const {mesh,triangles}=recorder(),before=JSON.stringify(p),anchors=new TerrainAnchorBuilder();

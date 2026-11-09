@@ -80,29 +80,37 @@ export function treePrototype(form:TreeForm,requestedVariant:number):TreePrototy
   }else if(form==='broadleaf'){
     const lean:V=[.045*(variant-1),.025,.48];stem([0,0,0],lean,.075,.038,3);
     stem(lean,[-.46,.13,.67],.033,0,3);stem(lean,[.37,-.18,.74],.031,0,3);
-    // Eight independently oriented, bent branch sprays replace the closed
-    // polyhedral crown. Four faces per spray leave an open surface, with a
-    // coherent cutout UV spanning its folds. These are spatial branch clusters,
-    // not a camera-facing whole-tree billboard or a solid canopy envelope.
+    // Each branch cluster contains two intersecting sprays with independent
+    // axes, sizes and centers. Their normals span broad elevations, so the
+    // canopy has depth and upper foliage instead of eight upright oval sheets.
+    // Two triangles per spray preserve the existing 32-triangle allocation.
     const sprays:[V,number,number][]=[
-      [[-.43,-.13,.61],.49,.22],[[.43,-.18,.66],.51,.23],
-      [[-.26,.37,.70],.52,.23],[[.25,.32,.77],.47,.21],
-      [[-.24,-.34,.79],.49,.20],[[.39,.10,.53],.44,.22],
-      [[.01,-.08,.87],.43,.13],[[-.12,-.38,.53],.46,.20],
+      [[-.43,-.10,.60],.48,.16],[[.40,-.16,.64],.49,.18],
+      [[-.25,.36,.70],.50,.17],[[.23,.32,.78],.45,.14],
+      [[-.25,-.30,.80],.46,.14],[[.38,.09,.51],.43,.16],
+      [[.01,-.06,.86],.36,.10],[[-.13,-.36,.52],.44,.16],
     ];
+    const elevations=[.20,.95,-.95,.55,-1.0,.10,1.2,-.8];
     for(let j=0;j<sprays.length;j++){
-      const [base,width,height]=sprays[j],angle=j*2.399963+variant*.49,tilt=.27*Math.sin(j*1.9+variant);
-      const u:V=[Math.cos(angle),Math.sin(angle),0],v:V=[-Math.sin(angle)*Math.sin(tilt),Math.cos(angle)*Math.sin(tilt),Math.cos(tilt)],n=normal([0,0,0],u,v);
-      const center:V=[base[0]+(variant-1)*.018,base[1],base[2]],offset=j*4;
-      const edge=(x:number,y:number):V=>{
-        const point=center.map((c,i)=>c+u[i]*width*x+v[i]*height*y) as V;
-        const radial=Math.hypot(point[0],point[1]);if(radial>1){point[0]/=radial;point[1]/=radial;}
-        return point;
-      };
-      const corners=[edge(-1,-1),edge(1,-1),edge(1,1),edge(-1,1)],uv:UV[]=[[-1,offset-1],[1,offset-1],[1,offset+1],[-1,offset+1]];
-      const middle=center.map((c,i)=>c+n[i]*.12) as V;
-      const normals=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,y])=>unit(n.map((c,i)=>c*.8+u[i]*x*.5+v[i]*y*.5) as V));
-      for(let k=0;k<4;k++)tri(middle,corners[k],corners[(k+1)%4],TREE_MATERIAL.leaf,.91+.085*(j%3)/2,[[0,offset],uv[k],uv[(k+1)%4]],[n,normals[k],normals[(k+1)%4]]);
+      const [base,width,height]=sprays[j],angle=j*2.399963+variant*.49,elevation=elevations[j]+.09*Math.sin(variant+j);
+      const u:V=[-Math.sin(angle),Math.cos(angle),0],v:V=[-Math.sin(elevation)*Math.cos(angle),-Math.sin(elevation)*Math.sin(angle),Math.cos(elevation)];
+      const n:V=[Math.cos(elevation)*Math.cos(angle),Math.cos(elevation)*Math.sin(angle),Math.sin(elevation)];
+      const crossAxis=unit(u.map((x,i)=>x*.55+v[i]*.835) as V),offset=j*4;
+      for(let plane=0;plane<2;plane++){
+        const axisU=plane?n:u,axisV=plane?crossAxis:v,scaleU=plane?.86:1,scaleV=plane?1.08:.93;
+        const center:V=[base[0]+(variant-1)*.018+n[0]*plane*.045,base[1]+n[1]*plane*.045,base[2]+n[2]*plane*.012];
+        const edge=(x:number,y:number):V=>{
+          const d=axisU.map((a,i)=>a*x*scaleU+axisV[i]*y*scaleV) as V;
+          const point:V=[center[0]+d[0]*width,center[1]+d[1]*width,center[2]+d[2]*height];
+          const radial=Math.hypot(point[0],point[1]);if(radial>1){point[0]/=radial;point[1]/=radial;}
+          return point;
+        };
+        const corners=[edge(-1,-1),edge(1,-1),edge(1,1),edge(-1,1)],uv:UV[]=[[-1,offset-1],[1,offset-1],[1,offset+1],[-1,offset+1]],face=normal(corners[0],corners[1],corners[2]);
+        const normals=corners.map(p=>unit([face[0]*.4+(p[0]-center[0])/width,face[1]*.4+(p[1]-center[1])/width,face[2]*.4+(p[2]-center[2])/height]));
+        const shade=.91+.085*(j%3)/2;
+        tri(corners[0],corners[1],corners[2],TREE_MATERIAL.leaf,shade,[uv[0],uv[1],uv[2]],[normals[0],normals[1],normals[2]]);
+        tri(corners[0],corners[2],corners[3],TREE_MATERIAL.leaf,shade,[uv[0],uv[2],uv[3]],[normals[0],normals[2],normals[3]]);
+      }
     }
     // The high branch tip reaches the recorded height; cutouts still keep its
     // edge leafy. No source height or crown radius is inflated for the effect.
