@@ -96,24 +96,33 @@ export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:
         const crownBase=shape==='fan'?h-r*0.45:h*0.87;
         taper(x,y,[[0,trunk*1.15],[crownBase,trunk*0.78]],bark);
         if(shape==='fan'){
-          // Stanford's Washingtonia references show a rounded crown of upright,
-          // outward and hanging fan fronds, not a horizontal ring of paddles.
-          // Each fan bends at a mid-rib into a drooping, three-part pleated edge.
-          // Exact pruning and leaflet counts remain estimated; no dead-frond skirt
-          // is assumed for an individual whose current trimming is unverified.
-          lobe(x,y,crownBase,r*0.25,r*0.22,green,rotation);
-          for(let tier=0;tier<3;tier++)for(let j=0;j<6;j++){
-            const angle=rotation+j*Math.PI/3+tier*0.43,dx=Math.cos(angle),dy=Math.sin(angle);
-            const elevation=[0.88,0.10,-0.72][tier],along=Math.cos(elevation),rise=Math.sin(elevation);
-            const at=(forward:number,side:number,droop=0):Vertex=>[x+r*(dx*forward*along-dy*side),y+r*(dy*forward*along+dx*side),Math.min(h,crownBase+r*(forward*rise-droop))];
-            const hub=at(0.28,0),tint=green.map(v=>v*(tier===2?0.93:1)) as Color;
-            triangle(at(0,-0.018),hub,at(0,0.018),tint);
-            const rays=[-1.30,-0.43,0.43,1.30];
-            const mid=rays.map(phi=>at(0.28+0.36*Math.cos(phi),0.36*Math.sin(phi),-0.06));
-            const edge=rays.map(phi=>at(0.28+0.72*Math.cos(phi),0.72*Math.sin(phi),0.20+0.035*Math.cos(phi)));
-            for(let k=0;k<rays.length-1;k++){
-              triangle(hub,mid[k],mid[k+1],tint);
-              quad(mid[k],edge[k],edge[k+1],mid[k+1],tint);
+          // Stanford's WASro / WASfil / LIVaus / BRAar / TRAfo photographs show
+          // young upright fans filling the growing point, then individually
+          // splayed and hanging fronds. Three identical six-leaf tiers made
+          // annular shelves around a low hub. This continuous spiral uses the
+          // same 204 leaf triangles: 24 for the folded central foliage, and
+          // fifteen separately pleated fans with twelve triangles apiece.
+          // Frond number, angles and dimensions are visual estimates. No skirt
+          // or seasonal flowers are inferred from a different photographed tree.
+          lobe(x,y,h-r*0.26,r*0.32,r*0.26,green,rotation);
+          for(let j=0;j<15;j++){
+            const angle=rotation+j*2.399963,dx=Math.cos(angle),dy=Math.sin(angle);
+            const elevation=1.17-j*2.15/14,along=Math.cos(elevation),rise=Math.sin(elevation);
+            // Emerging leaves are shorter and still partly folded. Their upper
+            // tips remain inside the estimated height without clipping a plane
+            // across all high leaves (another source of the former flat rings).
+            const length=Math.min(1,0.42/Math.max(0.1,rise))*(0.94+0.06*Math.cos(j*1.7));
+            const spread=elevation>0.6?0.55:1;
+            const at=(forward:number,side:number,droop=0):Vertex=>[x+r*length*(dx*forward*along-dy*side*spread),y+r*length*(dy*forward*along+dx*side*spread),crownBase+r*length*(forward*rise-droop)];
+            const hub=at(0.23,0),tint=green.map(v=>v*(0.96+0.04*Math.cos(j*0.7))) as Color;
+            quad(at(0,-0.014),at(0.23,-0.012),at(0.23,0.012),at(0,0.014),tint);
+            // Five folded segments share the fan's blade base. Shallower notches
+            // preserve a fan silhouette rather than separate spear-like leaves.
+            for(let k=0;k<5;k++){
+              const a=-1.2+k*0.48,b=a+0.48,m=(a+b)/2;
+              const edge=(phi:number)=>at(0.23+0.59*Math.cos(phi),0.59*Math.sin(phi),0.16);
+              const tip=at(0.23+0.77*Math.cos(m),0.77*Math.sin(m),0.13);
+              triangle(hub,edge(a),tip,tint);triangle(hub,tip,edge(b),tint);
             }
           }
         }else{

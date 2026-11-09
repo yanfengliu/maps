@@ -16,6 +16,7 @@ import { emptySculptureCounts, type SculptureCounts } from './campus-sculptures.
 import { ChurchTextures } from './church-textures.ts';
 import { churchAxes, churchWallMask } from './church-cutaway.ts';
 import {TerrainGrounding,TERRAIN_VERTEX_HELPERS,terrainTileMatrix} from './terrain-grounding.ts';
+import type {ElevationGridLoader} from './campus-elevation.ts';
 export { prepareBuildingDetails } from './building-geometry.ts';
 
 export interface BuildingDetailStats {
@@ -385,7 +386,7 @@ function advanceUpload(gl:WebGL2RenderingContext,job:MeshUpload,geometry:DetailG
 }
 
 /** Campus-scale layer: adaptive globe has reached Mercator before detail draws. */
-export function createBuildingDetailsLayer(data: CampusData, onError?: (message: string) => void): BuildingDetailsLayer {
+export function createBuildingDetailsLayer(data: CampusData, onError?: (message: string) => void, loadElevationGrid?:ElevationGridLoader): BuildingDetailsLayer {
   const wallAxes = churchAxes(data);
   let map: MapLibreMap | undefined, context: WebGL2RenderingContext | undefined;
   let gpuProgram: WebGLProgram | undefined, roofs: GpuMesh | undefined, facades: GpuMesh | undefined;
@@ -400,8 +401,8 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
   const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0,terrainTextureBytes:0,terrainStatus:'disabled',terrainOffscreenDrawCalls:0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const photos = new ChurchTextures(() => map?.triggerRepaint());
-  const grounding=new TerrainGrounding(data);
   let groundRevision=0;
+  const grounding=new TerrainGrounding(data,()=>{groundRevision++;map?.triggerRepaint();},loadElevationGrid);
   const releaseMeshes = () => {
     photos.dispose();state.textureBytes=0;
     if (context) for (const mesh of [roofs,facades,uploading?.roofs,uploading?.facades]) if (mesh) { context.deleteVertexArray(mesh.vao); context.deleteBuffer(mesh.buffer); }
@@ -477,7 +478,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   return {
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
     groundLayer,
-    get stats() { return Object.freeze({ ...state,environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}) }); },
+    get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
     setInterior(enabled) {
       if(interior===enabled)return;

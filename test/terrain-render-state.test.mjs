@@ -61,7 +61,7 @@ function geometry(interior=false){
   environment:{trees:0,palms:0,broadleaf:0,conifers:0,benches:0,lamps:0},sculptures:{works:0,figures:0,triangles:0}};
 }
 
-async function fixture({interior=false}={}){
+async function fixture({interior=false,elevationGate,beforeElevationReady}={}){
  const previous={Worker:globalThis.Worker,fetch:globalThis.fetch,createImageBitmap:globalThis.createImageBitmap};
  const workers=[],bitmaps=[],requests=[],gpu=gpuOracle(),listeners=new Map();
  globalThis.Worker=class{constructor(){workers.push(this);this.terminated=false;}postMessage(){}terminate(){this.terminated=true;}};
@@ -70,7 +70,10 @@ async function fixture({interior=false}={}){
  const owner={getZoom:()=>17,getCenter:()=>({toArray:()=>[-122.1697,37.4278]}),getTerrain:()=>({source:'bay-area-terrain',exaggeration:1}),getBearing:()=>0,getPitch:()=>58,
   on:(name,callback)=>listeners.set(name,callback),off:name=>listeners.delete(name),triggerRepaint(){}};
  // A new source identity keeps the production weak caches independent between tests.
- const layer=createBuildingDetailsLayer({type:'FeatureCollection',features:[]});
+ const layer=createBuildingDetailsLayer({type:'FeatureCollection',features:[]},undefined,async()=>{
+  if(elevationGate)await elevationGate;
+  const grid=new Float32Array(256*256*4);for(let i=0;i<grid.length;i+=4){grid[i]=28;grid[i+3]=1;}return grid;
+ });
  const options={defaultProjectionData:{mainMatrix:[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],projectionTransition:0},renderTerrainHeightMap:target=>assert.ok(gpu.live.textures.has(target.texture))};
  const close=async()=>{
   layer.onRemove(owner,gpu.gl);await tick();
@@ -83,6 +86,10 @@ async function fixture({interior=false}={}){
   layer.prerender(gpu.gl,options);layer.render(gpu.gl,options);assert.equal(workers.length,1);
   workers[0].onmessage({data:{geometry:geometry(interior),buildMs:1}});
   for(let i=0;i<30&&!layer.stats.ready;i++){layer.prerender(gpu.gl,options);layer.render(gpu.gl,options);await tick();}
+  if(beforeElevationReady){
+   await beforeElevationReady({layer,gpu});
+   for(let i=0;i<30&&!layer.stats.ready;i++){layer.prerender(gpu.gl,options);layer.render(gpu.gl,options);await tick();}
+  }
   assert.equal(layer.stats.error,null);assert.equal(layer.stats.ready,true);assert.equal(layer.stats.terrainStatus,'active');
   return {...gpu,layer,owner,options,requests,bitmaps,close};
  }catch(error){await close();throw error;}
@@ -95,6 +102,17 @@ function assertRestored(f,before){
  assert.deepEqual(after.viewport,before.viewport,'custom terrain painting must retain the native tile viewport');
 }
 const tileOptions={tileID:{canonical:{z:16,x:10526,y:25410},wrap:0},width:512,height:512};
+
+test('completed mesh remains unready while campus DEM loads, then publishes without restarting uploads',async()=>{
+ let release,slices;const gate=new Promise(resolve=>release=resolve);
+ const f=await fixture({elevationGate:gate,beforeElevationReady:async({layer,gpu})=>{
+  assert.equal(layer.stats.ready,false,'native fallback must remain until complete elevation is resident');
+  assert.equal(layer.stats.terrainStatus,'loading');assert.ok(layer.stats.bytes>0,'mesh upload completed independently');
+  assert.equal(gpu.live.buffers.size,2);assert.equal(gpu.draws.length,0);slices=layer.stats.uploadSlices;release();await tick();
+ }});
+ try{assert.equal(f.layer.stats.ready,true);assert.equal(f.layer.stats.uploadSlices,slices,'waiting for DEM must not rebuild or restart the mesh');assert.equal(f.live.buffers.size,2);}
+ finally{await f.close();}
+});
 
 test('ground sidecar binds every active sampler away from native tile attachments and restores borrowed state',async()=>{
  const f=await fixture();try{

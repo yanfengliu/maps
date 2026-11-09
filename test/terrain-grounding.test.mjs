@@ -7,6 +7,7 @@ import {projectLocal,MERCATOR_ORIGIN,METERS_TO_MERCATOR,prepareBuildingDetails,b
 import {buildChurchInterior,CHURCH_ID} from '../src/church-interior.ts';
 import {HOOVER_PART_IDS} from '../src/hoover-architecture.ts';
 import {STADIUM_CONCOURSE_ID,STADIUM_SEATING_IDS} from '../src/stadium-architecture.ts';
+import {elevationTileCoverage,MAX_ELEVATION_TILES} from '../src/campus-elevation.ts';
 const source=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url)));
 
 test('regional terrain uses the real bounded Terrarium source, full attribution, globe and one-to-one heights',()=>{
@@ -69,18 +70,41 @@ function fakeGl(supported=true){
   getExtension:name=>name==='EXT_color_buffer_float'&&supported?{}:null,createTexture(){const t={id:id++};live.add(t);return t;},deleteTexture:t=>live.delete(t),getParameter:key=>key===3?unit:bindings.get(unit)||null,bindTexture:(_target,t)=>bindings.set(unit,t),activeTexture:v=>unit=v,texImage2D:(...args)=>uploads.push(args),texParameteri(){},uniform1f(){},uniform1i(){},uniform4f(){}}};
 }
 
-test('terrain textures have bounded separate accounting, explicit capability failure and clean restoration',()=>{
- const data={type:'FeatureCollection',features:source.features.slice(0,1)},resource=new TerrainGrounding(data),fake=fakeGl(),targets=[];
- const options={renderTerrainHeightMap:target=>targets.push(target)};
- assert.throws(()=>resource.prerender(fakeGl(false).gl,options,true),/EXT_color_buffer_float/);assert.equal(resource.bytes,0);
- assert.throws(()=>resource.prerender(fake.gl,{},true),/unavailable/);
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+const completeGrid=()=>{const grid=new Float32Array(TERRAIN_SIZE*TERRAIN_SIZE*4);for(let i=0;i<grid.length;i+=4){grid[i]=28;grid[i+3]=1;}return grid;};
+
+test('fresh offscreen stadium anchors use a complete campus grid and retain bounded textures across camera and context changes',async()=>{
+ const data=prepareBuildingDetails(structuredClone(source)),fake=fakeGl(false),grid=completeGrid();let calls=0,bounds;
+ const resource=new TerrainGrounding(data,()=>{},async(value,size)=>{calls++;bounds=value;assert.equal(size,TERRAIN_SIZE);return grid;});
+ const options={renderTerrainHeightMap:()=>assert.fail('viewport-only terrain capture must never be used')};
  resource.setObjects(new Float32Array([1,2,3,4]));resource.prerender(fake.gl,options,true);
- assert.equal(resource.status,'active');assert.equal(fake.live.size,2);assert.equal(targets[0].width,TERRAIN_SIZE);assert.equal(targets[0].height,TERRAIN_SIZE);
- assert.ok(targets[0].bounds[0]<targets[0].bounds[2]&&targets[0].bounds[1]<targets[0].bounds[3]);assert.ok(resource.bytes<=MAX_TERRAIN_TEXTURE_BYTES);
- assert.equal(fake.uploads.length,2);resource.prerender(fake.gl,options,true);assert.equal(fake.uploads.length,2,'moving camera re-renders DEM into existing textures instead of reallocating');
+ assert.equal(resource.status,'loading');assert.equal(resource.bytes,0);await tick();resource.prerender(fake.gl,options,true);
+ assert.equal(resource.status,'active');assert.equal(fake.live.size,2);assert.equal(calls,1);
+ assert.equal(elevationTileCoverage(bounds).length,MAX_ELEVATION_TILES);assert.ok(resource.bytes<=MAX_TERRAIN_TEXTURE_BYTES);
+ assert.equal(fake.uploads[0][8],grid);assert.equal(fake.uploads.length,2);
+ const anchors=buildingTerrainAnchors(data),stadium=data.features.findIndex(f=>f.properties.id===STADIUM_CONCOURSE_ID),anchor=[anchors[stadium*2],anchors[stadium*2+1]];
+ const mercator=[MERCATOR_ORIGIN[0]+anchor[0]*METERS_TO_MERCATOR,MERCATOR_ORIGIN[1]-anchor[1]*METERS_TO_MERCATOR];
+ assert.equal(sampleTerrainGrid(grid,256,256,(mercator[0]-bounds[0])/(bounds[2]-bounds[0]),(bounds[3]-mercator[1])/(bounds[3]-bounds[1])),28,'stadium datum exists without ever viewing the shared center');
+ const pressbox=projectLocal([-122.161929,37.4337265]);assert.ok(Math.hypot(pressbox[0]-anchor[0],pressbox[1]-anchor[1])>50,'regression viewpoint is materially separated from assembly datum');
+ const environment=JSON.parse(readFileSync(new URL('../public/data/stanford-environment.geojson',import.meta.url)));
+ for(const feature of environment.features)for(const p of feature.geometry.type==='Point'?[feature.geometry.coordinates]:feature.geometry.coordinates)assert.doesNotThrow(()=>resource.setObjects(new Float32Array(projectLocal(p))),'every mapped environment point is covered');
+ resource.prerender(fake.gl,options,true,2);assert.equal(calls,1,'world copy/camera changes never refetch the DEM');
  resource.dispose(fake.gl);assert.equal(fake.live.size,0);assert.equal(resource.bytes,0);
- resource.prerender(fake.gl,options,true);assert.equal(fake.live.size,2);assert.equal(fake.uploads.length,4,'context restoration recreates both owned textures');
+ resource.prerender(fake.gl,options,true);assert.equal(resource.status,'active');assert.equal(fake.live.size,2);assert.equal(calls,1);
  resource.dispose(fake.gl);assert.equal(fake.live.size,0);
+ const recreated=new TerrainGrounding(data,()=>{},()=>assert.fail('completed CPU grid must survive new custom layer creation'));
+ recreated.prerender(fake.gl,options,true);assert.equal(recreated.status,'active');recreated.dispose(fake.gl);
  const layout=terrainTextureLayout(new Float32Array([1,2]),new Float32Array([3,4]));assert.deepEqual([...layout.values.slice(0,4)],[1,2,3,4]);
  assert.throws(()=>terrainTextureLayout(new Float32Array(32770)),/16,384/);
+});
+
+test('pending DEM requests abort on removal, late results cannot publish, and failed or incomplete loads can retry',async()=>{
+ const data=prepareBuildingDetails(structuredClone(source)),fake=fakeGl();let release,signal,changed=0;
+ const resource=new TerrainGrounding(data,()=>changed++,async(_bounds,_size,value)=>{signal=value;return new Promise(resolve=>release=resolve);});
+ resource.prerender(fake.gl,{},true);resource.dispose(fake.gl);assert.equal(signal.aborted,true);release(completeGrid());await tick();assert.equal(changed,0);assert.equal(fake.live.size,0);
+ const failed=new TerrainGrounding(data,()=>changed++,async()=>{throw new Error('HTTP 503');});failed.prerender(fake.gl,{},true);await tick();
+ assert.throws(()=>failed.prerender(fake.gl,{},true),/Campus elevation.*Retry.*503/);failed.dispose(fake.gl);
+ const missing=new TerrainGrounding(data,()=>{},async()=>new Float32Array(TERRAIN_SIZE*TERRAIN_SIZE*4));missing.prerender(fake.gl,{},true);await tick();assert.throws(()=>missing.prerender(fake.gl,{},true),/incomplete/);missing.dispose(fake.gl);
+ const retry=new TerrainGrounding(data,()=>{},async()=>completeGrid());retry.prerender(fake.gl,{},true);await tick();retry.prerender(fake.gl,{},true);assert.equal(retry.status,'active');
+ assert.throws(()=>retry.setObjects(new Float32Array([1e8,2])),/outside verified elevation/);retry.dispose(fake.gl);assert.equal(fake.live.size,0);
 });

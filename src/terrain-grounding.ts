@@ -2,6 +2,7 @@ import type {CustomRenderMethodInput} from 'maplibre-gl';
 import {MERCATOR_ORIGIN,METERS_TO_MERCATOR,projectLocal,type CampusData} from './building-geometry.ts';
 import {HOOVER_PART_IDS} from './hoover-architecture.ts';
 import {STADIUM_CENTER,STADIUM_CONCOURSE_ID,STADIUM_SEATING_IDS,STADIUM_PRESSBOX_IDS,STADIUM_SCOREBOARD_IDS} from './stadium-architecture.ts';
+import {loadCampusElevation,type ElevationGridLoader,type MercatorBounds} from './campus-elevation.ts';
 
 /** Native DEM source is deliberately regional; its attribution is valid for US
  * 3DEP/NED, GMTED/SRTM and NOAA ETOPO1 rather than every global contributor. */
@@ -12,6 +13,8 @@ export const MAX_TERRAIN_ANCHORS=16384;
 export const MAX_TERRAIN_TEXTURE_BYTES=TERRAIN_SIZE*TERRAIN_SIZE*16+MAX_TERRAIN_ANCHORS*8;
 export const TERRAIN_OBJECT_BASE=-1000;
 const EMPTY_ANCHORS=new Float32Array();
+// Completed CPU data survives mode/style/context replacement; GPU handles never do.
+const elevationGrids=new WeakMap<CampusData,Float32Array>();
 export function decodeTerrainObjectId(id:number):number|undefined{return Number.isInteger(id)&&id<=TERRAIN_OBJECT_BASE?TERRAIN_OBJECT_BASE-id:undefined;}
 export const isTerrainObjectId=(id:number)=>decodeTerrainObjectId(id)!==undefined;
 export type RegisterTerrainAnchor=(point:readonly number[])=>number;
@@ -117,24 +120,57 @@ export class TerrainGrounding {
   private dirty=true;
   private layout=terrainTextureLayout(new Float32Array());
   private bounds:[number,number,number,number];
+  private data:CampusData;
+  private grid?:Float32Array;
+  private request?:AbortController;
+  private failure?:Error;
+  private changed:()=>void;
+  private loadGrid:ElevationGridLoader;
   status:'disabled'|'loading'|'active'='disabled';
-  constructor(data:CampusData){
+  constructor(data:CampusData,changed:()=>void=()=>{},loadGrid:ElevationGridLoader=loadCampusElevation){
+    this.data=data;this.changed=changed;this.loadGrid=loadGrid;this.grid=elevationGrids.get(data);
     this.buildings=buildingTerrainAnchors(data);
     const points=data.features.flatMap(f=>(f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).flatMap(p=>p[0].map(projectLocal)));
     const x=points.map(p=>p[0]),y=points.map(p=>p[1]);
     this.bounds=points.length?[Math.min(...x)-150,Math.min(...y)-150,Math.max(...x)+150,Math.max(...y)+150]:[-2000,-2000,2000,2000];
+    for(let i=0;i<this.buildings.length;i+=2){
+      this.bounds[0]=Math.min(this.bounds[0],this.buildings[i]-150);this.bounds[2]=Math.max(this.bounds[2],this.buildings[i]+150);
+      this.bounds[1]=Math.min(this.bounds[1],this.buildings[i+1]-150);this.bounds[3]=Math.max(this.bounds[3],this.buildings[i+1]+150);
+    }
   }
   get bytes(){return this.heights?TERRAIN_SIZE*TERRAIN_SIZE*16+(this.anchors?this.layout.bytes:0):0;}
-  setObjects(values?:Float32Array){const next=values??EMPTY_ANCHORS;if(next===this.objects)return;this.objects=next;this.dirty=true;}
-  prerender(gl:WebGL2RenderingContext,options:CustomRenderMethodInput,enabled:boolean,worldOffset=0){
-    if(!enabled){this.status='disabled';return;}
+  setObjects(values?:Float32Array){
+    const next=values??EMPTY_ANCHORS;if(next===this.objects)return;
+    if(next.length%2)throw new Error('Campus terrain object anchors must be coordinate pairs.');
+    for(let i=0;i<next.length;i+=2)if(!Number.isFinite(next[i])||!Number.isFinite(next[i+1])||next[i]<this.bounds[0]||next[i]>this.bounds[2]||next[i+1]<this.bounds[1]||next[i+1]>this.bounds[3])throw new Error('Campus object anchor lies outside verified elevation coverage.');
+    this.objects=next;this.dirty=true;
+  }
+  prerender(gl:WebGL2RenderingContext,_options:CustomRenderMethodInput,enabled:boolean,_worldOffset=0){
+    if(!enabled){this.request?.abort();this.request=undefined;this.status='disabled';return;}
+    if(this.failure)throw this.failure;
+    const wasActive=this.status==='active';
     this.status='loading';
-    if(!options.renderTerrainHeightMap)throw new Error('Terrain grounding is unavailable in this renderer. Retry terrain and campus detail.');
+    if(!this.grid){
+      if(!this.request){
+        const request=new AbortController();this.request=request;
+        const [west,south,east,north]=this.bounds;
+        const bounds:MercatorBounds=[MERCATOR_ORIGIN[0]+west*METERS_TO_MERCATOR,MERCATOR_ORIGIN[1]-north*METERS_TO_MERCATOR,MERCATOR_ORIGIN[0]+east*METERS_TO_MERCATOR,MERCATOR_ORIGIN[1]-south*METERS_TO_MERCATOR];
+        void this.loadGrid(bounds,TERRAIN_SIZE,request.signal).then(grid=>{
+          if(this.request!==request||request.signal.aborted)return;
+          if(grid.length!==TERRAIN_SIZE*TERRAIN_SIZE*4)throw new Error('Campus elevation grid has an invalid size.');
+          for(let i=0;i<grid.length;i+=4)if(!Number.isFinite(grid[i])||grid[i+3]!==1)throw new Error('Campus elevation grid is incomplete.');
+          this.grid=grid;elevationGrids.set(this.data,grid);this.request=undefined;this.changed();
+        }).catch(error=>{
+          if(this.request!==request||request.signal.aborted)return;
+          this.request=undefined;this.failure=new Error(`Campus elevation could not load. Retry terrain and campus detail. ${error instanceof Error?error.message:String(error)}`);this.changed();
+        });
+      }
+      return;
+    }
     if(!this.heights){
-      if(!gl.getExtension('EXT_color_buffer_float'))throw new Error('This GPU cannot render the floating-point terrain height map. Campus detail is paused; retry with a WebGL2 GPU that supports EXT_color_buffer_float.');
       this.heights=gl.createTexture()??undefined;if(!this.heights)throw new Error('Terrain height texture could not be allocated.');
       const previous=gl.getParameter(gl.TEXTURE_BINDING_2D);
-      try{gl.bindTexture(gl.TEXTURE_2D,this.heights);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,TERRAIN_SIZE,TERRAIN_SIZE,0,gl.RGBA,gl.FLOAT,null);this.textureParameters(gl);}
+      try{gl.bindTexture(gl.TEXTURE_2D,this.heights);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,TERRAIN_SIZE,TERRAIN_SIZE,0,gl.RGBA,gl.FLOAT,this.grid);this.textureParameters(gl);}
       finally{gl.bindTexture(gl.TEXTURE_2D,previous);}
     }
     if(this.dirty){
@@ -145,9 +181,8 @@ export class TerrainGrounding {
       finally{gl.bindTexture(gl.TEXTURE_2D,previous);}
       this.dirty=false;
     }
-    const [west,south,east,north]=this.bounds;
-    options.renderTerrainHeightMap({texture:this.heights,width:TERRAIN_SIZE,height:TERRAIN_SIZE,bounds:[MERCATOR_ORIGIN[0]+worldOffset+west*METERS_TO_MERCATOR,MERCATOR_ORIGIN[1]-north*METERS_TO_MERCATOR,MERCATOR_ORIGIN[0]+worldOffset+east*METERS_TO_MERCATOR,MERCATOR_ORIGIN[1]-south*METERS_TO_MERCATOR]});
     this.status='active';
+    if(!wasActive)this.changed();
   }
   private textureParameters(gl:WebGL2RenderingContext){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);}
   bind(gl:WebGL2RenderingContext,uniforms:Record<string,WebGLUniformLocation|null>):()=>void{
@@ -159,5 +194,5 @@ export class TerrainGrounding {
     gl.activeTexture(active);
     return ()=>{saved.forEach((texture,i)=>{gl.activeTexture(gl.TEXTURE0+2+i);gl.bindTexture(gl.TEXTURE_2D,texture);});gl.activeTexture(active);};
   }
-  dispose(gl:WebGL2RenderingContext){if(this.heights)gl.deleteTexture(this.heights);if(this.anchors)gl.deleteTexture(this.anchors);this.heights=undefined;this.anchors=undefined;this.dirty=true;this.status='disabled';}
+  dispose(gl:WebGL2RenderingContext){this.request?.abort();this.request=undefined;this.failure=undefined;if(this.heights)gl.deleteTexture(this.heights);if(this.anchors)gl.deleteTexture(this.anchors);this.heights=undefined;this.anchors=undefined;this.dirty=true;this.status='disabled';}
 }
