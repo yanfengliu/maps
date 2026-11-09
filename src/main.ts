@@ -64,6 +64,7 @@ let activeResult = -1;
 let worldSearch: AbortController | undefined;
 let searchRevision = 0;
 let sourceReady = false;
+let styleAvailable = false;
 let tilesReady = false;
 let successfulRegionalTiles = 0;
 let failed = false;
@@ -340,7 +341,7 @@ async function loadCampus(): Promise<void> {
     if (!campusBoundary || !['Feature','FeatureCollection'].includes(campusBoundary.type)) throw new Error('Campus boundary is missing');
     allPlaces = [...PLACES,...SCULPTURE_PLACES, ...buildingPlaces(candidate.features)];
     sourceReady = true;
-    if (map?.isStyleLoaded()) addCampusLayers();
+    if (styleAvailable) addCampusLayers();
     checkReady();
   } catch (error) {
     sourceReady = false;
@@ -364,7 +365,7 @@ const campusRoads=new CampusRoadLayer({onChange:stats=>{
 }});
 
 function addCampusLayers(): void {
-  if (!map || !campusData || !campusBoundary) return;
+  if (!map || !styleAvailable || !campusData || !campusBoundary) return;
   if (map.getSource('stanford')) {
     (map.getSource('stanford') as GeoJSONSource).setData(campusData);
     // MapLibre restores standard layers after a lost context; custom layers
@@ -415,6 +416,7 @@ function scheduleLoadDeadline(): void {
 }
 
 function reloadRegionalMap(): void {
+  styleAvailable = false;
   tileErrorShown = false;
   successfulRegionalTiles = 0;
   tilesReady = false;
@@ -466,7 +468,6 @@ function startMap(): void {
       }
     }, { capture: true });
     map.on('load', () => {
-      addCampusLayers();
       for (const place of [PLACES[0]]) {
         const button = document.createElement('button');
         button.className = 'map-pin'; button.dataset.campus = String(Boolean(place.campus));
@@ -517,7 +518,11 @@ function startMap(): void {
         showError(`The map configuration is invalid or could not render. ${message || 'MapLibre reported an unspecified error.'} Retry to reload the map.`, () => window.location.reload());
       }
     });
-    map.on('style.load', () => { if (sourceReady) addCampusLayers(); });
+    // A parsed style can accept campus layers while its remote tiles load.
+    // isStyleLoaded() also waits for source tiles and needlessly serialized
+    // geometry generation, shaders and campus elevation behind that network.
+    map.on('style.load', () => { styleAvailable = true; if (sourceReady) addCampusLayers(); });
+    map.on('webglcontextlost', () => { styleAvailable = false; });
     map.setPadding(panelPadding());
     updateCameraUi();
     scheduleLoadDeadline();

@@ -4,8 +4,9 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {join} from 'node:path';
-import {validateStyleMin,createExpression} from '@maplibre/maplibre-gl-style-spec';
-import {CampusRoadLayer,campusRoadLayers,ROAD_METRE_WIDTH,CAMPUS_ROAD_SOURCE,CAMPUS_ROAD_PLAZA_SOURCE,validateCampusRoadManifest,validateCampusRoadPart} from '../src/campus-road-layer.ts';
+import {stripTypeScriptTypes} from 'node:module';
+import {validateStyleMin,createExpression,createPropertyExpression,latest} from '@maplibre/maplibre-gl-style-spec';
+import {CampusRoadLayer,campusRoadLayers,roadMetreWidth,CAMPUS_ROAD_LATITUDE,CAMPUS_ROAD_SOURCE,CAMPUS_ROAD_PLAZA_SOURCE,validateCampusRoadManifest,validateCampusRoadPart} from '../src/campus-road-layer.ts';
 import {CAMPUS_TRAFFIC_SOURCE} from '../src/campus-traffic.ts';
 
 const point=([x,y])=>[-122.17+x/90000,37.43+y/111000];
@@ -14,6 +15,8 @@ const line=(points,id='way/1',extra={})=>({type:'Feature',properties:{...props(i
 const collection=(...features)=>({type:'FeatureCollection',features});
 const plaza=collection({type:'Feature',properties:{...props('derived/main-quad-paving','plaza'),modeledSurface:'pavers'},geometry:{type:'Polygon',coordinates:[[[0,0],[20,0],[20,20],[0,20],[0,0]],[[5,5],[7,5],[7,7],[5,7],[5,5]]].map(r=>r.map(point))}});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const widths=[.8,2.4,4.2,7.4,20];
+const widthGroups=values=>['unknown','pavers','concrete','asphalt'].flatMap(material=>values.map(width=>({material,width})));
 function bundle(features=[line([[0,0],[10,0],[10,10]])]){
   const controls=Buffer.from(JSON.stringify(collection(...['stop','traffic_signals'].map((controlType,i)=>({type:'Feature',properties:{id:`node/${i+1}`,version:1,kind:'traffic-control',controlType,placement:'road-control-point',physicalPoleVerified:false,directionStatus:i?'unknown':'source-tagged'},geometry:{type:'Point',coordinates:point([i,0])}})))));
   const part=Buffer.from(JSON.stringify(collection(...features))),manifest={schemaVersion:1,files:[{file:'stanford-surfaces-roads-0.geojson',features:features.length,bytes:part.length,sha256:hash(part)}],counts:{streets:features.filter(f=>f.geometry.type==='LineString').length,roadAreas:features.filter(f=>f.geometry.type==='Polygon').length,streetSegments:features.filter(f=>f.geometry.type==='LineString').reduce((n,f)=>n+f.geometry.coordinates.length-1,0)},bounds:[-122.18,37.42,-122.16,37.44],campusBoundary:'stanford-campus.geojson',controls:{file:'stanford-surfaces-controls.geojson',bytes:controls.length,sha256:hash(controls),counts:{stop:1,traffic_signals:1,directionUnknown:1}}};
@@ -32,13 +35,13 @@ const loader=files=>async url=>new Response(files.get(String(url).split('/').at(
 async function settled(layer){for(let i=0;i<200&&!layer.stats.dataReady&&!layer.stats.error;i++)await new Promise(r=>setTimeout(r,1));assert.ok(layer.stats.dataReady||layer.stats.error,'road loader did not settle');}
 function ready(map){for(const id of [CAMPUS_ROAD_SOURCE,CAMPUS_ROAD_PLAZA_SOURCE,CAMPUS_TRAFFIC_SOURCE]){map.ready.add(id);map.emit('sourcedata',{sourceId:id});}}
 
-test('native road styles validate against the pinned engine, retain round joins/caps and scale exact metre widths',()=>{
-  const layers=campusRoadLayers(),empty=collection();
+test('native road styles validate, retain round joins/caps and keep physical widths within the campus latitude bound',()=>{
+  const layers=campusRoadLayers(widthGroups(widths)),empty=collection();
   assert.deepEqual(validateStyleMin({version:8,sources:{[CAMPUS_ROAD_SOURCE]:{type:'geojson',data:empty},[CAMPUS_ROAD_PLAZA_SOURCE]:{type:'geojson',data:empty}},layers}).map(e=>e.message),[]);
-  const compiled=createExpression(ROAD_METRE_WIDTH,'layers[0].paint.line-width');assert.equal(compiled.result,'success');
-  for(const latitude of [37.414,37.43,37.444])for(const width of [.8,2.4,4.2,7.4,20])for(const zoom of [13,15.5,18,21]){
+  for(const latitude of [37.414,37.43,37.444])for(const width of widths)for(const zoom of [13,15.5,18,21]){
+    const compiled=createExpression(roadMetreWidth(width),'layers[0].paint.line-width');assert.equal(compiled.result,'success');
     const scale=512/(40075016.68557849*Math.cos(latitude*Math.PI/180)),actual=compiled.value.evaluate({zoom},{properties:{modeledWidth:width,roadPixelsPerMetreZ0:scale}});
-    assert.ok(Math.abs(actual-width*scale*2**zoom)<1e-7,'physical width must remain stable across zoom/latitude');
+    assert.ok(Math.abs(actual/(width*scale*2**zoom)-1)<.0003,'fixed campus latitude must remain within 0.03% of the physical width');
   }
   for(const layer of layers.filter(l=>l.type==='line')){
     assert.equal(layer.layout['line-join'],'round');assert.equal(layer.layout['line-cap'],'round');assert.equal(layer.layout['line-round-limit'],1,'even shallow junctions must not revert to pointed miters');
@@ -61,12 +64,29 @@ test('local road readiness waits for road, plaza and control sources but not rem
   owner.attach(map,'foreign-layer');map.emit('style.load');await settled(owner);
   assert.equal(owner.stats.dataReady,true);assert.equal(owner.stats.ready,false);assert.equal(map.loaded,false,'unrelated regional readiness stays false');
   const rendered=map.sources.get(CAMPUS_ROAD_SOURCE);assert.equal(rendered.tolerance,0);assert.deepEqual(rendered.data.features[0].geometry,source.geometry);assert.equal(JSON.stringify(source),before);
-  assert.ok(rendered.data.features[0].properties.roadPixelsPerMetreZ0>0);
+  assert.deepEqual(rendered.data.features[0],source,'rendering must retain exact source properties as well as geometry');
   const masks=map.sources.get(CAMPUS_ROAD_PLAZA_SOURCE).data.features;assert.equal(masks.length,2);assert.deepEqual(masks[0].geometry,plaza.features[0].geometry);assert.deepEqual(masks[1].geometry.coordinates,[plaza.features[0].geometry.coordinates[1]]);
   map.ready.add(CAMPUS_ROAD_SOURCE);map.emit('sourcedata',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,false);
   ready(map);assert.equal(owner.stats.ready,true);assert.ok(Object.isFrozen(owner.stats));assert.ok(changes.some(s=>s.ready));
   assert.equal(owner.stats.stops,1);assert.equal(owner.stats.signals,1);assert.equal(map.images.size,2);
   owner.destroy();assert.equal(map.sources.size,0);assert.equal(map.images.size,0);assert.deepEqual([...map.layers.keys()],['foreign-layer']);assert.ok([...map.events.values()].every(s=>s.size===0));
+});
+
+test('discarded covering tiles complete local readiness before regional idle, with final-frame fallback and owned listener cleanup',async()=>{
+ const {files}=bundle(),map=fakeMap(false),owner=new CampusRoadLayer({fetcher:loader(files)});
+ owner.attach(map);map.emit('style.load');await settled(owner);assert.equal(owner.stats.ready,false);
+ // Native terrain removes obsolete loading tiles after the last data event;
+ // their sourcedataabort is the only source event announcing this transition.
+ for(const id of [CAMPUS_ROAD_SOURCE,CAMPUS_ROAD_PLAZA_SOURCE,CAMPUS_TRAFFIC_SOURCE])map.ready.add(id);
+ map.emit('sourcedataabort',{sourceId:'openmaptiles'});assert.equal(owner.stats.ready,false,'unrelated remote cancellation must not drive the local observer');
+ map.emit('sourcedataabort',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,true);
+ assert.equal(map.loaded,false,'local roads become ready while unrelated regional tiles still load, before map idle');
+ map.ready.delete(CAMPUS_ROAD_PLAZA_SOURCE);map.emit('sourcedata',{sourceId:CAMPUS_ROAD_PLAZA_SOURCE});assert.equal(owner.stats.ready,false);
+ map.emit('idle');assert.equal(owner.stats.ready,false,'idle alone cannot substitute for actual local source completion');
+ map.ready.add(CAMPUS_ROAD_PLAZA_SOURCE);map.emit('idle');assert.equal(owner.stats.ready,true,'final-frame source cleanup gets a fallback readiness check');
+ owner.attach(map);assert.equal(map.events.get('sourcedataabort').size,1);assert.equal(map.events.get('idle').size,1);
+ owner.destroy();assert.equal(map.events.get('sourcedataabort').size,0);assert.equal(map.events.get('idle').size,0);
+ map.emit('idle');map.emit('sourcedataabort',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,false,'detached callbacks cannot resurrect readiness');
 });
 
 test('source-specific failure, HTTP/JSON/hash errors have a working retry and cannot leave partial layers',async()=>{
@@ -88,7 +108,7 @@ test('idempotent style/context recovery restores owned sources and layers withou
   const {files}=bundle(),map=fakeMap();let fetches=0;
   const owner=new CampusRoadLayer({fetcher:async url=>{fetches++;return loader(files)(url);}});owner.attach(map);await settled(owner);ready(map);
   const initialFetches=fetches,initialCalls={...map.calls};owner.attach(map);owner.attach(map);assert.deepEqual(map.calls,initialCalls);
-  map.layers.delete('campus-road-asphalt-line');map.emit('style.load');assert.ok(map.layers.has('campus-road-asphalt-line'));assert.equal(fetches,initialFetches);
+  map.layers.delete('campus-road-asphalt-line-4');map.emit('style.load');assert.ok(map.layers.has('campus-road-asphalt-line-4'));assert.equal(fetches,initialFetches);
   map.sources.clear();map.ready.clear();map.images.clear();for(const id of [...map.layers.keys()])if(id!=='foreign-layer')map.layers.delete(id);
   map.emit('style.load');assert.equal(owner.stats.ready,false);assert.equal(map.images.size,2);ready(map);assert.equal(owner.stats.ready,true);assert.equal(fetches,initialFetches);
   map.emit('webglcontextlost');assert.equal(owner.stats.ready,false);map.emit('sourcedata',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,false,'late worker data cannot declare a lost GPU context ready');map.emit('webglcontextrestored');assert.equal(owner.stats.ready,true);
@@ -139,9 +159,66 @@ test('default browser fetch is invoked without the controller as its receiver',a
 });
 
 test('carriageways cover footway end caps instead of painting rounded pavement stubs across traffic lanes',()=>{
- const ids=campusRoadLayers().map(layer=>layer.id);
- assert.ok(ids.indexOf('campus-road-asphalt-line')>ids.indexOf('campus-road-concrete-line'));
- assert.ok(ids.indexOf('campus-road-asphalt-line')>ids.indexOf('campus-road-pavers-line'));
+ const ids=campusRoadLayers(widthGroups(widths)).map(layer=>layer.id);
+ assert.ok(ids.indexOf('campus-road-asphalt-line-0.8')>ids.indexOf('campus-road-concrete-line-20'));
+ assert.ok(ids.indexOf('campus-road-asphalt-line-0.8')>ids.indexOf('campus-road-pavers-line-20'));
+});
+
+// Exercise the pinned engine's actual composite paint binder. Merely evaluating
+// the style expression at camera zoom misses its clamp to each bucket's zoom.
+// Only its WebGL uniform/array sinks and zoom-parameter carrier are substituted.
+const binderSource=readFileSync(new URL('../node_modules/maplibre-gl/src/data/program_configuration.ts',import.meta.url),'utf8');
+const binderClass=binderSource.slice(binderSource.indexOf('class CompositeExpressionBinder '),binderSource.indexOf('abstract class CrossFadedBinder'));
+assert.ok(binderClass.startsWith('class CompositeExpressionBinder '),'pinned binder moved; review its replacement before updating this regression');
+const CompositeBinder=new Function('EvaluationParameters','clamp',`return ${stripTypeScriptTypes(binderClass)}`)(class{constructor(zoom){this.zoom=zoom;}},(value,low,high)=>Math.max(low,Math.min(high,value)));
+class WidthArray{length=0;values=[];resize(length){this.length=length;}emplace(index,min,max){this.values[index]=[min,max];}}
+function nativeBoundWidth(spec,width,tileZoom,cameraZoom){
+ const parsed=createPropertyExpression(spec,'line-width',latest.paint_line['line-width']);assert.equal(parsed.result,'success');
+ const expression=parsed.value,feature={properties:{modeledWidth:width,roadPixelsPerMetreZ0:512/(40075016.68557849*Math.cos(CAMPUS_ROAD_LATITUDE*Math.PI/180))}};
+ if(expression.kind!=='composite')return expression.evaluate({zoom:cameraZoom},feature,{});
+ const binder=new CompositeBinder(expression,['width'],'number',false,tileZoom,WidthArray);binder.populatePaintArray(1,feature,{});
+ let factor;binder.setUniform({set(value){factor=value;}},{zoom:cameraZoom});
+ const [min,max]=binder.paintVertexArray.values[0];return min+(max-min)*factor;
+}
+function assertPhysicalWidth(spec,width){
+ const scale=512/(40075016.68557849*Math.cos(CAMPUS_ROAD_LATITUDE*Math.PI/180));
+ for(const cameraZoom of [13,15.5,18,20,21])for(const offset of [-3,-2,-1,0,1]){
+  const tileZoom=Math.floor(cameraZoom)+offset,actual=nativeBoundWidth(spec,width,tileZoom,cameraZoom),expected=width*scale*2**cameraZoom;
+  assert.ok(Math.abs(actual/expected-1)<1e-7,`tile width at source z${tileZoom} / camera z${cameraZoom} is ${actual}, expected ${expected}`);
+ }
+}
+test('adjacent mixed-LOD terrain tiles retain identical physical road widths with the actual native paint binder',()=>{
+ for(const width of widths)for(const layer of campusRoadLayers(widthGroups([width])).filter(l=>l.type==='line'))assertPhysicalWidth(layer.paint['line-width'],width);
+});
+test('negative control detects the old composite width shrinking across native terrain source-tile boundaries',()=>{
+ const old=['interpolate',['exponential',2],['zoom'],0,['*',['get','modeledWidth'],['get','roadPixelsPerMetreZ0']],24,['*',['get','modeledWidth'],['get','roadPixelsPerMetreZ0'],2**24]];
+ assert.throws(()=>assertPhysicalWidth(old,4.2),/tile width/);
+ assert.equal(nativeBoundWidth(old,4.2,18,20)/nativeBoundWidth(old,4.2,20,20),.5,'the old Palm road was half-width in the lower-LOD tile');
+});
+test('the full pinned network keeps all seventeen exact sourced widths in exclusive native groups',()=>{
+ const manifest=JSON.parse(readFileSync(new URL('../public/data/stanford-surfaces-roads-manifest.json',import.meta.url)));
+ const features=manifest.files.flatMap(part=>JSON.parse(readFileSync(new URL('../public/data/'+part.file,import.meta.url))).features).filter(f=>f.geometry.type==='LineString');
+ const sourceWidths=[...new Set(features.map(f=>f.properties.modeledWidth))],groups=features.map(f=>({material:f.properties.modeledSurface,width:f.properties.modeledWidth})),layers=campusRoadLayers(groups).filter(l=>l.type==='line');
+ assert.equal(sourceWidths.length,17);assert.equal(layers.length,40,'draw only material/width pairs actually present in the pinned source');
+ const latitudeError=Math.max(...[manifest.bounds[1],manifest.bounds[3]].map(lat=>Math.abs(Math.cos(lat*Math.PI/180)/Math.cos(CAMPUS_ROAD_LATITUDE*Math.PI/180)-1)));
+ assert.ok(latitudeError<.0003,'the runtime latitude approximation must remain bounded by the actual dataset');
+ for(const material of ['unknown','pavers','concrete','asphalt']){
+  const matching=layers.filter(l=>l.id.startsWith(`campus-road-${material}-line-`));
+  assert.deepEqual(new Set(matching.map(l=>l.filter.at(-1)[2])),new Set(groups.filter(g=>g.material===material).map(g=>g.width)),'no width may be rounded, omitted or counted twice');
+ }
+});
+
+test('every sourced width group participates in readiness, recovery and cleanup when a retry changes widths',async()=>{
+ let files=bundle([line([[0,0],[10,0]],'way/1',{modeledWidth:4.2}),line([[10,0],[20,0]],'way/2',{modeledWidth:17.3}),line([[10,0],[10,10]],'way/3',{modeledWidth:2.4,modeledSurface:'concrete'})]).files;
+ const map=fakeMap(),owner=new CampusRoadLayer({fetcher:url=>loader(files)(url)});
+ owner.attach(map);await settled(owner);ready(map);
+ const original=[...map.layers.keys()].filter(id=>id.includes('-line-'));assert.equal(original.length,3);assert.equal(owner.stats.ready,true);
+ map.layers.delete('campus-road-asphalt-line-17.3');map.emit('sourcedata',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,false);
+ map.emit('style.load');assert.equal(owner.stats.ready,true);assert.ok(map.layers.has('campus-road-asphalt-line-17.3'));
+ files=bundle([line([[0,0],[20,0]],'way/4',{modeledWidth:3.75})]).files;
+ owner.retry();await settled(owner);ready(map);assert.equal(owner.stats.ready,true);
+ assert.ok(original.every(id=>!map.layers.has(id)),'superseded width groups must not survive a reload');assert.ok(map.layers.has('campus-road-asphalt-line-3.75'),'new exact OSM widths require no hard-coded list');
+ owner.destroy();assert.deepEqual([...map.layers.keys()],['foreign-layer']);assert.equal(map.sources.size,0);
 });
 
 test('context restoration waits for the replacement style, then installs while regional tiles still load',async()=>{
