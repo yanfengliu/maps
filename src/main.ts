@@ -173,8 +173,7 @@ function updateSelection(): void {
  * detail mesh, and recover even after a style retry or graphics restoration. */
 function syncChurchVisibility():void {
   if(!map)return;
-  for(const id of ['stanford-buildings','stanford-roofs'])if(map.getLayer(id))map.setFilter(id,churchInterior?['!=',['get','id'],CHURCH_ID]:null);
-  quadArcadeVisibility.sync(map,Boolean(!churchInterior&&buildingDetails?.stats.ready));
+  quadArcadeVisibility.sync(map,Boolean(buildingDetails?.stats.ready),churchInterior);
 }
 
 function setChurchInterior(enabled:boolean):void {
@@ -487,7 +486,7 @@ function startMap(): void {
     });
     map.on('move', updateCameraUi);
     map.on('render', () => {
-      quadArcadeVisibility.sync(map,Boolean(!churchInterior&&buildingDetails?.stats.ready));
+      quadArcadeVisibility.sync(map,Boolean(buildingDetails?.stats.ready),churchInterior);
       if(churchInterior){
         const message=buildingDetails?.stats.error?'Interior detail could not load. Use Retry above.':buildingDetails?.stats.ready?'Drag to pan · scroll to zoom · drag the compass to rotate':'Opening the interior…';
         if(el('church-ready').textContent!==message)el('church-ready').textContent=message;

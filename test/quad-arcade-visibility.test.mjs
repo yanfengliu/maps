@@ -9,7 +9,7 @@ import { STADIUM_SEATING_IDS, STADIUM_OPEN_PART_IDS } from '../src/stadium-archi
 test('open arcades switch only the Quad family after upload, with full fallback on loss, zoom-out and style recreation',()=>{
   let zoom=19,layer=true,paint;
   const dataset={},writes=[];
-  const map={getLayer:()=>layer,getZoom:()=>zoom,getCanvas:()=>({dataset}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings'){paint=value;writes.push(value);}}};
+  const map={setFilter(){},getLayer:()=>layer,getZoom:()=>zoom,getCanvas:()=>({dataset}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings'){paint=value;writes.push(value);}}};
   const controller=createQuadArcadeVisibility();
   const height=id=>{
     const expression=createExpression(paint,'layers[0].paint.fill-extrusion-height');
@@ -36,7 +36,7 @@ test('open arcades switch only the Quad family after upload, with full fallback 
 
 
 test('open garages, stadium walkway and seating replace native walls and caps only while detailed terraces are ready',()=>{
-  let zoom=17.6;const paint=new Map(),map={getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,key,value)=>paint.set(id+':'+key,value)};
+  let zoom=17.6;const paint=new Map(),map={setFilter(){},getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,key,value)=>paint.set(id+':'+key,value)};
   const controller=createQuadArcadeVisibility();
   const evaluate=(id,key,building,base)=>{const expression=createExpression(paint.get(id+':'+key),'layers[0].paint.'+key);assert.equal(expression.result,'success');return expression.value.evaluate({zoom},{properties:{id:building,base,detailWallHeight:28}});};
   for(const [nextZoom,ready]of [[17.6,false],[17.6,true],[14,true],[17.6,true],[17.6,false]]){

@@ -51,7 +51,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
@@ -117,13 +117,13 @@ test('facade profiles retain mapped floor counts and distinguish explicit zero, 
 
 test('emitted facade rows follow two recorded floors even when the height would fit many more', () => {
   const fixture={type:'FeatureCollection',features:[{type:'Feature',properties:{id:'test/two-floors',building:'university',height:30,base:0,'osm:building:levels':'2','osm:roof:shape':'flat'},geometry:{type:'Polygon',coordinates:[[[-122.17,37.427],[-122.1698,37.427],[-122.1698,37.4272],[-122.17,37.4272],[-122.17,37.427]]]}}]};
-  const mesh=buildBuildingGeometry(prepareBuildingDetails(fixture)).facades;
+  const mesh=buildBuildingGeometry(prepareBuildingDetails(fixture)).roofs;
   let highestUv=0;
   for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+11]===1)highestUv=Math.max(highestUv,mesh[i+10]);
   assert.ok(Math.abs(highestUv-7.2)<0.00001,'two shader cells must span the full wall rather than repeating every 3.6 physical metres');
   fixture.features[0].properties['osm:building:levels']='0';
-  const zero=buildBuildingGeometry(prepareBuildingDetails(fixture)).facades;
-  for(let i=0;i<zero.length;i+=VERTEX_FLOATS)assert.equal(zero[i+11],2,'explicit zero must not receive a fabricated positive floor row');
+  const zero=buildBuildingGeometry(prepareBuildingDetails(fixture)).roofs;
+  for(let i=0;i<zero.length;i+=VERTEX_FLOATS)if(Math.abs(zero[i+5])<.01)assert.equal(zero[i+11],2,'explicit zero must not receive a fabricated positive floor row');
 });
 
 test('photo-grounded Roble and Bing Wing profiles have three floor rows and three tall front bays without changing their source tags', () => {
@@ -195,6 +195,7 @@ test('all 648 detailed buildings stay finite, under mapped or explicitly referen
       // A raised scoreboard's missing, photo-derived columns are explicit
       // additions below its panel, not a changed source base or taller part.
       if(mesh[i+11]===33){assert.equal(feature.properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=feature.properties.base);}
+      else if(detailed.features[mesh[i+12]].properties.detailFlatShell && mesh[i+2]<0){assert.equal(feature.properties.base,0);assert.equal(mesh[i+2],-10);assert.equal(mesh[i+11],2,'only opaque foundation skirts may extend below grade');}
       else assert.ok(mesh[i + 2] >= feature.properties.base - 0.0001, feature.properties.id);
     }
   }
@@ -250,7 +251,7 @@ test('mapped gables have an exact ridge and flat/skillion raised edges have ston
     let highestRoof = -Infinity, highestClosure = -Infinity;
     for (let i = 0; i < geometry.roofs.length; i += VERTEX_FLOATS) if (geometry.roofs[i + 12] === index) {
       if (geometry.roofs[i + 11] === 0 || geometry.roofs[i+11]===9) highestRoof = Math.max(highestRoof, geometry.roofs[i + 2]);
-      if (geometry.roofs[i + 11] === 2) highestClosure = Math.max(highestClosure, geometry.roofs[i + 2]);
+      if (geometry.roofs[i + 11] === 2 || feature.properties.detailFlatShell&&Math.abs(geometry.roofs[i+5])<.001) highestClosure = Math.max(highestClosure, geometry.roofs[i + 2]);
     }
     assert.ok(Math.abs(highestRoof - feature.properties.height) < 0.0001, `${feature.properties.id} roof does not reach its source height`);
     assert.ok(Math.abs(highestClosure - feature.properties.height) < 0.0001, `${feature.properties.id} has an open roof boundary`);

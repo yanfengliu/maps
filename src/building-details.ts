@@ -116,6 +116,7 @@ uniform float u_radius;
 uniform sampler2D u_nave;
 uniform sampler2D u_chancel;
 uniform float u_ceiling;
+uniform float u_facadeDetail;
 out vec4 outColor;
 ${STADIUM_FIELD_HELPERS}
 ${LANDSCAPE_HELPERS}
@@ -128,7 +129,7 @@ void main() {
   if (ceiling && u_ceiling<0.5) discard;
   vec3 tint = v_color;
   ${ROOF_TILE_FRAGMENT}
-  if ((v_kind > 0.5 && v_kind < 8.5 && abs(v_kind - 2.0) > 0.1) || abs(v_kind-13.0)<0.1) {
+  if (u_facadeDetail>0.5 && ((v_kind > 0.5 && v_kind < 8.5 && abs(v_kind - 2.0) > 0.1) || abs(v_kind-13.0)<0.1)) {
     // Nearby elevations use meter-sized bays, recessed glazing and stone
     // surrounds. Main Quad's lower storey reads as a shaded arcade.
     float distanceToFocus = distance(v_position,u_focus);
@@ -437,7 +438,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     compiling.shaders.forEach(value => context!.deleteShader(value));
     state.compileMs = performance.now() - compiling.started;
     compiling = undefined; state.shaderReady = true;
-    for (const name of ['u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel','u_sideWalls','u_endWalls','u_groundPass','u_drapeGround','u_terrainHeights','u_terrainAnchors','u_terrainBounds','u_terrainEnabled','u_terrainBuildingCount']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
+    for (const name of ['u_facadeDetail','u_matrix','u_selected','u_focus','u_radius','u_ceiling','u_nave','u_chancel','u_sideWalls','u_endWalls','u_groundPass','u_drapeGround','u_terrainHeights','u_terrainAnchors','u_terrainBounds','u_terrainEnabled','u_terrainBuildingCount']) uniforms[name] = context.getUniformLocation(gpuProgram, name);
     state.maxSliceMs = Math.max(state.maxSliceMs, performance.now() - started);
     map?.triggerRepaint();
   };
@@ -574,6 +575,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       gl.useProgram(gpuProgram!); gl.uniformMatrix4fv(uniforms.u_matrix, false, matrix); gl.uniform1f(uniforms.u_selected, interior?-1:selected); gl.uniform1f(uniforms.u_ceiling,state.ceiling?1:0);
       const terrainEnabled=Boolean(map.getTerrain?.());
       if(terrainEnabled&&grounding.status!=='active')return;
+      gl.uniform1f(uniforms.u_facadeDetail,map.getZoom()>=15.5?1:0);
       gl.uniform1f(uniforms.u_groundPass,0);gl.uniform1f(uniforms.u_drapeGround,terrainEnabled?1:0);
       const walls=interior?churchWallMask(wallAxes,map.getBearing?.()??0,map.getPitch?.()??0):[1,1,1,1];
       gl.uniform2f(uniforms.u_sideWalls,walls[0],walls[1]); gl.uniform2f(uniforms.u_endWalls,walls[2],walls[3]);

@@ -74,6 +74,7 @@ test('all combined building and environment geometry stays finite within memory-
     }else{
       assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=(source.features[id].properties.id==='way/324983017'?16:source.features[id].properties.height)+0.0001);
       if(kind===33){assert.equal(source.features[id].properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=source.features[id].properties.base);}
+      else if(prepared.features[id].properties.detailFlatShell&&mesh[i+2]<0){assert.equal(source.features[id].properties.base,0);assert.equal(mesh[i+2],-10);assert.equal(kind,2);}
       else assert.ok(mesh[i+2]>=source.features[id].properties.base-0.0001);
     }
   }
@@ -313,8 +314,8 @@ test('material families differentiate sandstone, pink Roble, modern light roofs 
     assert.ok(relief>300,'photo-grounded entrances need actual trim geometry as well as a flat window mask');
   }
   let ivyVertices=0,plainVertices=0;
-  for(let i=0;i<geometry.facades.length;i+=VERTEX_FLOATS)if(geometry.facades[i+12]===roble){
-    const kind=geometry.facades[i+11];if(kind===13){assert.ok(geometry.facades[i+3]*0.49+geometry.facades[i+4]*0.87>0.7,'ivy escaped the photographed front-facing elevations');ivyVertices++;}if(kind===4)plainVertices++;
+  for(const mesh of [geometry.roofs,geometry.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+12]===roble){
+    const kind=mesh[i+11];if(kind===13){assert.ok(mesh[i+3]*0.49+mesh[i+4]*0.87>0.7,'ivy escaped the photographed front-facing elevations');ivyVertices++;}if(kind===4)plainVertices++;
   }
   assert.ok(ivyVertices>=12&&plainVertices>=12,'the model must preserve both photographed ivy panels and plain pink stone on untreated elevations');
 });

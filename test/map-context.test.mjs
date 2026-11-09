@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {stripTypeScriptTypes} from 'node:module';
 import {runInNewContext} from 'node:vm';
+import {createQuadArcadeVisibility} from '../src/quad-arcade-visibility.ts';
 import {PLACES} from '../src/places.ts';
 
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replaceAll('\r\n','\n');
@@ -11,13 +12,13 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 
 test('church cutaway excludes only the church exterior, retaining campus, picking and all map labels on entry, retry and exit',()=>{
   const layers=new Map(['stanford-buildings','stanford-roofs','stanford-building-picking','stanford-names','road-label','place-label'].map(id=>[id,{id,layout:{visibility:'visible'}}]));
-  const filters=new Map(),visibility=[],arcade=[];
-  const context={churchInterior:true,CHURCH_ID:'way/836474103',buildingDetails:{stats:{ready:true}},BUILDING_PICK_LAYERS:['stanford-buildings','stanford-building-picking'],interiorLabelVisibility:new Map(),quadArcadeVisibility:{sync:(_,ready)=>arcade.push(ready)},map:{getLayer:id=>layers.get(id),getStyle:()=>({layers:[...layers.values()].map(l=>({...l,type:l.id.endsWith('label')||l.id==='stanford-names'?'symbol':'fill-extrusion'}))}),setFilter:(id,filter)=>filters.set(id,plain(filter)),setLayoutProperty:(id,key,value)=>visibility.push([id,key,value])}};
+  const filters=new Map(),visibility=[],arcade=[],controller=createQuadArcadeVisibility();
+  const context={churchInterior:true,CHURCH_ID:'way/836474103',buildingDetails:{stats:{ready:true}},BUILDING_PICK_LAYERS:['stanford-buildings','stanford-building-picking'],interiorLabelVisibility:new Map(),quadArcadeVisibility:{sync:(map,ready,interior)=>{arcade.push(ready&&!interior);controller.sync(map,ready,interior);}},map:{getZoom:()=>13.5,getCanvas:()=>({dataset:{}}),setPaintProperty(){},getLayer:id=>layers.get(id),getStyle:()=>({layers:[...layers.values()].map(l=>({...l,type:l.id.endsWith('label')||l.id==='stanford-names'?'symbol':'fill-extrusion'}))}),setFilter:(id,filter)=>filters.set(id,plain(filter)),setLayoutProperty:(id,key,value)=>visibility.push([id,key,value])}};
   const sync=()=>runInNewContext(`${handler('syncChurchVisibility')}\nsyncChurchVisibility();`,context);
   sync();
-  for(const id of ['stanford-buildings','stanford-roofs'])assert.deepEqual(filters.get(id),['!=',['get','id'],'way/836474103']);
+  for(const id of ['stanford-buildings','stanford-roofs'])assert.deepEqual(filters.get(id),['all',['!=',['get','id'],'way/836474103']]);
   assert.equal(filters.size,2,'no surrounding-source filter or picking filter changes');assert.deepEqual(visibility,[],'no building or symbol layer disappears');assert.equal(arcade.at(-1),false,'native context walls remain complete while custom layer contains the room');
-  filters.clear();sync();assert.equal(filters.size,2,'recreated style layers receive the same church-only exclusion');
+  filters.clear();controller.reset();sync();assert.equal(filters.size,2,'recreated style layers receive the same church-only exclusion');
   context.churchInterior=false;sync();for(const id of ['stanford-buildings','stanford-roofs'])assert.equal(filters.get(id),null);assert.equal(arcade.at(-1),true);assert.deepEqual(visibility,[]);
 });
 

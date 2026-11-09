@@ -49,10 +49,10 @@ test('every octagonal observation arch has an empty centre and complete adjoinin
 });
 
 test('native fallback is retained until ready; every custom Hoover part stays selectable afterwards',()=>{
- const calls=[],map={getLayer:()=>true,getZoom:()=>18,getCanvas:()=>({dataset:{}}),setPaintProperty:(...args)=>calls.push(args)};
+ const calls=[],map={setFilter(){},getLayer:()=>true,getZoom:()=>18,getCanvas:()=>({dataset:{}}),setPaintProperty:(...args)=>calls.push(args)};
  const controller=createQuadArcadeVisibility();controller.sync(map,false);
  assert.deepEqual(calls[0][2],['get','detailWallHeight']);calls.length=0;controller.sync(map,true);
- const wallIds=calls[0][2][1][2][1],capIds=calls[1][2][1][2][1],pickIds=quadPickingLayer().filter[2][1];
+ const wallIds=calls[0][2][1][2][1],capIds=calls[1][2][1][2][1],pickIds=quadPickingLayer().filter[2][2][1];
  for(const id of HOOVER_PART_IDS){assert.ok(wallIds.includes(id));assert.ok(capIds.includes(id));assert.ok(pickIds.includes(id));}
 });
 

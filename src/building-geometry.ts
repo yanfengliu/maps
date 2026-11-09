@@ -20,6 +20,7 @@ import { addGarage } from './garage-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
+import {hasFlatBuildingShell,FLAT_SHELL_FOUNDATION_DEPTH} from './flat-building-shell.ts';
 import {TerrainAnchorBuilder} from './terrain-grounding.ts';
 
 export type CampusData = GeoJSON.FeatureCollection<GeoJSON.Polygon | GeoJSON.MultiPolygon>;
@@ -74,7 +75,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
       geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
-    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof,
+    return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
       ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };
   }) };
@@ -182,7 +183,7 @@ export class BuildingGeometryBuilder {
     const roofTint = color(p.detailRoofColor??p.roofColor), wallTint = color(p.detailWallColor??p.color);
     const architecture = p.detailArchitecture as BuildingArchitecture;
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
-    const shape = architecture.roofShape;
+    const shape = architecture.roofShape, flatShell=p.detailFlatShell===true;
     for (const [component, polygon] of polygons.entries()) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
@@ -245,9 +246,11 @@ export class BuildingGeometryBuilder {
         for (let i = 0; i < ring.length; i++) {
           const a = ring[i], b = ring[(i + 1) % ring.length];
           const dx = b[0] - a[0], dy = b[1] - a[1], length = Math.hypot(dx, dy);
-          if (length < (architecture.profile==='quad'||architecture.profile==='quad-wing'?0.00001:0.4)) continue;
+          if (length < (flatShell||architecture.profile==='quad'||architecture.profile==='quad-wing'?0.00001:0.4)) continue;
           const nx = outward * dy / length, ny = -outward * dx / length;
-          const at = (point: Point, z: number, extension = 0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
+          const at = (point: Point, z: number, extension = flatShell?0:0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
+          const shellTop=flatShell?height:wall-0.12;
+          const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
           if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){
             // Reference-specific workshop and concrete-frame bays.
@@ -272,8 +275,15 @@ export class BuildingGeometryBuilder {
             const frontLength=Math.hypot(frontEnd[0]-frontStart[0],frontEnd[1]-frontStart[1]);
             const along=(point:Point)=>((point[0]-frontStart[0])*(frontEnd[0]-frontStart[0])+(point[1]-frontStart[1])*(frontEnd[1]-frontStart[1]))/(frontLength*frontLength)*11.4;
             const u0=libraryFront?along(a):0,u1=libraryFront?along(b):bays*3.8;
-            this.facades.quad(at(a, base), at(b, base), at(b, wall - 0.12), at(a, wall - 0.12), wallTint, kind, building,
+            walls.quad(at(a, base), at(b, base), at(b, shellTop), at(a, shellTop), wallTint, kind, building,
               [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
+          }else if(flatShell){
+            // A closed shell includes tiny returns and low walls, even when
+            // they cannot fit a window. Courtyard rings use the same rule.
+            walls.quad(at(a,base),at(b,base),at(b,height),at(a,height),wallTint,2,building);
+          }
+          if(flatShell&&base===0){
+            this.roofs.quad(at(a,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,base),at(a,base),wallTint,2,building);
           }
           // The cornice encloses the small raised eave seam; a second wall
           // strip inside that solid trim is redundant. Keep sloped gable ends.
@@ -285,7 +295,7 @@ export class BuildingGeometryBuilder {
           if(!wingRoof)edge.push(b);
           for (let j = 1; j < edge.length; j++) {
             const u = edge[j - 1], v = edge[j], roofA = roofPoint(u), roofB = roofPoint(v);
-            if (Math.max(roofA[2], roofB[2]) > z + 0.001) this.roofs.quad([u[0], u[1], z], [v[0], v[1], z], roofB, roofA, wallTint, 2, building);
+            if (!flatShell && Math.max(roofA[2], roofB[2]) > z + 0.001) this.roofs.quad([u[0], u[1], z], [v[0], v[1], z], roofB, roofA, wallTint, 2, building);
           }
           // Modest cornices sit just beyond the wall; they do not replace the
           // source footprint or bridge a courtyard.

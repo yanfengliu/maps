@@ -17,7 +17,7 @@ test('open arcades and stadium stands retain full-height picking across native c
  assert.ok(BUILDING_PICK_LAYERS.includes(layer.id)&&BUILDING_PICK_LAYERS.includes('stanford-buildings'),'one delegated query includes the proxy and other campus buildings');
  const data=prepareBuildingDetails(JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))));
  let zoom=19,wall;
- const controller=createQuadArcadeVisibility(),map={getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings')wall=value;}};
+ const controller=createQuadArcadeVisibility(),map={setFilter(){},getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings')wall=value;}};
  for(const [nextZoom,ready]of [[19,false],[19,true],[15,false],[19,true],[19,false]]){
   zoom=nextZoom;controller.sync(map,ready);
   const nativeHeight=createExpression(wall,'layers[1].paint.fill-extrusion-height');assert.equal(nativeHeight.result,'success');let count=0;const seen=new Set();
@@ -29,9 +29,9 @@ test('open arcades and stadium stands retain full-height picking across native c
    assert.equal(pick,feature.properties.detailRoofHeight);
    if(STADIUM_SEATING_IDS.has(feature.properties.id))assert.ok(pick>=feature.properties.height,'the full seating envelope remains queryable');
    else assert.ok(pick>feature.properties.detailWallHeight,'the whole modeled roof silhouette remains queryable');
-   if(ready&&zoom>=15.5)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
+   if(ready&&zoom>=15.5&&!feature.properties.detailFlatShell)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
   }
   for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
-  assert.equal(count,38,'scope includes the eight custom Hoover parts with the Quad, stadium and open garages');
+  assert.equal(count,38+85,'scope includes all 85 complete flat shells as well as the 38 existing landmark parts');
  }
 });
