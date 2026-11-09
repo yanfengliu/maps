@@ -32,6 +32,6 @@ test('open arcades and stadium stands retain full-height picking across native c
    if(ready&&zoom>=15.5&&!feature.properties.detailFlatShell)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
   }
   for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
-  assert.equal(count,38+85,'scope includes all 85 complete flat shells as well as the 38 existing landmark parts');
+  assert.equal(count,38+84,'scope includes all 84 complete flat shells as well as the 38 existing landmark parts');
  }
 });

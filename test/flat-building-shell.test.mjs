@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {featureFilter} from '@maplibre/maplibre-gl-style-spec';
@@ -21,6 +22,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
   assert.equal(p.base,source.features[index].properties.base);
   assert.equal(p.height,source.features[index].properties.height);
   for(let i=0;i<mesh.length;i+=S*3)if(mesh[i+12]===index)triangles.push([0,1,2].map(j=>[...mesh.slice(i+j*S,i+j*S+3)]));
+  for(let i=0;i<mesh.length;i+=S)if(mesh[i+12]===index&&[0,9,17].includes(mesh[i+11])){assert.equal(mesh[i+11],9,'a compound or pitched roof cannot use a generic flat shell');assert.ok(Math.abs(mesh[i+2]-p.detailRoofHeight)<.0001,'every roof point shares the shell top');}
   for(const ring of polygons(feature.geometry).flat())for(let i=1;i<ring.length;i++){
    const a=projectLocal(ring[i-1]),b=projectLocal(ring[i]);edges++;
    const length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<=1.8)short++;
@@ -35,7 +37,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
    if(p.base===0)covers(-10,0);
   }
  }
- assert.equal(buildings,85);assert.equal(edges,924);assert.equal(short,73);
+ assert.equal(buildings,84);assert.equal(edges,902);assert.equal(short,73);
 });
 
 test('native flat caps have a single owner across both LOD thresholds, readiness loss, style recreation and church mode',()=>{
@@ -73,4 +75,15 @@ test('short low walls and elevated flat parts retain a closed shell without addi
  const heights=new Set();let wallTriangles=0;
  for(let i=0;i<mesh.length;i+=S*3){const h=[mesh[i+2],mesh[i+S+2],mesh[i+2*S+2]];h.forEach(z=>heights.add(z));if(h.includes(3)&&h.includes(3.5))wallTriangles++;}
  assert.equal(wallTriangles,8);assert.ok(Math.min(...heights)>=3);assert.ok(Math.max(...heights)<=3.5);
+});
+
+
+test('Braun Music retains its specialized tile perimeter and deck, rather than full-height generic flat walls',()=>{
+ const index=prepared.features.findIndex(f=>f.properties.id==='relation/12460152');
+ assert.equal(prepared.features[index].properties.detailFlatShell,false);
+ const heights=new Set();for(let i=0;i<geometry.roofs.length;i+=S)if(geometry.roofs[i+12]===index&&[9,17].includes(geometry.roofs[i+11]))heights.add(geometry.roofs[i+2]);
+ assert.ok(heights.size>1,'a flat source tag does not imply a planar authored roof');
+ const parts=[];for(const mesh of [geometry.roofs,geometry.facades]){const vertices=[];for(let i=0;i<mesh.length;i+=S)if(mesh[i+12]===index)vertices.push(...mesh.slice(i,i+S));parts.push(vertices);}
+ // Independent accepted a312d8a baseline, including deck, tiles, solar and walls.
+ assert.equal(createHash('sha256').update(JSON.stringify(parts)).digest('hex'),'f7be9c21688ec4013210fa50bea2c1bba23cdabbb9c8388e72e3fd184c12d440');
 });
