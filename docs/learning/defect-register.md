@@ -132,3 +132,8 @@ The owner reported pointed generic palms and requested realistic reusable forms.
 F47 (review30): independent native inspection rejected the eight nearly upright broadleaf sheets after root's initial acceptance. Multi-directional projected area and leaf-mask coverage were insufficient tests of the assembled crown's visible volume. The bounded repair must introduce meaningful cluster depth and varied elevations, retain the former arrangement as a regression control, and repeat close/opposite/steep/top views before closure.
 
 F47 remains open after review31 rejected final attempt5's intersecting sheets. Failed broadleaf geometry and its experimental regressions are excluded together, preserved in revision 0798917 and ignored evidence. The delivered palm-only subset restores visible non-palm baseline geometry, guarded by a full-source hash regression. Passing covariance/depth or shader-gap checks is not a rendered realism pass. Conifer refinement is deferred to keep the whole-scene budget.
+
+
+## 2026-11-09 — Unknown material displayed as a different pavement
+
+The northeast Oval report showed that conservative material inference alone did not fix the defect class: missing/generic material tags still produced a pale default, creating unsupported seams against the neutral dark route tone. The renderer now shares that tone for missing/generic tags, while evidence remains unknown/unverified. Explicit unpaved, mixed, concrete, brick and stone treatments remain separate. The regression evaluates actual line/fill paint expressions for all 3,035 source features and the reported junctions, preserves the source byte representation, and fails against the former palette. This is a display fallback, not proof of paving or uniform real-world material.

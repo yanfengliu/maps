@@ -54,9 +54,15 @@ export function validateCampusRoadPart(value:unknown,bounds:RoadManifest['bounds
   return data;
 }
 
+// Unknown surfaces share the neutral route tone rather than displaying a
+// metadata gap as a physical paving boundary. This is cartographic fallback,
+// not an asphalt inference: source/evidence stay unknown, with no added texture
+// or markings. Explicit unpaved and mixed surfaces bypass this fallback.
+const neutralRouteColor='#5e615c';
 const colors:Record<RoadMaterial,string|ExpressionSpecification>={
-  unknown:['match',['get','unpavedSurface'],'grass','#9aa981',['dirt','ground','earth','compacted'],'#b3a18a',['gravel','fine_gravel','pebblestone'],'#a7a396','woodchips','#a58e70','sand','#c7baa0','#a8a89c'],
-  asphalt:'#5e615c',concrete:'#c2bfae',pavers:['match',['get','surface'],['sett','unhewn_cobblestone','cobblestone'],'#918b7e','#a18c82'],
+  unknown:['match',['get','unpavedSurface'],'grass','#9aa981',['dirt','ground','earth','compacted'],'#b3a18a',['gravel','fine_gravel','pebblestone'],'#a7a396','woodchips','#a58e70','sand','#c7baa0',
+    ['match',['coalesce',['get','surface'],''],['','paved'],neutralRouteColor,'#a8a89c']],
+  asphalt:neutralRouteColor,concrete:'#c2bfae',pavers:['match',['get','surface'],['sett','unhewn_cobblestone','cobblestone'],'#918b7e','#a18c82'],
 };
 // A composite feature+zoom width is clamped to each source tile's zoom..zoom+1
 // by MapLibre's paint binder. Terrain uses mixed tile zooms, so it can produce

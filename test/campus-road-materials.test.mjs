@@ -56,7 +56,7 @@ test('explicit stone and concrete variants keep evidence and appropriate palette
  const stone=expression.value.evaluate({}, {properties:{surface:'sett'}}),brick=expression.value.evaluate({}, {properties:{surface:'bricks'}});assert.notDeepEqual(stone,brick);
 });
 
-test('whole campus audit fixes the reported seam and preserves deliberate/conflicting material boundaries',()=>{
+test('whole campus audit fixes the south Oval inference and preserves deliberate/conflicting material boundaries',()=>{
  const root=new URL('../public/data/',import.meta.url),manifest=JSON.parse(readFileSync(new URL('stanford-surfaces-roads-manifest.json',root)));
  const source=fc(manifest.files.flatMap(p=>JSON.parse(readFileSync(new URL(p.file,root))).features)),before=JSON.stringify(source),result=resolveRoadMaterials(source);
  assert.equal(result.audit.features,3035);assert.equal(result.audit.inferred.length,3);assert.equal(result.audit.unknown,2157);assert.equal(result.audit.unverified,2084);
@@ -68,4 +68,32 @@ test('whole campus audit fixes the reported seam and preserves deliberate/confli
  const layer=campusRoadLayers([{material:'asphalt',width:3}]).find(l=>l.type==='line'),filter=createExpression(layer.filter,'layers[0].filter');assert.equal(filter.result,'success');
  const f=resolved.get('way/8927111');assert.equal(filter.value.evaluate({}, {...f,type:2}),true,'the native layer must consume the derived display material');
  assert.equal(filter.value.evaluate({}, {...source.features.find(f=>f.properties.id==='way/8927111'),type:2}),false,'negative control: raw unknown was the visible color seam');
+});
+
+test('missing surface metadata cannot manufacture a color seam, while documented materials remain distinct',()=>{
+ const root=new URL('../public/data/',import.meta.url),manifest=JSON.parse(readFileSync(new URL('stanford-surfaces-roads-manifest.json',root)));
+ const source=fc(manifest.files.flatMap(p=>JSON.parse(readFileSync(new URL(p.file,root))).features)),before=JSON.stringify(source),result=resolveRoadMaterials(source);
+ const layers=campusRoadLayers(['unknown','asphalt','concrete','pavers'].map(material=>({material,width:3})));
+ const color=(material,properties,type='line')=>{
+  const layer=layers.find(l=>l.id.startsWith(`campus-road-${material}-${type==='line'?'line':'area'}`)),paint=layer.paint[`${type==='line'?'line':'fill'}-color`];
+  if(typeof paint==='string')return paint;
+  const expression=createExpression(paint,'paint.color');assert.equal(expression.result,'success');return expression.value.evaluate({}, {properties});
+ };
+ const neutral=color('asphalt',{}),byId=new Map(result.data.features.map(f=>[f.properties.id,f.properties]));
+ for(const id of ['way/8935550','way/694395375','way/31711470']){
+  const p=byId.get(id);assert.equal(p.renderSurface,'unknown',id);assert.equal(p.renderSurfaceEvidence,'unverified',id);
+  assert.equal(color('unknown',p),neutral,`${id}: source uncertainty is not a physical paving boundary`);
+ }
+ let unspecified=0,unpaved=0,mixed=0;
+ for(const f of result.data.features){
+  const p=f.properties;if(p.renderSurface!=='unknown')continue;
+  assert.equal(color('unknown',p),color('unknown',p,'fill'),'line and area fallback must agree');
+  if(!p.surface||p.surface==='paved'){assert.equal(color('unknown',p),neutral,p.id);assert.equal(p.surfaceEvidence,'unverified');assert.equal(p.renderSurfaceEvidence,'unverified');unspecified++;}
+  else {assert.notEqual(color('unknown',p),neutral,p.id);if(p.unpavedSurface)unpaved++;else mixed++;}
+ }
+ assert.deepEqual({unspecified,unpaved,mixed},{unspecified:2080,unpaved:73,mixed:4});
+ for(const material of ['concrete','pavers'])assert.notEqual(color(material,{}),neutral);
+ assert.notEqual(color('pavers',{surface:'sett'}),neutral);
+ assert.notEqual(color('unknown',{unpavedSurface:'grass'}),neutral,'explicit unpaved interpretation also survives a missing raw tag');
+ assert.equal(JSON.stringify(source),before,'styling must not relabel source materials or change geometry');
 });
