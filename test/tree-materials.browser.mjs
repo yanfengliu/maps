@@ -32,12 +32,12 @@ export async function verifyTreeMaterials(page,shaders){
     };
     try{
       const program=makeProgram(true),solid=makeProgram(false);
-      for(const kind of [90,91,93])for(const id of [0,2,5]){
+      for(const kind of [91])for(const id of [0,2,5]){
         const r=sample(program,kind,id);records.push(r);
         if(!r.ratios.every(n=>n>.15&&n<.96))throw Error('Production leaf coverage is empty or solid: '+JSON.stringify(r));
         if(kind===91&&r.rachis<.95)throw Error('Production frond rachis is disconnected');
       }
-      const control=sample(solid,90,0);
+      const control=sample(solid,91,0);
       if(!control.ratios.every(n=>n===1))throw Error('Solid negative control did not paint the same region');
       return {pass:true,records,solidControlRejected:!control.ratios.every(n=>n>.15&&n<.96)};
     }finally{

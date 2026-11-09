@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import {TREE_MATERIAL,TREE_MATERIAL_KINDS,TREE_VARIANTS,treePrototype,treeVariant,mappedTreeForm,addTreePrototype} from '../src/tree-prototypes.ts';
 import {addCampusEnvironment,environmentDimensions} from '../src/campus-environment.ts';
 import {buildBuildingGeometry,prepareBuildingDetails,projectLocal} from '../src/building-geometry.ts';
@@ -14,10 +15,10 @@ const recorder=()=>{
   return {mesh,triangles};
 };
 const area=([a,b,c])=>{const u=b.map((v,i)=>v-a[i]),v=c.map((v,i)=>v-a[i]);return Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]);};
-const leafKinds=[TREE_MATERIAL.leaf,TREE_MATERIAL.feather,TREE_MATERIAL.fan,TREE_MATERIAL.needle];
+const leafKinds=[TREE_MATERIAL.feather,TREE_MATERIAL.fan];
 
 test('a small immutable prototype library is reused by stable source identity without changing botanical families',()=>{
-  assert.equal(prototypes.length,10);
+  assert.equal(prototypes.length,5);
   for(const [form,count] of Object.entries(TREE_VARIANTS)){
     const assignments=Array.from({length:200},(_,i)=>treeVariant(`node/${i}`,form));
     assert.equal(new Set(assignments).size,count,'all variants should be reusable rather than one generated mesh per instance');
@@ -29,18 +30,17 @@ test('a small immutable prototype library is reused by stable source identity wi
       assert.throws(()=>{p.triangles.push(p.triangles[0]);},TypeError);
     }
   }
-  assert.equal(mappedTreeForm({species:'Phoenix canariensis'},'palm'),'feather');
-  assert.equal(mappedTreeForm({genus:'Washingtonia'},'palm'),'fan');
-  assert.equal(mappedTreeForm({species:'Livistona australis'},'palm'),'fan');
-  assert.equal(mappedTreeForm({},'palm'),'feather','unknown palms keep the existing fallback, without inventing a species');
-  assert.equal(mappedTreeForm({},'broadleaf'),'broadleaf');assert.equal(mappedTreeForm({},'conifer'),'conifer');
-  assert.throws(()=>treePrototype('feather',3));assert.throws(()=>treePrototype('conifer',-.1));
+  assert.equal(mappedTreeForm({species:'Phoenix canariensis'}),'feather');
+  assert.equal(mappedTreeForm({genus:'Washingtonia'}),'fan');
+  assert.equal(mappedTreeForm({species:'Livistona australis'}),'fan');
+  assert.equal(mappedTreeForm({}),'feather','unknown palms keep the existing fallback, without inventing a species');
+  assert.throws(()=>treePrototype('feather',3));assert.throws(()=>treePrototype('fan',-.1));
 });
 
 test('every prototype stays inside the recorded height/crown envelope with finite noncollapsed faces and unit normals',()=>{
   // Redistribute the same scene reservation from solid crowns into arching
   // fronds. The exact whole-scene triangle and GPU caps below are unchanged.
-  const caps={feather:72,fan:76,broadleaf:44,conifer:208};
+  const caps={feather:72,fan:76};
   for(const p of prototypes){
     assert.ok(p.triangles.length<=caps[p.form],`${p.form}/${p.variant} exceeds its tree allocation`);
     for(const t of p.triangles){
@@ -79,99 +79,6 @@ test('feather palms contain arching nonplanar fronds, upright new leaves and des
   }
 });
 
-test('broadleaf trunks fork below irregular crowns and conifers retain narrowing layered silhouettes',()=>{
-  for(const p of prototypes.filter(p=>p.form==='broadleaf')){
-    const branches=p.triangles.filter(t=>t.kind===TREE_MATERIAL.bark).flatMap(t=>t.points).filter(v=>v[2]>.5);
-    assert.ok(branches.some(v=>v[0]<-.3)&&branches.some(v=>v[0]>.3),'visible forked branches must connect the trunk to both crown sides');
-    const outline=p.triangles.filter(t=>t.kind===TREE_MATERIAL.leaf).flatMap(t=>t.points).filter(v=>v[2]>.4&&v[2]<.6);
-    assert.ok(Math.max(...outline.map(v=>Math.hypot(v[0],v[1])))-Math.min(...outline.map(v=>Math.hypot(v[0],v[1])))>.1,'the canopy should not be a circular extrusion');
-  }
-  for(const p of prototypes.filter(p=>p.form==='conifer')){
-    const points=p.triangles.filter(t=>t.kind===TREE_MATERIAL.needle).flatMap(t=>t.points),low=points.filter(v=>v[2]<.4),high=points.filter(v=>v[2]>.7);
-    assert.ok(Math.max(...low.map(v=>Math.hypot(v[0],v[1])))>Math.max(...high.map(v=>Math.hypot(v[0],v[1])))*1.8);
-    assert.ok(new Set(points.map(v=>v[2].toFixed(4))).size>12,'conifers must have independently angled branch layers');
-    const boughs=new Set(p.triangles.filter(t=>t.kind===TREE_MATERIAL.needle).map(t=>Math.floor((t.uv[0][1]+1.001)/4)));
-    assert.ok(boughs.size>=48,'the rejected twelve-spray tree left sparse leaf-like planes instead of a dense branched silhouette');
-  }
-});
-
-test('broadleaf branch sprays are distributed bent surfaces with several orientations, not closed crown shells or one billboard',()=>{
-  const projectedArea=(faces,direction)=>faces.reduce((sum,t)=>{
-    const [a,b,c]=t.points,u=b.map((v,i)=>v-a[i]),v=c.map((v,i)=>v-a[i]),cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
-    return sum+Math.abs(cross.reduce((s,n,i)=>s+n*direction[i],0));
-  },0);
-  const viewRatio=faces=>{
-    const areas=[];for(const elevation of [0,.4,.85,Math.PI/2])for(let j=0;j<24;j++)areas.push(projectedArea(faces,[Math.cos(j*Math.PI/12)*Math.cos(elevation),Math.sin(j*Math.PI/12)*Math.cos(elevation),Math.sin(elevation)]));
-    return Math.min(...areas)/Math.max(...areas);
-  };
-  for(const p of prototypes.filter(p=>p.form==='broadleaf')){
-    const leaves=p.triangles.filter(t=>t.kind===TREE_MATERIAL.leaf),groups=new Map();
-    for(const t of leaves){const id=Math.floor((t.uv[0][1]+1.001)/4);const group=groups.get(id)??[];group.push(t);groups.set(id,group);}
-    assert.ok(groups.size>=8,'several spatial branch clusters must replace the old closed whole-crown envelopes');
-    for(const faces of groups.values()){
-      const vertices=[...new Map(faces.flatMap(t=>t.points).map(p=>[p.join(','),p])).values()],edges=new Map();
-      for(const t of faces)for(let i=0;i<3;i++){const edge=[t.points[i].join(','),t.points[(i+1)%3].join(',')].sort().join('|');edges.set(edge,(edges.get(edge)??0)+1);}
-      assert.ok([...edges.values()].some(n=>n===1),'a branch spray must remain an open surface rather than another solid crown shell');
-      const [a,b,c]=vertices,u=b.map((n,i)=>n-a[i]),v=c.map((n,i)=>n-a[i]),normal=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],size=Math.hypot(...normal);
-      assert.ok(vertices.some(p=>Math.abs(p.reduce((sum,n,i)=>sum+(n-a[i])*normal[i],0))/size>.03),'a spray must have measurable depth across its folds');
-    }
-    assert.ok(viewRatio(leaves)>.18,'the 3D crown must keep projected foliage through profile, steep and opposite views');
-    const flat=leaves.map(t=>({...t,points:t.points.map(p=>[p[0],p[1],.6])}));
-    assert.ok(viewRatio(flat)<.001,'negative control: a single flat foliage plane must be rejected');
-  }
-});
-
-// Measure actual emitted coordinates at a representative 12.2 m / 3.7 m
-// height-to-radius ratio. Vertex normals alone can hide a physically thin card.
-function clusterVolumeMetrics(faces){
-  const groups=new Map(),upAreas=[],sideAreas=[],allAreas=[];
-  for(const face of faces){
-    const group=Math.floor((face.uv[0][1]+1.001)/4),list=groups.get(group)??[];list.push(face);groups.set(group,list);
-    const [a,b,c]=face.points.map(p=>[p[0],p[1],p[2]*3.3]),u=b.map((v,i)=>v-a[i]),v=c.map((n,i)=>n-a[i]),cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],area=Math.hypot(...cross),vertical=Math.abs(cross[2])/area;
-    allAreas.push(area);if(vertical>.65)upAreas.push(area);if(vertical<.45)sideAreas.push(area);
-  }
-  const depths=[];
-  for(const faces of groups.values()){
-    const points=[...new Map(faces.flatMap(t=>t.points).map(p=>[p.join(','),[p[0],p[1],p[2]*3.3]])).values()],mean=[0,1,2].map(k=>points.reduce((s,p)=>s+p[k],0)/points.length);
-    const matrix=[0,1,2].map(i=>[0,1,2].map(j=>points.reduce((s,p)=>s+(p[i]-mean[i])*(p[j]-mean[j]),0)/points.length));
-    // Jacobi eigenvalues of the symmetric covariance matrix: the smallest
-    // variance measures thickness independently of camera or arbitrary axes.
-    for(let step=0;step<12;step++){
-      let p=0,q=1;for(const [i,j] of [[0,2],[1,2]])if(Math.abs(matrix[i][j])>Math.abs(matrix[p][q])){p=i;q=j;}
-      if(Math.abs(matrix[p][q])<1e-12)break;
-      const a=matrix[p][p],b=matrix[p][q],d=matrix[q][q],angle=.5*Math.atan2(2*b,d-a),c=Math.cos(angle),s=Math.sin(angle);
-      matrix[p][p]=c*c*a-2*s*c*b+s*s*d;matrix[q][q]=s*s*a+2*s*c*b+c*c*d;matrix[p][q]=matrix[q][p]=0;
-      for(let k=0;k<3;k++)if(k!==p&&k!==q){const x=matrix[k][p],y=matrix[k][q];matrix[k][p]=matrix[p][k]=c*x-s*y;matrix[k][q]=matrix[q][k]=s*x+c*y;}
-    }
-    const eigenvalues=[matrix[0][0],matrix[1][1],matrix[2][2]].sort((a,b)=>a-b);depths.push(eigenvalues[0]/eigenvalues[2]);
-  }
-  const sum=a=>a.reduce((s,v)=>s+v,0),area=sum(allAreas);
-  return {depths,upArea:sum(upAreas)/area,sideArea:sum(sideAreas)/area};
-}
-
-function rejectedUprightSheetFixture(variant){
-  // Exact geometry family rejected in review30/F47: eight near-vertical
-  // four-triangle sprays, +-0.27 tilt and only0.12 depth at their center.
-  const sites=[[[ -.43,-.13,.61],.49,.22],[[.43,-.18,.66],.51,.23],[[-.26,.37,.70],.52,.23],[[.25,.32,.77],.47,.21],[[-.24,-.34,.79],.49,.20],[[.39,.10,.53],.44,.22],[[.01,-.08,.87],.43,.13],[[-.12,-.38,.53],.46,.20]],faces=[];
-  for(let j=0;j<sites.length;j++){
-    const [base,w,h]=sites[j],angle=j*2.399963+variant*.49,tilt=.27*Math.sin(j*1.9+variant),u=[Math.cos(angle),Math.sin(angle),0],v=[-Math.sin(angle)*Math.sin(tilt),Math.cos(angle)*Math.sin(tilt),Math.cos(tilt)],n=[Math.sin(angle)*Math.cos(tilt),-Math.cos(angle)*Math.cos(tilt),Math.sin(tilt)],center=[base[0]+(variant-1)*.018,base[1],base[2]],offset=j*4;
-    const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([x,y])=>center.map((c,i)=>c+u[i]*w*x+v[i]*h*y)),middle=center.map((c,i)=>c+n[i]*.12),uv=[[-1,offset-1],[1,offset-1],[1,offset+1],[-1,offset+1]];
-    for(let k=0;k<4;k++)faces.push({points:[middle,corners[k],corners[(k+1)%4]],uv:[[0,offset],uv[k],uv[(k+1)%4]]});
-  }
-  return faces;
-}
-
-test('broadleaf clusters have substantial depth and upward foliage rather than the rejected lacy upright sheets',()=>{
-  const substantial=m=>m.depths.every(ratio=>ratio>.12)&&m.upArea>.20&&m.sideArea>.15;
-  for(let variant=0;variant<TREE_VARIANTS.broadleaf;variant++){
-    const leaves=treePrototype('broadleaf',variant).triangles.filter(t=>t.kind===TREE_MATERIAL.leaf),metrics=clusterVolumeMetrics(leaves);
-    assert.ok(substantial(metrics),`every spatial cluster needs thickness and the crown needs upper and side foliage: ${JSON.stringify(metrics)}`);
-    const old=clusterVolumeMetrics(rejectedUprightSheetFixture(variant));
-    assert.equal(substantial(old),false,'negative control: the exact rejected near-vertical sheet family must fail');
-    assert.ok(old.depths.every(ratio=>ratio<.04)&&old.upArea<.01,'the control must exercise shallow, consistently upright foliage rather than an unrelated malformed mesh');
-  }
-});
-
 test('scaled instances preserve independent terrain anchors, immutable templates and normalized transformed normals',()=>{
   for(const p of prototypes){
     const {mesh,triangles}=recorder(),before=JSON.stringify(p),anchors=new TerrainAnchorBuilder();
@@ -187,16 +94,31 @@ test('scaled instances preserve independent terrain anchors, immutable templates
 test('real source instances reuse the library while retaining mapped positions, dimensions, family and source tags',()=>{
   const data=load('stanford-environment.geojson'),original=JSON.stringify(data),mapped=data.features.filter(f=>f.properties.kind==='tree');
   for(const feature of mapped){
-    const {mesh,triangles}=recorder(),anchors=new TerrainAnchorBuilder(),p=feature.properties,d=environmentDimensions(p),family=mappedTreeForm(p,d.type);
+    const {mesh,triangles}=recorder(),anchors=new TerrainAnchorBuilder(),p=feature.properties,d=environmentDimensions(p),family=d.type==='palm'?mappedTreeForm(p):null;
     // Render individually so the separate dated Quad reconstruction cannot
     // replace a mapped node during this source-preservation check.
     const counts=addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal,anchors.add);
     assert.equal(counts.trees,1);assert.deepEqual(Array.from(anchors.finish()),Array.from(new Float32Array(projectLocal(feature.geometry.coordinates))));
-    assert.equal(triangles.length,treePrototype(family,treeVariant(p.id,family)).triangles.length);
-    assert.ok(triangles.some(t=>leafKinds.includes(t.kind)));assert.ok(triangles.every(t=>decodeTerrainObjectId(t.id)===0));
-    assert.ok(Math.abs(Math.max(...triangles.flatMap(t=>t.points.map(p=>p[2])))-d.height)<1e-8);
+    if(family)assert.equal(triangles.length,treePrototype(family,treeVariant(p.id,family)).triangles.length);
+    assert.ok(triangles.some(t=>family?leafKinds.includes(t.kind):t.kind===10));assert.ok(triangles.every(t=>decodeTerrainObjectId(t.id)===0));
+    const top=Math.max(...triangles.flatMap(t=>t.points.map(p=>p[2])));
+    assert.ok(top<=d.height+1e-8&&top>=d.height*.98);
   }
   assert.equal(JSON.stringify(data),original);
+});
+
+test('excluded broadleaf and conifer candidates do not alter any visible baseline source-instance face',()=>{
+  // Oracle generated independently from 18c5916's emitter for every non-palm
+  // source node. Ignore only zero-area pole faces, never visible geometry.
+  const data=load('stanford-environment.geojson'),result=[];
+  for(const feature of data.features.filter(f=>f.properties.kind==='tree'&&environmentDimensions(f.properties).type!=='palm')){
+    const {mesh,triangles}=recorder(),anchors=new TerrainAnchorBuilder();
+    addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal,anchors.add);
+    assert.ok(triangles.every(t=>area(t.points)>1e-8),'collapsed pole faces must not consume the geometry budget');
+    result.push([feature.properties.id,triangles,Array.from(anchors.finish())]);
+  }
+  assert.equal(result.length,389);
+  assert.equal(createHash('sha256').update(JSON.stringify(result)).digest('hex'),'1b693eb30c4bb11dd0f5be5a1b1c6b58f9146f188d5d3e390ca0aa0d705ad3e8');
 });
 
 test('the complete campus retains its unchanged triangle and packed GPU budgets with all environment layers included',()=>{

@@ -1,6 +1,6 @@
 # Development log
 
-- 2026-11-09: **Reusable foliage replaces generic tree solids; sourced paths keep continuous color.** — Eight active cached tree variants add curved feather fronds, leafy branch sprays and layered conifers with only 64 more scene triangles and no texture downloads. Three failed visual candidates were rejected before native acceptance. The full 3,035-feature surface audit corrects three bounded material gaps and eleven explicit stone tags; 2,084 materials remain unverified. [Design and limits](../work/0_bay-area-stanford/design.md#reusable-botanical-tree-forms--2026-11-09).
+- 2026-11-09: **Added reusable feather-palm variants and audited connected road colors.** — Three active palm forms add arched, cutout leaflets without texture downloads. Broadleaf candidates failed independent visual review and are excluded; conifer refinement is deferred to preserve the geometry limit. The full 3,035-feature surface audit corrects three bounded material gaps and eleven explicit stone tags; 2,084 materials remain unverified. [Design and limits](../work/0_bay-area-stanford/design.md#reusable-botanical-tree-forms--2026-11-09).
 
 - 2026-11-09: **Loaded campus detail earlier and removed terrain road slivers** — Paired detail readiness improves 24.7% cold / 23.2% warm; app-only changes preserve the large engine chunk. Exact source-width groups fix native terrain tile clamping, and canceled-tile readiness now completes. First-tile tradeoffs and limited hardware samples remain explicit. [Evidence and limits](detailed/2026-11-08_2026-11-09.md).
 

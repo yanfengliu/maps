@@ -159,7 +159,10 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
     for(let level=0;level<levels.length-1;level++)for(let i=0;i<sides;i++){
       const a=point(i,levels[level]),b=point(i+1,levels[level]),c=point(i+1,levels[level+1]),d=point(i,levels[level+1]);
       const shade=(0.94+0.06*Math.sin(i*2.4+seed*9));const color=tint.map(v=>v*shade) as Color;
-      triangle(a,b,c,color,10,[normal(a),normal(b),normal(c)]);triangle(a,c,d,color,10,[normal(a),normal(c),normal(d)]);
+      // At each pole one face has zero area. Keep every visible baseline
+      // face and its normals; omit only those collapsed triangles.
+      if(level!==0)triangle(a,b,c,color,10,[normal(a),normal(b),normal(c)]);
+      if(level!==levels.length-2)triangle(a,c,d,color,10,[normal(a),normal(c),normal(d)]);
     }
   };
   for(const feature of data.features){
@@ -176,9 +179,27 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
       if(quadPlantings.containsMappedTree(feature.geometry.coordinates))continue;
       const {type,height,radius,seed}=environmentDimensions(p);counts.trees++;
       const bark:Color=type==='palm'?[0.56,0.48,0.35]:[0.45,0.40,0.31];
-      const form=mappedTreeForm(p,type),green:Color=type==='palm'?[0.34,0.45,0.27]:type==='conifer'?[0.33,0.44,0.34]:p.leaf_cycle==='evergreen'?[0.39,0.49,0.31]:[0.49,0.59,0.35];
-      addTreePrototype(mesh,treePrototype(form,treeVariant(p.id,form)),[x,y],height,radius,seed*Math.PI*2,green,bark,objectId);
-      if(type==='palm')counts.palms++;else if(type==='conifer')counts.conifers++;else counts.broadleaf++;
+      if(type==='palm'){
+        const form=mappedTreeForm(p),green:Color=[0.34,0.45,0.27];
+        addTreePrototype(mesh,treePrototype(form,treeVariant(p.id,form)),[x,y],height,radius,seed*Math.PI*2,green,bark,objectId);
+        counts.palms++;
+        continue;
+      }
+      const trunk=0.19+seed*0.09;
+      cylinder(x,y,trunk,0,height*0.60,bark);
+      // A narrow mulch collar makes the root legible without inventing a garden.
+      for(let i=0;i<8;i++){const a=i*Math.PI/4,b=(i+1)*Math.PI/4;triangle([x,y,0.035],[x+Math.cos(a)*0.53,y+Math.sin(a)*0.53,0.035],[x+Math.cos(b)*0.53,y+Math.sin(b)*0.53,0.035],[0.52,0.49,0.37],12);}
+      if(type==='conifer'){
+        counts.conifers++;
+        for(let tier=0;tier<3;tier++)for(let i=0;i<8;i++){
+          const a=i*Math.PI/4+seed,b=(i+1)*Math.PI/4+seed,r=radius*(1-tier*0.22),bottom=height*(0.30+tier*0.18),top=height*(0.69+tier*0.15);
+          triangle([x+Math.cos(a)*r,y+Math.sin(a)*r,bottom],[x+Math.cos(b)*r,y+Math.sin(b)*r,bottom],[x,y,top],[0.32+tier*0.015,0.43+tier*0.015,0.34]);
+        }
+      }else{
+        counts.broadleaf++;
+        const evergreen=p.leaf_cycle==='evergreen',green:Color=evergreen?[0.39,0.49,0.31]:[0.49,0.59,0.35];
+        crown(x,y,height*0.68,radius,radius*(0.86+seed*0.20),height*0.32,green,seed);
+      }
     }else{
       counts.lamps++;
       cylinder(x,y,0.085,0,3.6,[0.37,0.41,0.35],4);
