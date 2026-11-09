@@ -28,6 +28,6 @@ No material finding requires a repair. Root accepts the reviewed code, preserves
 
 Root's 284 tests, types, Pages-base production build and audit passed on the reviewed code. Native actual-control checks cover the reported terrain defect, graphics loss/restoration, source failure/Retry and desktop/phone church navigation. Two-build cache proof preserves engine filenames and SHA256 through an app-only edit. Raw evidence remains ignored under artifacts/loading-roads-20261108/output.
 
-## Outcome
+## Round outcome
 
 Accepted for integration and publication. No unresolved material finding; live deployment and primary-main cleanup are delivery steps owned by root, not evidence claimed by this review.
