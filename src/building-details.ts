@@ -1,4 +1,5 @@
 import {LANDSCAPE_HELPERS,LANDSCAPE_FRAGMENT} from './campus-landscape-materials.ts';
+import {TREE_HELPERS,TREE_FRAGMENT} from './tree-materials.ts';
 import {emptyLandscapeCounts,type LandscapeCounts} from './campus-landscape.ts';
 import {ROOF_TILE_FRAGMENT} from './roof-materials.ts';
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
@@ -118,6 +119,7 @@ uniform float u_ceiling;
 out vec4 outColor;
 ${STADIUM_FIELD_HELPERS}
 ${LANDSCAPE_HELPERS}
+${TREE_HELPERS}
 void main() {
   if(u_groundPass>0.5?v_groundSurface<0.5:(u_drapeGround>0.5&&v_groundSurface>0.5))discard;
   if(v_terrainAvailable<0.999)discard;
@@ -278,6 +280,7 @@ void main() {
 ${SURFACE_FRAGMENT}
 ${HOOVER_FRAGMENT}
 ${LANDSCAPE_FRAGMENT}
+${TREE_FRAGMENT}
   if(abs(v_kind-29.0)<0.1 && v_color.r>v_color.g*1.5){
     // Long timber boards remain legible through the ghosted ceiling surface.
     float boards=v_uv.x/0.24,aa=max(fwidth(boards),0.002);

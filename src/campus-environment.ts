@@ -1,6 +1,7 @@
 import type * as GeoJSON from 'geojson';
 import {addQuadPlantings} from './quad-plantings.ts';
 import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
+import {addTreePrototype,mappedTreeForm,treePrototype,treeVariant} from './tree-prototypes.ts';
 
 type Point = [number, number];
 type Vertex = [number, number, number];
@@ -50,13 +51,13 @@ export function environmentDimensions(properties:CampusEnvironment['features'][n
   const seed=variation(properties.id);
   const palm=properties.leaf_type==='palm'||/Phoenix|Washingtonia|Yucca|palm/i.test(String(properties.species??properties.genus??''));
   const conifer=!palm&&properties.leaf_type==='needleleaved';
-  const type=palm?'palm':conifer?'conifer':'broadleaf';
+  const type:'palm'|'conifer'|'broadleaf'=palm?'palm':conifer?'conifer':'broadleaf';
   const height=metres(properties.height,palm?11+seed*5:conifer?12+seed*4:7+seed*5,2,28);
   const radius=metres(properties.diameter_crown,palm?7.8:conifer?6:7.2,1.5,15)/2;
   return {type,height,radius:radius*(0.87+seed*0.25),seed};
 }
 
-/** Solid low-poly crowns have interpolated normals; no alpha sprites or per-tree draw. */
+/** Reusable botanical forms share the existing opaque mesh and terrain anchors. */
 export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,project:(coordinate:readonly number[])=>Point,registerAnchor?:RegisterTerrainAnchor):EnvironmentCounts {
   const counts=emptyEnvironmentCounts();
   const quadPlantings=addQuadPlantings(mesh,data,project,registerAnchor);
@@ -175,32 +176,9 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
       if(quadPlantings.containsMappedTree(feature.geometry.coordinates))continue;
       const {type,height,radius,seed}=environmentDimensions(p);counts.trees++;
       const bark:Color=type==='palm'?[0.56,0.48,0.35]:[0.45,0.40,0.31];
-      const trunk=type==='palm'?0.35:0.19+seed*0.09;
-      cylinder(x,y,trunk,0,height*(type==='palm'?0.88:0.60),bark);
-      // A narrow mulch collar makes the root legible without inventing a garden.
-      for(let i=0;i<8;i++){const a=i*Math.PI/4,b=(i+1)*Math.PI/4;triangle([x,y,0.035],[x+Math.cos(a)*0.53,y+Math.sin(a)*0.53,0.035],[x+Math.cos(b)*0.53,y+Math.sin(b)*0.53,0.035],[0.52,0.49,0.37],12);}
-      if(type==='palm'){
-        counts.palms++;
-        // Feather-like arching fronds, arranged in two alternating crown tiers.
-        for(let i=0;i<12;i++){
-          const angle=i*Math.PI/6+seed*2.1,dx=Math.cos(angle),dy=Math.sin(angle),tier=i%2;
-          const frondRadius=radius*(tier?0.8:1.08),z=height*(tier?0.96:0.90),tip=height*(tier?0.80:0.70),width=0.68;
-          const a:Vertex=[x,y,height*0.85],b:Vertex=[x+dx*frondRadius*0.54-dy*width,y+dy*frondRadius*0.54+dx*width,z],c:Vertex=[x+dx*frondRadius,y+dy*frondRadius,tip],d:Vertex=[x+dx*frondRadius*0.54+dy*width,y+dy*frondRadius*0.54-dx*width,z];
-          const color:Color=tier?[0.37,0.47,0.27]:[0.31,0.43,0.26];
-          triangle(a,b,c,color);triangle(a,c,d,color);
-        }
-        crown(x,y,height*0.87,0.7,0.7,0.8,[0.38,0.45,0.24],seed);
-      }else if(type==='conifer'){
-        counts.conifers++;
-        for(let tier=0;tier<3;tier++)for(let i=0;i<8;i++){
-          const a=i*Math.PI/4+seed,b=(i+1)*Math.PI/4+seed,r=radius*(1-tier*0.22),bottom=height*(0.30+tier*0.18),top=height*(0.69+tier*0.15);
-          triangle([x+Math.cos(a)*r,y+Math.sin(a)*r,bottom],[x+Math.cos(b)*r,y+Math.sin(b)*r,bottom],[x,y,top],[0.32+tier*0.015,0.43+tier*0.015,0.34]);
-        }
-      }else{
-        counts.broadleaf++;
-        const evergreen=p.leaf_cycle==='evergreen',green:Color=evergreen?[0.39,0.49,0.31]:[0.49,0.59,0.35];
-        crown(x,y,height*0.68,radius,radius*(0.86+seed*0.20),height*0.32,green,seed);
-      }
+      const form=mappedTreeForm(p,type),green:Color=type==='palm'?[0.34,0.45,0.27]:type==='conifer'?[0.33,0.44,0.34]:p.leaf_cycle==='evergreen'?[0.39,0.49,0.31]:[0.49,0.59,0.35];
+      addTreePrototype(mesh,treePrototype(form,treeVariant(p.id,form)),[x,y],height,radius,seed*Math.PI*2,green,bark,objectId);
+      if(type==='palm')counts.palms++;else if(type==='conifer')counts.conifers++;else counts.broadleaf++;
     }else{
       counts.lamps++;
       cylinder(x,y,0.085,0,3.6,[0.37,0.41,0.35],4);

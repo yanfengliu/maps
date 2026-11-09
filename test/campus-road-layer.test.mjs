@@ -64,7 +64,7 @@ test('local road readiness waits for road, plaza and control sources but not rem
   owner.attach(map,'foreign-layer');map.emit('style.load');await settled(owner);
   assert.equal(owner.stats.dataReady,true);assert.equal(owner.stats.ready,false);assert.equal(map.loaded,false,'unrelated regional readiness stays false');
   const rendered=map.sources.get(CAMPUS_ROAD_SOURCE);assert.equal(rendered.tolerance,0);assert.deepEqual(rendered.data.features[0].geometry,source.geometry);assert.equal(JSON.stringify(source),before);
-  assert.deepEqual(rendered.data.features[0],source,'rendering must retain exact source properties as well as geometry');
+  assert.deepEqual(rendered.data.features[0],{...source,properties:{...source.properties,renderSurface:'asphalt',renderSurfaceEvidence:'osm-tag',renderSurfaceSources:[]}},'rendering retains every source field and adds separately named display evidence');
   const masks=map.sources.get(CAMPUS_ROAD_PLAZA_SOURCE).data.features;assert.equal(masks.length,2);assert.deepEqual(masks[0].geometry,plaza.features[0].geometry);assert.deepEqual(masks[1].geometry.coordinates,[plaza.features[0].geometry.coordinates[1]]);
   map.ready.add(CAMPUS_ROAD_SOURCE);map.emit('sourcedata',{sourceId:CAMPUS_ROAD_SOURCE});assert.equal(owner.stats.ready,false);
   ready(map);assert.equal(owner.stats.ready,true);assert.ok(Object.isFrozen(owner.stats));assert.ok(changes.some(s=>s.ready));

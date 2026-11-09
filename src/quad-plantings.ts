@@ -1,6 +1,7 @@
 import type {CampusEnvironment} from './campus-environment.ts';
 import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
 import {QUAD_PLANTING_REFERENCE,QUAD_SPECIES,type ReferencePlant} from './quad-planting-reference.ts';
+import {addTreePrototype,treePrototype,treeVariant} from './tree-prototypes.ts';
 export {quadPlantingCoverage} from './quad-planting-reference.ts';
 
 type Point=[number,number];type Vertex=[number,number,number];type Color=[number,number,number];
@@ -50,8 +51,8 @@ export function locateQuadPlantings(data:CampusEnvironment,project:(p:readonly n
   });
 }
 
-/** No new material, draw call or geographic source: append to the batched
- * environment mesh, using the established leaf/bark/plain kinds and sentinel. */
+/** Keep the dated plant layout and append to the shared anchored mesh. The
+ * botanical forms add no draw calls or geographic source features. */
 export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:(p:readonly number[])=>Point,registerAnchor?:RegisterTerrainAnchor){
   const circles=locateQuadPlantings(data,project),counts={trees:0,palms:0,broadleaf:0,conifers:0};
   let objectId=-2;
@@ -91,11 +92,12 @@ export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:
       const green:Color=species.silver?[0.48,0.56,0.46]:shape==='cycad'?[0.27,0.40,0.24]:[0.33,0.46,0.28],bark:Color=[0.47,0.42,0.32];
       counts.trees++;
       if(shape==='fan'||shape==='feather')counts.palms++;else if(species.conifer)counts.conifers++;else counts.broadleaf++;
-      if(shape==='fan'||shape==='feather'){
-        const trunk=plant.code==='PHca'?0.48:plant.code==='WAro'?0.20:0.30;
-        const crownBase=shape==='fan'?h-r*0.45:h*0.87;
+      if(shape==='feather'){
+        addTreePrototype(mesh,treePrototype('feather',treeVariant(plant.id,'feather')),[x,y],h,r,rotation,green,bark,objectId);
+      }else if(shape==='fan'){
+        const trunk=plant.code==='WAro'?0.20:0.30;
+        const crownBase=h-r*0.45;
         taper(x,y,[[0,trunk*1.15],[crownBase,trunk*0.78]],bark);
-        if(shape==='fan'){
           // Stanford's WASro / WASfil / LIVaus / BRAar / TRAfo photographs show
           // young upright fans filling the growing point, then individually
           // splayed and hanging fronds. Three identical six-leaf tiers made
@@ -125,17 +127,6 @@ export function addQuadPlantings(mesh:MeshWriter,data:CampusEnvironment,project:
               triangle(hub,edge(a),tip,tint);triangle(hub,tip,edge(b),tint);
             }
           }
-        }else{
-          // Long arching pinnate silhouettes contrast with the separate fans.
-          for(let j=0;j<10;j++){
-            const angle=rotation+j*Math.PI/5,dx=Math.cos(angle),dy=Math.sin(angle),short=j%2===0?1:0.83;
-            const at=(along:number,side:number,z:number):Vertex=>[x+dx*along*r*short-dy*side,y+dy*along*r*short+dx*side,z];
-            const sections=[[0,0.04,h*0.88],[0.38,r*0.16,h],[0.72,r*0.12,h*0.92],[1,0.01,h-Math.min(3.7,h*0.38)]];
-            for(let k=1;k<sections.length;k++){
-              const [u0,w0,z0]=sections[k-1],[u1,w1,z1]=sections[k];quad(at(u0,-w0,z0),at(u1,-w1,z1),at(u1,w1,z1),at(u0,w0,z0),green);
-            }
-          }
-        }
       }else if(shape==='tuft'||shape==='cycad'||shape==='ponytail'){
         const trunkTop=shape==='cycad'?h*0.28:h*0.74;
         if(shape==='ponytail')taper(x,y,[[0,0.42],[h*0.25,0.30],[trunkTop,0.10]],bark);

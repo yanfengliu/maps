@@ -6,6 +6,7 @@ import {projectLocal} from '../src/building-geometry.ts';
 import {addCampusEnvironment} from '../src/campus-environment.ts';
 import {addQuadPlantings,locateQuadPlantings,quadPlantingCoverage} from '../src/quad-plantings.ts';
 import {QUAD_SPECIES,QUAD_PLANTING_REFERENCE,QUAD_PLANTING_SOURCE} from '../src/quad-planting-reference.ts';
+import {TREE_MATERIAL_KINDS} from '../src/tree-prototypes.ts';
 
 const bytes=readFileSync(new URL('../public/data/stanford-environment.geojson',import.meta.url));
 const data=JSON.parse(bytes),before=JSON.stringify(data);
@@ -69,7 +70,7 @@ test('reference geometry has low shrubs, documented varied crowns, eight bounded
   assert.ok(triangles.length*3*44<1100000);
   const shapes=new Set(QUAD_PLANTING_REFERENCE.flatMap(c=>c.plants.map(p=>QUAD_SPECIES[p.code].shape)));assert.equal(shapes.size,8);
   for(const triangle of triangles){
-    assert.equal(triangle.building,-2);assert.ok([10,11,12].includes(triangle.kind));
+    assert.equal(triangle.building,-2);assert.ok([10,11,12,...TREE_MATERIAL_KINDS].includes(triangle.kind));
     assert.ok(triangle.points.flat().every(Number.isFinite));assert.ok(triangle.points.every(p=>p[2]>=0&&p[2]<=17));
     const [a,b,c]=triangle.points,ab=b.map((x,i)=>x-a[i]),ac=c.map((x,i)=>x-a[i]);assert.ok(Math.hypot(ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0])>1e-8,'no collapsed triangles');
     if(triangle.kind===12)assert.ok(circles.some(c=>triangle.points.every(p=>inside(p,[...c.ring,c.ring[0]]))),'groundcover crosses a planter boundary');

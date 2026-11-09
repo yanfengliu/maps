@@ -2,6 +2,7 @@ import type {Map as MapLibreMap,LayerSpecification,ExpressionSpecification} from
 import type * as GeoJSON from 'geojson';
 import {publicAsset} from './public-assets.ts';
 import {validateCampusSurfaces} from './campus-surfaces.ts';
+import {resolveRoadMaterials} from './campus-road-materials.ts';
 import {CAMPUS_TRAFFIC_SOURCE,campusTrafficIcons,campusTrafficLayer,validateCampusTraffic,type CampusTrafficData} from './campus-traffic.ts';
 
 export const CAMPUS_ROAD_SOURCE='stanford-road-network';
@@ -54,8 +55,8 @@ export function validateCampusRoadPart(value:unknown,bounds:RoadManifest['bounds
 }
 
 const colors:Record<RoadMaterial,string|ExpressionSpecification>={
-  unknown:['match',['get','unpavedSurface'],'grass','#9aa981',['dirt','ground','compacted'],'#b3a18a',['gravel','fine_gravel'],'#a7a396','sand','#c7baa0','#a8a89c'],
-  asphalt:'#5e615c',concrete:'#c2bfae',pavers:'#a18c82',
+  unknown:['match',['get','unpavedSurface'],'grass','#9aa981',['dirt','ground','earth','compacted'],'#b3a18a',['gravel','fine_gravel','pebblestone'],'#a7a396','woodchips','#a58e70','sand','#c7baa0','#a8a89c'],
+  asphalt:'#5e615c',concrete:'#c2bfae',pavers:['match',['get','surface'],['sett','unhewn_cobblestone','cobblestone'],'#918b7e','#a18c82'],
 };
 // A composite feature+zoom width is clamped to each source tile's zoom..zoom+1
 // by MapLibre's paint binder. Terrain uses mixed tile zooms, so it can produce
@@ -76,7 +77,7 @@ export function campusRoadLayers(widths:readonly {material:RoadMaterial;width:nu
   for(const material of ['unknown','pavers','concrete','asphalt'] as RoadMaterial[]){
     const exactWidths=[...new Set(widths.filter(group=>group.material===material).map(group=>group.width))].sort((a,b)=>a-b);
     const base={source:CAMPUS_ROAD_SOURCE,minzoom:13};
-    const common:ExpressionSpecification=['all',['==',['get','modeledSurface'],material],['!=',['get','pavedAreaId'],'derived/main-quad-paving']];
+    const common:ExpressionSpecification=['all',['==',['coalesce',['get','renderSurface'],['get','modeledSurface']],material],['!=',['get','pavedAreaId'],'derived/main-quad-paving']];
     layers.push({id:`campus-road-${material}-area`,...base,type:'fill',filter:['all',common,['==',['geometry-type'],'Polygon']],paint:{'fill-color':colors[material],'fill-opacity':1,'fill-antialias':false}});
     for(const width of exactWidths)layers.push({id:`campus-road-${material}-line-${width}`,...base,type:'line',filter:['all',common,['==',['geometry-type'],'LineString'],['==',['get','modeledWidth'],width]],layout:{'line-cap':'round','line-join':'round','line-round-limit':1},paint:{'line-color':colors[material],'line-width':roadMetreWidth(width),'line-opacity':1}});
   }
@@ -154,8 +155,8 @@ export class CampusRoadLayer {
       if(Object.keys(counts).some(key=>counts[key as keyof RoadCounts]!==manifest.counts[key as keyof RoadCounts]))throw failure('loaded source counts differ from the manifest');
       const stops=controls.features.filter(f=>f.properties.controlType==='stop').length,signals=controls.features.length-stops,directionUnknown=controls.features.filter(f=>f.properties.directionStatus==='unknown').length;
       if(stops!==manifest.controls.counts.stop||signals!==manifest.controls.counts.traffic_signals||directionUnknown!==manifest.controls.counts.directionUnknown)throw failure('traffic control counts differ from the manifest');
-      const roads:CampusRoadData={type:'FeatureCollection',features};
-      const layers=campusRoadLayers(features.filter(f=>f.geometry.type==='LineString').map(f=>({material:f.properties.modeledSurface,width:f.properties.modeledWidth!})));
+      const roads=resolveRoadMaterials({type:'FeatureCollection',features}).data;
+      const layers=campusRoadLayers(roads.features.filter(f=>f.geometry.type==='LineString').map(f=>({material:f.properties.renderSurface,width:f.properties.modeledWidth!})));
       const plazas:GeoJSON.FeatureCollection={type:'FeatureCollection',features:[]};
       for(const f of surfaces.features)if(f.geometry.type==='Polygon'&&f.properties.kind==='plaza'){
         plazas.features.push(f);

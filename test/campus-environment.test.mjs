@@ -1,4 +1,5 @@
 import {gpuGeometryBytes,GPU_VERTEX_BYTES,MAX_GPU_GEOMETRY_BYTES} from '../src/gpu-geometry.ts';
+import {TREE_MATERIAL,TREE_MATERIAL_KINDS} from '../src/tree-prototypes.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -68,7 +69,7 @@ test('all combined building and environment geometry stays finite within memory-
     if(id<0){
       assert.ok(id===-5||isTerrainObjectId(id),'groundcover is draped and solid objects have a reserved unselectable terrain anchor; selected=-1 is forbidden');
       if(isTerrainObjectId(id))assert.ok(decodeTerrainObjectId(id)<geometry.terrainAnchors.length/2,'every rigid object ID resolves to an actual anchor pair');
-      assert.ok([10,11,12].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
+      assert.ok([10,11,12,...TREE_MATERIAL_KINDS].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
       assert.ok(mesh[i+2]>=0&&mesh[i+2]<=28);environmentVertices++;
     }else{
       assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=(source.features[id].properties.id==='way/324983017'?16:source.features[id].properties.height)+0.0001);
@@ -289,7 +290,7 @@ test('actual emitted palm, broadleaf and conifer silhouettes differ; untagged si
   const one=properties=>({type:'FeatureCollection',features:[{type:'Feature',properties:{id:'node/123',version:1,kind:'tree',...properties},geometry:{type:'Point',coordinates:[-122.1697,37.4278]}}]});
   const make=properties=>buildBuildingGeometry(empty,one(properties));
   const palm=make({species:'Phoenix canariensis'}),broadleaf=make({leaf_type:'broadleaved'}),conifer=make({leaf_type:'needleleaved'});
-  const vertices=g=>{const result=[];for(let i=0;i<g.roofs.length;i+=VERTEX_FLOATS)if(g.roofs[i+11]===10)result.push([...g.roofs.slice(i,i+3)]);return result;};
+  const vertices=g=>{const result=[];for(let i=0;i<g.roofs.length;i+=VERTEX_FLOATS)if([10,TREE_MATERIAL.leaf,TREE_MATERIAL.feather,TREE_MATERIAL.fan,TREE_MATERIAL.needle].includes(g.roofs[i+11]))result.push([...g.roofs.slice(i,i+3)]);return result;};
   const extent=g=>{const points=vertices(g);return {low:Math.min(...points.map(p=>p[2])),high:Math.max(...points.map(p=>p[2])),width:Math.max(...points.map(p=>Math.hypot(p[0],p[1])))};};
   const p=extent(palm),b=extent(broadleaf),c=extent(conifer);
   assert.ok(p.low/p.high>0.68,'palms need a high crown over a tall exposed trunk');
