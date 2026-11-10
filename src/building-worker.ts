@@ -1,5 +1,8 @@
+import {validateCampusRoadManifest,validateCampusRoadPart} from './campus-road-layer.ts';
+import {validateCampusTraffic} from './campus-traffic.ts';
+import type {StopSignInput} from './stop-signs.ts';
 import {validateCampusLandscape} from './campus-landscape.ts';
-import { buildBuildingGeometry, appendCampusSurfaces, appendCampusLandscape, type CampusData } from './building-geometry.ts';
+import { buildBuildingGeometry, appendStopSigns, appendCampusSurfaces, appendCampusLandscape, type CampusData } from './building-geometry.ts';
 import { validateCampusSurfaces } from './campus-surfaces.ts';
 import { validateCampusEnvironment } from './campus-environment.ts';
 import { validateCampusSculptures } from './campus-sculptures.ts';
@@ -16,23 +19,34 @@ async function readLocalInput(file:string,label:string):Promise<unknown> {
   catch{throw new Error(`${label} ${input} is not valid JSON. Restore the pinned input and retry campus detail.`);}
 }
 
+async function readStopSigns():Promise<StopSignInput>{
+  const manifest=validateCampusRoadManifest(await readLocalInput('stanford-surfaces-roads-manifest.json','Stop sign roads'));
+  const [controls,parts]=await Promise.all([
+    readLocalInput(manifest.controls.file,'Stop signs').then(value=>validateCampusTraffic(value,manifest.bounds)),
+    Promise.all(manifest.files.map(part=>readLocalInput(part.file,'Stop sign roads').then(value=>validateCampusRoadPart(value,manifest.bounds))))
+  ]);
+  if(controls.features.filter(f=>f.properties.controlType==='stop').length!==manifest.controls.counts.stop)throw new Error('Physical stop sign count differs from the source manifest.');
+  return {controls,roads:{type:'FeatureCollection',features:parts.flatMap(part=>part.features)}};
+}
+
 self.onmessage = async (event: MessageEvent<{data:CampusData;interior:boolean}>) => {
   try {
     if(event.data.interior){
-      const [surfaces,landscape]=await Promise.all([readLocalInput('stanford-surfaces.geojson','Campus paving').then(validateCampusSurfaces),readLocalInput('stanford-landscape.geojson','Campus landscape').then(validateCampusLandscape)]);
-      const started=performance.now(),geometry=appendCampusLandscape(appendCampusSurfaces(buildChurchInterior(event.data.data),surfaces,'facades'),landscape,'facades');
-      self.postMessage({geometry,buildMs:performance.now()-started},{transfer:[geometry.roofs.buffer,geometry.facades.buffer]});
+      const [surfaces,landscape,traffic]=await Promise.all([readLocalInput('stanford-surfaces.geojson','Campus paving').then(validateCampusSurfaces),readLocalInput('stanford-landscape.geojson','Campus landscape').then(validateCampusLandscape),readStopSigns()]);
+      const started=performance.now(),geometry=appendStopSigns(appendCampusLandscape(appendCampusSurfaces(buildChurchInterior(event.data.data),surfaces,'facades'),landscape,'facades'),traffic,'facades');
+      self.postMessage({geometry,buildMs:performance.now()-started},{transfer:[geometry.roofs.buffer,geometry.facades.buffer,...(geometry.terrainAnchors?[geometry.terrainAnchors.buffer]:[])]});
       return;
     }
-    const [source,sculptureSource,surfaceSource,landscapeSource]=await Promise.all([
+    const [source,sculptureSource,surfaceSource,landscapeSource,traffic]=await Promise.all([
       readLocalInput('stanford-environment.geojson','Campus environment'),
       readLocalInput('stanford-sculptures.geojson','Campus sculpture'),
       readLocalInput('stanford-surfaces.geojson','Campus paving'),
-      readLocalInput('stanford-landscape.geojson','Campus landscape')
+      readLocalInput('stanford-landscape.geojson','Campus landscape'),
+      readStopSigns()
     ]);
     const environment=validateCampusEnvironment(source),sculptures=validateCampusSculptures(sculptureSource);
     const started=performance.now();
-    const geometry = buildBuildingGeometry(event.data.data,environment,sculptures,validateCampusSurfaces(surfaceSource),validateCampusLandscape(landscapeSource));
+    const geometry = appendStopSigns(buildBuildingGeometry(event.data.data,environment,sculptures,validateCampusSurfaces(surfaceSource),validateCampusLandscape(landscapeSource)),traffic);
     self.postMessage({ geometry, buildMs: performance.now() - started }, { transfer: [geometry.roofs.buffer, geometry.facades.buffer,...(geometry.terrainAnchors?[geometry.terrainAnchors.buffer]:[])] });
   } catch (error) {
     self.postMessage({ error: error instanceof Error ? error.message : 'Campus geometry generation failed.' });

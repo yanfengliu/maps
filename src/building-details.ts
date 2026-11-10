@@ -1,3 +1,5 @@
+import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
+import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
 import {LANDSCAPE_HELPERS,LANDSCAPE_FRAGMENT} from './campus-landscape-materials.ts';
 import {TREE_HELPERS,TREE_FRAGMENT} from './tree-materials.ts';
 import {emptyLandscapeCounts,type LandscapeCounts} from './campus-landscape.ts';
@@ -37,6 +39,7 @@ export interface BuildingDetailStats {
   sculptures: SculptureCounts;
   surfaces: SurfaceCounts;
   landscape: LandscapeCounts;
+  traffic: StopSignCounts;
   /** CPU geometry generation runs in the dedicated worker. */
   buildMs: number;
   /** Longest observed main-thread shader, upload, or ceiling-sort slice. */
@@ -121,6 +124,7 @@ out vec4 outColor;
 ${STADIUM_FIELD_HELPERS}
 ${LANDSCAPE_HELPERS}
 ${TREE_HELPERS}
+${STOP_SIGN_HELPERS}
 void main() {
   if(u_groundPass>0.5?v_groundSurface<0.5:(u_drapeGround>0.5&&v_groundSurface>0.5))discard;
   if(v_terrainAvailable<0.999)discard;
@@ -282,6 +286,7 @@ ${SURFACE_FRAGMENT}
 ${HOOVER_FRAGMENT}
 ${LANDSCAPE_FRAGMENT}
 ${TREE_FRAGMENT}
+  ${STOP_SIGN_FRAGMENT}
   if(abs(v_kind-29.0)<0.1 && v_color.r>v_color.g*1.5){
     // Long timber boards remain legible through the ghosted ceiling surface.
     float boards=v_uv.x/0.24,aa=max(fwidth(boards),0.002);
@@ -403,7 +408,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
-  const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0,terrainTextureBytes:0,terrainStatus:'disabled',terrainOffscreenDrawCalls:0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
+  const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0,terrainTextureBytes:0,terrainStatus:'disabled',terrainOffscreenDrawCalls:0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(),traffic:emptyStopSignCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const photos = new ChurchTextures(() => map?.triggerRepaint());
   let groundRevision=0;
   const grounding=new TerrainGrounding(data,()=>{groundRevision++;map?.triggerRepaint();},loadElevationGrid);
@@ -482,7 +487,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   return {
     id: 'stanford-architectural-details', type: 'custom', renderingMode: '3d',
     groundLayer,
-    get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}) }); },
+    get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}),traffic:Object.freeze({...state.traffic}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
     setInterior(enabled) {
       if(interior===enabled)return;
@@ -490,7 +495,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
       // Only one mesh pair is GPU-resident. Keep the shared program warm and
       // discard even a partial upload before replacing the campus with a room.
       releaseMeshes();pending=(interior?cachedInterior:cachedGeometry).get(data);
-      Object.assign(state,{mode:interior?'church-interior':'campus',ceiling:false,buildingCount:interior?1:data.features.length,roofTriangles:0,facadeTriangles:0,triangles:0,bytes:0,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(),buildMs:0,uploadMs:0,uploadSlices:0,uploadWallMs:0,drawCalls:0,lastDrawDetail:'none',error:null});
+      Object.assign(state,{mode:interior?'church-interior':'campus',ceiling:false,buildingCount:interior?1:data.features.length,roofTriangles:0,facadeTriangles:0,triangles:0,bytes:0,environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(),traffic:emptyStopSignCounts(),buildMs:0,uploadMs:0,uploadSlices:0,uploadWallMs:0,drawCalls:0,lastDrawDetail:'none',error:null});
       map?.triggerRepaint();
     },
     setCeiling(visible) { state.ceiling=interior&&visible;map?.triggerRepaint(); },
@@ -558,7 +563,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
           if(interior)transparentCeiling=ceilingOrder(pending.geometry.roofs);
           const elapsed=performance.now()-started;state.uploadMs+=elapsed;state.maxSliceMs=Math.max(state.maxSliceMs,elapsed);
           Object.assign(state, { ready: true, roofTriangles: pending.geometry.roofTriangles, facadeTriangles: pending.geometry.facadeTriangles,
-            triangles: pending.geometry.triangles, bytes: gpuGeometryBytes(pending.geometry.roofs)+gpuGeometryBytes(pending.geometry.facades), environment:pending.geometry.environment,sculptures:pending.geometry.sculptures,surfaces:pending.geometry.surfaces??emptySurfaceCounts(),landscape:pending.geometry.landscape??emptyLandscapeCounts(), buildMs: pending.buildMs });
+            triangles: pending.geometry.triangles, bytes: gpuGeometryBytes(pending.geometry.roofs)+gpuGeometryBytes(pending.geometry.facades), environment:pending.geometry.environment,sculptures:pending.geometry.sculptures,surfaces:pending.geometry.surfaces??emptySurfaceCounts(),landscape:pending.geometry.landscape??emptyLandscapeCounts(),traffic:pending.geometry.traffic??emptyStopSignCounts(), buildMs: pending.buildMs });
           groundRevision++;map.triggerRepaint();
         } catch (error) { fail(error instanceof Error ? error.message : 'Campus GPU detail could not initialize.'); return; }
       }

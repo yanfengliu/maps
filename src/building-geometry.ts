@@ -1,3 +1,4 @@
+import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
 import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
 import {roofTriangleUV} from './roof-materials.ts';
 import earcut from 'earcut';
@@ -125,6 +126,7 @@ export interface DetailGeometry {
   /** Local x/y pairs for rigid furniture/sculpture origins, indexed by IDs <= -1000. */
   terrainAnchors?:Float32Array;
   surfaces?: SurfaceCounts;
+  traffic?: StopSignCounts;
   landscape?: LandscapeCounts;
   churchTextures?: boolean;
   roofs: Float32Array;
@@ -346,6 +348,15 @@ export function appendCampusLandscape(geometry:DetailGeometry,landscape:CampusLa
   if(geometry.triangles+additional>MAX_DETAIL_TRIANGLES)throw new Error('Campus landscape exceeds the shared geometry budget.');
   const combined=new Float32Array(geometry[target].length+mesh.values.length);combined.set(geometry[target]);combined.set(mesh.values,geometry[target].length);
   return {...geometry,[target]:combined,landscape:counts,roofTriangles:geometry.roofTriangles+(target==='roofs'?additional:0),facadeTriangles:geometry.facadeTriangles+(target==='facades'?additional:0),triangles:geometry.triangles+additional,bytes:geometry.bytes+mesh.values.length*4};
+}
+
+export function appendStopSigns(geometry:DetailGeometry,input:StopSignInput,target:'roofs'|'facades'='roofs'):DetailGeometry {
+  const mesh=new Mesh(),anchors=Array.from(geometry.terrainAnchors??[]);
+  const traffic=addStopSigns(mesh,stopSignPlacements(input,projectLocal),point=>{const id=-1000-anchors.length/2;anchors.push(...point);return id;});
+  const additional=mesh.values.length/VERTEX_FLOATS/3;
+  if(geometry.triangles+additional>MAX_DETAIL_TRIANGLES)throw new Error('Physical stop signs exceed the shared geometry budget.');
+  const combined=new Float32Array(geometry[target].length+mesh.values.length);combined.set(geometry[target]);combined.set(mesh.values,geometry[target].length);
+  return {...geometry,[target]:combined,terrainAnchors:new Float32Array(anchors),traffic,roofTriangles:geometry.roofTriangles+(target==='roofs'?additional:0),facadeTriangles:geometry.facadeTriangles+(target==='facades'?additional:0),triangles:geometry.triangles+additional,bytes:geometry.bytes+mesh.values.length*4};
 }
 
 export function buildBuildingGeometry(data: CampusData,environment?:CampusEnvironment,sculptures?:CampusSculptures,surfaces?:CampusSurfaces,landscape?:CampusLandscape): DetailGeometry {

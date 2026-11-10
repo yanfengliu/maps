@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-09: **Rendered stop signs as physical roadside objects.** — 296 fixed octagonal faces, metal backs and posts replace 306 camera-facing icons without duplicating intersection records; terrain anchors, source directions and estimated placement limits are retained. [Design and evidence](../work/0_bay-area-stanford/design.md#physical-stop-signs--2026-11-09).
+
 - 2026-11-09: **Removed competing native caps from ready flat-roof models.** — Complete terrain-grounded shells cover all 84 generic flat buildings, including short returns and courtyard walls; native fallback and picking remain available. Hospital architectural refinement remains open. [Evidence and limits](detailed/2026-11-08_2026-11-09.md#hospital-terrain-cap-seam).
 
 - 2026-11-09: **Removed false pavement color breaks caused by missing surface data.** — All 2,080 unresolved missing/generic material records use a shared neutral route tone; documented material distinctions and original evidence remain intact. The previous three bounded inferences remain separate. [Evidence and limits](detailed/2026-11-08_2026-11-09.md#unknown-material-color-follow-up).

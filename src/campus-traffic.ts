@@ -7,8 +7,8 @@ export const CAMPUS_SIGNAL_ICON='stanford-control-signal';
 export interface TrafficProperties {id:string;version:number;kind:'traffic-control';controlType:'stop'|'traffic_signals';placement:'road-control-point';physicalPoleVerified:false;directionStatus:'unknown'|'source-tagged';[key:string]:unknown}
 export type CampusTrafficData=GeoJSON.FeatureCollection<GeoJSON.Point,TrafficProperties>;
 
-/** These are source regulatory locations. Do not turn them into invented pole
- * footprints, traffic directions or a claimed current red/amber/green state. */
+/** Source regulatory locations stay unchanged. Physical stop-sign offsets and
+ * uncertain facing are separately labeled estimates, never a pole survey. */
 export function validateCampusTraffic(value:unknown,bounds:readonly number[]):CampusTrafficData {
   const data=value as CampusTrafficData,ids=new Set<string>();
   const bad=()=>new Error('Campus traffic controls contain invalid mapped regulatory points. Retry to reload the pinned road data.');
@@ -38,7 +38,7 @@ export function campusTrafficIcons(){
 }
 
 export function campusTrafficLayer():LayerSpecification {
-  return {id:'campus-traffic-controls',type:'symbol',source:CAMPUS_TRAFFIC_SOURCE,minzoom:17,
+  return {id:'campus-traffic-controls',type:'symbol',source:CAMPUS_TRAFFIC_SOURCE,minzoom:17,filter:['==',['get','controlType'],'traffic_signals'],
     layout:{'icon-image':['match',['get','controlType'],'stop',CAMPUS_STOP_ICON,CAMPUS_SIGNAL_ICON],'icon-size':['interpolate',['linear'],['zoom'],17,.65,20,.9,24,1.1],'icon-anchor':'center','icon-pitch-alignment':'viewport','icon-rotation-alignment':'viewport','icon-allow-overlap':false,'icon-ignore-placement':false,'icon-padding':3},
     metadata:{description:'Mapped regulatory points; symbols do not assert physical pole positions, orientations or live signal states.'},
   };

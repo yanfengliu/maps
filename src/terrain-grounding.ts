@@ -8,6 +8,9 @@ import {loadCampusElevation,type ElevationGridLoader,type MercatorBounds} from '
  * 3DEP/NED, GMTED/SRTM and NOAA ETOPO1 rather than every global contributor. */
 export const BAY_TERRAIN_BOUNDS:[number,number,number,number]=[-123.6,36.7,-121.0,39.0];
 export const TERRAIN_SOURCE_ID='bay-area-terrain';
+// Pinned stop-control extent plus a 20 m roadside-placement margin. Buildings
+// alone omit southern campus roads. The union still uses the same 16 DEM tiles.
+export const STOP_CONTROL_BOUNDS:readonly number[]=[-122.1847,37.4153,-122.1551,37.4424];
 export const TERRAIN_SIZE=256;
 export const MAX_TERRAIN_ANCHORS=16384;
 export const MAX_TERRAIN_TEXTURE_BYTES=TERRAIN_SIZE*TERRAIN_SIZE*16+MAX_TERRAIN_ANCHORS*8;
@@ -131,6 +134,7 @@ export class TerrainGrounding {
     this.data=data;this.changed=changed;this.loadGrid=loadGrid;this.grid=elevationGrids.get(data);
     this.buildings=buildingTerrainAnchors(data);
     const points=data.features.flatMap(f=>(f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates).flatMap(p=>p[0].map(projectLocal)));
+    points.push(projectLocal(STOP_CONTROL_BOUNDS.slice(0,2)),projectLocal(STOP_CONTROL_BOUNDS.slice(2,4)));
     const x=points.map(p=>p[0]),y=points.map(p=>p[1]);
     this.bounds=points.length?[Math.min(...x)-150,Math.min(...y)-150,Math.max(...x)+150,Math.max(...y)+150]:[-2000,-2000,2000,2000];
     for(let i=0;i<this.buildings.length;i+=2){
