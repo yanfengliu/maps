@@ -235,10 +235,11 @@ test('context restoration waits for the replacement style, then installs while r
 test('fast shared-input retry and healthy cached payload wait for replacement style parsing',async()=>{
  for(const failed of [false,true]){
   const {files}=bundle();let broken=failed,requests=0;
-  const map=fakeMap(),owner=new CampusRoadLayer({fetcher:url=>{requests++;return broken?Promise.resolve(new Response('Unavailable',{status:503})):loader(files)(url);}});
+  const notifications=[],map=fakeMap(),owner=new CampusRoadLayer({onChange:stats=>notifications.push(stats),fetcher:url=>{requests++;return broken?Promise.resolve(new Response('Unavailable',{status:503})):loader(files)(url);}});
   try{
    owner.attach(map);await settled(owner);if(!failed)ready(map);
-   const oldRequests=requests;owner.prepareForStyleReload();broken=false;if(failed)owner.retry();
+   notifications.length=0;const oldRequests=requests;owner.prepareForStyleReload();broken=false;if(failed)owner.retry();
+   assert.ok(notifications.every(s=>s.error===null),'recovery must not republish a dismissed error banner');
    map.loaded=false;map.sources.clear();map.layers.clear();map.ready.clear();map.images.clear();
    let parsed=false;const add=map.addSource.bind(map);map.addSource=(...args)=>{assert.ok(parsed,'source mutation before replacement style.load');add(...args);};
    await settled(owner);assert.equal(owner.stats.dataReady,true);assert.equal(owner.stats.error,null);assert.equal(owner.stats.ready,false);assert.equal(map.sources.size,0);
