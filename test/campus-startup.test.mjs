@@ -29,7 +29,7 @@ test('early campus data waits for style parsing, and lost/retried styles cannot 
  handlers.webglcontextlost();assert.equal(context.styleAvailable,false);
  await runInNewContext(`${body('loadCampus')}\nloadCampus()`,context);assert.equal(context.attached,1);
  handlers['style.load']();assert.equal(context.attached,2);
- Object.assign(context,{el:()=>({}),scheduleLoadDeadline(){},createStyle:()=>({}),campusRoads:{stats:{error:null}}});
+ Object.assign(context,{el:()=>({}),scheduleLoadDeadline(){},createStyle:()=>({}),campusRoads:{stats:{error:null},prepareForStyleReload(){}}});
  context.map.setStyle=()=>assert.equal(context.styleAvailable,false,'reset before native style replacement');
  runInNewContext(`${body('reloadRegionalMap')}\nreloadRegionalMap()`,context);
  assert.equal(context.styleAvailable,false);
@@ -37,9 +37,9 @@ test('early campus data waits for style parsing, and lost/retried styles cannot 
 
 test('shared-input Retry recovers failed roads and rebuilds detail regardless of which owner reported last',()=>{
  for(const failedRoads of [false,true]){
-  const calls=[],context={campusRoads:{stats:{error:failedRoads?'Controls HTTP 503':null},retry:()=>calls.push('roads')},el:()=>({}),scheduleLoadDeadline(){},createStyle:()=>({}),map:{setStyle:(_style,options)=>{assert.equal(options.diff,false);calls.push('detail');}}};
+  const calls=[],context={campusRoads:{stats:{error:failedRoads?'Controls HTTP 503':null},prepareForStyleReload:()=>calls.push('invalidate'),retry:()=>calls.push('roads')},el:()=>({}),scheduleLoadDeadline(){},createStyle:()=>({}),map:{setStyle:(_style,options)=>{assert.equal(options.diff,false);calls.push('detail');}}};
   runInNewContext(`${body('reloadRegionalMap')}\nreloadRegionalMap()`,context);
-  assert.deepEqual(calls,failedRoads?['roads','detail']:['detail']);
+  assert.deepEqual(calls,failedRoads?['invalidate','roads','detail']:['invalidate','detail']);
  }
  assert.match(source,/if\(stats\.error\)showError\(stats\.error,reloadRegionalMap\)/,'road failures must use the shared recovery callback');
  assert.match(source,/createBuildingDetailsLayer\(campusData,[^\n]+reloadRegionalMap\)/,'detail failures must use the same recovery callback');

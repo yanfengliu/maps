@@ -131,6 +131,7 @@ export class CampusRoadLayer {
     }
     this.beforeId=beforeId;this.install();if(!this.payload&&!this.abort&&!this.state.error)void this.load();
   }
+  prepareForStyleReload():void {if(this.dead)return;this.styleAvailable=false;this.state.ready=false;this.notify();}
   retry():void {if(this.dead)return;this.abort?.abort();this.generation++;this.abort=null;this.removeLayers();this.payload=null;this.state=emptyStats();this.notify();void this.load();}
   destroy():void {if(this.dead)return;this.dead=true;this.abort?.abort();this.abort=null;this.generation++;this.detach();this.payload=null;this.state={...this.state,dataReady:false,ready:false};}
   private detach(removeResources=true){const map=this.map;if(!map)return;map.off('style.load',this.styleReady);map.off('sourcedata',this.sourceReady);map.off('sourcedataabort',this.sourceReady);map.off('idle',this.idleReady);map.off('error',this.sourceError);map.off('remove',this.mapRemoved);map.off('webglcontextlost',this.contextLost);map.off('webglcontextrestored',this.contextRestored);if(removeResources)this.removeLayers();this.map=null;}

@@ -152,3 +152,5 @@ The owner requests physical stop-sign objects. A screen-space icon does not have
 ## 2026-11-09 — Shared traffic input recovery and compass-facing semantics
 
 Review35 found two numeric compass tags interpreted as travel rather than sign-face bearings, with lexicographic road selection assigning one sign to the crossing road. Source-node regressions now require opposite travel vectors and the aligned incoming Arguello road, including its actual retained width. Native failure injection also found that shared controls-file failure left roads failed after the detail Retry rebuilt its owner. Both error callbacks now invoke shared recovery; regressions require failed roads to retry before the style/detail rebuild and preserve healthy road data. The native 503/Retry probe must restore both owners.
+
+Review35 additionally reproduced fast successful road downloads racing the deferred replacement-style parse. Explicit style-readiness invalidation now precedes both retry and replacement; a regression checks failed and healthy cached owners, forbids premature source mutation, then requires recovery at style.load.
