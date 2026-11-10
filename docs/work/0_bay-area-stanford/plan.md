@@ -296,3 +296,9 @@ Native inspection identified ten stop=all intersection records that overlap deta
 
 
 All 311 tests, types, Pages-base build, audit (zero vulnerabilities) and document checks pass. Eleven initial native captures cover four locations, front/back/oblique, phone, graphics recovery, church context/return and WASD. Review35 found two numeric compass bearings reversed and one associated crossing road selected incorrectly; final exact 80fa985 corrects the semantics and picks the aligned incoming road. Five additional original-resolution native captures verify both corrected signs front/back and a random 284-degree bearing/56-degree tilt. Root also reproduced shared controls-file HTTP 503 recovery leaving roads failed; both error callbacks now retry failed roads and rebuild detail together, and actual Retry restores both owners and all 296 signs. No app/GL errors in the visual gallery; the failure probe contains its intentional HTTP 503. Independent recheck and live publication follow.
+
+
+Review35 additionally reproduced cached road input arriving before the replacement style parsed. Explicit owner invalidation now precedes recovery; the regression covers failed and healthy cached payload without premature source mutation or unnecessary refetch. The preparation callback also suppresses re-emitting a dismissed prior error. All 312 tests/types/build/audit pass at final 01f7792. Native Retry restores both owners and all signs with an empty error list and hidden alert. Model geometry is unchanged from the inspected galleries; final review confirmation follows.
+
+
+Independent [review35](reviews/35_implementation.md) accepts exact 01f7792765e2801f99edbb15a6f5a71b4c0907fc with no remaining actionable findings, after rerunning twenty focused tests and confirming the final native recovery capture. Root proceeds to main publication and local/public actual-control checks.
