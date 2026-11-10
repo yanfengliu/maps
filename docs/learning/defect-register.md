@@ -147,3 +147,8 @@ The owner marked a broad beige/blue hospital roof split. Native magenta diagnost
 ## 2026-11-09 — Stop controls rendered as camera-facing icons
 
 The owner requests physical stop-sign objects. A screen-space icon does not have a ground-contact post, fixed orientation, back side or physical scale. The mapped controls now use 296 rigid metre-scale post/plate assemblies; ten overlapping all-way intersection records remain metadata on source-directed approach signs in the terrain-grounded geometry; native STOP symbols are excluded so they cannot appear over the objects. Whole-class regressions cover all 306 mapped identities, ten redundant junction controls, fixed plate normals, closed post cross-sections, mounting dimensions, source-derived versus estimated facing, roadside offsets, terrain coverage, unchanged source evidence and campus/church load failures with retry. Native front/back/oblique, phone and graphics recovery checks must verify pixels before acceptance. Pole placement/count remain interpretations, not a field survey.
+
+
+## 2026-11-09 — Shared traffic input recovery and compass-facing semantics
+
+Review35 found two numeric compass tags interpreted as travel rather than sign-face bearings, with lexicographic road selection assigning one sign to the crossing road. Source-node regressions now require opposite travel vectors and the aligned incoming Arguello road, including its actual retained width. Native failure injection also found that shared controls-file failure left roads failed after the detail Retry rebuilt its owner. Both error callbacks now invoke shared recovery; regressions require failed roads to retry before the style/detail rebuild and preserve healthy road data. The native 503/Retry probe must restore both owners.

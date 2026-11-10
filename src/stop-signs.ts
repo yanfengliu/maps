@@ -19,14 +19,30 @@ export function stopSignPlacements(input:StopSignInput,project:(p:readonly numbe
   const roads=new Map(input.roads.features.map(f=>[f.properties.id,f]));
   const placements:StopSignPlacement[]=input.controls.features.filter(f=>f.properties.controlType==='stop').map(f=>{
     const p=f.properties,source=project(f.geometry.coordinates),node=p.id.replace(/^node\//,'');
+    const raw=String(p['stop:direction']??p.direction??'');
+    const compass=raw.trim()!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0&&Number(raw)<=360;
+    // Cardinal direction is the face bearing; forward/backward instead tags
+    // affected vehicle travel. Select the aligned incoming road at junctions.
+    const angle=Number(raw)*Math.PI/180,compassTravel:Point=[-Math.sin(angle),-Math.cos(angle)];
     const candidates=(Array.isArray(p.retainedWayIds)?p.retainedWayIds:[]).map(id=>roads.get(String(id))).filter(r=>r?.geometry.type==='LineString').sort((a,b)=>String(a!.properties.id).localeCompare(String(b!.properties.id)));
+    if(compass){
+      const score=(road:NonNullable<typeof candidates[number]>)=>{
+        if(road.geometry.type!=='LineString')return -2;
+        const index=road.properties.sourceNodeIds.findIndex(id=>id.replace(/^node\//,'')===node),points=road.geometry.coordinates,oneway=String(road.properties.oneway??'no'),scores:number[]=[];
+        for(const next of [index-1,index+1]){
+          if(next<0||next>=points.length||index<0||(next>index&&['yes','1','true'].includes(oneway))||(next<index&&oneway==='-1'))continue;
+          const other=project(points[next]),dx=source[0]-other[0],dy=source[1]-other[1],length=Math.hypot(dx,dy);
+          if(length>1e-6)scores.push((dx*compassTravel[0]+dy*compassTravel[1])/length);
+        }
+        return Math.max(-2,...scores);
+      };
+      candidates.sort((a,b)=>score(b!)-score(a!));
+    }
     const road=candidates[0];
     if(!road||road.geometry.type!=='LineString')throw new Error(`Stop sign ${p.id} has no retained road for physical placement.`);
     const index=road.properties.sourceNodeIds.findIndex(id=>id.replace(/^node\//,'')===node),points=road.geometry.coordinates;
     if(index<0)throw new Error(`Stop sign ${p.id} is disconnected from its source road.`);
-    const raw=String(p['stop:direction']??p.direction??'');
     const knownRelative=(raw==='forward'||raw==='backward')&&candidates.length===1;
-    const compass=raw.trim()!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0&&Number(raw)<=360;
     // Select the incoming segment when direction is known, retaining way order.
     const backward=raw==='backward'||(!knownRelative&&index===0);
     const a=project(points[backward?index:Math.max(0,index-1)]),b=project(points[backward?Math.min(points.length-1,index+1):index]);
@@ -34,7 +50,7 @@ export function stopSignPlacements(input:StopSignInput,project:(p:readonly numbe
     if(Math.hypot(dx,dy)<1e-6){const start=project(points[Math.max(0,index-1)]),end=project(points[Math.min(points.length-1,index+1)]);dx=end[0]-start[0];dy=end[1]-start[1];}
     const length=Math.hypot(dx,dy);if(length<1e-6)throw new Error(`Stop sign ${p.id} has a zero-length road direction.`);
     let travel:Point=[dx/length*(backward?-1:1),dy/length*(backward?-1:1)];
-    if(compass){const angle=Number(raw)*Math.PI/180;travel=[Math.sin(angle),Math.cos(angle)];}
+    if(compass)travel=compassTravel;
     const roadWidth=Number(road.properties.modeledWidth);
     if(!Number.isFinite(roadWidth)||roadWidth<=0)throw new Error(`Stop sign ${p.id} has no finite road width.`);
     const offset=roadWidth/2+STOP_SIGN.shoulder;

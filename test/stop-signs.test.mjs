@@ -30,17 +30,27 @@ test('every mapped stop has a finite independent object placement; original coor
  assert.deepEqual(campusTrafficLayer().filter,['==',['get','controlType'],'traffic_signals'],'no camera-facing STOP icon over physical models');
 });
 
-test('forward, backward and compass travel face approaching traffic; ambiguous junctions retain estimated status',()=>{
+test('relative travel and compass face bearings orient signs toward approaching traffic; ambiguous junctions retain estimated status',()=>{
  const road=(id,points)=>({type:'Feature',properties:{id,modeledWidth:6,sourceNodeIds:points.map((_,i)=>String(i+1))},geometry:{type:'LineString',coordinates:points}});
  const roads={type:'FeatureCollection',features:[road('way/1',[[0,-10],[0,0],[0,10]])]};
  const feature=direction=>({type:'Feature',properties:{id:'node/2',controlType:'stop',direction,retainedWayIds:['way/1']},geometry:{type:'Point',coordinates:[0,0]}});
  const result=direction=>stopSignPlacements({roads,controls:{features:[feature(direction)]}},p=>[...p])[0];
  assert.deepEqual(result('forward').travel,[0,1]);assert.deepEqual(result('forward').position,[3.6,0]);
  assert.ok(result('backward').travel[1]===-1);assert.equal(result('backward').position[0],-3.6);
- assert.ok(Math.abs(result('90').travel[0]-1)<1e-12);assert.equal(result(undefined).facingEvidence,'estimated-road-direction');
+ assert.ok(Math.abs(result('90').travel[0]+1)<1e-12,'compass face east means vehicles travel west');assert.equal(result(undefined).facingEvidence,'estimated-road-direction');
  const f=feature();f.properties.retainedWayIds.push('way/2');roads.features.push(road('way/2',[[-10,0],[0,0],[10,0]]));
  const junction=stopSignPlacements({roads,controls:{features:[f]}},p=>[...p])[0];assert.equal(junction.setback,4);assert.deepEqual(junction.position,[3.6,-4]);
  assert.throws(()=>stopSignPlacements({roads:{features:[]},controls:{features:[f]}},p=>[...p]),/no retained road/);
+});
+
+test('real Arguello compass signs face opposing traffic and use the aligned incoming road width',()=>{
+ for(const [id,expectedRoad,heading,width] of [['node/256558437','way/663770748',20,4.1],['node/354801007','way/663770756',200,7.4]]){
+  const sign=placements.find(s=>s.id===id);assert.ok(sign);assert.equal(sign.roadId,expectedRoad);
+  assert.ok(Math.abs(sign.travel[0]-Math.sin(heading*Math.PI/180))<1e-12);
+  assert.ok(Math.abs(sign.travel[1]-Math.cos(heading*Math.PI/180))<1e-12);
+  assert.ok(Math.abs(sign.roadWidth-width)<1e-12);assert.equal(sign.facingEvidence,'source-direction');
+  const offset=sign.position.map((x,i)=>x-sign.source[i]);assert.ok(offset[0]*sign.travel[0]+offset[1]*sign.travel[1]<0,'post is upstream of intersection');
+ }
 });
 
 test('stop objects have vertical volume, front-facing fixed plates, real-world scale and rigid terrain anchors',()=>{

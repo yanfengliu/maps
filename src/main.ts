@@ -360,7 +360,7 @@ function addBuildingDetailLayer(): void {
 
 const quadArcadeVisibility=createQuadArcadeVisibility();
 const campusRoads=new CampusRoadLayer({onChange:stats=>{
-  if(stats.error)showError(stats.error,()=>campusRoads.retry());
+  if(stats.error)showError(stats.error,reloadRegionalMap);
 }});
 
 function addCampusLayers(): void {
@@ -415,6 +415,9 @@ function scheduleLoadDeadline(): void {
 }
 
 function reloadRegionalMap(): void {
+  // Roads and physical signs share pinned inputs. One Retry must recover both
+  // owners regardless of which asynchronous error reached the banner last.
+  if(campusRoads.stats.error)campusRoads.retry();
   styleAvailable = false;
   tileErrorShown = false;
   successfulRegionalTiles = 0;
