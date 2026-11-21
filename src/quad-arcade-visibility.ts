@@ -42,6 +42,8 @@ export function createQuadArcadeVisibility(){
         map.setPaintProperty('stanford-roofs','fill-extrusion-base',capBase);
         map.setPaintProperty('stanford-roofs','fill-extrusion-height',['+',capBase,0.05]);
       }
+      if(map.getLayer('stanford-building-picking'))map.setPaintProperty('stanford-building-picking','fill-extrusion-height',
+        flatShell?['coalesce',['get','detailPodiumHeight'],['get','detailRoofHeight']]:['get','detailRoofHeight']);
       map.getCanvas().dataset.campusDetailReady=String(detailed);
       map.getCanvas().dataset.flatShellReady=String(flatShell);
     },

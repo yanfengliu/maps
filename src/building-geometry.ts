@@ -19,6 +19,7 @@ import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadi
 import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
 import { referenceGarageHeight } from './garage-architecture.ts';
 import { addGarage } from './garage-geometry.ts';
+import { podiumHeight } from './hospital-exteriors.ts';
 import { PASTEUR_300_ID, PASTEUR_POD_TOP } from './pasteur-pods.ts';
 import { addHospitalExterior, addPasteurPods } from './hospital-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
@@ -73,6 +74,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
     const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
+    const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
     if(quad && quadParts.length){
       if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
@@ -80,6 +82,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
+      ...(podium===undefined?{}:{detailPodiumHeight:podium}),
       ...(p?.id===PASTEUR_300_ID?{detailPodMaximum:PASTEUR_POD_TOP}:{}),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
       ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };

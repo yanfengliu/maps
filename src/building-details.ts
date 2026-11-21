@@ -1,4 +1,4 @@
-import { PASTEUR_300_ID, hitsPasteurPod } from './pasteur-pods.ts';
+import { hospitalSurfacePicker } from './hospital-picking.ts';
 import { HOSPITAL_FRAGMENT } from './hospital-materials.ts';
 import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
 import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
@@ -64,7 +64,7 @@ export interface BuildingDetailsLayer extends CustomLayerInterface {
    * It shares the two geometry buffers and paints only ground into native DEM tiles. */
   readonly groundLayer:CustomLayerInterface;
   setSelected(id: string | null): void;
-  pickPasteurPod(point:{x:number;y:number}): Record<string,unknown>|null;
+  pickHospital(point:{x:number;y:number}): Record<string,unknown>|null;
   setInterior(enabled: boolean): void;
   setCeiling(visible: boolean): void;
   readonly stats: Readonly<BuildingDetailStats>;
@@ -418,6 +418,7 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
   let pending = cachedGeometry.get(data);
   const uniforms: Record<string, WebGLUniformLocation | null> = {};
   const matrix = new Float32Array(16);
+  let hospitalPicker:ReturnType<typeof hospitalSurfacePicker>|undefined;
   const indices = new Map(data.features.map((feature, index) => [String(feature.properties?.id), index]));
   const state: BuildingDetailStats = { mode:'campus', ceiling:false, ready: false, buildingCount: data.features.length, roofTriangles: 0, facadeTriangles: 0, triangles: 0, bytes: 0, textureBytes: 0,terrainTextureBytes:0,terrainStatus:'disabled',terrainOffscreenDrawCalls:0, environment:emptyEnvironmentCounts(),sculptures:emptySculptureCounts(),surfaces:emptySurfaceCounts(),landscape:emptyLandscapeCounts(),traffic:emptyStopSignCounts(), buildMs: 0, maxSliceMs: 0, shaderReady: false, compileMs: 0, uploadMs: 0,uploadSlices:0,uploadWallMs:0, drawCalls: 0, lastDrawDetail: 'none', error: null };
   const photos = new ChurchTextures(() => map?.triggerRepaint());
@@ -500,14 +501,13 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     groundLayer,
     get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}),traffic:Object.freeze({...state.traffic}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
-    pickPasteurPod(point) {
-      const index=indices.get(PASTEUR_300_ID);
-      if(index===undefined||!map||interior||!state.drawCalls||state.error)return null;
-      const datum=grounding.buildingDatum(index);
+    pickHospital(point) {
+      if(!map||interior||!pending||!state.drawCalls||state.error)return null;
       const {clientWidth,clientHeight}=map.getCanvas();
-      if(datum===null||!clientWidth||!clientHeight)return null;
-      const hit=hitsPasteurPod([2*point.x/clientWidth-1,1-2*point.y/clientHeight],matrix,datum,projectLocal);
-      return hit?data.features[index].properties:null;
+      if(!clientWidth||!clientHeight)return null;
+      hospitalPicker??=hospitalSurfacePicker(data,pending.geometry.roofs);
+      const hit=hospitalPicker([2*point.x/clientWidth-1,1-2*point.y/clientHeight],matrix,i=>grounding.buildingDatum(i),(x,y)=>grounding.groundDatum(x,y));
+      return hit?data.features[indices.get(hit)!].properties:null;
     },
     setInterior(enabled) {
       if(interior===enabled)return;

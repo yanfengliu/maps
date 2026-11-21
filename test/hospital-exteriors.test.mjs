@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { prepareBuildingDetails, buildBuildingGeometry, projectLocal, VERTEX_FLOATS } from '../src/building-geometry.ts';
-import { PASTEUR_300_ID, PASTEUR_POD_TOP, PASTEUR_POD_LAYER, PASTEUR_TIERS, hitsPasteurPod, pasteurFallbackData } from '../src/pasteur-pods.ts';
+import { PASTEUR_300_ID, PASTEUR_POD_TOP, PASTEUR_POD_LAYER, PASTEUR_TIERS, pasteurFallbackData } from '../src/pasteur-pods.ts';
+import { hospitalSurfacePicker, selectHospitalSurface } from '../src/hospital-picking.ts';
 import { attachPasteurPods } from '../src/pasteur-pods-layer.ts';
 import { createQuadArcadeVisibility } from '../src/quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS } from '../src/building-picking.ts';
@@ -168,16 +169,40 @@ test('the bounded pod layer supplies fallback on reload and remains queryable ac
 });
 
 
-test('oblique roof picking follows only the visible pod surfaces and their shared elevation',()=>{
-  const matrix=new Float32Array(16);
-  matrix[0]=matrix[5]=.01;matrix[9]=.04;matrix[15]=1;
-  const datum=18,center=PASTEUR_TIERS[1].outline.map(projectLocal).reduce(([x,y],[a,b])=>[x+a/4,y+b/4],[0,0]);
-  const project=([x,y,z])=>[x*.01,y*.01+z*.04];
-  const roof=project([...center,datum+PASTEUR_POD_TOP]);
-  assert.ok(hitsPasteurPod(roof,matrix,datum,projectLocal));
-  assert.equal(hitsPasteurPod(roof,matrix,0,projectLocal),false,'ignoring terrain reproduces the missed elevated roof');
-  const road=project([center[0]-40,center[1],datum]);
-  assert.equal(hitsPasteurPod(road,matrix,datum,projectLocal),false);
-  matrix[15]=-1;
-  assert.equal(hitsPasteurPod(roof,matrix,datum,projectLocal),false);
-});
+for(const [id,deckFraction] of [...entries,[PASTEUR_300_ID,1]]){
+  test(id+' uses its real raised surfaces for selection and leaves air above its podium clear',()=>{
+    const source=pinned.features.find(f=>f.properties.id===id);
+    const data=prepareBuildingDetails({type:'FeatureCollection',features:[source]});
+    const mesh=buildBuildingGeometry(data).roofs,faces=triangles(mesh),pick=hospitalSurfacePicker(data,mesh);
+    // Side elevation with real campus coordinates, viewing along the y axis.
+    const matrix=new Float32Array(16);matrix[0]=.0008;matrix[9]=.02;matrix[6]=.0002;matrix[15]=1;
+    const deck=source.properties.height*deckFraction,datum=16;
+    const vertices=faces.flatMap(f=>f.corners),span=points=>[Math.min(...points.map(v=>v[0])),Math.max(...points.map(v=>v[0]))];
+    const [min,max]=span(vertices),[minUpper,maxUpper]=span(vertices.filter(v=>v[2]>deck+.1));
+    const airX=minUpper-min>max-maxUpper?(min+minUpper)/2:(max+maxUpper)/2;
+    assert.ok(airX<minUpper||airX>maxUpper);
+    const sample=(x,z,terrain=datum)=>pick([x*.0008,(terrain+z)*.02],matrix,()=>datum,()=>datum);
+    const z=deck+1;
+    assert.equal(sample(airX,z),null,'visible background between the low roof and the old full-height proxy');
+    assert.equal(sample(airX,deck/2),id,'podium underneath remains selectable');
+    const upperWall=faces.find(({corners})=>corners.every(v=>v[2]>=deck-.001)&&Math.max(...corners.map(v=>v[2]))-Math.min(...corners.map(v=>v[2]))>1&&Math.abs((corners[1][0]-corners[0][0])*(corners[2][2]-corners[0][2])-(corners[2][0]-corners[0][0])*(corners[1][2]-corners[0][2]))>1);
+    assert.ok(upperWall);
+    const center=upperWall.corners.reduce(([x,z],p)=>[x+p[0]/3,z+p[2]/3],[0,0]);
+    assert.equal(sample(...center),id,'raised wing remains selectable');
+    assert.equal(sample(...center,datum+30),null,'a different terrain datum must not match');
+    const hospital=source.properties,neighbor={id:'neighbor'};
+    assert.equal(selectHospitalSurface([hospital,neighbor],null),neighbor);
+    assert.equal(selectHospitalSurface([neighbor,hospital],hospital),neighbor,'nearer native buildings win');
+    assert.equal(selectHospitalSurface([],hospital),hospital);
+    assert.equal(selectHospitalSurface([hospital],null),undefined);
+    const paint=new Map(),visibility=createQuadArcadeVisibility();
+    const map={getLayer:()=>true,getZoom:()=>18,getCanvas:()=>({dataset:{}}),setFilter(){},setPaintProperty:(layer,key,value)=>paint.set(layer+key,value)};
+    for(const ready of [false,true,false]){
+      visibility.sync(map,ready);
+      const height=paint.get('stanford-building-pickingfill-extrusion-height');
+      assert.deepEqual(height,ready?['coalesce',['get','detailPodiumHeight'],['get','detailRoofHeight']]:['get','detailRoofHeight']);
+    }
+    const p=data.features[0].properties;
+    assert.ok(near(p.detailPodiumHeight??p.detailRoofHeight,deck));
+  });
+}

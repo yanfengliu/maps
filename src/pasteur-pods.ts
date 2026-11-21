@@ -39,27 +39,3 @@ export function pasteurFallbackData(parent: {id?: unknown; name?: unknown; heigh
       detailPodMaximum:PASTEUR_POD_TOP,tierBase:tier.bottom,tierTop:tier.top,tierColor:tier.screen?'#c9c6b6':'#d6d2c4'},
   })):[]};
 }
-
-/** MapLibre's extrusion hit volume can miss roof pixels under pitched terrain.
- * Check the same tier faces, camera matrix and building datum as the draw. */
-export function hitsPasteurPod(point:Point,matrix:Float32Array,datum:number,project:(p:Point)=>Point):boolean {
-  const inside=(ring:Point[])=>{
-    let hit=false;
-    for(let i=0,j=ring.length-1;i<ring.length;j=i++){
-      const a=ring[i],b=ring[j];
-      if((a[1]>point[1])!==(b[1]>point[1])&&point[0]<(b[0]-a[0])*(point[1]-a[1])/(b[1]-a[1])+a[0])hit=!hit;
-    }
-    return hit;
-  };
-  const clip=([x,y]:Point,z:number):Point=>{
-    const w=matrix[3]*x+matrix[7]*y+matrix[11]*z+matrix[15];
-    if(w<=0)return [NaN,NaN];
-    return [(matrix[0]*x+matrix[4]*y+matrix[8]*z+matrix[12])/w,(matrix[1]*x+matrix[5]*y+matrix[9]*z+matrix[13])/w];
-  };
-  for(const {outline,bottom,top} of PASTEUR_TIERS){
-    const ring=outline.map(project),upper=ring.map(p=>clip(p,top+datum)),lower=ring.map(p=>clip(p,bottom+datum));
-    if(upper.some(p=>!Number.isFinite(p[0]))||lower.some(p=>!Number.isFinite(p[0])))continue;
-    if(inside(upper)||upper.some((p,i)=>{const j=(i+1)%ring.length;return inside([p,upper[j],lower[j],lower[i]]);}))return true;
-  }
-  return false;
-}
