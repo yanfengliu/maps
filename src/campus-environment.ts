@@ -2,6 +2,7 @@ import type * as GeoJSON from 'geojson';
 import {addQuadPlantings} from './quad-plantings.ts';
 import type {RegisterTerrainAnchor} from './terrain-grounding.ts';
 import {addTreePrototype,mappedTreeForm,treePrototype,treeVariant} from './tree-prototypes.ts';
+import {addConiferCrown} from './conifer-crown.ts';
 
 type Point = [number, number];
 type Vertex = [number, number, number];
@@ -191,10 +192,7 @@ export function addCampusEnvironment(mesh:MeshWriter,data:CampusEnvironment,proj
       for(let i=0;i<8;i++){const a=i*Math.PI/4,b=(i+1)*Math.PI/4;triangle([x,y,0.035],[x+Math.cos(a)*0.53,y+Math.sin(a)*0.53,0.035],[x+Math.cos(b)*0.53,y+Math.sin(b)*0.53,0.035],[0.52,0.49,0.37],12);}
       if(type==='conifer'){
         counts.conifers++;
-        for(let tier=0;tier<3;tier++)for(let i=0;i<8;i++){
-          const a=i*Math.PI/4+seed,b=(i+1)*Math.PI/4+seed,r=radius*(1-tier*0.22),bottom=height*(0.30+tier*0.18),top=height*(0.69+tier*0.15);
-          triangle([x+Math.cos(a)*r,y+Math.sin(a)*r,bottom],[x+Math.cos(b)*r,y+Math.sin(b)*r,bottom],[x,y,top],[0.32+tier*0.015,0.43+tier*0.015,0.34]);
-        }
+        addConiferCrown(mesh,x,y,height,radius,seed,objectId);
       }else{
         counts.broadleaf++;
         const evergreen=p.leaf_cycle==='evergreen',green:Color=evergreen?[0.39,0.49,0.31]:[0.49,0.59,0.35];
