@@ -110,7 +110,11 @@ export const CONIFER_FRAGMENT = `
     vec3 displacement=(origin+nearest*ray-v_crownPoint)*v_crownFrame.xxy;
     vec4 clipDelta=u_matrix*vec4(displacement,0);
     float reciprocalW=gl_FragCoord.w;
-    gl_FragDepth=.5+.5*(2.0*gl_FragCoord.z-1.0+clipDelta.z*reciprocalW)/(1.0+clipDelta.w*reciprocalW);
+    // gl_FragCoord.z already includes the depth range of MapLibre's layer.
+    // Work in half-range-scaled NDC so even a collapsed range stays finite.
+    float midDepth=.5*(gl_DepthRange.near+gl_DepthRange.far);
+    float offset=gl_FragCoord.z-midDepth+.5*gl_DepthRange.diff*clipDelta.z*reciprocalW;
+    gl_FragDepth=midDepth+offset/(1.0+clipDelta.w*reciprocalW);
     tint=leafColor;
   }
 `;
