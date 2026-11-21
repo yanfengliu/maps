@@ -1,5 +1,7 @@
 # Current map direction
 
+Keep a representative view of the running branch in its README. When a change makes the preview stale, refresh the screenshot, alt text and viewing directions together.
+
 The product is a map inspired by Apple Maps, beginning with the San Francisco Bay Area coastline and regional context. Stanford University's main campus is the only area with 3D buildings. Keep the regional-first view and a clear Stanford flight. Moving around the map should offer smooth pan, zoom, rotation, tilt, compass reset and useful local place search.
 
 Route planning, turn-by-turn directions, satellite imagery, live traffic and other cities' 3D buildings are outside the first increment. Do not claim pixel-identical Apple behavior or photorealistic Flyover. Use public sources and authored styling, not Apple's imagery or credentials.

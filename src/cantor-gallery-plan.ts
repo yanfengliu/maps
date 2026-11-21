@@ -59,13 +59,15 @@ export function openCantorGalleryPlan(): void {
     <button type="button" class="icon-button" aria-label="Close gallery floors">${icon('close')}</button></header>
     <nav aria-label="Museum floor"><button type="button">First floor</button><button type="button">Second floor</button></nav>
     <svg class="gallery-diagram" viewBox="165 130 1035 790" aria-hidden="true"></svg>
-    <label>Gallery or space<select></select></label>
+    <label>Gallery or space<span class="gallery-choice"><select></select><span aria-hidden="true"></span></span></label>
     <footer>Approximate outlines from the museum’s visitor map. <a href="${CANTOR_PLAN_URL}" target="_blank" rel="noreferrer">Official floor plan (PDF) ↗</a></footer>`;
   const diagram = dialog.querySelector('.gallery-diagram')!;
   const select = dialog.querySelector('select')!;
+  const choiceText = dialog.querySelector('.gallery-choice span')!;
   const floorButtons = [...dialog.querySelectorAll('nav button')];
   function selectSpace(number: string): void {
     select.value = number;
+    choiceText.textContent = select.selectedOptions[0]?.textContent ?? '';
     for (const space of diagram.querySelectorAll<SVGGElement>('[data-room]')) {
       space.classList.toggle('selected', space.dataset.room === number);
     }
