@@ -18,6 +18,8 @@ export interface BuildingArchitecture {
   roofShape: string;
   roofSource: 'osm-roof-shape' | 'estimated' | 'reference-profile' | 'official-description';
 }
+// 2025 Santa Clara County orthophotos show pale decks around these five open courts.
+const MEDICAL_COURTYARD_DECKS = new Set(['relation/4720978','relation/4721017','relation/4721018','relation/4721019','relation/4721020']);
 const BRAUN_MUSIC_ID='relation/12460152';
 
 /** Authored material families, informed by the inspected Stanford photographs. */
@@ -70,13 +72,14 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const available = Math.max(0, wallHeight - Number(p.base));
   const floorHeight = profile === 'residential' ? 3.25 : profile === 'modern' ? 4.1 : 4.2;
   const roble = p.id === 'way/232805733',braun=p.id===BRAUN_MUSIC_ID,garage=garageProfile(p);
+  const aerialDeck = MEDICAL_COURTYARD_DECKS.has(String(p.id));
   const floors = garage?.kind==='open-deck'?garage.levels:braun?2:reference ? reference.facadeBands : roble ? 3 : profile === 'quad' ? 1 : special ? null : mappedLevels !== null ? Math.max(0, mappedLevels - minLevel)
     : profile === 'garage' || profile === 'service' && available < 8 ? 1 : Math.max(1, Math.round(available / floorHeight));
   return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
     bayWidth: reference?.bayWidth ?? (profile === 'residential' ? 3.1 : profile === 'modern' ? 2.7 : profile === 'garage' ? 5.4 : profile === 'service' ? 5.8 : 4.2),
     facadeFamily:reference?.family??(unverified?'unverified':'generic'),
-    roofShape: String(p['osm:roof:shape'] ?? (braun?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
-    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference ? 'reference-profile' : 'estimated' };
+    roofShape: String(p['osm:roof:shape'] ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
+    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck ? 'reference-profile' : 'estimated' };
 }
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
@@ -100,6 +103,7 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const floors = detail.floorSource === 'osm-levels'
     ? `OSM records ${detail.mappedLevels} ${detail.mappedLevels === 1 ? 'level' : 'levels'}.`
     : `The facade models approximately ${detail.floors} ${detail.floors === 1 ? 'floor' : 'floors'} from the available height; the source has no floor count.`;
+  if(MEDICAL_COURTYARD_DECKS.has(String(p.id)) && detail.roofSource==='reference-profile')return `${floors} The light, flat deck around the courtyard follows the 2025 county aerial photograph. Roof equipment, window spacing and parapet heights are approximate.`;
   const roof = detail.roofSource === 'osm-roof-shape' ? `The ${detail.roofShape} roof follows an OSM shape tag.` : `The ${detail.roofShape} roof is a modeled estimate.`;
   return `${floors} ${roof} Window spacing is modeled; exact counts have not been surveyed.`;
 }

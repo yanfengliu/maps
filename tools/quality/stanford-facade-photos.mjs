@@ -1,0 +1,60 @@
+/** 2026-11-21 comparison with Stanford's public accessibility photographs.
+ * Each observation is limited to the photographed elevation and the selected map view. */
+const photos = [
+  ["relation/3126353", "Faculty Club", "02-350", "https://campus-map.stanford.edu//images_repo/bldg/02-350/02-350-1.jpg", "The low tiled eave shelters a long dark window band; the current frontage uses individual windows."],
+  ["relation/6593510", "Roble Gymnasium", "04-650", "https://campus-map.stanford.edu//images_repo/bldg/04-650/04-650-1.jpg", "A tall recessed round arch and circular opening mark the gym entrance; the comparable model wall has regular window bays."],
+  ["relation/12236339", "Cantor Arts Center", "07-100", "https://campus-map.stanford.edu//images_repo/bldg/07-100/07-100-1.jpg", "Four monumental columns support a raised stone entablature; the gallery-floor viewer does not supply this exterior portico."],
+  ["relation/17859516", "Schwab Residential Center", "06-750", "https://campus-map.stanford.edu//images_repo/bldg/06-750/06-750-1.jpg", "The photographed entry rises above the palms under a projecting tile hip; the view establishes one entrance only."],
+  ["way/26249839", "Fire Truck House", "02-620", "https://campus-map.stanford.edu//images_repo/bldg/02-620/02-620-1.jpg", "A central two-story gable stands between lower wings and red apparatus doors; the mapped frontage lacks those doors."],
+  ["way/26252222", "Tresidder Memorial Union", "02-300", "https://campus-map.stanford.edu//images_repo/bldg/02-300/02-300-1.jpg", "A tall glazed gable and projecting canopy face the elevated terrace; the regular model bays miss this opening."],
+  ["way/26292283", "Mechanical Engineering Laboratory", "02-660", "https://campus-map.stanford.edu//images_repo/bldg/02-660/02-660-1.jpg", "Pale frames surround tall panes with dark mullions; the authored facade captures the framing but simplifies balcony rails."],
+  ["way/30754713", "Frances C. Arrillaga Alumni Center", "08-450", "https://campus-map.stanford.edu//images_repo/bldg/08-450/08-450-1.jpg", "Large framed windows flank a pedimented entry; the generic frontage lacks the deep upper frames."],
+  ["way/30775809", "Old Union", "02-580", "https://campus-map.stanford.edu//images_repo/bldg/02-580/02-580-1.jpg", "An arched axial gateway stands higher than the adjoining arcades; the simple model mass misses the opening."],
+  ["way/81794792", "Huang Engineering Center", "04-080", "https://campus-map.stanford.edu//images_repo/bldg/04-080/04-080-1.jpg", "The projecting stone bay has tall arched upper windows and a recessed glazed entrance; the flat generic treatment misses both."],
+  ["way/131641548", "MBA Class of 1968 Building", "08-050F", "https://campus-map.stanford.edu//images_repo/bldg/08-050F/08-050F-1.jpg", "Upper dark-framed windows sit under the tile eave; a projecting glazed entry is prominent in the photo."],
+  ["way/158630340", "James H. Clark Center", "07-340", "https://campus-map.stanford.edu//images_repo/bldg/07-340/07-340-1.jpg", "Continuous bands of glass and open balconies wrap the corners beneath deep eaves; the generic walls lack those bands."],
+  ["way/166892958", "William H. Neukom Building", "02-040", "https://campus-map.stanford.edu//images_repo/bldg/02-040/02-040-1.jpg", "Tall dark vertical fins divide upper glazing below a deep overhang; the regular small windows differ."],
+  ["way/205182889", "Bing Concert Hall", "08-650", "https://campus-map.stanford.edu//images_repo/bldg/08-650/08-650-1.jpg", "Tall continuous foyer glass fronts a deep overhang; the model front appears solid at this scale."],
+  ["way/232715571", "Arrillaga Family Sports Center", "09-307", "https://campus-map.stanford.edu//images_repo/bldg/09-307/09-307-1.jpg", "Two levels of recessed dark glazing are framed by pale piers; exact spacing is obscured by roadside trees."],
+  ["way/232715595", "Ventura Hall", "14-050", "https://campus-map.stanford.edu//images_repo/bldg/14-050/14-050-1.jpg", "Light walls and a tiled low roof frame the planted entrance court; trees obscure much of the lower front."],
+  ["way/232715596", "Nora Suppes Hall", "14-040", "https://campus-map.stanford.edu//images_repo/bldg/14-040/14-040-1.jpg", "An exterior stair and freestanding open pergola lead to the upper level; both are absent from the generic volume."],
+  ["way/232715615", "Automotive Innovation Facility", "14-590", "https://campus-map.stanford.edu//images_repo/bldg/14-590/14-590-1.jpg", "A raised glazed monitor runs along a dark metal roof above wide workshop doors; the generic roof does not show it."],
+  ["way/232715629", "Arrillaga Gymnasium and Weight Room", "09-295", "https://campus-map.stanford.edu//images_repo/bldg/09-295/09-295-1.jpg", "A long high clerestory sits above a mostly blind gym wall; the model uses windows across the lower wall."],
+  ["way/232805656", "Bechtel International Center", "02-400", "https://campus-map.stanford.edu//images_repo/bldg/02-400/02-400-1.jpg", "The light stucco front has a tiled eave and an arched upper window with a small balcony; vegetation hides part of the wall."],
+  ["way/232805671", "Ford Center For Sports & Recreation", "08-250", "https://campus-map.stanford.edu//images_repo/bldg/08-250/08-250-1.jpg", "A glazed entry sits between tall projecting wall piers; trees hide the side elevations."],
+  ["way/232805676", "Montag Hall", "08-100", "https://campus-map.stanford.edu//images_repo/bldg/08-100/08-100-1.jpg", "A recessed entrance and tall dark windows punctuate a light brick front; only the entrance is visible."],
+  ["way/232805680", "Bing Wing", "03-200", "https://campus-map.stanford.edu//images_repo/bldg/03-200/03-200-1.jpg", "Tall arched stone bays sit below a row of small arched openings; the campus view faces a different elevation."],
+  ["way/232805684", "Barnum Center", "03-050", "https://campus-map.stanford.edu//images_repo/bldg/03-050/03-050-1.jpg", "A curved central gable and two small glazed projecting bays mark the entrance; the generic facade omits them."],
+  ["way/232805685", "Lathrop Library", "08-350", "https://campus-map.stanford.edu//images_repo/bldg/08-350/08-350-1.jpg", "Strong vertical concrete piers frame two upper glazed levels above a recessed base; the model uses smaller regular bays."],
+  ["way/232805690", "Harmony House", "02-130", "https://campus-map.stanford.edu//images_repo/bldg/02-130/02-130-1.jpg", "A steep curved gable and tall chimney dominate a white house; the modeled hip lacks those features."],
+  ["way/232805716", "Landau Economics Building", "08-290", "https://campus-map.stanford.edu//images_repo/bldg/08-290/08-290-1.jpg", "A deep dark glazed entry is recessed into a pale wall; the photograph covers only this entrance."],
+  ["way/232805717", "Littlefield Center", "08-360", "https://campus-map.stanford.edu//images_repo/bldg/08-360/08-360-1.jpg", "A broad central arch cuts through the lower storey below tall paired windows; the model does not show the passage."],
+  ["way/232805731", "Owen House", "02-917", "https://campus-map.stanford.edu//images_repo/bldg/02-917/02-917-1.jpg", "The symmetrical front porch and two corner towers frame a dormer; the simple model does not reproduce this silhouette."],
+  ["way/232805743", "Sweet Hall", "03-420", "https://campus-map.stanford.edu//images_repo/bldg/03-420/03-420-1.jpg", "A tall square entrance tower has large round openings beneath tiled eaves; the generic height treatment misses it."],
+  ["way/232841883", "Encina Commons", "06-040", "https://campus-map.stanford.edu//images_repo/bldg/06-040/06-040-1.jpg", "A drum with arched openings crowns the entrance arch; the low modeled wings do not describe this entry tower."],
+  ["way/232841885", "Gates Computer Science", "07-450", "https://campus-map.stanford.edu//images_repo/bldg/07-450/07-450-1.jpg", "A rounded stone corner carries a broad dark glazed upper floor and tiled overhang; the neutral model misses this articulation."],
+  ["way/232841893", "Polya Hall", "14-160", "https://campus-map.stanford.edu//images_repo/bldg/14-160/14-160-1.jpg", "A two-storey glazed entrance contrasts with vertical siding; the photograph does not establish the roof."],
+  ["way/232841906", "Encina Hall West", "06-020", "https://campus-map.stanford.edu//images_repo/bldg/06-020/06-020-1.jpg", "Paired round-headed upper windows punctuate a rusticated stone wall; uniform small model bays differ."],
+  ["way/232841909", "Physics and Astrophysics", "04-470", "https://campus-map.stanford.edu//images_repo/bldg/04-470/04-470-1.jpg", "A low red hip sits above a narrow upper window ribbon and pale main wall; generic facade spacing differs."],
+  ["way/232841915", "Encina Hall Center", "06-010", "https://campus-map.stanford.edu//images_repo/bldg/06-010/06-010-1.jpg", "Large ground-level stone arches and paired upper windows articulate the main front; the generic facade omits them."],
+  ["way/232841924", "Peterson Laboratory", "02-550", "https://campus-map.stanford.edu//images_repo/bldg/02-550/02-550-1.jpg", "A long colonnade fronts the tiled workshop roof; the roof and facade bands are simplified in the surveyed model."],
+  ["way/232841926", "Pine Hall", "14-170", "https://campus-map.stanford.edu//images_repo/bldg/14-170/14-170-1.jpg", "A low pale workshop wing has long high windows and a mostly blind front; the generic mass uses regular windows."],
+  ["way/232841930", "Sequoia Hall", "04-530", "https://campus-map.stanford.edu//images_repo/bldg/04-530/04-530-1.jpg", "The stone-clad entrance curves over a recessed doorway; the photograph crops away most of the building."],
+  ["way/232841950", "Mark Taper Student Center", "06-310", "https://campus-map.stanford.edu//images_repo/bldg/06-310/06-310-1.jpg", "Glazing rises beside an entrance under heavy tree cover; no whole elevation can be established."],
+  ["way/333374283", "Arrillaga Family Dining Commons", "06-250", "https://campus-map.stanford.edu//images_repo/bldg/06-250/06-250-1.jpg", "Open lower arches flank a central recessed doorway beneath tiled eaves; the model does not show these openings."],
+  ["way/469393555", "Sapp Center for Science Teaching and Learning", "07-200", "https://campus-map.stanford.edu//images_repo/bldg/07-200/07-200-1.jpg", "Rusticated stone frames the entrance bays and grouped tall windows; compare the survey for other elevations."],
+  ["way/518906031", "Windhover", "05-090", "https://campus-map.stanford.edu//images_repo/bldg/05-090/05-090-1.jpg", "Vertical weathered cladding encloses a simple rectangular volume; the modeled warm roof and pale walls differ."],
+  ["way/836474103", "Memorial Church", "01-500", "https://campus-map.stanford.edu//images_repo/bldg/01-500/01-500-1.jpg", "The three front portals, central arched opening and mosaic are visible; the map capture shows the rear and side."],
+  ["way/1346548889", "Hoover Tower", "03-100", "https://campus-map.stanford.edu//images_repo/bldg/03-100/03-100-1.jpg", "The tall shaft, observation arcade and domed cap are clear in the photo; the default close map crop omits its top."]
+];
+
+export const FACADE_PHOTOS = photos.map(([id,title,facility,photo,observed])=>({
+  key:'ada-'+facility, ids:[id], title, observed,
+  reviewedAt:'2026-11-21', status:'photo-supported',
+  reviewBasis:'Compared the Stanford accessibility photograph with the selected footprint at zoom 18, pitch 58 and bearing −28 on the 4945d55 map.',
+  limitations:'One undated elevation. Tree cover, perspective and camera direction limit the comparison. Other elevations, heights and exact bay counts remain unverified.',
+  sources:[
+    {kind:'photo',date:'undated',url:photo},
+    {kind:'document',date:'undated',url:'https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID='+facility}
+  ]
+}));

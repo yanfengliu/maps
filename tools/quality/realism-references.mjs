@@ -1,4 +1,5 @@
 /** Evidence is scoped to observed features, never a claim that a whole model is verified. */
+import {FACADE_PHOTOS} from './stanford-facade-photos.mjs';
 export const PINNED_PART_COUNT = 648;
 const survey = 'https://stgenpln.blob.core.windows.net/document/SU_2018GUP_App_Vol4_pt2.pdf';
 const transport = 'https://files.stanfordmedicinetransportation.org/production/';
@@ -16,7 +17,12 @@ const source = (url,kind='photo',date='undated')=>({url,kind,date});
 const record = (key,ids,title,observed,limitations,sources,extra={})=>({key,ids,title,...current,observed,limitations,sources,...extra});
 const old = {status:'prior-review',reviewedAt:'2026-10-20',reviewBasis:'Recorded in docs/work/0_bay-area-stanford/architecture-references.md; not newly inspected by this audit.'};
 
-export const REALISM_REFERENCES = [
+const architecturalReferences = [
+  record('medical-courtyard-decks',[4720978,4721017,4721018,4721019,4721020].map(id=>'relation/'+id),'Five School of Medicine courtyard buildings',
+    'The 2025 overhead view shows light, low-slope decks around open central courts at Alway, Lane, Edwards, Boswell and Grant.',
+    'Rooftop plant, parapet heights, walls and roof pitch below image resolution are unsurveyed.',
+    [source('https://geo.sanjoseca.gov/server/rest/services/Imagery/DPW_ImageryCached2025/MapServer','photo','2025')],
+    {reviewedAt:'2026-11-21',reviewBasis:'Inspected roof atlas sheet 1, parts 6–10, with the mapped rings registered to the county aerial.',expected:{roofShape:'flat'}}),
   ...engineering.map(([id,title,facadeFamily,roofShape,photoId,page,observed])=>record(`engineering-${id.split('/')[1]}`,[id],title,observed,
     'Bay counts, dimensions, monitor dimensions, material response and unphotographed elevations are estimated. Peterson courtyard addition, Sapp ornament/cupolas and Varian mixed roof sections are not fully reconstructed.',
     [source(page?`${survey}#page=${page}`:'https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID=02-660','document','2016 survey / undated ADA'),source(photoId?`https://campus-map.stanford.edu/images_repo/bldg/${photoId}/${photoId}-1.jpg`:`${survey}#page=${page}`,'photo',photoId?'undated':'2016')],
@@ -69,3 +75,8 @@ export const REALISM_REFERENCES = [
     'Window spacing, detailed entrance ornament and roof proportions remain approximations; source ten-metre height is estimated.',
     [source('https://resed.stanford.edu/houses/roble-hall-houses'),source('https://rde.stanford.edu/studenthousing/roble-hall','document')],old),
 ];
+
+// The architectural groups may cover multiple IDs. Keep those group-specific sources
+// together and use the directory photo as the first individual reference elsewhere.
+const researchedIds = new Set(architecturalReferences.flatMap(reference=>reference.ids));
+export const REALISM_REFERENCES = [...architecturalReferences,...FACADE_PHOTOS.filter(photo=>!researchedIds.has(photo.ids[0]))];

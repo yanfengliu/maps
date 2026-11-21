@@ -15,6 +15,7 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 test('search and selected footprints expose their own official visitor resources',()=>{
   const buildings=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))).features;
   const places=buildingPlaces(buildings);
+  assert.equal(searchPlaces('Green Library East Wing',places)[0].buildingId,'way/232805660');
   const adultMaps='https://stanfordhealthcare.org/content/dam/SHC/patientsandvisitors/locations-parking/docs/';
   const packardMap='https://www.stanfordchildrens.org/content/dam/sch/content-public/pdf/wayfinding-maps-stanford-childrens.pdf';
   const cases=[

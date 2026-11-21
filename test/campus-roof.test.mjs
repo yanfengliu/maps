@@ -115,3 +115,16 @@ test('Green East retains its stepped source boundary, three staggered upper roof
   changed[0][0]+=.001;
   assert.throws(()=>campusRoof(id,0,[changed]),/footprint changed/);
 });
+
+test('the five medical courtyard decks preserve every mapped opening and the provenance of their roof decision',()=>{
+  const ids=['relation/4720978','relation/4721017','relation/4721018','relation/4721019','relation/4721020'];
+  for(const id of ids){
+    const index=source.features.findIndex(f=>f.properties.id===id), feature=prepared.features[index];
+    assert.equal(feature.geometry,source.features[index].geometry);
+    assert.ok(feature.geometry.coordinates.length>=2,'each mapped court has a hole');
+    assert.equal(feature.properties.detailArchitecture.roofSource,'reference-profile');
+    assert.equal(feature.properties.detailArchitecture.roofShape,'flat');
+    assert.equal(feature.properties.detailFlatShell,true);
+    assert.equal(feature.properties.height,source.features[index].properties.height);
+  }
+});

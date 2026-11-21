@@ -1,4 +1,5 @@
 import { STADIUM_CENTER } from './stadium-architecture.ts';
+import { GREEN_EAST_ID } from './green-east-architecture.ts';
 import { hospitalVisitorMap } from './visitor-maps.ts';
 export type Position = [number, number];
 export interface Place {
@@ -72,7 +73,7 @@ export function buildingPlaces(features: readonly { properties: Record<string, u
     const id = feature.properties?.id;
     const center = geometryCenter(feature.geometry);
     return typeof name === 'string' && name.trim() && typeof id === 'string' && center
-      ? [{ id: `building-${id}`, name, subtitle: hospitalVisitorMap(id)?.address ?? 'Building · Stanford University', center, zoom: 18, campus: true, buildingId: id }]
+      ? [{ id: `building-${id}`, name, subtitle: hospitalVisitorMap(id)?.address ?? (id===GREEN_EAST_ID?'Green Library · Stanford University':'Building · Stanford University'), center, zoom: 18, campus: true, buildingId: id }]
       : [];
   });
 }
