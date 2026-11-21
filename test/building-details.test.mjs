@@ -51,8 +51,9 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
+    assert.equal(detailPodMaximum,properties.id==='relation/1753562'?77.5*.3048:undefined);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');
     else assert.equal(feature.geometry, original.features[index].geometry);
     const envelope=properties.id==='way/324983017'?16:properties.height;
@@ -191,7 +192,7 @@ test('all 648 detailed buildings stay finite, under mapped or explicitly referen
     assert.ok(mesh.every(Number.isFinite));
     for (let i = 0; i < mesh.length; i += VERTEX_FLOATS) {
       const feature = original.features[mesh[i + 12]];
-      assert.ok(mesh[i + 2] <= (feature.properties.id==='way/324983017'?16:feature.properties.height) + 0.0001, feature.properties.id);
+      assert.ok(mesh[i + 2] <= (feature.properties.id==='way/324983017'?16:feature.properties.id==='relation/1753562'?77.5*.3048:feature.properties.height) + 0.0001, feature.properties.id);
       // A raised scoreboard's missing, photo-derived columns are explicit
       // additions below its panel, not a changed source base or taller part.
       if(mesh[i+11]===33){assert.equal(feature.properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=feature.properties.base);}

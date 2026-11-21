@@ -19,7 +19,8 @@ import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadi
 import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
 import { referenceGarageHeight } from './garage-architecture.ts';
 import { addGarage } from './garage-geometry.ts';
-import { addHospitalExterior } from './hospital-geometry.ts';
+import { PASTEUR_300_ID, PASTEUR_POD_TOP } from './pasteur-pods.ts';
+import { addHospitalExterior, addPasteurPods } from './hospital-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
@@ -79,6 +80,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
+      ...(p?.id===PASTEUR_300_ID?{detailPodMaximum:PASTEUR_POD_TOP}:{}),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
       ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };
   }) };
@@ -248,6 +250,7 @@ export class BuildingGeometryBuilder {
         const deck=campusModel?.flat(tri);
         this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
+      if(p.id===PASTEUR_300_ID)addPasteurPods(this.roofs,building,projectLocal);
       if(braun)addBraunSolar(this.roofs,rings,building,height);
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
@@ -296,6 +299,9 @@ export class BuildingGeometryBuilder {
           if(flatShell&&base===0){
             this.roofs.quad(at(a,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,base),at(a,base),wallTint,2,building);
           }
+          // 300 Pasteur's podium has a flat continuous roof and closed source
+          // walls. Its higher profiles belong only to the three west pods.
+          if(p.id===PASTEUR_300_ID)continue;
           // The cornice encloses the small raised eave seam; a second wall
           // strip inside that solid trim is redundant. Keep sloped gable ends.
           const z = Math.min(height, wall + 0.07);

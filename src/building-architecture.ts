@@ -1,6 +1,7 @@
 import type * as GeoJSON from 'geojson';
 import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
+import { PASTEUR_300_ID } from './pasteur-pods.ts';
 import { HOSPITAL_EXTERIORS } from './hospital-exteriors.ts';
 import { HOOVER_PART_IDS, HOOVER_DESCRIPTION } from './hoover-architecture.ts';
 import { garageProfile, describeGarage } from './garage-architecture.ts';
@@ -28,6 +29,7 @@ const BRAUN_MUSIC_ID='relation/12460152';
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
   if(p.id===GREEN_EAST_ID)return {wall:'#c7bdb0',roof:'#ae7259'};
+  if(p.id===PASTEUR_300_ID)return {wall:'#ccc9bf',roof:'#c1bfb2'};
   if(p.id===BRAUN_MUSIC_ID)return {wall:'#dfd4bc',roof:'#c8c5b8'};
   if(garageProfile(p)?.kind==='open-deck')return {wall:p.id==='way/232841898'?'#c7ba99':'#bfbdae',roof:'#80827a'};
   if(STADIUM_SEATING_IDS.has(String(p.id)))return {wall:'#aaa99b',roof:'#7a1320'};
@@ -88,6 +90,7 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const p = properties ?? {};
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
+  if(p.id===PASTEUR_300_ID)return 'The mapped 300 Pasteur footprint is tagged 10 m. Palo Alto records the three existing west pods at up to 77.5 ft (23.6 m). Their roof outlines follow 2025 county imagery. The intermediate levels, relative screen heights and facade spacing are estimates.';
   const hospital=HOSPITAL_EXTERIORS[String(p.id)];
   if(hospital)return hospital.description;
   const garage=describeGarage(p);if(garage)return garage;

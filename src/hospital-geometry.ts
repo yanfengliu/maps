@@ -1,3 +1,4 @@
+import { PASTEUR_TIERS } from './pasteur-pods.ts';
 import earcut from 'earcut';
 import { FLAT_SHELL_FOUNDATION_DEPTH } from './flat-building-shell.ts';
 import { HOSPITAL_EXTERIORS, UPPER_WINGS, podiumHeight } from './hospital-exteriors.ts';
@@ -139,4 +140,22 @@ export function addHospitalExterior(mesh:Mesh,id:string,rings:Point[][],building
   // Broad planted areas only; species, planting beds and paths are unknown.
   for(const bed of beds) plane([bed.map(place)],deck+.04,garden,2);
   return true;
+}
+
+/** Upper-tier faces have the parent building ID throughout, so below-ground
+ * sampling never splits the 300 Pasteur roof at a terrain-tile boundary. */
+export function addPasteurPods(mesh:Mesh,building:number,project:(p:Point)=>Point):void {
+  for(const {outline,bottom,top,screen} of PASTEUR_TIERS){
+    const ring=outline.map(project);
+    const tint:Color=screen?[.76,.76,.72]:[.82,.81,.75];
+    for(const [i,a] of ring.entries()){
+      const b=ring[(i+1)%ring.length],bays=Math.max(1,Math.round(Math.hypot(a[0]-b[0],a[1]-b[1])/3.3));
+      const rows=screen?1:2;
+      mesh.quad(v(a,bottom),v(b,bottom),v(b,top),v(a,top),tint,screen?2:99,building,[[0,0],[bays,0],[bays,rows],[0,rows]]);
+    }
+    const indices=earcut(ring.flat());
+    for(let i=0;i<indices.length;i+=3){
+      mesh.triangle(v(ring[indices[i]],top),v(ring[indices[i+1]],top),v(ring[indices[i+2]],top),roof,2,building);
+    }
+  }
 }

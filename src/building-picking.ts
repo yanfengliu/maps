@@ -1,10 +1,11 @@
 import type { FillExtrusionLayerSpecification } from 'maplibre-gl';
+import { PASTEUR_POD_LAYER } from './pasteur-pods.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
 import { STADIUM_SEATING_IDS, STADIUM_OPEN_PART_IDS } from './stadium-architecture.ts';
 import { OPEN_GARAGE_IDS } from './garage-architecture.ts';
 import { HOOVER_PART_IDS } from './hoover-architecture.ts';
 
-export const BUILDING_PICK_LAYERS=['stanford-buildings','stanford-building-picking'];
+export const BUILDING_PICK_LAYERS=['stanford-buildings','stanford-building-picking',PASTEUR_POD_LAYER];
 
 /** MapLibre queries extrusion volumes even at zero opacity, while its draw
  * path skips them. Keep roof and seating envelopes selectable after open
