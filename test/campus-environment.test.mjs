@@ -72,7 +72,10 @@ test('all combined building and environment geometry stays finite within memory-
       assert.ok([10,11,12,...TREE_MATERIAL_KINDS].includes(kind),'foliage and furniture must not acquire facade windows or roof tiles');
       assert.ok(mesh[i+2]>=0&&mesh[i+2]<=28);environmentVertices++;
     }else{
-      assert.ok(id<648&&Number.isInteger(id));assert.ok(mesh[i+2]<=(source.features[id].properties.id==='way/324983017'?16:source.features[id].properties.height)+0.0001);
+      assert.ok(id<648&&Number.isInteger(id));
+      const building=source.features[id].properties;
+      const citedMaximum={'way/324983017':16,'relation/1753562':77.5*.3048}[building.id];
+      assert.ok(mesh[i+2]<=(citedMaximum??building.height)+0.0001,building.id);
       if(kind===33){assert.equal(source.features[id].properties.id,'way/1354429136');assert.ok(mesh[i+2]>=0&&mesh[i+2]<=source.features[id].properties.base);}
       else if(prepared.features[id].properties.detailFlatShell&&mesh[i+2]<0){assert.equal(source.features[id].properties.base,0);assert.equal(mesh[i+2],-10);assert.equal(kind,2);}
       else assert.ok(mesh[i+2]>=source.features[id].properties.base-0.0001);
@@ -306,8 +309,10 @@ test('material families differentiate sandstone, pink Roble, modern light roofs 
   const find=id=>prepared.features.find(f=>f.properties.id===id).properties;
   assert.equal(find('way/232805733').detailWallColor,'#c8aaa0');
   assert.notEqual(find('relation/35820').detailWallColor,find('way/232805733').detailWallColor);
-  const modern=prepared.features.find(f=>f.properties.detailArchitecture.profile==='modern'&&f.properties.detailArchitecture.roofShape==='flat');
-  assert.equal(modern.properties.detailRoofColor,'#c1cbc7');assert.equal(modern.properties.roofColor,'#b96f54');
+  const modern=find('way/109150501'); // Hoover Pavilion uses the generic modern roof family.
+  assert.equal(modern.detailArchitecture.profile,'modern');assert.equal(modern.detailArchitecture.roofShape,'flat');
+  assert.equal(find('relation/1753562').detailRoofColor,'#c1bfb2');
+  assert.equal(modern.detailRoofColor,'#c1cbc7');assert.equal(modern.roofColor,'#b96f54');
   const roble=source.features.findIndex(f=>f.properties.id==='way/232805733'),bing=source.features.findIndex(f=>f.properties.id==='way/232805680');
   for(const index of [roble,bing]){
     let relief=0;for(let i=0;i<geometry.facades.length;i+=VERTEX_FLOATS)if(geometry.facades[i+12]===index&&geometry.facades[i+11]===2)relief++;

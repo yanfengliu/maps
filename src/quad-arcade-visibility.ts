@@ -1,4 +1,5 @@
 import type { Map as MapLibreMap, ExpressionSpecification } from 'maplibre-gl';
+import { PASTEUR_POD_LAYER } from './pasteur-pods.ts';
 import {CHURCH_ID} from './church-interior.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
 import { STADIUM_SEATING_IDS, STADIUM_OPEN_PART_IDS } from './stadium-architecture.ts';
@@ -25,6 +26,9 @@ export function createQuadArcadeVisibility(){
       // Complete flat shells instead share one building datum for every face.
       // Remove both native owners while ready; never just recolor the seam.
       const clauses:ExpressionSpecification[]=[];
+      // Opacity zero retains per-tier hit testing while the custom mesh owns
+      // the opaque surfaces. At fallback the same bounded volumes are visible.
+      if(map.getLayer(PASTEUR_POD_LAYER))map.setPaintProperty(PASTEUR_POD_LAYER,'fill-extrusion-opacity',flatShell?0:1);
       if(flatShell)clauses.push(['!=',['get','detailFlatShell'],true]);
       if(interior)clauses.push(['!=',['get','id'],CHURCH_ID]);
       for(const id of ['stanford-buildings','stanford-roofs'])if(map.getLayer(id))map.setFilter(id,clauses.length?['all',...clauses]:null);

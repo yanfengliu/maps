@@ -17,6 +17,7 @@ import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
 import { CHURCH_ID, churchInteriorLocation } from './church-interior.ts';
+import { attachPasteurPods } from './pasteur-pods-layer.ts';
 import { searchWorldPlaces } from './world-search.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -147,7 +148,7 @@ function showBuilding(properties: Record<string, unknown>): void {
   const referencedHeight=properties.heightSource==='estimated'&&Number(properties.detailRoofHeight)>Number(properties.height);
   const height = Number(referencedHeight?properties.detailRoofHeight:properties.height);
   const source = referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
-  details.innerHTML = `<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="place-context">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
+  details.innerHTML = `<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="place-context">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}${Number.isFinite(properties.detailPodMaximum)?' · West pods up to '+Number(properties.detailPodMaximum).toFixed(1)+' m (city report)':''}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   if(selectedId===CHURCH_ID){
     const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;
@@ -365,6 +366,7 @@ const campusRoads=new CampusRoadLayer({onChange:stats=>{
 
 function addCampusLayers(): void {
   if (!map || !styleAvailable || !campusData || !campusBoundary) return;
+  attachPasteurPods(map,campusData);
   if (map.getSource('stanford')) {
     (map.getSource('stanford') as GeoJSONSource).setData(campusData);
     // MapLibre restores standard layers after a lost context; custom layers
@@ -394,8 +396,11 @@ function addCampusLayers(): void {
     campusEventsBound = true;
     map.on('mouseenter',BUILDING_PICK_LAYERS, () => { if (map) map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave',BUILDING_PICK_LAYERS, () => { if (map) map.getCanvas().style.cursor = ''; });
-    map.on('click',BUILDING_PICK_LAYERS, event => {
-      const feature = event.features?.[0]; if (feature) showBuilding(feature.properties);
+    map.on('click', event => {
+      if(!map?.getLayer('stanford-buildings'))return;
+      const native=map.queryRenderedFeatures(event.point,{layers:BUILDING_PICK_LAYERS})[0];
+      const properties=native?.properties??buildingDetails?.pickPasteurPod(event.point);
+      if(properties)showBuilding(properties);
     });
   }
   syncChurchVisibility();

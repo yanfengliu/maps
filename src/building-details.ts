@@ -1,3 +1,4 @@
+import { PASTEUR_300_ID, hitsPasteurPod } from './pasteur-pods.ts';
 import { HOSPITAL_FRAGMENT } from './hospital-materials.ts';
 import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
 import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
@@ -61,6 +62,7 @@ export interface BuildingDetailsLayer extends CustomLayerInterface {
    * It shares the two geometry buffers and paints only ground into native DEM tiles. */
   readonly groundLayer:CustomLayerInterface;
   setSelected(id: string | null): void;
+  pickPasteurPod(point:{x:number;y:number}): Record<string,unknown>|null;
   setInterior(enabled: boolean): void;
   setCeiling(visible: boolean): void;
   readonly stats: Readonly<BuildingDetailStats>;
@@ -491,6 +493,15 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     groundLayer,
     get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}),traffic:Object.freeze({...state.traffic}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
+    pickPasteurPod(point) {
+      const index=indices.get(PASTEUR_300_ID);
+      if(index===undefined||!map||interior||!state.drawCalls||state.error)return null;
+      const datum=grounding.buildingDatum(index);
+      const {clientWidth,clientHeight}=map.getCanvas();
+      if(datum===null||!clientWidth||!clientHeight)return null;
+      const hit=hitsPasteurPod([2*point.x/clientWidth-1,1-2*point.y/clientHeight],matrix,datum,projectLocal);
+      return hit?data.features[index].properties:null;
+    },
     setInterior(enabled) {
       if(interior===enabled)return;
       interior=enabled;worker?.terminate();worker=undefined;
