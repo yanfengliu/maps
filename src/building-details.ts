@@ -1,4 +1,4 @@
-import { hospitalSurfacePicker } from './hospital-picking.ts';
+import { hospitalSurfacePicker, type PickCandidate } from './hospital-picking.ts';
 import { HOSPITAL_FRAGMENT } from './hospital-materials.ts';
 import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
 import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
@@ -64,7 +64,7 @@ export interface BuildingDetailsLayer extends CustomLayerInterface {
    * It shares the two geometry buffers and paints only ground into native DEM tiles. */
   readonly groundLayer:CustomLayerInterface;
   setSelected(id: string | null): void;
-  pickHospital(point:{x:number;y:number}): Record<string,unknown>|null;
+  pickHospital(point:{x:number;y:number},candidates:PickCandidate[]): Record<string,unknown>|null;
   setInterior(enabled: boolean): void;
   setCeiling(visible: boolean): void;
   readonly stats: Readonly<BuildingDetailStats>;
@@ -501,13 +501,15 @@ export function createBuildingDetailsLayer(data: CampusData, onError?: (message:
     groundLayer,
     get stats() { return Object.freeze({ ...state,ready:state.ready&&(!map?.getTerrain?.()||grounding.status==='active'),environment:Object.freeze({...state.environment}),sculptures:Object.freeze({...state.sculptures}),surfaces:Object.freeze({...state.surfaces}),landscape:Object.freeze({...state.landscape}),traffic:Object.freeze({...state.traffic}) }); },
     setSelected(id) { selected = id === null ? -1 : (indices.get(id) ?? -1); map?.triggerRepaint(); },
-    pickHospital(point) {
-      if(!map||interior||!pending||!state.drawCalls||state.error)return null;
+    pickHospital(point,candidates) {
+      const fallback=candidates.find(f=>f.layer.id!=='stanford-roofs')?.properties??null;
+      if(!map||interior||!pending||!state.drawCalls||state.error)return fallback;
       const {clientWidth,clientHeight}=map.getCanvas();
-      if(!clientWidth||!clientHeight)return null;
-      hospitalPicker??=hospitalSurfacePicker(data,pending.geometry.roofs);
-      const hit=hospitalPicker([2*point.x/clientWidth-1,1-2*point.y/clientHeight],matrix,i=>grounding.buildingDatum(i),(x,y)=>grounding.groundDatum(x,y));
-      return hit?data.features[indices.get(hit)!].properties:null;
+      if(!clientWidth||!clientHeight)return fallback;
+      hospitalPicker??=hospitalSurfacePicker(data,pending.geometry.roofs,pending.geometry.facades);
+      const hit=hospitalPicker([2*point.x/clientWidth-1,1-2*point.y/clientHeight],matrix,i=>grounding.buildingDatum(i),(x,y)=>grounding.groundDatum(x,y),candidates,state.lastDrawDetail==='facades',p=>map?.queryTerrainElevation(p)??null);
+      const index=hit===null?undefined:indices.get(hit);
+      return index===undefined?null:data.features[index].properties;
     },
     setInterior(enabled) {
       if(interior===enabled)return;
