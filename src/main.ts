@@ -17,7 +17,6 @@ import { enableHeldKeyboardPan } from './keyboard-pan.ts';
 import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
 import { CHURCH_ID, churchInteriorLocation } from './church-interior.ts';
-import { selectHospitalSurface } from './hospital-picking.ts';
 import { attachPasteurPods } from './pasteur-pods-layer.ts';
 import { searchWorldPlaces } from './world-search.ts';
 
@@ -399,9 +398,10 @@ function addCampusLayers(): void {
     map.on('mouseleave',BUILDING_PICK_LAYERS, () => { if (map) map.getCanvas().style.cursor = ''; });
     map.on('click', event => {
       if(!map?.getLayer('stanford-buildings'))return;
-      const native=map.queryRenderedFeatures(event.point,{layers:BUILDING_PICK_LAYERS});
-      const properties=map.getCanvas().dataset.flatShellReady==='true'&&buildingDetails
-        ?selectHospitalSurface(native.map(f=>f.properties),buildingDetails.pickHospital(event.point)):native[0]?.properties;
+      const detailed=map.getCanvas().dataset.flatShellReady==='true'&&buildingDetails;
+      const layers=detailed?[...BUILDING_PICK_LAYERS,'stanford-roofs']:BUILDING_PICK_LAYERS;
+      const native=map.queryRenderedFeatures(event.point,{layers});
+      const properties=detailed?detailed.pickHospital(event.point,native):native[0]?.properties;
       if(properties)showBuilding(properties);
     });
   }

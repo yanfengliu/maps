@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { prepareBuildingDetails, buildBuildingGeometry, projectLocal, VERTEX_FLOATS } from '../src/building-geometry.ts';
 import { PASTEUR_300_ID, PASTEUR_POD_TOP, PASTEUR_POD_LAYER, PASTEUR_TIERS, pasteurFallbackData } from '../src/pasteur-pods.ts';
-import { hospitalSurfacePicker, selectHospitalSurface } from '../src/hospital-picking.ts';
+import { hospitalSurfacePicker } from '../src/hospital-picking.ts';
 import { attachPasteurPods } from '../src/pasteur-pods-layer.ts';
 import { createQuadArcadeVisibility } from '../src/quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS } from '../src/building-picking.ts';
@@ -190,11 +190,6 @@ for(const [id,deckFraction] of [...entries,[PASTEUR_300_ID,1]]){
     const center=upperWall.corners.reduce(([x,z],p)=>[x+p[0]/3,z+p[2]/3],[0,0]);
     assert.equal(sample(...center),id,'raised wing remains selectable');
     assert.equal(sample(...center,datum+30),null,'a different terrain datum must not match');
-    const hospital=source.properties,neighbor={id:'neighbor'};
-    assert.equal(selectHospitalSurface([hospital,neighbor],null),neighbor);
-    assert.equal(selectHospitalSurface([neighbor,hospital],hospital),neighbor,'nearer native buildings win');
-    assert.equal(selectHospitalSurface([],hospital),hospital);
-    assert.equal(selectHospitalSurface([hospital],null),undefined);
     const paint=new Map(),visibility=createQuadArcadeVisibility();
     const map={getLayer:()=>true,getZoom:()=>18,getCanvas:()=>({dataset:{}}),setFilter(){},setPaintProperty:(layer,key,value)=>paint.set(layer+key,value)};
     for(const ready of [false,true,false]){
@@ -206,3 +201,43 @@ for(const [id,deckFraction] of [...entries,[PASTEUR_300_ID,1]]){
     assert.ok(near(p.detailPodiumHeight??p.detailRoofHeight,deck));
   });
 }
+
+
+test('overlapping hospital and neighbor surfaces are selected in actual front-to-back order',()=>{
+  const names=['way/891732466','way/689417360','way/727171866','way/109151789','way/232841905','way/757988111','way/784079435'];
+  const data=prepareBuildingDetails({type:'FeatureCollection',features:pinned.features.filter(f=>names.includes(f.properties.id))});
+  const geometry=buildBuildingGeometry(data),pick=hospitalSurfacePicker(data,geometry.roofs,geometry.facades);
+  // Fixed 1440 × 920 perspective matrices, 58° pitch at zoom 18. The
+  // numerical camera is independent of the production render matrix builder.
+  const cameras={
+    stanfordReverse:new Float32Array([-1.6923161745071411, 0.7463460564613342, 0.39821410179138184, 0.3981344699859619, -0.8998205065727234, -1.4036728143692017, -0.7489318251609802, -0.7487820386886597, 0, 2.5441441535949707, -0.5300252437591553, -0.5299192667007446, -408.3802490234375, 1550.671142578125, 1152.63037109375, 1154.399658203125]),
+    mainEast:new Float32Array([0.8998205065727234, 1.4036728143692017, 0.7489318251609802, 0.7487820386886597, -1.6923161745071411, 0.7463460564613342, 0.39821410179138184, 0.3981344699859619, 0, 2.5441441535949707, -0.5300252437591553, -0.5299192667007446, 1915.4498291015625, -190.53604125976562, 223.6066436767578, 225.5617218017578]),
+    mainWest:new Float32Array([-0.8998205065727234, -1.4036728143692017, -0.7489318251609802, -0.7487820386886597, 1.6923161745071411, -0.7463460564613342, -0.39821410179138184, -0.3981344699859619, 0, 2.5441441535949707, -0.5300252437591553, -0.5299192667007446, -1915.4498291015625, 190.53604125976562, 426.92822265625, 428.8426513671875]),
+    stanfordFront:new Float32Array([1.6923161745071411, -0.7463460564613342, -0.39821410179138184, -0.3981344699859619, 0.8998205065727234, 1.4036728143692017, 0.7489318251609802, 0.7487820386886597, 0, 2.5441441535949707, -0.5300252437591553, -0.5299192667007446, 408.3802490234375, -1550.671142578125, -502.0955505371094, -499.9953308105469]),
+  };
+  const candidate=id=>({...data.features.find(f=>f.properties.id===id),layer:{id:'stanford-building-picking',type:'fill-extrusion',paint:{'fill-extrusion-opacity':0}}});
+  const samples=[
+    [names[0],names[2],cameras.stanfordReverse,804.411875,410.275081,names[0]],
+    [names[1],names[3],cameras.mainEast,906.106207,360.08356,names[1]],
+    [names[1],names[4],cameras.mainWest,968.289912,395.048867,names[1]],
+    [names[0],names[5],cameras.stanfordFront,904,604,names[5]],
+    [names[1],names[6],cameras.mainEast,920,556,names[6]],
+  ];
+  for(const [hospital,neighbor,camera,x,y,visible] of samples){
+    const screen=[x/720-1,1-y/460];
+    assert.equal(pick(screen,camera,()=>0,()=>0),hospital,'the point is on a hospital triangle');
+    for(const ids of [[neighbor,hospital],[hospital,neighbor]]){
+      assert.equal(pick(screen,camera,()=>0,()=>0,ids.map(candidate)),visible);
+    }
+  }
+  // At roof-only LOD an opaque native wall/cap can cover a custom surface.
+  // Only the click's evaluated native extrusion should enter the comparison.
+  const hospital=data.features.find(f=>f.properties.id===names[0]),native={...hospital,properties:{id:'native-only'}};
+  const matrix=new Float32Array(16);matrix[0]=matrix[5]=.0004;matrix[10]=-.015;matrix[15]=1;
+  const center=projectLocal([-122.177,37.4345833]).map(v=>v*.0004);
+  for(const [height,visible] of [[30,'native-only'],[1,names[0]]]){
+    const hit={...native,layer:{id:'stanford-buildings',type:'fill-extrusion',paint:{'fill-extrusion-base':0,'fill-extrusion-height':height}}};
+    assert.equal(pick(center,matrix,()=>0,()=>0,[hit],false),visible);
+    assert.equal(pick(center,matrix,()=>0,()=>0,[{...hit,layer:{...hit.layer,id:'stanford-building-picking'}}],false),names[0]);
+  }
+});
