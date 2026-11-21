@@ -20,6 +20,11 @@ const hospitalReview = {reviewedAt:'2026-11-21',reviewBasis:'Architect or Stanfo
 const old = {status:'prior-review',reviewedAt:'2026-10-20',reviewBasis:'Recorded in docs/work/0_bay-area-stanford/architecture-references.md; not newly inspected by this audit.'};
 
 const architecturalReferences = [
+  record('additional-aerial-decks',[30754822,109151789,232715633,232715634,232715635,232715636,232715637,232715638,232715639].map(id=>'way/'+id),'Fairchild, Beckman and seven unnamed mapped buildings',
+    'The light decks have straight parapet edges and scattered rooftop equipment. No red-tiled hips are visible in these footprints.',
+    'The image supports the overall roof form. Mechanical enclosures, precise pitch and elevations are unresolved.',
+    [source('https://geo.sanjoseca.gov/server/rest/services/Imagery/DPW_ImageryCached2025/MapServer','photo','2025')],
+    {reviewedAt:'2026-11-21',reviewBasis:'Compared the source footprint and emitted mesh to registered county imagery at atlas parts 39, 65, and 145–151.',expected:{roofShape:'flat'}}),
   record('medical-courtyard-decks',[4720978,4721017,4721018,4721019,4721020].map(id=>'relation/'+id),'Five School of Medicine courtyard buildings',
     'The 2025 overhead view shows light, low-slope decks around open central courts at Alway, Lane, Edwards, Boswell and Grant.',
     'Rooftop plant, parapet heights, walls and roof pitch below image resolution are unsurveyed.',

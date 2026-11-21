@@ -19,8 +19,9 @@ export interface BuildingArchitecture {
   roofShape: string;
   roofSource: 'osm-roof-shape' | 'estimated' | 'reference-profile' | 'official-description';
 }
-// 2025 Santa Clara County orthophotos show pale decks around these five open courts.
-const MEDICAL_COURTYARD_DECKS = new Set(['relation/4720978','relation/4721017','relation/4721018','relation/4721019','relation/4721020']);
+// 2025 Santa Clara County orthophotos show pale decks around the medical courts and nine other mapped buildings.
+const AERIAL_DECKS = new Set(['relation/4720978','relation/4721017','relation/4721018','relation/4721019', 'relation/4721020',
+  'way/30754822','way/109151789','way/232715633','way/232715634','way/232715635','way/232715636','way/232715637','way/232715638','way/232715639']);
 const BRAUN_MUSIC_ID='relation/12460152';
 
 /** Authored material families, informed by the inspected Stanford photographs. */
@@ -73,7 +74,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const available = Math.max(0, wallHeight - Number(p.base));
   const floorHeight = profile === 'residential' ? 3.25 : profile === 'modern' ? 4.1 : 4.2;
   const roble = p.id === 'way/232805733',braun=p.id===BRAUN_MUSIC_ID,garage=garageProfile(p);
-  const aerialDeck = MEDICAL_COURTYARD_DECKS.has(String(p.id));
+  const aerialDeck = AERIAL_DECKS.has(String(p.id));
   const floors = garage?.kind==='open-deck'?garage.levels:braun?2:reference ? reference.facadeBands : roble ? 3 : profile === 'quad' ? 1 : special ? null : mappedLevels !== null ? Math.max(0, mappedLevels - minLevel)
     : profile === 'garage' || profile === 'service' && available < 8 ? 1 : Math.max(1, Math.round(available / floorHeight));
   return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
@@ -106,7 +107,7 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const floors = detail.floorSource === 'osm-levels'
     ? `OSM records ${detail.mappedLevels} ${detail.mappedLevels === 1 ? 'level' : 'levels'}.`
     : `The facade models approximately ${detail.floors} ${detail.floors === 1 ? 'floor' : 'floors'} from the available height; the source has no floor count.`;
-  if(MEDICAL_COURTYARD_DECKS.has(String(p.id)) && detail.roofSource==='reference-profile')return `${floors} The light, flat deck around the courtyard follows the 2025 county aerial photograph. Roof equipment, window spacing and parapet heights are approximate.`;
+  if(AERIAL_DECKS.has(String(p.id)) && detail.roofSource==='reference-profile')return `${floors} The light, low-slope roof follows the 2025 county aerial photograph. Individual rooftop equipment and parapet heights have not been surveyed.`;
   const roof = detail.roofSource === 'osm-roof-shape' ? `The ${detail.roofShape} roof follows an OSM shape tag.` : `The ${detail.roofShape} roof is a modeled estimate.`;
   return `${floors} ${roof} Window spacing is modeled; exact counts have not been surveyed.`;
 }

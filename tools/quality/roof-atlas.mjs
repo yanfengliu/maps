@@ -76,6 +76,10 @@ export async function buildAtlas(directory, fetchTiles) {
   const faces=topSurfaces(mesh,prepared.features.length), tiles=new Map();
   const cards=data.features.map((source,i)=>card({...source,properties:prepared.features[i].properties},faces[i],i+1,tiles));
   await mkdir(join(directory,'tiles'),{recursive:true});
+  let previous=[];
+  try { previous=JSON.parse(await readFile(join(directory,'sources.json'),'utf8')).tiles; }
+  catch (error) { if (error.code!=='ENOENT') throw error; }
+  const known=new Map(previous.map(tile=>[tile.url,tile.sha256]));
   const manifest=[];
   for (const [file,url] of tiles) {
     const target=join(directory,file);
@@ -90,7 +94,9 @@ export async function buildAtlas(directory, fetchTiles) {
     }
     if(!bytes) throw new Error('Missing '+file+'. Run with --fetch to download the county photographs.');
     checkJpeg(bytes, url);
-    manifest.push({file,url,sha256:createHash('sha256').update(bytes).digest('hex')});
+    const sha256=createHash('sha256').update(bytes).digest('hex');
+    if (known.has(url) && known.get(url)!==sha256) throw new Error('Image differs from saved source digest: '+file);
+    manifest.push({file,url,sha256});
   }
   const modelDigest=await computeModelDigest(fileURLToPath(new URL('../..',import.meta.url)));
   await writeFile(join(directory,'sources.json'),JSON.stringify({service,year:2025,modelDigest,parts:cards.length,tiles:manifest},null,2)+'\n');
@@ -98,10 +104,13 @@ export async function buildAtlas(directory, fetchTiles) {
   const intro='<h1>Stanford roof comparisons</h1><p>Left: <a href="'+service+'">2025 Santa Clara County aerial imagery, City of San José</a>, with the mapped footprint outlined. Right: isolated exterior mesh at the same position, scale and orientation. Tree cover, shadows, tall-building displacement, overlapping parts and later construction limit interpretation. Heights, facades and shader materials need separate views.</p>';
   for(let start=0;start<cards.length;start+=36){
     const page=Math.floor(start/36)+1, total=Math.ceil(cards.length/36);
-    const nav='<nav>'+[page>1?'<a href="sheet-'+(page-1)+'.html">Previous</a>':'','Sheet '+page+' of '+total,page<total?'<a href="sheet-'+(page+1)+'.html">Next</a>':''].filter(Boolean).join(' · ')+'</nav>';
+    const nav='<nav>'+['<a href="index.html">All buildings</a>',page>1?'<a href="sheet-'+(page-1)+'.html">Previous</a>':'','Sheet '+page+' of '+total,page<total?'<a href="sheet-'+(page+1)+'.html">Next</a>':''].filter(Boolean).join(' · ')+'</nav>';
     const html='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Stanford roof comparisons '+page+'</title>'+style+intro+nav+'<main>'+cards.slice(start,start+36).join('')+'</main>'+nav+'</html>';
     await writeFile(join(directory,'sheet-'+page+'.html'),html);
   }
+  const entries=prepared.features.map((feature,i)=>({id:feature.properties.id,name:feature.properties.name||'',i})).sort((a,b)=>a.name.localeCompare(b.name)||a.id.localeCompare(b.id));
+  const links=entries.map(({id,name,i})=>'<li><a href="sheet-'+(Math.floor(i/36)+1)+'.html#part-'+(i+1)+'">'+escape(name||id)+'</a>'+ (name?' · '+escape(id):'')+'</li>');
+  await writeFile(join(directory,'index.html'),'<!doctype html><html lang="en"><meta charset="utf-8"><title>Stanford roof atlas index</title>'+style+intro+'<p>Find a mapped name or OpenStreetMap ID on this page.</p><ul>'+links.join('')+'</ul></html>');
   return {parts:cards.length,sheets:Math.ceil(cards.length/36),tiles:tiles.size,modelDigest};
 }
 
