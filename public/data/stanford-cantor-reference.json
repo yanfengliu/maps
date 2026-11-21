@@ -1,6 +1,6 @@
 {
-  "reviewed": "2026-11-08",
-  "status": "awaiting-current-plan-image",
+  "reviewed": "2026-11-21",
+  "status": "two-floor-visitor-diagram",
   "buildingIds": [
     "relation/12236339"
   ],
@@ -33,15 +33,17 @@
       103.851,
       71.693
     ],
-    "alignmentWarning": "Longest-edge axes are a geometric frame only. Entry side and individual gallery locations have not been visually registered to the current visitor plan."
+    "alignmentWarning": "The visitor view uses plan-relative diagram coordinates. The outer footprint and courtyard remain unchanged on the geographic map."
   },
   "sources": [
     {
       "url": "https://museum.stanford.edu/sites/default/files/inline-files/Cantor_map_for_website_12-18-24-A.pdf",
       "date": "2024-12-18",
       "type": "official current published visitor floor plan",
-      "retrieved": "Cached web text lists first/second-floor galleries, room numbers, courtyard, stair and elevator labels. Visual plan unavailable in this session.",
-      "limit": "Direct HTTP and normal headless Chrome returned Cloudflare HTTP 403. Web screenshot tool returned only an ImageDisplayed text placeholder, without image content."
+      "retrieved": "Downloaded the plan linked from the museum Visit page and inspected the two floor drawings on page 1 at a rendered height of 2,000 pixels on 2026-11-21.",
+      "limit": "Illustrated visitor diagram without a survey scale, partition heights, or geographic control points.",
+      "linkedFrom": "https://museum.stanford.edu/visit",
+      "sha256": "ea468d89d35a0df22a830242aba50c4750fb37d8d510c300daaa7ca1bf3acf20"
     },
     {
       "url": "https://museum.stanford.edu/sites/default/files/2023-07/2023_7_CantorMap.pdf",
@@ -73,24 +75,5 @@
       "retrieved": "Image search exposes an earlier handout plan; no current-layout confirmation."
     }
   ],
-  "decision": "No interior wall, doorway, stair, elevator or gallery geometry authored. Do not construct a current interior from labels or an unverified older floor plan. A visually accessible copy of the current public visitor plan is required before tracing and source registration.",
-  "implementationContractForLater": {
-    "function": "buildCantorInterior(data: CampusData, floor: 1 | 2): DetailGeometry",
-    "nativePartsToHide": [
-      "relation/12236339"
-    ],
-    "planFloors": [
-      1,
-      2
-    ],
-    "estimatedRatherThanSurveyed": [
-      "Dimensions derived by aligning visitor diagram to pinned footprint",
-      "Wall heights, thicknesses and floor-to-floor spacing"
-    ],
-    "excluded": [
-      "Invented artworks",
-      "Unshown private rooms",
-      "Unverified current partition layout"
-    ]
-  }
+  "decision": "The selected museum opens a two-floor diagram of named public spaces. The outlines and label positions follow the visitor plan. Doorways, private rooms, exhibit contents, surveyed dimensions and geographic registration are outside the model."
 }

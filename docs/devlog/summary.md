@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — Green Library’s East Wing now shows three staggered roof fields and three stories of precast bands and ribbon windows. Cantor’s building card opens a two-floor visitor diagram with 30 selectable spaces. Both Pasteur addresses and both Packard buildings now link to their official visitor maps. [Project records](../work/0_bay-area-stanford/plan.md).
+
 - 2026-11-21 — The realism audit now counts the 296 physical stop signs rendered by the exterior worker. Their 2,368 triangles bring the baseline to 189,905 of 190,000. [Current work](../work/0_bay-area-stanford/plan.md).
 
 - 2026-11-09: **Rendered stop signs as physical roadside objects.** — 296 fixed octagonal faces, metal backs and posts replace 306 camera-facing icons without duplicating intersection records; terrain anchors, source directions and estimated placement limits are retained. [Design and evidence](../work/0_bay-area-stanford/design.md#physical-stop-signs--2026-11-09).

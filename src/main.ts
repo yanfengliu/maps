@@ -18,6 +18,8 @@ import { createQuadArcadeVisibility } from './quad-arcade-visibility.ts';
 import { BUILDING_PICK_LAYERS, quadPickingLayer } from './building-picking.ts';
 import { CHURCH_ID, churchInteriorLocation } from './church-interior.ts';
 import { searchWorldPlaces } from './world-search.ts';
+import { CANTOR_ID, hospitalVisitorMap } from './visitor-maps.ts';
+import { openCantorGalleryPlan } from './cantor-gallery-plan.ts';
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -152,6 +154,23 @@ function showBuilding(properties: Record<string, unknown>): void {
   if(selectedId===CHURCH_ID){
     const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;
     button.addEventListener('click',enterChurchInterior);details.append(button);
+  } else if (selectedId === CANTOR_ID) {
+    const button = document.createElement('button');
+    button.className = 'detail-action';
+    button.textContent = 'Explore gallery floors';
+    button.addEventListener('click', openCantorGalleryPlan);
+    details.append(button);
+  } else {
+    const visitorMap = hospitalVisitorMap(selectedId);
+    if (visitorMap) {
+      const link = document.createElement('a');
+      link.className = 'visitor-map-link';
+      link.href = visitorMap.url;
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      link.textContent = `Visitor map · ${visitorMap.address} (PDF) ↗`;
+      details.append(link);
+    }
   }
 }
 

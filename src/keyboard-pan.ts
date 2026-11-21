@@ -53,7 +53,7 @@ export function enableHeldKeyboardPan(map: MapLibreMap): () => void {
   const textEntry = (target: EventTarget | null): boolean => {
     const element = target as HTMLElement | null;
     if (!element) return false;
-    if (element.isContentEditable || element.closest?.('[role="textbox"], [role="searchbox"], [role="combobox"]')) return true;
+    if (element.isContentEditable || element.closest?.('dialog[open], [role="textbox"], [role="searchbox"], [role="combobox"]')) return true;
     if (element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') return true;
     return element.tagName === 'INPUT' && !['button','checkbox','color','file','hidden','image','radio','range','reset','submit'].includes((element as HTMLInputElement).type);
   };

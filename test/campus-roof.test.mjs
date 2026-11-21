@@ -34,7 +34,8 @@ test('rendered generic hipped surfaces follow source-edge planes rather than sam
  const monitorPeaks=new Map([['way/232841907',5.439],['way/232841919',5.439],['way/232841878',11.1],['way/232841924',11.1]]),monitored=new Set();
  let checked=0;
  for(const {feature,rings,key} of cases()){
-  if(feature.properties.id===BRAUN_MUSIC_ID)continue;
+  // These two surveyed buildings have their own emitted-layout checks.
+  if(feature.properties.id===BRAUN_MUSIC_ID||feature.properties.id==='way/232805660')continue;
   const index=prepared.features.indexOf(feature),p=feature.properties,model=evaluateRoofSkeleton(rings,CAMPUS_ROOF_PROFILES[key]),peak=monitorPeaks.get(p.id)??p.detailRoofHeight,slope=Math.max(0,peak-p.detailWallHeight-.07)/model.maximumTime,main=[];
   const normals=rings.flatMap(r=>r.map((a,i)=>{const b=r[(i+1)%r.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);return [-(b[1]-a[1])/l*slope,(b[0]-a[0])/l*slope];}));
   for(let i=0;i<mesh.roofs.length;i+=VERTEX_FLOATS*3){
@@ -67,4 +68,50 @@ test('Braun has a flat solar deck with a narrow tiled edge and open courtyards, 
  assert.equal(p.detailArchitecture.floors,2);assert.equal(p.detailArchitecture.floorSource,'official-description');assert.equal(p.height,source.features[index].properties.height);assert.deepEqual(f.geometry,source.features[index].geometry);
  for(const t of [...deck,...tile,...panels]){assert.ok(t.every(v=>v[2]>=p.detailWallHeight&&v[2]<=p.height));assert.ok(Math.abs(native.reduce((s,n)=>s+overlap(t,n),0)-area(t))<.015,'surfaces retain both courtyards');}
  const changed=rings.map(r=>r.map(p=>[...p]));changed[0][0][0]+=.001;assert.throws(()=>campusRoof(BRAUN_MUSIC_ID,0,changed),/footprint changed/);
+});
+
+test('Green East retains its stepped source boundary, three staggered upper roof fields, hip ends and three window bands', () => {
+  const id = 'way/232805660', index = source.features.findIndex(f => f.properties.id === id);
+  const feature = prepared.features[index], p = feature.properties;
+  const ring = feature.geometry.coordinates[0].slice(0, -1).map(projectLocal);
+  assert.deepEqual(feature.geometry, source.features[index].geometry);
+  assert.equal(p.height, 12);
+  assert.equal(p.heightSource, 'estimated');
+  assert.equal(p.detailArchitecture.floors, 3);
+  assert.equal(p.detailArchitecture.floorSource, 'official-description');
+  assert.equal(p.detailArchitecture.roofSource, 'reference-profile');
+
+  function surfaces(array, kinds) {
+    const result = [];
+    for (let i = 0; i < array.length; i += VERTEX_FLOATS * 3) {
+      if (array[i + 12] === index && kinds.includes(array[i + 11])) {
+        result.push([0, 1, 2].map(j => Array.from(array.slice(i + j * VERTEX_FLOATS, i + (j + 1) * VERTEX_FLOATS))));
+      }
+    }
+    return result;
+  }
+
+  const upper = surfaces(mesh.roofs, [54]), hips = surfaces(mesh.roofs, [17]), all = [...upper, ...hips];
+  const native = footprint([ring]), upperArea = upper.reduce((s,t) => s + area(t), 0);
+  assert.ok(upperArea > 1550 && upperArea < 1680, 'three broad upper fields seen in the registered aerial');
+  assert.ok(Math.abs(all.reduce((s,t) => s + area(t), 0) - area(ring)) < .005, 'cover the complete stepped plan');
+  for (const [i, t] of all.entries()) {
+    assert.ok(t.every(v => v[2] >= p.detailWallHeight && v[2] <= 12));
+    assert.ok(Math.abs(native.reduce((s,n) => s + overlap(t,n), 0) - area(t)) < .005, 'roof stays inside the mapped outline');
+    for (const other of all.slice(i+1)) assert.ok(overlap(t,other) < .002, 'no overlapping roof surfaces');
+  }
+  for (const point of ring) {
+    assert.ok(hips.some(t => t.some(v => Math.hypot(v[0]-point[0],v[1]-point[1])<.0001 && Math.abs(v[2]-p.detailWallHeight-.07)<.0001)), 'each mapped outline vertex remains at the eave');
+  }
+  const uvTriangles=upper.map(t => t.map(v => [v[9],v[10]]));
+  const onUpper=(x,y)=>uvTriangles.some(t=>[0,1,2].every(i=>cross(t[i],t[(i+1)%3],[x,y])>=-1e-5));
+  for (const [x, y, expected] of [[18,20,true],[18,0,false],[33,0,true],[33,-12,false],[49,-12,true],[49,29,false],[33,29,true]]) {
+    assert.equal(onUpper(x,y),expected,'aerial step at '+[x,y]);
+  }
+  const bands=surfaces(mesh.facades,[53]);
+  assert.equal(bands.length,ring.length*2,'wrap all mapped edges, including short returns');
+  assert.ok(bands.flat().every(v=>v[10]===0||v[10]===3));
+  const changed = ring.map(([x,y]) => [x,y]);
+  changed[0][0]+=.001;
+  assert.throws(()=>campusRoof(id,0,[changed]),/footprint changed/);
 });

@@ -94,6 +94,17 @@ test('typing targets keep WASD text and focus into them releases held movement',
   h.dispose();h.step(16);
 });
 
+test('opening a gallery dialog releases held pan and gives its floor controls the keyboard', () => {
+  const h=harness();
+  h.key('keydown','d');h.step(20);
+  const count=h.results.length;
+  h.focus({tagName:'BUTTON',closest:selector=>selector.includes('dialog[open]')?{}:null});
+  h.step(20);assert.equal(h.results.length,count);
+  assert.equal(h.key('keydown','a').defaultPrevented,false);
+  h.step(20);assert.equal(h.results.length,count);
+  h.dispose();
+});
+
 test('focus changes between map controls preserve a held key; entering text or composition clears it', () => {
   const h=harness();h.focus({tagName:'BUTTON'});h.key('keydown','d');h.step(20);
   h.focus({tagName:'INPUT',type:'checkbox'});h.step(20);assert.equal(h.results.length,2);
