@@ -7,6 +7,8 @@ import {addCampusEnvironment,environmentDimensions} from '../src/campus-environm
 import {buildBuildingGeometry,prepareBuildingDetails,projectLocal} from '../src/building-geometry.ts';
 import {MAX_DETAIL_TRIANGLES,MAX_GPU_GEOMETRY_BYTES,gpuGeometryBytes} from '../src/gpu-geometry.ts';
 import {TerrainAnchorBuilder,decodeTerrainObjectId} from '../src/terrain-grounding.ts';
+import {NEEDLE_FOLIAGE} from '../src/conifer-crown.ts';
+import {originalConiferCrown} from './helpers/conifer-baseline.mjs';
 
 const load=name=>JSON.parse(readFileSync(new URL('../public/data/'+name,import.meta.url)));
 const prototypes=Object.entries(TREE_VARIANTS).flatMap(([form,count])=>Array.from({length:count},(_,v)=>treePrototype(form,v)));
@@ -100,14 +102,15 @@ test('real source instances reuse the library while retaining mapped positions, 
     const counts=addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal,anchors.add);
     assert.equal(counts.trees,1);assert.deepEqual(Array.from(anchors.finish()),Array.from(new Float32Array(projectLocal(feature.geometry.coordinates))));
     if(family)assert.equal(triangles.length,treePrototype(family,treeVariant(p.id,family)).triangles.length);
-    assert.ok(triangles.some(t=>family?leafKinds.includes(t.kind):t.kind===10));assert.ok(triangles.every(t=>decodeTerrainObjectId(t.id)===0));
+    const nonPalmKind=d.type==='conifer'?NEEDLE_FOLIAGE:10;
+    assert.ok(triangles.some(t=>family?leafKinds.includes(t.kind):t.kind===nonPalmKind));assert.ok(triangles.every(t=>decodeTerrainObjectId(t.id)===0));
     const top=Math.max(...triangles.flatMap(t=>t.points.map(p=>p[2])));
     assert.ok(top<=d.height+1e-8&&top>=d.height*.98);
   }
   assert.equal(JSON.stringify(data),original);
 });
 
-test('excluded broadleaf and conifer candidates do not alter any visible baseline source-instance face',()=>{
+test('all baseline broadleaf faces, conifer trunks, mulch and anchors retain their source-instance geometry',()=>{
   // Oracle generated independently from 18c5916's emitter for every non-palm
   // source node. Ignore only zero-area pole faces, never visible geometry.
   const data=load('stanford-environment.geojson'),result=[];
@@ -115,7 +118,11 @@ test('excluded broadleaf and conifer candidates do not alter any visible baselin
     const {mesh,triangles}=recorder(),anchors=new TerrainAnchorBuilder();
     addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal,anchors.add);
     assert.ok(triangles.every(t=>area(t.points)>1e-8),'collapsed pole faces must not consume the geometry budget');
-    result.push([feature.properties.id,triangles,Array.from(anchors.finish())]);
+    const dimensions=environmentDimensions(feature.properties);
+    const unchanged=dimensions.type==='conifer'
+      ? [...triangles.filter(t=>t.kind!==NEEDLE_FOLIAGE),...originalConiferCrown(projectLocal(feature.geometry.coordinates),dimensions,triangles[0].id)]
+      : triangles;
+    result.push([feature.properties.id,unchanged,Array.from(anchors.finish())]);
   }
   assert.equal(result.length,389);
   // V8's projected coordinates differ by nanometres on Apple Silicon. Both
@@ -124,6 +131,35 @@ test('excluded broadleaf and conifer candidates do not alter any visible baselin
     ? '393d3ac1dcbad62a2de810b3e2aad11db723cb0809c04641d11a8cd6f1012526'
     : '1b693eb30c4bb11dd0f5be5a1b1c6b58f9146f188d5d3e390ca0aa0d705ad3e8';
   assert.equal(createHash('sha256').update(JSON.stringify(result)).digest('hex'), baseline);
+});
+
+test('each mapped needleleaf tree retains its terrain anchor and fits a closed crown volume inside the original geometry budget',()=>{
+  const features=load('stanford-environment.geojson').features.filter(f=>f.properties.kind==='tree'&&environmentDimensions(f.properties).type==='conifer');
+  assert.equal(features.length,26);
+  const variations=new Set();
+  for(const feature of features){
+    const {mesh,triangles}=recorder(),anchors=new TerrainAnchorBuilder();
+    addCampusEnvironment(mesh,{type:'FeatureCollection',features:[feature]},projectLocal,anchors.add);
+    const {height,radius}=environmentDimensions(feature.properties),[x,y]=projectLocal(feature.geometry.coordinates);
+    const crown=triangles.filter(t=>t.kind===NEEDLE_FOLIAGE),edges=new Map();
+    assert.equal(crown.length,24);
+    for(const {points,uv,normals,id} of crown){
+      assert.equal(decodeTerrainObjectId(id),0);
+      assert.ok(area(points)>1e-8);
+      for(let i=0;i<3;i++){
+        const [px,py,z]=points[i],[u,v]=uv[i],[r,h,seed]=normals[i];
+        assert.equal(r,radius);assert.equal(h,height);assert.ok(seed>=0&&seed<=1);variations.add(seed);
+        assert.ok(Math.abs((px-x)/radius-u)<1e-9&&Math.abs((py-y)/radius-v)<1e-9);
+        assert.ok(Math.hypot(u,v)<=1.00000001&&z>=0&&z<=height);
+        const a=JSON.stringify(points[i]),b=JSON.stringify(points[(i+1)%3]);
+        const key=a<b?a+'/'+b:b+'/'+a;
+        edges.set(key,(edges.get(key)??0)+(a<b?1:-1));
+      }
+    }
+    assert.equal(edges.size,36);
+    assert.ok([...edges.values()].every(winding=>winding===0),'every hull edge has an opposite incident face');
+  }
+  assert.equal(variations.size,26,'adjacent source IDs must not repeat a single branch arrangement');
 });
 
 test('the complete campus retains its unchanged triangle and packed GPU budgets with all environment layers included',()=>{

@@ -8,6 +8,7 @@ import {buildBuildingGeometry,BuildingGeometryBuilder,prepareBuildingDetails,pro
 import {validateCampusEnvironment,environmentDimensions,addCampusEnvironment} from '../src/campus-environment.ts';
 import {footprintClearance,estimateFacing} from '../tools/data/build-campus-environment.mjs';
 import {decodeTerrainObjectId,isTerrainObjectId} from '../src/terrain-grounding.ts';
+import {NEEDLE_FOLIAGE} from '../src/conifer-crown.ts';
 
 const load=name=>readFileSync(new URL('../public/data/'+name,import.meta.url));
 const bytes=load('stanford-environment.geojson'),environment=validateCampusEnvironment(JSON.parse(bytes));
@@ -291,7 +292,7 @@ test('actual emitted palm, broadleaf and conifer silhouettes differ; untagged si
   const one=properties=>({type:'FeatureCollection',features:[{type:'Feature',properties:{id:'node/123',version:1,kind:'tree',...properties},geometry:{type:'Point',coordinates:[-122.1697,37.4278]}}]});
   const make=properties=>buildBuildingGeometry(empty,one(properties));
   const palm=make({species:'Phoenix canariensis'}),broadleaf=make({leaf_type:'broadleaved'}),conifer=make({leaf_type:'needleleaved'});
-  const vertices=g=>{const result=[];for(let i=0;i<g.roofs.length;i+=VERTEX_FLOATS)if([10,TREE_MATERIAL.feather,TREE_MATERIAL.fan].includes(g.roofs[i+11]))result.push([...g.roofs.slice(i,i+3)]);return result;};
+  const vertices=g=>{const result=[];for(let i=0;i<g.roofs.length;i+=VERTEX_FLOATS)if([10,TREE_MATERIAL.feather,TREE_MATERIAL.fan,NEEDLE_FOLIAGE].includes(g.roofs[i+11]))result.push([...g.roofs.slice(i,i+3)]);return result;};
   const extent=g=>{const points=vertices(g);return {low:Math.min(...points.map(p=>p[2])),high:Math.max(...points.map(p=>p[2])),width:Math.max(...points.map(p=>Math.hypot(p[0],p[1])))};};
   const p=extent(palm),b=extent(broadleaf),c=extent(conifer);
   assert.ok(p.low/p.high>0.68,'palms need a high crown over a tall exposed trunk');

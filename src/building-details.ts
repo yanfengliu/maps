@@ -2,6 +2,7 @@ import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
 import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
 import {LANDSCAPE_HELPERS,LANDSCAPE_FRAGMENT} from './campus-landscape-materials.ts';
 import {TREE_HELPERS,TREE_FRAGMENT} from './tree-materials.ts';
+import {CONIFER_VERTEX_OUTPUTS,CONIFER_VERTEX,CONIFER_HELPERS,CONIFER_FRAGMENT} from './conifer-material.ts';
 import {emptyLandscapeCounts,type LandscapeCounts} from './campus-landscape.ts';
 import {ROOF_TILE_FRAGMENT} from './roof-materials.ts';
 import type { CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap } from 'maplibre-gl';
@@ -86,6 +87,7 @@ out vec2 v_position;
 flat out float v_kind;
 flat out float v_wallVisible;
 flat out float v_groundSurface;
+${CONIFER_VERTEX_OUTPUTS}
 uniform float u_groundPass;
 ${TERRAIN_VERTEX_HELPERS}
 void main() {
@@ -94,6 +96,7 @@ void main() {
   vec3 position=u_groundPass>0.5?vec3(a_position.xy,0.0):groundPosition(a_position,a_building);
   if(u_groundPass>0.5)v_terrainAvailable=1.0;
   gl_Position=u_groundPass>0.5&&v_groundSurface<0.5?vec4(2,2,2,1):u_matrix*vec4(position,1.0);
+${CONIFER_VERTEX}
   float illumination = 0.72 + 0.28 * abs(dot(normalize(a_normal), normalize(vec3(-0.45,0.6,0.85))));
   vec3 tint = abs(a_building - u_selected) < 0.1 ? mix(a_color, vec3(0.90,0.65,0.35),0.18) : a_color;
   v_color = tint * illumination;
@@ -124,6 +127,7 @@ out vec4 outColor;
 ${STADIUM_FIELD_HELPERS}
 ${LANDSCAPE_HELPERS}
 ${TREE_HELPERS}
+${CONIFER_HELPERS}
 ${STOP_SIGN_HELPERS}
 void main() {
   if(u_groundPass>0.5?v_groundSurface<0.5:(u_drapeGround>0.5&&v_groundSurface>0.5))discard;
@@ -286,6 +290,7 @@ ${SURFACE_FRAGMENT}
 ${HOOVER_FRAGMENT}
 ${LANDSCAPE_FRAGMENT}
 ${TREE_FRAGMENT}
+${CONIFER_FRAGMENT}
   ${STOP_SIGN_FRAGMENT}
   if(abs(v_kind-29.0)<0.1 && v_color.r>v_color.g*1.5){
     // Long timber boards remain legible through the ghosted ceiling surface.

@@ -6,7 +6,7 @@
 type V=[number,number,number];
 type UV=[number,number];
 type Color=[number,number,number];
-export const TREE_MATERIAL={feather:91,fan:92,bark:94,palmBark:95} as const;
+export const TREE_MATERIAL={feather:91,fan:92,needle:93,bark:94,palmBark:95} as const;
 export const TREE_MATERIAL_KINDS=Object.freeze(Object.values(TREE_MATERIAL));
 export type TreeForm='feather'|'fan';
 export interface TreeTriangle {readonly points:readonly V[];readonly uv:readonly UV[];readonly normals:readonly V[];readonly kind:number;readonly shade:number}
