@@ -144,9 +144,12 @@ export class TerrainGrounding {
   }
   get bytes(){return this.heights?TERRAIN_SIZE*TERRAIN_SIZE*16+(this.anchors?this.layout.bytes:0):0;}
   buildingDatum(index:number):number|null {
+    return this.groundDatum(this.buildings[index*2],this.buildings[index*2+1]);
+  }
+  groundDatum(x:number,y:number):number|null {
     if(this.status==='disabled')return 0;
     if(this.status!=='active'||!this.grid)return null;
-    const [west,south,east,north]=this.bounds,x=this.buildings[index*2],y=this.buildings[index*2+1];
+    const [west,south,east,north]=this.bounds;
     return sampleTerrainGrid(this.grid,TERRAIN_SIZE,TERRAIN_SIZE,(x-west)/(east-west),(y-south)/(north-south));
   }
   setObjects(values?:Float32Array){
