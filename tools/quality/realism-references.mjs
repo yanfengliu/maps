@@ -14,6 +14,8 @@ const engineering = [
 const current = {reviewedAt:'2026-11-08', status:'photo-supported', reviewBasis:'Reference images inspected during the 2026-11-08 modeling pass; render acceptance is recorded separately.'};
 const source = (url,kind='photo',date='undated')=>({url,kind,date});
 const record = (key,ids,title,observed,limitations,sources,extra={})=>({key,ids,title,...current,observed,limitations,sources,...extra});
+const naip = source('https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPImagery/ImageServer','photo','2022-05-18, Stanford tile m_3712239_ne_10_060');
+const hospitalReview = {reviewedAt:'2026-11-21',reviewBasis:'Architect or Stanford exterior photos inspected with the georeferenced NAIP natural-color roof view.'};
 const old = {status:'prior-review',reviewedAt:'2026-10-20',reviewBasis:'Recorded in docs/work/0_bay-area-stanford/architecture-references.md; not newly inspected by this audit.'};
 
 export const REALISM_REFERENCES = [
@@ -60,6 +62,15 @@ export const REALISM_REFERENCES = [
   record('bing',['way/232805680'] ,"Green Library's Bing Wing",'Three tall rounded west entrance bays beneath small upper openings and a red hipped roof.',
     'Other elevations, window counts, ornament and twelve-metre source default remain estimates.',
     [source('https://trees.stanford.edu/images/inner_palms/inner_palms-Pages/Image8.html'),source(survey,'document','2016')],old),
+  record('stanford-500-pasteur',['way/891732466'],'Stanford Hospital, 500 Pasteur','Four glazed, cantilevered upper blocks, inset roof screens, a garden podium and central glazed roof.',
+    'Upper silhouettes approximate the 2022 public aerial. The pinned 18 m envelope is an estimate. Glazing, overhangs, screen heights and planting remain approximate.',
+    [source('https://vinoly.com/wp-content/uploads/2016/05/Stanford_Hero_Banner3.jpg'),source('https://vinoly.com/wp-content/uploads/2016/05/Stanford_SingleImage_02.jpg'),naip],hospitalReview),
+  record('packard-main',['way/689417360'],'Lucile Packard Children’s Hospital, Main Building','Staggered pavilion bars, horizontal louvers, pale vertical fins and terraces.',
+    'The 18 m envelope is estimated. Aerial and exterior references support relative massing. Exact roof levels, locations of individual blades, service enclosures and glass finishes are unverified.',
+    [source('https://perkinswill.com/wp-content/uploads/2019/03/Hero_Lucile_Packard-scaled.jpg'),source('https://perkinswill.com/wp-content/uploads/2019/03/LPCH-Energy.jpg'),naip],hospitalReview),
+  record('packard-west',['way/130100416'],'Lucile Packard Children’s Hospital, West Building','Stepped roof lights and wings around a central planted terrace. Stanford’s historical photograph shows pale horizontal bands and dark glazing.',
+    'The aerial establishes the roof arrangement. The 1991 photograph does not establish current finishes. The 18 m envelope, terrace levels, planting and glazing remain estimates.',
+    [source('https://med.stanford.edu/content/dam/sm-news/images/2016/05/2016-05-23.pdf#page=4','photo','1991 opening; published 2016'),source('https://lpfch.org/impact-stories/child-centered-healing/','document'),naip],hospitalReview),
   record('roble',['way/232805733'],'Roble Hall','Official three stories; arched entrance, paired columns, cornice and window surrounds.',
     'Window spacing, detailed entrance ornament and roof proportions remain approximations; source ten-metre height is estimated.',
     [source('https://resed.stanford.edu/houses/roble-hall-houses'),source('https://rde.stanford.edu/studenthousing/roble-hall','document')],old),

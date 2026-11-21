@@ -18,6 +18,7 @@ import { addStadiumSeating, addStadiumField, addStadiumStructure } from './stadi
 import { STADIUM_CENTER, STADIUM_CONCOURSE_ID } from './stadium-architecture.ts';
 import { referenceGarageHeight } from './garage-architecture.ts';
 import { addGarage } from './garage-geometry.ts';
+import { addHospitalExterior } from './hospital-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
@@ -199,6 +200,10 @@ export class BuildingGeometryBuilder {
       if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       if(addGarage(this.roofs,this.facades,rings,building,p,base,height)){this.checkBudget(String(p.id));continue;}
       if(addHoover(this.roofs,this.facades,String(p.id),rings[0],building,height)){this.checkBudget(String(p.id));continue;}
+      if (flatShell && addHospitalExterior(this.roofs, String(p.id), rings, building, base, height, projectLocal)) {
+        this.checkBudget(String(p.id));
+        continue;
+      }
       const vertices = rings.flat(), holes: number[] = [];
       let offset = rings[0].length;
       for (const ring of rings.slice(1)) { holes.push(offset); offset += ring.length; }

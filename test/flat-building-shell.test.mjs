@@ -6,6 +6,7 @@ import {featureFilter} from '@maplibre/maplibre-gl-style-spec';
 import {prepareBuildingDetails,buildBuildingGeometry,projectLocal,VERTEX_FLOATS as S} from '../src/building-geometry.ts';
 import {createQuadArcadeVisibility} from '../src/quad-arcade-visibility.ts';
 import {quadPickingLayer} from '../src/building-picking.ts';
+import {podiumHeight} from '../src/hospital-exteriors.ts';
 import {CHURCH_ID} from '../src/church-interior.ts';
 
 const source=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url)));
@@ -22,7 +23,8 @@ test('every replacement flat shell closes all source and courtyard edges, includ
   assert.equal(p.base,source.features[index].properties.base);
   assert.equal(p.height,source.features[index].properties.height);
   for(let i=0;i<mesh.length;i+=S*3)if(mesh[i+12]===index)triangles.push([0,1,2].map(j=>[...mesh.slice(i+j*S,i+j*S+3)]));
-  for(let i=0;i<mesh.length;i+=S)if(mesh[i+12]===index&&[0,9,17].includes(mesh[i+11])){assert.equal(mesh[i+11],9,'a compound or pitched roof cannot use a generic flat shell');assert.ok(Math.abs(mesh[i+2]-p.detailRoofHeight)<.0001,'every roof point shares the shell top');}
+  const podium=podiumHeight(p.id,p.base,p.detailRoofHeight);
+  for(let i=0;i<mesh.length;i+=S)if(podium===undefined&&mesh[i+12]===index&&[0,9,17].includes(mesh[i+11])){assert.equal(mesh[i+11],9,'a compound or pitched roof cannot use a generic flat shell');assert.ok(Math.abs(mesh[i+2]-p.detailRoofHeight)<.0001,'every roof point shares the shell top');}
   for(const ring of polygons(feature.geometry).flat())for(let i=1;i<ring.length;i++){
    const a=projectLocal(ring[i-1]),b=projectLocal(ring[i]);edges++;
    const length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<=1.8)short++;
@@ -33,7 +35,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
     assert.equal(faces.length,2,`${p.id} edge ${i}: exactly one opaque face from ${z0} to ${z1}`);
     for(const [q,z] of corners)assert.ok(faces.flat().some(v=>at(v,q,z)),`${p.id} unjoined corner`);
    };
-   covers(p.base,p.detailRoofHeight);
+   covers(p.base,podium??p.detailRoofHeight);
    if(p.base===0)covers(-10,0);
   }
  }

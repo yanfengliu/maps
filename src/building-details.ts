@@ -1,3 +1,4 @@
+import { HOSPITAL_FRAGMENT } from './hospital-materials.ts';
 import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
 import {emptyStopSignCounts,type StopSignCounts} from './stop-signs.ts';
 import {LANDSCAPE_HELPERS,LANDSCAPE_FRAGMENT} from './campus-landscape-materials.ts';
@@ -286,6 +287,7 @@ ${SURFACE_FRAGMENT}
 ${HOOVER_FRAGMENT}
 ${LANDSCAPE_FRAGMENT}
 ${TREE_FRAGMENT}
+  ${HOSPITAL_FRAGMENT}
   ${STOP_SIGN_FRAGMENT}
   if(abs(v_kind-29.0)<0.1 && v_color.r>v_color.g*1.5){
     // Long timber boards remain legible through the ghosted ceiling surface.
