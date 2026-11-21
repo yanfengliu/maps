@@ -2,6 +2,12 @@
 
 An Apple Maps-inspired world map that starts at Stanford University, the first campus with authored 3D detail. The regional map uses custom warm cartography over OpenFreeMap's OpenMapTiles data. Regional buildings stay flat; only the supplied Stanford footprints are extruded.
 
+![Tilted 3D map of Stanford, with Memorial Church beside the Main Quad, the Oval beyond it, and Hoover Tower on the right.](docs/images/stanford-campus.jpg)
+
+<!-- When this preview no longer represents the branch, capture its current map with the controls and attribution visible. Update the image, alt text and viewing directions together. -->
+
+[Explore the live map](https://yanfengliu.github.io/maps/)
+
 ## Run locally
 
 Use Node 24 (the exact development version is in `.nvmrc`).
@@ -24,7 +30,7 @@ npm run audit
 
 ## Explore
 
-The app starts at Stanford. **World** zooms out to a globe, and the Stanford and Memorial Church shortcuts return to the detailed campus. Click buildings for their source height information, or open Memorial Church's roofless interior while the surrounding map remains visible.
+The app starts at Stanford. Zoom in once for the view above, or zoom out to explore the globe. Search for **Stanford University** and select the campus suggestion to return. Click a building to see its source height information. Select **Memorial Church** and choose **Explore the interior** to see its cutaway in the surrounding campus.
 
 Typing shows local campus suggestions. Press **Enter** or **Search worldwide** to query Photon's OpenStreetMap index; click a suggestion or select one with the arrow keys and press Enter to navigate directly. Worldwide search is not a complete index of real places. Missing businesses, addresses and landmarks may return no results. Requests are explicit, paced and cached; the public service has no availability guarantee. See [Photon's service policy](https://github.com/komoot/photon#demo-server).
 
@@ -32,7 +38,7 @@ Typing shows local campus suggestions. Press **Enter** or **Search worldwide** t
 - Right-drag or Ctrl-drag gently rotates and tilts. Middle-drag up/down adjusts tilt without changing bearing. Touch supports two-finger rotation and tilt.
 - Hold WASD to pan continuously in every map mode; release to stop. Text inputs keep normal typing behavior. Mouse drag, rotation, middle-button tilt and wheel zoom work at the same time as held WASD. Arrow keys pan, + / − zoom, Option/Alt + left/right rotates, and Shift + up/down tilts when the map has focus.
 - Click the compass to face north; drag it horizontally to rotate or vertically to tilt.
-- The 2D/3D button and tilt slider change perspective. **World** returns to the globe.
+- The 2D/3D button and tilt slider change perspective.
 
 Reduced motion is respected. A WebGL-capable browser is required. Loading failures show a retry action rather than silently substituting a made-up map.
 
