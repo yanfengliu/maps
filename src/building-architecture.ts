@@ -1,4 +1,5 @@
 import type * as GeoJSON from 'geojson';
+import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
 import { HOOVER_PART_IDS, HOOVER_DESCRIPTION } from './hoover-architecture.ts';
 import { garageProfile, describeGarage } from './garage-architecture.ts';
@@ -13,7 +14,7 @@ export interface BuildingArchitecture {
   floorSource: 'osm-levels' | 'estimated' | 'not-applicable' | 'reference-profile' | 'official-description';
   mappedLevels: number | null;
   bayWidth: number;
-  facadeFamily: 'generic' | 'unverified' | 'workshop' | 'concrete-frame' | 'sandstone' | 'aggregate';
+  facadeFamily: 'generic' | 'unverified' | 'workshop' | 'concrete-frame' | 'sandstone' | 'aggregate' | 'precast-ribbon';
   roofShape: string;
   roofSource: 'osm-roof-shape' | 'estimated' | 'reference-profile' | 'official-description';
 }
@@ -22,6 +23,7 @@ const BRAUN_MUSIC_ID='relation/12460152';
 /** Authored material families, informed by the inspected Stanford photographs. */
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
+  if(p.id===GREEN_EAST_ID)return {wall:'#c7bdb0',roof:'#ae7259'};
   if(p.id===BRAUN_MUSIC_ID)return {wall:'#dfd4bc',roof:'#c8c5b8'};
   if(garageProfile(p)?.kind==='open-deck')return {wall:p.id==='way/232841898'?'#c7ba99':'#bfbdae',roof:'#80827a'};
   if(STADIUM_SEATING_IDS.has(String(p.id)))return {wall:'#aaa99b',roof:'#7a1320'};
@@ -61,6 +63,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  if(p.id===GREEN_EAST_ID)return {profile:'institutional', floors:3, floorSource:'official-description', mappedLevels,
+    bayWidth:6.2, facadeFamily:'precast-ribbon', roofShape:'hipped', roofSource:'reference-profile'};
   const special = ['memorial-church', 'quad-wing', 'library', 'tower', 'open'].includes(profile);
   const minLevel = Math.max(0, Number(p['osm:building:min_level']) || 0);
   const available = Math.max(0, wallHeight - Number(p.base));
@@ -78,6 +82,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
+  if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
   const garage=describeGarage(p);if(garage)return garage;
   if(p.id===BRAUN_MUSIC_ID)return 'Stanford describes first and second floors and a flat photovoltaic roof at Braun Music Center. The model retains its courtyard openings and narrow tiled perimeter; panel layout, roof edging, window spacing and unsurveyed dimensions are estimates.';
   const detail = p.detailArchitecture as BuildingArchitecture | undefined;
