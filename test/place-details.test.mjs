@@ -5,9 +5,46 @@ import {stripTypeScriptTypes} from 'node:module';
 import {runInNewContext} from 'node:vm';
 import {PLACES,SCULPTURE_PLACES,buildingPlaces,searchPlaces} from '../src/places.ts';
 
+import {CANTOR_ID,hospitalVisitorMap} from '../src/visitor-maps.ts';
+import {GALLERY_FLOORS} from '../src/cantor-gallery-plan.ts';
+
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replaceAll('\r\n','\n');
 const handler=name=>stripTypeScriptTypes(source.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`))?.[0]??'');
 const plain=value=>JSON.parse(JSON.stringify(value));
+
+test('search and selected footprints expose their own official visitor resources',()=>{
+  const buildings=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))).features;
+  const places=buildingPlaces(buildings);
+  const cases=[
+    ['300 Pasteur','relation/1753562','stanford-hospital-map.pdf'],
+    ['500 Pasteur','way/891732466','500-Pasteur-11-15-19.pdf'],
+    ["Packard Children's Hospital West",'way/130100416','wayfinding-maps-stanford-childrens.pdf'],
+    ["Packard Children's Hospital Main",'way/689417360','wayfinding-maps-stanford-childrens.pdf']
+  ];
+  for(const [term,id,file] of cases){
+    assert.equal(searchPlaces(term,places)[0].buildingId,id);
+    const actions=[],details={querySelector:()=>null,append:action=>actions.push(action)};
+    const context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},escapeHtml:String,icon:()=>'',document:{createElement:tag=>({tag})}};
+    runInNewContext(`${handler('showBuilding')}\nshowBuilding(${JSON.stringify(buildings.find(f=>f.properties.id===id).properties)})`,context);
+    assert.equal(actions.length,1);assert.equal(actions[0].tag,'a');assert.ok(actions[0].href.endsWith('/'+file));assert.match(actions[0].textContent,/Visitor map/);
+  }
+});
+
+test('Cantor floors contain the distinct public spaces in the published drawing',()=>{
+  let action;
+  const context={details:{querySelector:()=>null,append:button=>{action=button;}},selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},escapeHtml:String,icon:()=>'',openCantorGalleryPlan(){},document:{createElement:()=>({addEventListener(name,listener){this[name]=listener;}})}};
+  runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:CANTOR_ID,name:'Cantor Arts Center'})`,context);
+  assert.equal(action.textContent,'Explore gallery floors');assert.equal(action.click,context.openCantorGalleryPlan);
+  const first=GALLERY_FLOORS[0],second=GALLERY_FLOORS[1];
+  assert.deepEqual(first.map(s=>s.number),[101,105,106,108,111,117,121,122,125,127,128,132,134,141,142,151]);
+  assert.deepEqual(second.map(s=>s.number),[201,205,206,207,208,210,211,212,213,214,218,220,221,242]);
+  for(const [lower,upper] of [[101,201],[132,218],[151,242]]){
+    assert.equal(first.find(s=>s.number===lower).outline,second.find(s=>s.number===upper).outline);
+  }
+  const [west,east]=[132,101].map(id=>first.find(s=>s.number===id));
+  assert.ok(west.label[0]<first.find(s=>s.number===117).label[0] && east.label[0]>first.find(s=>s.number===122).label[0]);
+  assert.match(second.find(s=>s.number===208).name,/Balcony/);
+});
 
 test('search selection reaches Memorial Church and its interior action without fixed shortcut buttons',()=>{
  const data=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url),'utf8')),church=searchPlaces('Memorial Church',buildingPlaces(data.features))[0];assert.ok(church?.buildingId);
@@ -32,7 +69,7 @@ test('free campus and global search navigation does not reopen a fixed landmarks
 
 test('contextual building and sculpture cards lead with identity, preserve provenance and close normally',()=>{
  const clicks=[],details={hidden:true,querySelector:()=>({addEventListener:(_,fn)=>clicks.push(fn)})},elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,{addEventListener:(_,fn)=>clicks.push(fn)});return elements.get(id);};
- const context={details,selectedId:null,CHURCH_ID:'church',setChurchInterior(){},updateSelection(){},closeDetails:()=>clicks.push('closed'),escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),icon:()=>'',SCULPTURE_PLACES,el:get,goTo:place=>clicks.push(place.id)};
+ const context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},closeDetails:()=>clicks.push('closed'),escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),icon:()=>'',SCULPTURE_PLACES,el:get,goTo:place=>clicks.push(place.id)};
  runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:'other',name:'A < B',height:12,heightSource:'osm-height'});`,context);
  assert.match(details.innerHTML,/<h2>A &lt; B<\/h2>/);assert.ok(details.innerHTML.indexOf('<h2>')<details.innerHTML.indexOf('Mapped height'));assert.match(details.innerHTML,/12 m · Mapped height/);clicks[0]();assert.equal(clicks.at(-1),'closed');
  runInNewContext(`${handler('showSculpture')}\nshowSculpture('${SCULPTURE_PLACES[0].sculptureId}');`,context);

@@ -6,6 +6,7 @@ import {stripTypeScriptTypes} from 'node:module';
 import {runInNewContext} from 'node:vm';
 import {createStyle} from '../src/style.ts';
 import {PLACES,MAX_MAP_ZOOM} from '../src/places.ts';
+import {CANTOR_ID,hospitalVisitorMap} from '../src/visitor-maps.ts';
 
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replaceAll('\r\n','\n');
 const handler=name=>stripTypeScriptTypes(source.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}`))?.[0]??'');
@@ -31,7 +32,7 @@ test('initial camera opens on Stanford before the globe style requests tiles, wi
 test('building cards omit the campus return action while keeping church interior entry',()=>{
   for(const church of [false,true]){
     const buttons=[],listeners=[];const details={hidden:true,querySelector:()=>({addEventListener(){}}),append:button=>buttons.push(button)};
-    const context={details,selectedId:null,CHURCH_ID:'church',setChurchInterior(){},updateSelection(){},closeDetails(){},enterChurchInterior(){},escapeHtml:String,icon:()=>'',document:{createElement:()=>({addEventListener:name=>listeners.push(name)})},el:()=>assert.fail('removed campus button must never be accessed')};
+    const context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},closeDetails(){},enterChurchInterior(){},escapeHtml:String,icon:()=>'',document:{createElement:()=>({addEventListener:name=>listeners.push(name)})},el:()=>assert.fail('removed campus button must never be accessed')};
     runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:'${church?'church':'other'}',name:'Building',height:12});`,context);
     assert.doesNotMatch(details.innerHTML,/building-campus|View the whole campus/);
     assert.equal(details.hidden,false);assert.equal(buttons.length,church?1:0);
@@ -50,7 +51,7 @@ test('the native zoom-out control remains available after removing the World sho
 
 test('building cards disclose the referenced parking height without relabelling mapped heights',()=>{
  for(const [heightSource,detailRoofHeight,expected] of [['estimated',16,'16 m · Estimated from reference floors'],['osm-height',16,'10 m · Mapped height'],['estimated',9,'10 m · Estimated height']]){
-  const details={querySelector:()=>({addEventListener(){}})},context={details,selectedId:null,CHURCH_ID:'church',setChurchInterior(){},updateSelection(){},closeDetails(){},escapeHtml:String,icon:()=>''};
+  const details={querySelector:()=>({addEventListener(){}})},context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},closeDetails(){},escapeHtml:String,icon:()=>''};
   runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:'way/324983017',height:10,heightSource:'${heightSource}',detailRoofHeight:${detailRoofHeight}});`,context);
   assert.ok(details.innerHTML.includes(expected));
  }
