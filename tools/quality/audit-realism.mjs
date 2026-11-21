@@ -156,7 +156,7 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
   const readJSON=async path=>JSON.parse(await readFile(resolve(repo,path),'utf8'));
   const importSource=name=>import(pathToFileURL(resolve(repo,'src',name)).href);
   const raw=await readFile(resolve(repo,'public/data/stanford-buildings.geojson'));
-  const source=JSON.parse(raw),[{prepareBuildingDetails,buildBuildingGeometry},{buildingArchitecture}]=await Promise.all([importSource('building-geometry.ts'),importSource('building-architecture.ts')]);
+  const source=JSON.parse(raw),[{prepareBuildingDetails,buildBuildingGeometry,appendStopSigns},{buildingArchitecture}]=await Promise.all([importSource('building-geometry.ts'),importSource('building-architecture.ts')]);
   const prepared=prepareBuildingDetails(source);
   const [environment,sculptures,surfaces,surfaceProvenance]=await Promise.all(['stanford-environment.geojson','stanford-sculptures.geojson','stanford-surfaces.geojson','stanford-surfaces-provenance.json'].map(name=>readJSON('public/data/'+name)));
   const roadManifest=await readJSON('public/data/stanford-surfaces-roads-manifest.json');
@@ -166,8 +166,9 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
   let geometry=null;
   if(includeGeometry){
     const [env,sculpt,gpu,surface,turf]=await Promise.all([importSource('campus-environment.ts'),importSource('campus-sculptures.ts'),importSource('gpu-geometry.ts'),importSource('campus-surfaces.ts'),importSource('campus-landscape.ts')]);
-    const mesh=buildBuildingGeometry(prepared,env.validateCampusEnvironment(environment),sculpt.validateCampusSculptures(sculptures),surface.validateCampusSurfaces(surfaces),turf.validateCampusLandscape(landscape));
-    geometry={scope:'Complete campus exterior, environment, sculptures and selected ground surfaces; church interior and textures excluded',parts:mesh.buildings,triangles:mesh.triangles,triangleBudget:gpu.MAX_DETAIL_TRIANGLES,cpuBytes:mesh.bytes,gpuBytes:gpu.gpuGeometryBytes(mesh.roofs)+gpu.gpuGeometryBytes(mesh.facades),gpuBudgetBytes:gpu.MAX_GPU_GEOMETRY_BYTES,gpuVertexBytes:gpu.GPU_VERTEX_BYTES,meshBuffers:2,finite:mesh.roofs.every(Number.isFinite)&&mesh.facades.every(Number.isFinite),runtimeObservation:false};
+    const campus=buildBuildingGeometry(prepared,env.validateCampusEnvironment(environment),sculpt.validateCampusSculptures(sculptures),surface.validateCampusSurfaces(surfaces),turf.validateCampusLandscape(landscape));
+    const mesh=appendStopSigns(campus,{roads,controls});
+    geometry={scope:'Campus exterior with buildings, environment, sculptures, ground and physical stop signs; church interior and textures excluded',parts:mesh.buildings,stopSigns:mesh.traffic.stops,triangles:mesh.triangles,triangleBudget:gpu.MAX_DETAIL_TRIANGLES,cpuBytes:mesh.bytes,gpuBytes:gpu.gpuGeometryBytes(mesh.roofs)+gpu.gpuGeometryBytes(mesh.facades),gpuBudgetBytes:gpu.MAX_GPU_GEOMETRY_BYTES,gpuVertexBytes:gpu.GPU_VERTEX_BYTES,meshBuffers:2,finite:mesh.roofs.every(Number.isFinite)&&mesh.facades.every(Number.isFinite),runtimeObservation:false};
   }
   if(await computeModelDigest(repo)!==modelDigest)throw new Error('Model inputs changed during audit. Run again after edits settle.');
   const report=auditInventory({source,prepared,architecture:buildingArchitecture,geometry,modelDigest,renderReviews:await loadRenderReviews(reviewsPath&&resolve(reviewsPath),modelDigest)});

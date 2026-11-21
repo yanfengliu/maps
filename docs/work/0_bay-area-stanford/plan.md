@@ -3,9 +3,11 @@
 Status: active
 Owner: root integration
 Created: 2026-10-19
-Updated: 2026-11-09
+Updated: 2026-11-21
 
 ## Current request tracker
+
+On November 21 the owner resumed all outstanding items and requested frequent pushes. Green Library and the hospital exteriors have separate implementation owners. The visitor-view owner is checking the Cantor drawings and hospital visitor sources. Root owns the campus-wide roof comparison, vegetation, mobile checks, reviews and releases. The production scene has only 95 spare triangles before these changes. The README image shipped at 6070bc4 and its Pages build passed. Root restored the local main demo on port 5174 with Node 24.12.0. This Mac has no connected phone or installed mobile simulator. Actual-device validation is pending. The older branches are being inventoried separately.
 
 The owner asks for one tracked list and coordinated delivery. Root owns this list, integration, native visual acceptance, independent review and publishing. A completed implementation is not accepted until its rendered result is inspected; an inventory check is never a claim of photographic realism. New requests extend this list rather than replacing earlier requests.
 

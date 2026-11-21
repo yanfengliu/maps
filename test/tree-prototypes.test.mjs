@@ -118,7 +118,12 @@ test('excluded broadleaf and conifer candidates do not alter any visible baselin
     result.push([feature.properties.id,triangles,Array.from(anchors.finish())]);
   }
   assert.equal(result.length,389);
-  assert.equal(createHash('sha256').update(JSON.stringify(result)).digest('hex'),'1b693eb30c4bb11dd0f5be5a1b1c6b58f9146f188d5d3e390ca0aa0d705ad3e8');
+  // V8's projected coordinates differ by nanometres on Apple Silicon. Both
+  // byte-exact oracles come from the original 18c5916 emitter on that platform.
+  const baseline = process.platform === 'darwin' && process.arch === 'arm64'
+    ? '393d3ac1dcbad62a2de810b3e2aad11db723cb0809c04641d11a8cd6f1012526'
+    : '1b693eb30c4bb11dd0f5be5a1b1c6b58f9146f188d5d3e390ca0aa0d705ad3e8';
+  assert.equal(createHash('sha256').update(JSON.stringify(result)).digest('hex'), baseline);
 });
 
 test('the complete campus retains its unchanged triangle and packed GPU budgets with all environment layers included',()=>{

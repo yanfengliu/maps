@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — The realism audit now counts the 296 physical stop signs rendered by the exterior worker. Their 2,368 triangles bring the baseline to 189,905 of 190,000. [Current work](../work/0_bay-area-stanford/plan.md).
+
 - 2026-11-09: **Rendered stop signs as physical roadside objects.** — 296 fixed octagonal faces, metal backs and posts replace 306 camera-facing icons without duplicating intersection records; terrain anchors, source directions and estimated placement limits are retained. [Design and evidence](../work/0_bay-area-stanford/design.md#physical-stop-signs--2026-11-09).
 
 - 2026-11-09: **Removed competing native caps from ready flat-roof models.** — Complete terrain-grounded shells cover all 84 generic flat buildings, including short returns and courtyard walls; native fallback and picking remain available. Hospital architectural refinement remains open. [Evidence and limits](detailed/2026-11-08_2026-11-09.md#hospital-terrain-cap-seam).

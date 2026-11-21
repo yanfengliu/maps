@@ -111,12 +111,15 @@ test('runtime source guard tolerates projection roundoff without rounding geomet
     const rings = orientRoofRings(polygons[component].map(ring => ring.slice(0, -1).map(projectLocal))), before = structuredClone(rings);
     assert.ok(roofSignatureMargin(rings) > ROOF_SIGNATURE_ROUNDOFF, 'every pinned coordinate has a verified margin from a rounding boundary');
     if (observed[id]) {
-      const [node, browser] = observed[id], captured = structuredClone(rings), point = captured.flat().find(p => p[1] === node);
-      assert.ok(point, 'the observed Node coordinate belongs to the exact pinned source');
+      const [node, browser] = observed[id], captured = structuredClone(rings);
+      const point = captured.flat().find(p => Math.abs(p[1] - node) <= ROOF_SIGNATURE_ROUNDOFF);
+      assert.ok(point, 'the runtime projects the pinned vertex within the measured roundoff margin');
       assert.ok(Math.abs(browser - node) < 2e-9 && browser !== node);
-      point[1] = browser;
-      assert.equal(roofSourceSignature(captured), topology.signature);
-      assert.doesNotThrow(() => quadRoof(sourceId, component, captured));
+      for (const measured of [node, browser]) {
+        point[1] = measured;
+        assert.equal(roofSourceSignature(captured), topology.signature);
+        assert.doesNotThrow(() => quadRoof(sourceId, component, captured));
+      }
     }
     for (const amplitude of [0.5e-9, 2e-9, ROOF_SIGNATURE_ROUNDOFF]) for (const sign of [-1, 1]) {
       const noisy = rings.map(ring => ring.map(([x, y], i) => [x + sign * amplitude, y + sign * amplitude * (i % 2 ? -1 : 1)]));
