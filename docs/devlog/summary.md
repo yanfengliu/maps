@@ -1,5 +1,6 @@
 # Development log
 
+- 2026-11-21 — Added distinct exteriors at 300 and 500 Pasteur and both Packard buildings. Twenty-six mapped needleleaf trees now show layered boughs from above and at street level. [Implementation and limits](../work/0_bay-area-stanford/design.md#hospital-exteriors-and-trees-2026-11-21).
 - 2026-11-21 — Replaced 14 red-tile roof estimates with aerial-supported decks, including five medical courtyards, added reproducible comparisons for all 648 roofs, and recorded 45 photographed elevations. Green Library East Wing can be found by its full name. [Evidence and limits](../work/0_bay-area-stanford/design.md#campus-roofs-and-photographed-entrances-2026-11-21).
 - 2026-11-21 — Green Library’s East Wing now shows three staggered roof fields and three stories of precast bands and ribbon windows. Cantor’s building card opens a two-floor visitor diagram with 30 selectable spaces. Both Pasteur addresses and both Packard buildings now link to their official visitor maps. [Project records](../work/0_bay-area-stanford/plan.md).
 
