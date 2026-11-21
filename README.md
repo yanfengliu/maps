@@ -30,7 +30,7 @@ npm run audit
 
 ## Explore
 
-The app starts at Stanford. Zoom in once for the view above, or zoom out to explore the globe. Search for **Stanford University** and select the campus suggestion to return. Click a building to see its source height information. Select **Memorial Church** and choose **Explore the interior** to see its cutaway in the surrounding campus.
+The app starts at Stanford. Zoom in once for the view above, or zoom out to explore the globe. Search for **Stanford University** and select the campus suggestion to return. Click a building to see its source height information. Select **Memorial Church** and choose **Explore the interior** to see its cutaway in the surrounding campus. At **Cantor Arts Center**, choose **Explore gallery floors** to browse 30 spaces on two floors. Search **300 Pasteur**, **500 Pasteur** or **Packard Children’s Hospital** to open its official visitor map.
 
 Typing shows local campus suggestions. Press **Enter** or **Search worldwide** to query Photon's OpenStreetMap index; click a suggestion or select one with the arrow keys and press Enter to navigate directly. Worldwide search is not a complete index of real places. Missing businesses, addresses and landmarks may return no results. Requests are explicit, paced and cached; the public service has no availability guarantee. See [Photon's service policy](https://github.com/komoot/photon#demo-server).
 
@@ -68,4 +68,4 @@ For the same project-path build locally, run `npm run build -- --base=/maps/` an
 
 The current product direction and contribution checks are in [local rules](docs/policies/local-rules.md). The first increment's acceptance and verification are in [the plan](docs/work/0_bay-area-stanford/plan.md).
 
-The previous Shibuya project is preserved on [codex/shibuya-archive-2026-10-19](https://github.com/yanfengliu/maps/tree/codex/shibuya-archive-2026-10-19) at commit e93f56711a5b629481c1512a89058c2823017840.
+Earlier projects are available at their original branch tips through the [Shibuya map](https://github.com/yanfengliu/maps/tree/archive/shibuya-2026-10-19), [Unreal Shibuya](https://github.com/yanfengliu/maps/tree/archive/shibuya-unreal-5.8), and [Medieval City](https://github.com/yanfengliu/maps/tree/archive/medieval-city-20261027) recovery tags.

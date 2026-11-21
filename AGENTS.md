@@ -52,4 +52,4 @@ The designated coordinator reads `../fleet/docs/skills/coordinator.md` before pl
 
 Use Node 24 as pinned in `.nvmrc`, `npm ci`, and the package scripts for build, types, tests and audit. Check changed map flows in a headless browser using actual controls and inspect native screenshots. Own and close every browser/server process; preserve unrelated processes and cached source data. Keep task output under ignored `artifacts/`.
 
-The previous Shibuya project is preserved on `codex/shibuya-archive-2026-10-19`. Do not resume its goals or change its archived branch. Publishing or deployment needs a user instruction.
+The previous Shibuya project is preserved at the recovery tag `archive/shibuya-2026-10-19`. Keep its goals and recovery tag archived. Publishing or deployment needs a user instruction.

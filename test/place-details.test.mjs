@@ -15,18 +15,20 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 test('search and selected footprints expose their own official visitor resources',()=>{
   const buildings=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))).features;
   const places=buildingPlaces(buildings);
+  const adultMaps='https://stanfordhealthcare.org/content/dam/SHC/patientsandvisitors/locations-parking/docs/';
+  const packardMap='https://www.stanfordchildrens.org/content/dam/sch/content-public/pdf/wayfinding-maps-stanford-childrens.pdf';
   const cases=[
-    ['300 Pasteur','relation/1753562','stanford-hospital-map.pdf'],
-    ['500 Pasteur','way/891732466','500-Pasteur-11-15-19.pdf'],
-    ["Packard Children's Hospital West",'way/130100416','wayfinding-maps-stanford-childrens.pdf'],
-    ["Packard Children's Hospital Main",'way/689417360','wayfinding-maps-stanford-childrens.pdf']
+    ['300 Pasteur','relation/1753562',adultMaps+'stanford-hospital-map.pdf'],
+    ['500 Pasteur','way/891732466',adultMaps+'500-Pasteur-11-15-19.pdf'],
+    ["Packard Children's Hospital West",'way/130100416',packardMap],
+    ["Packard Children's Hospital Main",'way/689417360',packardMap]
   ];
-  for(const [term,id,file] of cases){
+  for(const [term,id,url] of cases){
     assert.equal(searchPlaces(term,places)[0].buildingId,id);
     const actions=[],details={querySelector:()=>null,append:action=>actions.push(action)};
     const context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},escapeHtml:String,icon:()=>'',document:{createElement:tag=>({tag})}};
     runInNewContext(`${handler('showBuilding')}\nshowBuilding(${JSON.stringify(buildings.find(f=>f.properties.id===id).properties)})`,context);
-    assert.equal(actions.length,1);assert.equal(actions[0].tag,'a');assert.ok(actions[0].href.endsWith('/'+file));assert.match(actions[0].textContent,/Visitor map/);
+    assert.equal(actions.length,1);assert.equal(actions[0].tag,'a');assert.equal(actions[0].href,url);assert.match(actions[0].textContent,/Visitor map/);
   }
 });
 
@@ -36,6 +38,11 @@ test('Cantor floors contain the distinct public spaces in the published drawing'
   runInNewContext(`${handler('showBuilding')}\nshowBuilding({id:CANTOR_ID,name:'Cantor Arts Center'})`,context);
   assert.equal(action.textContent,'Explore gallery floors');assert.equal(action.click,context.openCantorGalleryPlan);
   const first=GALLERY_FLOORS[0],second=GALLERY_FLOORS[1];
+  assert.deepEqual(second.filter(room=>[206,207,212].includes(room.number)).map(room=>[room.number,room.name]),[
+    [206,'Ancient, Medieval & Early Modern European Art'],
+    [207,'Artist Archive Room · Patricia S. Rebele Gallery'],
+    [212,'Artist Archive Room · Rowland K. Rebele Gallery']
+  ]);
   assert.deepEqual(first.map(s=>s.number),[101,105,106,108,111,117,121,122,125,127,128,132,134,141,142,151]);
   assert.deepEqual(second.map(s=>s.number),[201,205,206,207,208,210,211,212,213,214,218,220,221,242]);
   for(const [lower,upper] of [[101,201],[132,218],[151,242]]){
