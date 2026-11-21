@@ -9,6 +9,7 @@ import { DETAIL_ORIGIN, MERCATOR_ORIGIN, METERS_TO_MERCATOR, VERTEX_FLOATS, proj
 import { STADIUM_FIELD_HELPERS, STADIUM_FIELD_FRAGMENT } from './stadium-materials.ts';
 import { STADIUM_ELEVATION_FRAGMENT } from './stadium-elevation.ts';
 import { GARAGE_FRAGMENT } from './garage-materials.ts';
+import {GREEN_EAST_FRAGMENT} from './green-east-architecture.ts';
 import { ENGINEERING_FRAGMENT } from './engineering-materials.ts';
 import { HOOVER_FRAGMENT } from './hoover-materials.ts';
 import { SURFACE_FRAGMENT } from './campus-surface-materials.ts';
@@ -282,6 +283,7 @@ void main() {
   ${STADIUM_ELEVATION_FRAGMENT}
   ${GARAGE_FRAGMENT}
   ${ENGINEERING_FRAGMENT}
+  ${GREEN_EAST_FRAGMENT}
 ${SURFACE_FRAGMENT}
 ${HOOVER_FRAGMENT}
 ${LANDSCAPE_FRAGMENT}

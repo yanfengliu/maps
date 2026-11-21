@@ -11,6 +11,7 @@ import { addLandmarkAccents } from './landmark-accents.ts';
 import { addCampusSculptures, emptySculptureCounts, type CampusSculptures, type SculptureCounts } from './campus-sculptures.ts';
 import { addQuadArcade, addQuadWingElevation, QUAD_WING_IDS } from './quad-architecture.ts';
 import { quadRoof } from './quad-roof.ts';
+import {GREEN_EAST_ID} from './green-east-architecture.ts';
 import { campusRoof, addBraunSolar, BRAUN_MUSIC_ID } from './campus-roof.ts';
 import { engineeringRoofOffset } from './engineering-architecture.ts';
 import { addEngineeringElevation, addEngineeringMonitors } from './engineering-geometry.ts';
@@ -239,8 +240,8 @@ export class BuildingGeometryBuilder {
       for (const [a, b, c] of roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
         const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
-        const deck=braun&&campusModel?.flat(tri);
-        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],braun&&!deck?color('#b77d60'):roofTint,deck?9:wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
+        const deck=campusModel?.flat(tri);
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
       if(braun)addBraunSolar(this.roofs,rings,building,height);
       for (const [ringIndex, ring] of rings.entries()) {
@@ -254,7 +255,10 @@ export class BuildingGeometryBuilder {
           const shellTop=flatShell?height:wall-0.12;
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
-          if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){
+          if(architecture.facadeFamily==='precast-ribbon'){
+            const bays=Math.max(1,Math.round(length/architecture.bayWidth)),rows=architecture.floors!;
+            this.facades.quad(at(a,base),at(b,base),at(b,wall),at(a,wall),wallTint,53,building,[[0,0],[bays,0],[bays,rows],[0,rows]]);
+          }else if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){
             // Reference-specific workshop and concrete-frame bays.
           }else if(architecture.profile==='quad-wing'&&length>1.8){
             addQuadWingElevation(this.facades,a,b,[nx,ny],base,wall,building,wallTint,String(p.id),arcade);
