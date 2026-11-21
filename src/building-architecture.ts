@@ -1,6 +1,7 @@
 import type * as GeoJSON from 'geojson';
 import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
+import { HOSPITAL_EXTERIORS } from './hospital-exteriors.ts';
 import { HOOVER_PART_IDS, HOOVER_DESCRIPTION } from './hoover-architecture.ts';
 import { garageProfile, describeGarage } from './garage-architecture.ts';
 import { ENGINEERING_REFERENCES, UNVERIFIED_ACADEMIC_IDS } from './engineering-architecture.ts';
@@ -86,6 +87,8 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const p = properties ?? {};
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
+  const hospital=HOSPITAL_EXTERIORS[String(p.id)];
+  if(hospital)return hospital.description;
   const garage=describeGarage(p);if(garage)return garage;
   if(p.id===BRAUN_MUSIC_ID)return 'Stanford describes first and second floors and a flat photovoltaic roof at Braun Music Center. The model retains its courtyard openings and narrow tiled perimeter; panel layout, roof edging, window spacing and unsurveyed dimensions are estimates.';
   const detail = p.detailArchitecture as BuildingArchitecture | undefined;
