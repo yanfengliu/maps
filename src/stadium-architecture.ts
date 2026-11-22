@@ -1,4 +1,5 @@
 // Mapped Stanford Stadium parts, distinct from the nearby baseball grandstand.
+export const NORTH_TICKET_BOOTH = 'way/690412907';
 export const STADIUM_CONCOURSE_ID = 'relation/18614805';
 export const STADIUM_SEATING_IDS = new Set([
   ...Array.from({length:8},(_,i)=>`way/${1351986681+i}`),

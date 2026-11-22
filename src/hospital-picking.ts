@@ -1,3 +1,4 @@
+import {NORTH_TICKET_BOOTH,STADIUM_CONCOURSE_ID,STADIUM_SEATING_IDS} from './stadium-architecture.ts';
 import {SUPPLEMENTAL_OPEN_IDS} from './supplemental-architecture.ts';
 import {AVERY_ID} from './avery-architecture.ts';
 import earcut from 'earcut';
@@ -7,6 +8,7 @@ import {HOSPITAL_EXTERIORS} from './hospital-exteriors.ts';
 import {PASTEUR_300_ID} from './pasteur-pods.ts';
 
 export const HOSPITAL_PICK_IDS=new Set([PASTEUR_300_ID,...Object.keys(HOSPITAL_EXTERIORS)]);
+const stadiumMeshes=new Set([STADIUM_CONCOURSE_ID,...STADIUM_SEATING_IDS]);
 const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID,...SUPPLEMENTAL_OPEN_IDS]);
 type Vertex=[number,number,number];
 type Clip=(x:number,y:number,z:number)=>Vertex|null;
@@ -98,11 +100,23 @@ export function hospitalSurfacePicker(data:CampusData,roofs:Float32Array,facades
       return depth;
     };
     let nearest=Infinity,hit:string|null=null;
-    for(const id of exactExteriorIds){
+    // A raked football stand only owns the steps, risers and exterior walls
+    // drawn by its mesh. MapLibre's transparent top-height prism reaches
+    // across visible paths at grazing angles. Check only queried sections.
+    const exactIds=new Set(exactExteriorIds);
+    for(const f of candidates){
+      const id=String(f.properties.id);
+      if(stadiumMeshes.has(id))exactIds.add(id);
+    }
+    // A small foreground structure can sit outside its native low wall at
+    // high pitch. Use its actual roof when the surrounding bowl is queried.
+    const stadiumOverlap=exactIds.size>exactExteriorIds.size;
+    if(exactIds.has(STADIUM_CONCOURSE_ID))exactIds.add(NORTH_TICKET_BOOTH);
+    for(const id of exactIds){
       const depth=meshDepth(id);
       if(depth<nearest){nearest=depth;hit=id;}
     }
-    if(!hit){
+    if(!hit&&!stadiumOverlap){
       // Avery keeps its terrain-owned, clipped native apron below the two stands.
       const native=candidates.find(f=>f.layer.id!=='stanford-roofs'&&!HOSPITAL_PICK_IDS.has(String(f.properties.id)));
       return native?String(native.properties.id):null;
@@ -110,7 +124,7 @@ export function hospitalSurfacePicker(data:CampusData,roofs:Float32Array,facades
     const seen=new Set<string>();
     for(const f of candidates){
       const id=String(f.properties.id);
-      if(exactExteriorIds.has(id))continue;
+      if(exactIds.has(id))continue;
       let depth=nativeSurfaceDepth(f,point,clip,nativeElevation);
       if(!seen.has(id)){depth=Math.min(depth,meshDepth(id));seen.add(id);}
       if(depth<nearest){nearest=depth;hit=id;}
