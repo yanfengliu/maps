@@ -22,4 +22,4 @@ The six targeted exterior regressions passed with the corrected geometry. The ex
 
 ## Round outcome
 
-Changes required at the target. The correction awaits independent recheck.
+Changes required at the target. Review 45 independently confirmed the front gable, the arch bays and the full roof coverage.

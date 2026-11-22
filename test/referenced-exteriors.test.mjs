@@ -82,6 +82,8 @@ test('Burnham entrance has a street-facing gable, two valleys and three front ar
   assert.ok(zAt(ring[4])>zAt(ring[3])+1&&zAt(ring[4])>zAt(ring[5])+1,'front center rises above both corners');
   assert.equal(zAt(ring[4]),f.properties.height);
   const area=r=>Math.abs(r.reduce((s,v,i)=>{const q=r[(i+1)%r.length];return s+v[0]*q[1]-v[1]*q[0];},0))/2;
+  assert.equal(caps.length,11);
+  assert.ok(caps.every(t=>area(t)>.01),'each roof triangle covers a measurable patch');
   assert.ok(Math.abs(caps.reduce((s,t)=>s+area(t),0)-area(ring))<.02,'the roof covers the T-shaped footprint once');
   const arches=parts.get(id).filter(t=>t[0][11]===3).flat();
   assert.equal(arches.length,12);

@@ -14,7 +14,9 @@ export function burnhamRoof(ring:Point[]){
   const faces=[
     [left,shoulderLeft,joint,leftRidge],[shoulderRight,right,rightRidge,joint],
     [shoulderLeft,frontLeft,apex,joint],[apex,frontRight,shoulderRight,joint],
-    [backLeft,leftRidge,joint,rightRidge,backRight],
+    // The joint lies on the rear ridge. Keep it in both adjoining roof planes
+    // without asking a triangulator to classify three collinear ridge points.
+    [leftRidge,backLeft,joint],[backLeft,backRight,joint],[backRight,rightRidge,joint],
   ];
   const triangles:[Point,Point,Point][]=[];
   for(const face of faces){
