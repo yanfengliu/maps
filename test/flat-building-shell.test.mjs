@@ -39,7 +39,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
    if(p.base===0)covers(-10,0);
   }
  }
- assert.equal(buildings,102);assert.equal(edges,1087);assert.equal(short,82);
+ assert.equal(buildings,103);assert.equal(edges,1107);assert.equal(short,82);
 });
 
 test('native flat caps have a single owner across both LOD thresholds, readiness loss, style recreation and church mode',()=>{

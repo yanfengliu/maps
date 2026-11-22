@@ -1,3 +1,4 @@
+import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
 import {civicHistory} from './civic-history.ts';
 import {CIVIC_FACADE_PHOTOS} from './civic-facades.ts';
 import {civicAppearance} from './civic-appearance.ts';
@@ -33,6 +34,8 @@ export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
   const p=properties??{},profile=architecture.profile;
   const civic=civicAppearance(p.id);
   if(civic)return {wall:civic.wall,roof:civic.roofColor};
+  if(p.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
+  if(p.id===BAND_SHAK_ID)return {wall:'#bfae97',roof:'#ae9988'};
   if(p.id===GREEN_EAST_ID)return {wall:'#c7bdb0',roof:'#ae7259'};
   if(p.id===PASTEUR_300_ID)return {wall:'#ccc9bf',roof:'#c1bfb2'};
   if(p.id===BRAUN_MUSIC_ID)return {wall:'#dfd4bc',roof:'#c8c5b8'};
@@ -75,6 +78,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  if(p.id===AVERY_ID)return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'fabric-canopies',roofSource:'reference-profile'};
+  if(p.id===BAND_SHAK_ID)return {profile:'institutional',floors:mappedLevels??2,floorSource:mappedLevels===null?'estimated':'osm-levels',mappedLevels,bayWidth:4.2,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
   if(p.id===GREEN_EAST_ID)return {profile:'institutional', floors:3, floorSource:'official-description', mappedLevels,
     bayWidth:6.2, facadeFamily:'precast-ribbon', roofShape:'hipped', roofSource:'reference-profile'};
   const special = ['memorial-church', 'quad-wing', 'library', 'tower', 'open'].includes(profile);
@@ -97,6 +102,8 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const civic=civicAppearance(p.id);
   const history=civicHistory(String(p.id));
   if(history)return history;
+  if(p.id===AVERY_ID)return AVERY_DESCRIPTION;
+  if(p.id===BAND_SHAK_ID)return BAND_SHAK_DESCRIPTION;
   if(civic)return civic.description;
   const photo=CIVIC_FACADE_PHOTOS[String(p.id)];
   if(photo)return photo.observed+' The model uses the photographed wall finish. Unseen elevations, dimensions and individual openings are estimates.';

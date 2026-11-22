@@ -74,7 +74,7 @@ test('complete campus signs fit unchanged GPU/triangle limits and preserve earli
  const buildings=prepareBuildingDetails(read('stanford-buildings.geojson'));
  const base=buildBuildingGeometry(buildings,read('stanford-environment.geojson'),read('stanford-sculptures.geojson'),read('stanford-surfaces.geojson'),read('stanford-landscape.geojson'));
  const geometry=appendStopSigns(base,input);
- assert.equal(base.triangles,187296);assert.equal(geometry.triangles,189664);
+ assert.equal(base.triangles,187374);assert.equal(geometry.triangles,189742);
  assert.equal(MAX_DETAIL_TRIANGLES,190000);assert.equal(MAX_GPU_GEOMETRY_BYTES,24*1024*1024);
  assert.ok(geometry.triangles<=MAX_DETAIL_TRIANGLES);assert.ok(gpuGeometryBytes(geometry.roofs)+gpuGeometryBytes(geometry.facades)<=MAX_GPU_GEOMETRY_BYTES);
  assert.equal(geometry.facades,base.facades);assert.deepEqual(geometry.roofs.subarray(0,base.roofs.length),base.roofs);

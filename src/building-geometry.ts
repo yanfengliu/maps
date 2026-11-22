@@ -1,3 +1,5 @@
+import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
+import {addAveryStands} from './avery-aquatics.ts';
 import {civicHistoryNotice} from './civic-history.ts';
 import {civicFacade} from './civic-appearance.ts';
 import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
@@ -67,6 +69,7 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 
 /** Derived geometry hints are estimates; the original source height is retained. */
 export function prepareBuildingDetails(data: CampusData): CampusData {
+  const bandShak=data.features.find(f=>f.properties?.id===BAND_SHAK_ID);
   const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
   const sourceQuad=data.features.find(feature=>feature.properties?.id==='relation/35820');
   const detailArcadeEdges=sourceQuad?.geometry.type==='Polygon'?quadArcadeEdges(sourceQuad.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))):[];
@@ -74,10 +77,13 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
     const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
-    const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
+    const detailWallHeight = p?.id===AVERY_ID ? Number(p.base)+.15 : quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
     const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
+    if(p?.id===AVERY_ID&&geometry.type==='Polygon'&&bandShak?.geometry.type==='Polygon'){
+      geometry=composeBuildingParts(geometry,[bandShak.geometry],projectLocal);
+    }
     if(quad && quadParts.length){
       if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
       geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
@@ -205,6 +211,7 @@ export class BuildingGeometryBuilder {
         this.checkBudget(String(p.id));
         continue;
       }
+      if(p.id===AVERY_ID){addAveryStands(this.roofs,building,base,height,projectLocal);this.checkBudget(String(p.id));continue;}
       if(addStadiumSeating(this.roofs,String(p.id),rings[0],building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       if(p.id===STADIUM_CONCOURSE_ID)addStadiumField(this.roofs,building,projectLocal);
       if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}

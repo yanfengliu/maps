@@ -1,3 +1,4 @@
+import {AVERY_ID} from './avery-architecture.ts';
 import earcut from 'earcut';
 import type {MapGeoJSONFeature} from 'maplibre-gl';
 import {projectLocal,VERTEX_FLOATS,type CampusData,type Point} from './building-geometry.ts';
@@ -5,6 +6,7 @@ import {HOSPITAL_EXTERIORS} from './hospital-exteriors.ts';
 import {PASTEUR_300_ID} from './pasteur-pods.ts';
 
 export const HOSPITAL_PICK_IDS=new Set([PASTEUR_300_ID,...Object.keys(HOSPITAL_EXTERIORS)]);
+const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID]);
 type Vertex=[number,number,number];
 type Clip=(x:number,y:number,z:number)=>Vertex|null;
 type Surface={index:number;start:number;end:number;mesh:Float32Array};
@@ -53,8 +55,8 @@ function nativeSurfaceDepth(f:PickCandidate,point:Point,clip:Clip,elevation:(p:P
   return depth;
 }
 
-/** Index ranges into the original render buffers once. Per click, test hospital
- * triangles first. Only compare the queried neighbors when a hospital is hit. */
+/** Index ranges into the original render buffers once. Per click, test the non-prismatic
+ * hospital and aquatic-center surfaces first, then their queried neighbors. */
 export function hospitalSurfacePicker(data:CampusData,roofs:Float32Array,facades:Float32Array=new Float32Array()) {
   const surfaces=new Map<string,Surface[]>();
   for(const mesh of [roofs,facades]){
@@ -95,18 +97,19 @@ export function hospitalSurfacePicker(data:CampusData,roofs:Float32Array,facades
       return depth;
     };
     let nearest=Infinity,hit:string|null=null;
-    for(const id of HOSPITAL_PICK_IDS){
+    for(const id of exactExteriorIds){
       const depth=meshDepth(id);
       if(depth<nearest){nearest=depth;hit=id;}
     }
     if(!hit){
+      // Avery keeps its terrain-owned, clipped native apron below the two stands.
       const native=candidates.find(f=>f.layer.id!=='stanford-roofs'&&!HOSPITAL_PICK_IDS.has(String(f.properties.id)));
       return native?String(native.properties.id):null;
     }
     const seen=new Set<string>();
     for(const f of candidates){
       const id=String(f.properties.id);
-      if(HOSPITAL_PICK_IDS.has(id))continue;
+      if(exactExteriorIds.has(id))continue;
       let depth=nativeSurfaceDepth(f,point,clip,nativeElevation);
       if(!seen.has(id)){depth=Math.min(depth,meshDepth(id));seen.add(id);}
       if(depth<nearest){nearest=depth;hit=id;}
