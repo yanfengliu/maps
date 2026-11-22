@@ -14,9 +14,9 @@ for(const buffer of [mesh.roofs,mesh.facades])for(let i=0;i<buffer.length;i+=3*V
   if(feature)parts.get(feature.properties.id).push([0,1,2].map(j=>buffer.subarray(i+j*VERTEX_FLOATS,i+(j+1)*VERTEX_FLOATS)));
 }
 
-test('the historic inventory retains all 23 former shapes and the duplicated 670/672 Lomita parent and the current mesh emits none',()=>{
+test('the historic inventory retains all 23 former shapes and the two folded footprints and the current mesh emits none',()=>{
   const former=source.features.filter(f=>!currentBuilding(f));
-  assert.equal(former.length,24);
+  assert.equal(former.length,25);
   for(const f of former)assert.equal(parts.get(f.properties.id).length,0,f.properties.id);
   assert.equal(prepared.features.length,648);
 });

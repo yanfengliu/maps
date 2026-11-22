@@ -1,3 +1,4 @@
+import {KNOLL_ASSEMBLY} from '../src/supplemental-architecture.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -26,7 +27,7 @@ test('building assemblies and church interior share rigid anchors without modify
  const before=JSON.stringify(source),data=prepareBuildingDetails(source),anchors=buildingTerrainAnchors(data),churchIndex=data.features.findIndex(f=>f.properties.id===CHURCH_ID);
  const church=buildChurchInterior(data);
  for(const mesh of [church.roofs,church.facades])for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)assert.equal(mesh[i+12],churchIndex,'interior vertices use the exterior anchor index');
- for(const ids of [HOOVER_PART_IDS,new Set([STADIUM_CONCOURSE_ID,...STADIUM_SEATING_IDS])]){
+ for(const ids of [HOOVER_PART_IDS,KNOLL_ASSEMBLY,new Set([STADIUM_CONCOURSE_ID,...STADIUM_SEATING_IDS])]){
   const indices=data.features.flatMap((f,i)=>ids.has(f.properties.id)?[i]:[]);assert.ok(indices.length>1);
   for(const i of indices)assert.deepEqual(anchors.slice(i*2,i*2+2),anchors.slice(indices[0]*2,indices[0]*2+2),'connected tower/bowl parts must not acquire different vertical datums');
  }

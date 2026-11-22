@@ -1,6 +1,13 @@
 import type {BuildingArchitecture} from './building-architecture.ts';
 
 export const CLOCK_PERGOLA='way/232805683';
+export const KNOLL_BAY='way/1168128440';
+export const KNOLL_PARENT='way/232805659';
+export const KNOLL_CENTRAL_WING='way/1168128441';
+export const KNOLL_WINGS=new Set(['way/1168128439',KNOLL_CENTRAL_WING,'way/1168128442']);
+export const KNOLL_ASSEMBLY=new Set([KNOLL_PARENT,...KNOLL_WINGS]);
+// Original parent bounds midpoint, before render-only wing composition.
+export const KNOLL_DATUM:[number,number]=[-122.1724503,37.42096585];
 export const KNOLL_GARAGE='way/232805698';
 export const QUAD_RESTROOM='way/338080122';
 export const DIAMOND_PRESS='way/1363917194';

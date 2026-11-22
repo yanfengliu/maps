@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {ADDITIONAL_OUTLINE_ASSESSMENTS} from './additional-outline-refs.mjs';
 import {fingerprints} from './part-model-comparison.mjs';
 import baselineParts from './building-parts-5a1c696.json' with {type:'json'};
+import {KNOLL_BAY} from '../../src/supplemental-architecture.ts';
 import {currentBuilding} from '../../src/former-campus-buildings.ts';
 import {PLAN_MATCHES} from './campus-plan-register.mjs';
 import {ROOF_PHOTO_CHECKS} from './roof-photo-register.mjs';
@@ -184,7 +185,7 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
     const cohort=report.rows.filter(row=>Object.hasOwn(baselineParts,row.id));
     if(cohort.length!==521||!cohort.every(row=>ROOF_PHOTO_CHECKS.has(row.id)))throw Error('The 521-part reference cohort changed');
     for(const row of cohort){
-      row.modelChange = row.id==='way/1169967277'?'duplicate footprint omitted':!currentBuilding({properties:row})?'former footprint omitted':baselineParts[row.id]===partSignatures[row.id]?'geometry and finishes retained':'geometry or finishes updated';
+      row.modelChange = row.id===KNOLL_BAY?'bay represented on parent exterior':row.id==='way/1169967277'?'duplicate footprint omitted':!currentBuilding({properties:row})?'former footprint omitted':baselineParts[row.id]===partSignatures[row.id]?'geometry and finishes retained':'geometry or finishes updated';
     }
     report.counts.original521={modelChange:countBy(cohort,row=>row.modelChange),evidence:countBy(cohort,row=>row.evidenceStatus)};
   }

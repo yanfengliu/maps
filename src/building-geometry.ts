@@ -1,5 +1,5 @@
-import {SUPPLEMENTAL_PARTS,SUPPLEMENTAL_OPEN_IDS,DIAMOND_PRESS,supplementalName} from './supplemental-architecture.ts';
-import {addSupplementalExterior,addPressBoxGlazing} from './supplemental-exteriors.ts';
+import {SUPPLEMENTAL_PARTS,SUPPLEMENTAL_OPEN_IDS,DIAMOND_PRESS,KNOLL_PARENT,KNOLL_WINGS,KNOLL_CENTRAL_WING,KNOLL_ASSEMBLY,supplementalName} from './supplemental-architecture.ts';
+import {addSupplementalExterior,addPressBoxGlazing,addKnollFrontBay} from './supplemental-exteriors.ts';
 import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS,facilityModelHeight,addFacilityElevation} from './facility-elevations.ts';
 import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
@@ -85,6 +85,7 @@ export const STERN_WINGS = new Set(['way/30775651','way/30775656','way/30775658'
 export function prepareBuildingDetails(data: CampusData): CampusData {
   const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
   const bandShak=data.features.find(f=>f.properties?.id===BAND_SHAK_ID);
+  const knollWings=data.features.filter(f=>KNOLL_WINGS.has(String(f.properties?.id)));
   const sternWings=data.features.filter(f=>STERN_WINGS.has(String(f.properties?.id)));
   const sourceQuad=data.features.find(feature=>feature.properties?.id==='relation/35820');
   const detailArcadeEdges=sourceQuad?.geometry.type==='Polygon'?quadArcadeEdges(sourceQuad.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))):[];
@@ -106,6 +107,10 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     if(p?.id===AVERY_ID&&geometry.type==='Polygon'&&bandShak?.geometry.type==='Polygon'){
       geometry=composeBuildingParts(geometry,[bandShak.geometry],projectLocal);
     }
+    if(p?.id===KNOLL_PARENT&&knollWings.length===KNOLL_WINGS.size){
+      if(geometry.type!=='Polygon'||knollWings.some(f=>f.geometry.type!=='Polygon'))throw Error('Changed Knoll parent or wing geometry');
+      geometry=composeBuildingParts(geometry,knollWings.map(f=>f.geometry as GeoJSON.Polygon),projectLocal);
+    }
     if(p?.id==='relation/22862' && sternWings.length){
       if(geometry.type!=='Polygon'||sternWings.some(f=>f.geometry.type!=='Polygon'))throw Error('Changed Stern parent or wing geometry');
       geometry=composeBuildingParts(geometry,sternWings.map(f=>f.geometry as GeoJSON.Polygon),projectLocal);
@@ -113,6 +118,8 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:currentBuilding(feature)&&hasFlatBuildingShell(p,detailArchitecture),
       ...(name?{detailPlaceName:name}:{}),
+      ...(knollWings.length===KNOLL_WINGS.size&&p?.id===KNOLL_PARENT?{detailMapLabel:''}:{}),
+      ...(knollWings.length===KNOLL_WINGS.size&&p?.id===KNOLL_CENTRAL_WING?{detailMapLabel:'The Knoll'}:{}),
       ...(SUPPLEMENTAL_PARTS[String(p?.id)]?.facilityCode?{detailFacilityCode:SUPPLEMENTAL_PARTS[String(p?.id)].facilityCode}:{}),
       ...(facility?{detailFacilityCode:facility.code,...(facility.facilityName?{detailFacilityName:facility.facilityName}:{})}:{}),
       ...(podium===undefined?{}:{detailPodiumHeight:podium}),
@@ -226,7 +233,7 @@ export class BuildingGeometryBuilder {
     const roofTint = color(p.detailRoofColor??p.roofColor), wallTint = color(p.detailWallColor??p.color);
     const architecture = p.detailArchitecture as BuildingArchitecture;
     const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
-    const shape = architecture.roofShape, flatShell=p.detailFlatShell===true;
+    const shape = architecture.roofShape, flatShell=p.detailFlatShell===true,knoll=KNOLL_ASSEMBLY.has(String(p.id));
     for (const [component, polygon] of polygons.entries()) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
@@ -310,14 +317,17 @@ export class BuildingGeometryBuilder {
         for (let i = 0; i < ring.length; i++) {
           const a = ring[i], b = ring[(i + 1) % ring.length];
           const dx = b[0] - a[0], dy = b[1] - a[1], length = Math.hypot(dx, dy);
-          if (length < (flatShell||architecture.profile==='quad'||architecture.profile==='quad-wing'?0.00001:0.4)) continue;
+          if (length < (flatShell||knoll||architecture.profile==='quad'||architecture.profile==='quad-wing'?0.00001:0.4)) continue;
           const nx = outward * dy / length, ny = -outward * dx / length;
           const at = (point: Point, z: number, extension = flatShell?0:0.045): Vertex => [point[0] + nx * extension, point[1] + ny * extension, z];
           const shellTop=flatShell?height:wall-0.12;
-          const walls=flatShell?this.roofs:this.facades;
+          const walls=flatShell||knoll?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
           const civic=ringIndex===0&&length>1.8?(entrance?.frontage(a,b)??civicFront?.(a,b,nx,ny)):undefined;
-          if(MITCHELL_COLUMNS.has(String(p.id))){
+          const bayEdge=feature.geometry.type==='MultiPolygon'?i:i-5;
+          if(p.id===KNOLL_PARENT&&component===0&&ringIndex===0&&bayEdge>=0&&bayEdge<5){
+            addKnollFrontBay(walls,bayEdge,a,b,[nx,ny],base,shellTop,building,wallTint);
+          }else if(MITCHELL_COLUMNS.has(String(p.id))){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,2,building);
           }else if(p.id===MITCHELL_UPPER){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,46,building,[[0,0],[length/7.6,0],[length/7.6,1],[0,1]]);
@@ -354,7 +364,7 @@ export class BuildingGeometryBuilder {
             const u0=libraryFront?along(a):0,u1=libraryFront?along(b):bays*3.8;
             walls.quad(at(a, base), at(b, base), at(b, shellTop), at(a, shellTop), wallTint, kind, building,
               [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
-          }else if(flatShell){
+          }else if(flatShell||knoll){
             // A closed shell includes tiny returns and low walls, even when
             // they cannot fit a window. Courtyard rings use the same rule.
             walls.quad(at(a,base),at(b,base),at(b,height),at(a,height),wallTint,2,building);

@@ -1,3 +1,4 @@
+import {KNOLL_PARENT} from '../../src/supplemental-architecture.ts';
 import {currentBuilding} from '../../src/former-campus-buildings.ts';
 // Offline authoring tool. No Python or skeleton library is bundled in the product.
 // Download the pinned BSD-3 wheel into ignored artifacts first:
@@ -15,12 +16,17 @@ const wheel = resolve(process.argv[2] ?? 'artifacts/skeleton-tools/py_straight_s
 const digest = value => createHash('sha256').update(value).digest('hex');
 if (digest(readFileSync(wheel)) !== wheelSha256) throw Error('Wrong skeleton authoring tool; download the pinned wheel.');
 const source = readFileSync('public/data/stanford-buildings.geojson');
-const prepared = prepareBuildingDetails(JSON.parse(source));
+const inventory=JSON.parse(source);
+const prepared = prepareBuildingDetails(inventory);
 const cases = [];
 for (const feature of prepared.features.filter(currentBuilding).filter(f => f.properties.id === 'relation/12460152' || f.properties.detailArchitecture.roofShape === 'hipped' && !['quad','quad-wing'].includes(f.properties.detailArchitecture.profile))) {
   const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
   for (const [index, polygon] of polygons.entries()) cases.push({ id: `${feature.properties.id}/${index}`, rings: orientRoofRings(polygon.map(ring => ring.slice(0, -1).map(projectLocal))) });
 }
+// The complete campus uses the two projections left after subtracting the
+// three wings. A source subset without the wings can still render the parent.
+const knoll=inventory.features.find(f=>f.properties.id===KNOLL_PARENT);
+cases.push({id:KNOLL_PARENT+'/whole',rings:orientRoofRings(knoll.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal)))});
 const run = spawnSync('python', ['tools/data/quad-roof-skeleton.py', wheel], { input: JSON.stringify(cases), encoding: 'utf8', windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
 if (run.status !== 0) throw Error(run.stderr || 'Skeleton authoring failed.');
 const determinant = (a, b, c) => a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);

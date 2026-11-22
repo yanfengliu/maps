@@ -49,6 +49,9 @@ test('examined visitor photos have individual sources and exclude Stanford’s o
       assert.ok(width>0 && height>0);
     }
   }
+  const garage=facilities.find(f=>f.code==='05-310');
+  assert.deepEqual([garage.status,garage.images[0].width,garage.images[0].height,garage.images[0].sha256],
+    ['exterior-photo',768,576,'e6c46c7cc479f2395c43efca38481acb6ee3300cf2ad1d2a913fb3ccb6f06d52']);
   assert.equal(facilities.find(f=>f.code==='09-535').status,'placeholder');
   assert.equal(facilities.find(f=>f.code==='14-411').status,'exterior-photo');
 });

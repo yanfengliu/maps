@@ -412,8 +412,8 @@ function addCampusLayers(): void {
   addBuildingDetailLayer();
   map.addLayer(quadPickingLayer(), 'road-label');
   map.addLayer({ id: 'stanford-names', type: 'symbol', source: 'stanford', minzoom: 16,
-    filter: ['all', ['has','name'], ['!=', ['get','name'], null]],
-    layout: { 'text-field': ['get','name'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-max-width': 10, 'text-padding': 8, 'text-offset': [0,0.8] },
+    filter: ['!=',['coalesce',['get','detailMapLabel'],['get','name'],''],''],
+    layout: { 'text-field': ['coalesce',['get','detailMapLabel'],['get','name'],''], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-max-width': 10, 'text-padding': 8, 'text-offset': [0,0.8] },
     paint: { 'text-color': '#765a44', 'text-halo-color': '#fff9eb', 'text-halo-width': 1.8 } });
   if (!campusEventsBound) {
     campusEventsBound = true;
