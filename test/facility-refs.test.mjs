@@ -52,3 +52,20 @@ test('examined visitor photos have individual sources and exclude Stanford’s o
   assert.equal(facilities.find(f=>f.code==='09-535').status,'placeholder');
   assert.equal(facilities.find(f=>f.code==='14-411').status,'exterior-photo');
 });
+
+test('per-part visual notes keep single-facility and overlap-only claims separate', async () => {
+  const {FACILITY_EXTERIOR_REFERENCES,FACILITY_CONTEXT_COMPARISONS} = await import('../tools/quality/facility-refs.mjs');
+  const index = new Map(rows.map(row=>[row.id,row]));
+  const observations=[...FACILITY_EXTERIOR_REFERENCES,...FACILITY_CONTEXT_COMPARISONS];
+  assert.equal(new Set(observations.flatMap(row=>row.ids)).size, observations.length);
+  for (const record of observations) {
+    const footprint=index.get(record.ids[0]);
+    assert.equal(record.scope,footprint.status);
+    assert.equal(record.facility,footprint.candidates[0].code);
+    assert.ok(record.observed.length>=65);
+    assert.ok(record.sources[0].url.includes('/'+record.facility+'/'));
+    assert.ok(record.reviewBasis.includes('pitch'));
+  }
+  assert.ok(FACILITY_EXTERIOR_REFERENCES.every(record=>record.scope==='footprint'));
+  assert.ok(FACILITY_CONTEXT_COMPARISONS.every(record=>record.scope!=='footprint'));
+});
