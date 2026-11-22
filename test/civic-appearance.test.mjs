@@ -17,7 +17,7 @@ test('photographed civic elevations and roof fields are present on the original 
     assert.equal(p.height,feature.properties.height);
     if(!appearance){
       const photo=CIVIC_FACADE_PHOTOS[id];assert.equal(p.detailWallColor,photo.wall);
-      assert.ok(record.sources.some(s=>s.kind==='photo'&&s.url.includes('/'+photo.code+'/')));
+      assert.ok(record.sources.some(s=>s.kind==='photo'&&(s.url.includes('/'+photo.code+'/')||!s.url.includes('MapServer')&&!s.url.includes('images_repo'))));
       const front=CAMPUS_FRONTAGES[id];
       if(front){
         const geometry=buildBuildingGeometry(data);

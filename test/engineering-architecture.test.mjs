@@ -32,7 +32,7 @@ test('all researched workshop IDs select tall masonry bays and tile monitor roof
 });
 
 test('the complete remaining academic-glass backlog is explicit and labeled unverified',()=>{
-  assert.equal(UNVERIFIED_ACADEMIC_IDS.size,6);
+  assert.equal(UNVERIFIED_ACADEMIC_IDS.size,4);
   for(const id of UNVERIFIED_ACADEMIC_IDS){
     const p=source.features.find(f=>f.properties.id===id)?.properties;assert.ok(p,id);
     const a=buildingArchitecture(p,p.height);assert.equal(a.facadeFamily,'unverified');assert.equal(a.profile,'institutional');assert.equal(a.roofShape,'flat');
