@@ -9,6 +9,8 @@ Updated: 2026-11-21
 
 The November 21 pass covers the Green Library East Wing, public interior plans, four hospital exteriors, aerial roof comparisons, photographed entrances, trees, mobile-browser operation and branch cleanup. The three retired remote branches have recovery tags. A physical phone check is open at the owner’s direction.
 
+The new November 21 architectural reference pass starts at 5a1c696 with 521 individually unreferenced parts, 217 named and 304 unnamed. Root compares two years of roof photographs and integrates the models. Separate research covers Stanford’s visitor-map building plans, residential exterior photographs, and academic and civic exteriors. Each part needs an identifiable source and a bounded finding or an explicit unresolved outcome. The 127 earlier records retain their own scope.
+
 The owner asks for one tracked list and coordinated delivery. Root owns this list, integration, native visual acceptance, independent review and publishing. A completed implementation is not accepted until its rendered result is inspected; an inventory check is never a claim of photographic realism. New requests extend this list rather than replacing earlier requests.
 
 | Request | Status | Owner / next acceptance evidence |
