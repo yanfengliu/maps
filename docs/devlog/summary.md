@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — Compared the complete reference backlog with Stanford’s visitor plan. Updated civic facades, tiled roof perimeters, farm buildings, 22 baseball seating sections and the above-ground Clark stage. Removed 21 former footprints from the live map. The audit can compare every original part with its baseline geometry and finishes. [Reference inventory](../../tools/quality/README.md).
+
 - 2026-11-21 — Corrected photographed roof forms and finishes, residence exteriors and six civic buildings. The Stern Hall relation now draws only the central remainder between its eight individually modeled flat-roofed wings. [Reference pass](../work/0_bay-area-stanford/plan.md).
 
 - 2026-11-21 — The realism audit now links two aerial photograph crops per part for the 521 previously unreferenced parts. The register retains inconclusive views and changes between acquisitions. [Read the comparison method](../../tools/quality/README.md).

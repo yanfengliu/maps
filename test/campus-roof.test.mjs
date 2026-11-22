@@ -1,3 +1,4 @@
+import {currentBuilding} from '../src/former-campus-buildings.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -5,6 +6,7 @@ import {createHash} from 'node:crypto';
 import earcut from 'earcut';
 import {prepareBuildingDetails,buildBuildingGeometry,projectLocal,VERTEX_FLOATS} from '../src/building-geometry.ts';
 import {CAMPUS_ROOF_PROFILES,CAMPUS_ROOF_SOURCE_SHA256} from '../src/campus-roof-profile.ts';
+import {TILED_EDGE_WIDTH} from '../src/tiled-perimeter.ts';
 import {campusRoof,BRAUN_MUSIC_ID} from '../src/campus-roof.ts';
 import {evaluateRoofSkeleton,orientRoofRings,roofSignatureMargin,ROOF_SIGNATURE_ROUNDOFF} from '../src/roof-skeleton.ts';
 const bytes=readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url)),source=JSON.parse(bytes),prepared=prepareBuildingDetails(source),mesh=buildBuildingGeometry(prepared);
@@ -12,10 +14,10 @@ const area=r=>Math.abs(r.reduce((sum,p,i)=>{const q=r[(i+1)%r.length];return sum
 function overlap(subject,clip){let polygon=subject;const sign=Math.sign(cross(...clip));for(let i=0;i<3&&polygon.length;i++){const a=clip[i],b=clip[(i+1)%3],next=[];for(let j=0;j<polygon.length;j++){const p=polygon[j],q=polygon[(j+1)%polygon.length],dp=cross(a,b,p)*sign,dq=cross(a,b,q)*sign;if(dp>=0)next.push(p);if((dp>0)!==(dq>0)){const t=dp/(dp-dq);next.push([p[0]+t*(q[0]-p[0]),p[1]+t*(q[1]-p[1])]);}}polygon=next;}return polygon.length<3?0:area(polygon);}
 function footprint(rings){const points=rings.flat(),holes=[];let offset=rings[0].length;for(const ring of rings.slice(1)){holes.push(offset);offset+=ring.length;}const indices=earcut(points.flat(),holes,2),tri=[];for(let i=0;i<indices.length;i+=3)tri.push(indices.slice(i,i+3).map(j=>points[j]));return tri;}
 function inside(p,ring){let yes=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])yes=!yes;}return yes;}
-function cases(){const out=[];for(const f of prepared.features){const p=f.properties;if(!(p.id===BRAUN_MUSIC_ID||p.detailArchitecture.roofShape==='hipped'&&!['quad','quad-wing'].includes(p.detailArchitecture.profile)))continue;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;for(const [component,poly] of polys.entries())out.push({feature:f,key:p.id+'/'+component,rings:orientRoofRings(poly.map(r=>r.slice(0,-1).map(projectLocal))),component});}return out;}
+function cases(){const out=[];for(const f of prepared.features.filter(currentBuilding)){const p=f.properties;if(!(p.id===BRAUN_MUSIC_ID||p.detailArchitecture.roofShape==='hipped'&&!['quad','quad-wing'].includes(p.detailArchitecture.profile)))continue;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;for(const [component,poly] of polys.entries())out.push({feature:f,key:p.id+'/'+component,rings:orientRoofRings(poly.map(r=>r.slice(0,-1).map(projectLocal))),component});}return out;}
 
 test('every generic hipped campus component has pinned continuous planar roof topology, including concave outlines and courtyards',()=>{
- assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,343);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,321);
  for(const {key,rings} of cases()){
   const profile=CAMPUS_ROOF_PROFILES[key];assert.ok(profile,key);assert.ok(roofSignatureMargin(rings.map(r=>r.map(([x,y])=>[x+profile.offset,y+profile.offset])))>ROOF_SIGNATURE_ROUNDOFF,key+' guard phase');
   const model=evaluateRoofSkeleton(rings,profile),triangles=model.triangles.map(t=>t.map(i=>model.vertices[i])),native=footprint(rings),expected=area(rings[0])-rings.slice(1).reduce((s,r)=>s+area(r),0);
@@ -35,7 +37,7 @@ test('rendered generic hipped surfaces follow source-edge planes rather than sam
  let checked=0;
  for(const {feature,rings,key} of cases()){
   // These two surveyed buildings have their own emitted-layout checks.
-  if(feature.properties.id===BRAUN_MUSIC_ID||feature.properties.id==='way/232805660')continue;
+  if(feature.properties.id===BRAUN_MUSIC_ID||feature.properties.id==='way/232805660'||TILED_EDGE_WIDTH[feature.properties.id])continue;
   const index=prepared.features.indexOf(feature),p=feature.properties,model=evaluateRoofSkeleton(rings,CAMPUS_ROOF_PROFILES[key]),peak=monitorPeaks.get(p.id)??p.detailRoofHeight,slope=Math.max(0,peak-p.detailWallHeight-.07)/model.maximumTime,main=[];
   const normals=rings.flatMap(r=>r.map((a,i)=>{const b=r[(i+1)%r.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);return [-(b[1]-a[1])/l*slope,(b[0]-a[0])/l*slope];}));
   for(let i=0;i<mesh.roofs.length;i+=VERTEX_FLOATS*3){
@@ -126,5 +128,23 @@ test('the five medical courtyard decks preserve every mapped opening and the pro
     assert.equal(feature.properties.detailArchitecture.roofShape,'flat');
     assert.equal(feature.properties.detailFlatShell,true);
     assert.equal(feature.properties.height,source.features[index].properties.height);
+  }
+});
+
+test('photo-matched tiled perimeters enclose a coplanar central deck while preserving the complete footprint',()=>{
+  assert.equal(Object.keys(TILED_EDGE_WIDTH).length,11);
+  for (const id of Object.keys(TILED_EDGE_WIDTH)) {
+    const feature=prepared.features.find(f=>f.properties.id===id),p=feature.properties;
+    assert.equal(p.detailArchitecture.roofSource,'reference-profile');
+    const ring=feature.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal));
+    const roof=campusRoof(id,0,ring), deck=roof.triangles.filter(roof.flat), tile=roof.triangles.filter(t=>!roof.flat(t));
+    assert.ok(deck.length>0&&tile.length>0,id);
+    assert.ok(deck.flat().every(v=>Math.abs(roof.fraction(v)-1)<1e-7),id+' central deck');
+    assert.ok(tile.some(tri=>tri.some(v=>roof.fraction(v)<.01)),id+' tile reaches eave');
+    const total=deck.concat(tile).reduce((sum,t)=>sum+area(t),0);
+    assert.ok(Math.abs(total-area(ring[0])+ring.slice(1).reduce((sum,h)=>sum+area(h),0))<1e-5,id+' footprint');
+    const index=prepared.features.indexOf(feature),kinds=new Set();
+    for(let off=0;off<mesh.roofs.length;off+=3*VERTEX_FLOATS)if(mesh.roofs[off+12]===index) kinds.add(mesh.roofs[off+11]);
+    assert.ok(kinds.has(9)&&kinds.has(17),id+' both surfaces emitted');
   }
 });

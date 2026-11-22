@@ -79,7 +79,7 @@ export const FACILITY_COMPARISONS = cases.map(entry => {
   const image=photos.get(entry.facility)[0];
   return {
     key:'visitor-'+entry.facility+'-'+entry.id.split('/').join('-'),
-    ids:[entry.id],title:entry.title,facility:entry.facility,scope:entry.scope,observed:entry.observed,
+    ids:[entry.id],title:entry.title,facility:entry.facility,scope:entry.scope,observed:'Comparison with the 5a1c696 model: '+entry.observed,
     reviewedAt:'2026-11-21',status:entry.scope==='footprint'?'photo-supported':'context-only',
     reviewBasis:'Compared Stanford’s public facility photograph with a local control-driven map view at zoom '+entry.view.zoom+', pitch '+entry.view.pitch+' and bearing '+entry.view.bearing+' on the 5a1c696 renderer.',
     limitations:'The photograph covers one elevation and has no verified capture date. Roof heights, other elevations and obscured details require independent evidence.',

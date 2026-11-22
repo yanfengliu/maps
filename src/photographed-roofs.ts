@@ -67,4 +67,7 @@ register([
   'way/886812786', 'way/1302742362',
 ], {roof:'#b3795c', roofShape:'hipped'});
 
+register(['way/232715616','way/232715664'],{roof:'#a58970',roofShape:'flat'});
+register(['way/232715672'],{roof:'#9ca68f'});
+
 export function photographedRoof(id: string) { return profiles.get(id); }

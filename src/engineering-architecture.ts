@@ -1,3 +1,4 @@
+import {CIVIC_FACADE_PHOTOS} from './civic-facades.ts';
 /** Explicit visual evidence, not an inference from an academic department's name.
  * Dimensions/bay counts remain authored estimates inside the original source envelope. */
 export interface EngineeringReference {
@@ -30,12 +31,14 @@ export const ENGINEERING_REFERENCES:Readonly<Record<string,EngineeringReference>
 /** Legacy flat-roof estimates requiring individual research. Preserve their
  * estimated massing, but remove the invented glass curtain-wall appearance.
  * This list is an audit backlog, NOT evidence of a modern architectural style. */
-export const UNVERIFIED_ACADEMIC_IDS=new Set([
+export const LEGACY_ACADEMIC_FLATS=new Set([
   'way/81794792','way/81794794',
   'way/232805740','way/232841885','way/232841888','way/232841903',
   'way/232841910','way/232841913','way/307364465','way/597085021',
   'way/727171866','way/738808362','way/1038160838','way/1434557267',
 ]);
+
+export const UNVERIFIED_ACADEMIC_IDS=new Set([...LEGACY_ACADEMIC_FLATS].filter(id=>!CIVIC_FACADE_PHOTOS[id]));
 
 export function engineeringRoofOffset(id:string,wall:number,height:number):number {
   return ENGINEERING_REFERENCES[id]?.monitor?Math.min(.9,(height-wall)*.55):0;

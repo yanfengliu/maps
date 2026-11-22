@@ -1,3 +1,7 @@
+import {CLARK_STAGE,LASUEN_RESTROOM} from './courtyard-and-pavilion.ts';
+import {BASEBALL_FIELD,BASEBALL_FRONT} from './baseball-seating.ts';
+import {addFarmExterior} from './farm-exteriors.ts';
+import {currentBuilding} from './former-campus-buildings.ts';
 import {civicFacade} from './civic-appearance.ts';
 import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
 import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
@@ -26,6 +30,7 @@ import { addHospitalExterior, addPasteurPods } from './hospital-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
+import {TILED_EDGE_WIDTH} from './tiled-perimeter.ts';
 import {photographedRoof} from './photographed-roofs.ts';
 import {HOUSING_APPEARANCE} from './housing-appearance.ts';
 import {hasFlatBuildingShell,FLAT_SHELL_FOUNDATION_DEPTH} from './flat-building-shell.ts';
@@ -77,8 +82,8 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
   return { ...data, features: data.features.map(feature => {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
-    const detailRoofHeight = quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
-    const detailWallHeight = quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
+    const detailRoofHeight = p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
+    const detailWallHeight = p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
     const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
@@ -197,6 +202,7 @@ export class BuildingGeometryBuilder {
     if (this.done) return;
     const building = this.featureIndex++;
     const feature = this.data.features[building];
+    if(!currentBuilding(feature))return;
     const p = feature.properties!;
     const height = Number(p.detailRoofHeight), base = Number(p.base), wall = Number(p.detailWallHeight);
     const roofTint = color(p.detailRoofColor??p.roofColor), wallTint = color(p.detailWallColor??p.color);
@@ -206,12 +212,13 @@ export class BuildingGeometryBuilder {
     for (const [component, polygon] of polygons.entries()) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
+      if(addFarmExterior(this.roofs,String(p.id),rings[0],building,base,height)){this.checkBudget(String(p.id));continue;}
       if (architecture.profile === 'memorial-church') {
         addMemorialChurch(this.roofs, this.facades, rings[0], building, base, height, wallTint, roofTint);
         this.checkBudget(String(p.id));
         continue;
       }
-      if(addStadiumSeating(this.roofs,String(p.id),rings[0],building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
+      if(addStadiumSeating(this.roofs,String(p.id),rings[0],building,base,height,projectLocal(BASEBALL_FRONT[String(p.id)]?BASEBALL_FIELD:STADIUM_CENTER),Number(p['osm:roof:height'])||undefined)){this.checkBudget(String(p.id));continue;}
       if(p.id===STADIUM_CONCOURSE_ID)addStadiumField(this.roofs,building,projectLocal);
       if(addStadiumStructure(this.roofs,this.facades,String(p.id),rings,building,base,height,projectLocal(STADIUM_CENTER))){this.checkBudget(String(p.id));continue;}
       if(addGarage(this.roofs,this.facades,rings,building,p,base,height)){this.checkBudget(String(p.id));continue;}
@@ -257,11 +264,20 @@ export class BuildingGeometryBuilder {
         const roofPeak=height-engineeringRoofOffset(String(p.id),wall,height);
         return [point[0], point[1], Math.min(roofPeak, wall + 0.07 + (roofPeak - wall - 0.07) * fraction)];
       };
-      for (const [a, b, c] of roofTriangles) {
+      if(p.id===CLARK_STAGE){
+        const ring=rings[0],origin:Point=[ring.reduce((s,v)=>s+v[0],0)/ring.length,ring.reduce((s,v)=>s+v[1],0)/ring.length];
+        const inset=(v:Point):Vertex=>[origin[0]+.90*(v[0]-origin[0]),origin[1]+.90*(v[1]-origin[1]),height];
+        for(const [i,a] of ring.entries()){
+          const b=ring[(i+1)%ring.length];
+          this.roofs.triangle([...origin,height],inset(a),inset(b),roofTint,9,building);
+          this.roofs.quad([...a,height],[...b,height],inset(b),inset(a),color('#747d79'),9,building);
+        }
+      }
+      for (const [a, b, c] of p.id===CLARK_STAGE?[]:roofTriangles) {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
         const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
         const deck=campusModel?.flat(tri);
-        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],TILED_EDGE_WIDTH[String(p.id)]?(deck?color('#cbc9bc'):color('#ae7257')):braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
       if(p.id===PASTEUR_300_ID)addPasteurPods(this.roofs,building,projectLocal);
       if(braun)addBraunSolar(this.roofs,rings,building,height);
@@ -278,7 +294,9 @@ export class BuildingGeometryBuilder {
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
           const civic=ringIndex===0&&length>1.8?civicFront?.(a,b,nx,ny):undefined;
-          if(civic){
+          if(p.id===LASUEN_RESTROOM){
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,47,building,[[0,0],[length,0],[length,shellTop-base],[0,shellTop-base]]);
+          }else if(civic){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,civic.material,building,
               [[civic.u0,0],[civic.u1,0],[civic.u1,civic.bands],[civic.u0,civic.bands]]);
           }else if(architecture.facadeFamily==='precast-ribbon'){

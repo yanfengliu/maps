@@ -1,3 +1,5 @@
+import {BASEBALL_FRONT} from '../src/baseball-seating.ts';
+import {FARM_IDS} from '../src/farm-exteriors.ts';
 import {OPEN_GARAGE_IDS} from '../src/garage-architecture.ts';
 import {HOOVER_PART_IDS} from '../src/hoover-architecture.ts';
 import test from 'node:test';
@@ -16,8 +18,8 @@ test('open arcades and stadium stands retain full-height picking across native c
  assert.notEqual(layer.layout?.visibility,'none','invisible layout would disable MapLibre queries');
  assert.ok(BUILDING_PICK_LAYERS.includes(layer.id)&&BUILDING_PICK_LAYERS.includes('stanford-buildings'),'one delegated query includes the proxy and other campus buildings');
  const data=prepareBuildingDetails(JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url))));
- let zoom=19,wall;
- const controller=createQuadArcadeVisibility(),map={setFilter(){},getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings')wall=value;}};
+ let zoom=19,wall,nativeFilter;
+ const controller=createQuadArcadeVisibility(),map={setFilter(id,value){if(id==='stanford-buildings')nativeFilter=value;},getLayer:()=>true,getZoom:()=>zoom,getCanvas:()=>({dataset:{}}),setPaintProperty:(id,_key,value)=>{if(id==='stanford-buildings')wall=value;}};
  for(const [nextZoom,ready]of [[19,false],[19,true],[15,false],[19,true],[19,false]]){
   zoom=nextZoom;controller.sync(map,ready);
   const nativeHeight=createExpression(wall,'layers[1].paint.fill-extrusion-height');assert.equal(nativeHeight.result,'success');let count=0;const seen=new Set();
@@ -29,10 +31,15 @@ test('open arcades and stadium stands retain full-height picking across native c
    assert.equal(pick,feature.properties.detailRoofHeight);
    if(STADIUM_SEATING_IDS.has(feature.properties.id))assert.ok(pick>=feature.properties.height,'the full seating envelope remains queryable');
    else assert.ok(pick>feature.properties.detailWallHeight,'the whole modeled roof silhouette remains queryable');
-   if(ready&&zoom>=15.5&&!feature.properties.detailFlatShell)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
+   if(FARM_IDS.includes(feature.properties.id)||BASEBALL_FRONT[feature.properties.id]){
+    const visible=!nativeFilter||featureFilter(nativeFilter,'layers[1].filter').filter({zoom},f);
+    assert.equal(visible,!(ready&&zoom>=14),feature.properties.id);
+   }else if(ready&&zoom>=15.5&&!feature.properties.detailFlatShell)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
   }
   for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
   for(const medicalCourt of [4720978,4721017,4721018,4721019,4721020])assert.ok(seen.has('relation/'+medicalCourt),'each medical courtyard must remain selectable');
-  assert.equal(count,38+157,'scope includes all 157 complete flat shells as well as the 38 existing landmark parts');
+  const flat=data.features.filter(f=>f.properties.detailFlatShell).map(f=>f.properties.id);
+  assert.equal(count,new Set([...flat,...FARM_IDS,...Object.keys(BASEBALL_FRONT)]).size+38);
+  for(const id of FARM_IDS)assert.ok(seen.has(id));
  }
 });

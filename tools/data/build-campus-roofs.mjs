@@ -1,3 +1,4 @@
+import {currentBuilding} from '../../src/former-campus-buildings.ts';
 // Offline authoring tool. No Python or skeleton library is bundled in the product.
 // Download the pinned BSD-3 wheel into ignored artifacts first:
 // python -m pip download --no-deps --dest artifacts/skeleton-tools py_straight_skeleton==0.1.0
@@ -16,7 +17,7 @@ if (digest(readFileSync(wheel)) !== wheelSha256) throw Error('Wrong skeleton aut
 const source = readFileSync('public/data/stanford-buildings.geojson');
 const prepared = prepareBuildingDetails(JSON.parse(source));
 const cases = [];
-for (const feature of prepared.features.filter(f => f.properties.id === 'relation/12460152' || f.properties.detailArchitecture.roofShape === 'hipped' && !['quad','quad-wing'].includes(f.properties.detailArchitecture.profile))) {
+for (const feature of prepared.features.filter(currentBuilding).filter(f => f.properties.id === 'relation/12460152' || f.properties.detailArchitecture.roofShape === 'hipped' && !['quad','quad-wing'].includes(f.properties.detailArchitecture.profile))) {
   const polygons = feature.geometry.type === 'Polygon' ? [feature.geometry.coordinates] : feature.geometry.coordinates;
   for (const [index, polygon] of polygons.entries()) cases.push({ id: `${feature.properties.id}/${index}`, rings: orientRoofRings(polygon.map(ring => ring.slice(0, -1).map(projectLocal))) });
 }

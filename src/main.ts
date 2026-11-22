@@ -1,3 +1,4 @@
+import {currentBuilding} from './former-campus-buildings.ts';
 import { publicAsset } from './public-assets.ts';
 import * as maplibregl from 'maplibre-gl';
 import type { Map as MapLibreMap, GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
@@ -147,9 +148,10 @@ function showBuilding(properties: Record<string, unknown>): void {
   updateSelection();
   details.hidden = false;
   details.className='place-details place-details--building';
+  const stage=properties.id==='way/158630338';
   const referencedHeight=properties.heightSource==='estimated'&&Number(properties.detailRoofHeight)>Number(properties.height);
-  const height = Number(referencedHeight?properties.detailRoofHeight:properties.height);
-  const source = referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
+  const height = Number(stage||referencedHeight?properties.detailRoofHeight:properties.height);
+  const source = stage?'Estimated courtyard stage height':referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
   details.innerHTML = `<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="place-context">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}${Number.isFinite(properties.detailPodMaximum)?' · West pods up to '+Number(properties.detailPodMaximum).toFixed(1)+' m (city report)':''}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   if(selectedId===CHURCH_ID){
@@ -358,7 +360,7 @@ async function loadCampus(): Promise<void> {
     campusData = prepareBuildingDetails(candidate);
     campusBoundary = boundary as GeoJSON.FeatureCollection;
     if (!campusBoundary || !['Feature','FeatureCollection'].includes(campusBoundary.type)) throw new Error('Campus boundary is missing');
-    allPlaces = [...PLACES,...SCULPTURE_PLACES, ...buildingPlaces(candidate.features)];
+    allPlaces = [...PLACES,...SCULPTURE_PLACES, ...buildingPlaces(candidate.features.filter(currentBuilding))];
     sourceReady = true;
     if (styleAvailable) addCampusLayers();
     checkReady();
@@ -385,9 +387,10 @@ const campusRoads=new CampusRoadLayer({onChange:stats=>{
 
 function addCampusLayers(): void {
   if (!map || !styleAvailable || !campusData || !campusBoundary) return;
-  attachPasteurPods(map,campusData);
+  const active = {...campusData,features:campusData.features.filter(currentBuilding)};
+  attachPasteurPods(map,active);
   if (map.getSource('stanford')) {
-    (map.getSource('stanford') as GeoJSONSource).setData(campusData);
+    (map.getSource('stanford') as GeoJSONSource).setData(active);
     // MapLibre restores standard layers after a lost context; custom layers
     // must be attached again even when their source already exists.
     addBuildingDetailLayer();
@@ -399,7 +402,7 @@ function addCampusLayers(): void {
     paint: { 'fill-color': '#e8e7d6', 'fill-opacity': 0.26 } }, 'regional-buildings-flat');
   map.addLayer({ id: 'campus-boundary', type: 'line', source: 'stanford-campus', minzoom: 13,
     paint: { 'line-color': '#b49a7f', 'line-width': 1, 'line-dasharray': [3,3], 'line-opacity': 0.5 } }, 'road-label');
-  map.addSource('stanford', { type: 'geojson', data: campusData });
+  map.addSource('stanford', { type: 'geojson', data: active });
   quadArcadeVisibility.reset();
   map.addLayer({ id: 'stanford-buildings', type: 'fill-extrusion', source: 'stanford', minzoom: 13.5,
     paint: { 'fill-extrusion-color': ['coalesce', ['get','detailWallColor'], ['get','color']], 'fill-extrusion-height': ['get','detailWallHeight'], 'fill-extrusion-height-transition': { duration:0 }, 'fill-extrusion-base': ['get','base'], 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': true } }, 'road-label');

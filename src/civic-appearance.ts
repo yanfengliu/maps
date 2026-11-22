@@ -47,10 +47,24 @@ export function civicAppearance(id: unknown): CivicAppearance | undefined {
 }
 
 type Point = [number, number];
+type Frontage = NonNullable<CivicAppearance['frontage']>;
+const south:Point=[-.25,-.97],east:Point=[.97,-.25],west:Point=[-.97,.25];
+// Directions come from the university's public building descriptions and
+// the photographed plaza/street. Counts and bay widths are model parameters.
+export const CAMPUS_FRONTAGES:Readonly<Record<string,Frontage>>={
+  'way/81794793': {normal:west, material:3,width:5.2,bands:3},
+  'way/81794794': {normal:south,material:3,width:4.5,bands:4},
+  'way/307364465': {normal:south,material:3,width:5.4,bands:3},
+  'way/30775803': {normal:south,material:3,width:5.0,bands:2},
+  'way/232805663': {normal:south,material:3,width:5.4,bands:2},
+  'way/232805668': {normal:south,material:3,width:6.3,bands:1},
+  'way/232841887': {normal:west,material:99,width:7.6,bands:4},
+  'way/597085021': {normal:east,material:97,width:3.2,bands:3},
+};
 /** Use a common coordinate along a facade so collinear footprint subdivisions
  * cannot restart the window or divide the crossing zinc band. */
 export function civicFacade(id:string, ring:Point[]) {
-  const frontage = civicAppearance(id)?.frontage;
+  const frontage = civicAppearance(id)?.frontage ?? CAMPUS_FRONTAGES[id];
   if (!frontage) return;
   const [east,north] = frontage.normal;
   const along = (p:Point) => -north*p[0] + east*p[1];
@@ -61,12 +75,14 @@ export function civicFacade(id:string, ring:Point[]) {
     const perimeter = id === 'way/493811440';
     if (!front && !perimeter) return;
     const material = !front && perimeter ? 58 : frontage.material;
-    const position = frontage.material===97
-      ? (p:Point) => (along(p)-low)/frontage.width
+    const isGenericArch=frontage.material===3;
+    const bands=frontage.bands*(isGenericArch?3.6:1);
+    const position = frontage.material===97 || frontage.material===99 || isGenericArch
+      ? (p:Point) => (along(p)-low)/frontage.width*(isGenericArch?3.8:1)
       : (p:Point) => (along(p)-low)/span;
     // Each museum clerestory runs continuously around all four elevations.
     // On its remaining walls only the relative vertical bands are referenced.
     if (material===58) return {material,u0:0,u1:Math.hypot(b[0]-a[0],b[1]-a[1])/4,bands:1};
-    return {material,u0:position(a),u1:position(b),bands:frontage.bands};
+    return {material,u0:position(a),u1:position(b),bands};
   };
 }

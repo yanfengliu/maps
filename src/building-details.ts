@@ -291,6 +291,26 @@ void main() {
   ${STADIUM_ELEVATION_FRAGMENT}
   ${GARAGE_FRAGMENT}
   ${CIVIC_FRAGMENT}
+  if(abs(v_kind-59.)<.1){
+    vec2 grid=abs(fract(v_uv/vec2(1.1,1.8))-.5);
+    float bar=smoothstep(.46,.49,max(grid.x,grid.y));
+    tint=mix(tint*(.93+.055*cos(v_uv.y*1.2)),vec3(.77,.79,.76),bar);
+  }
+  if(abs(v_kind-47.)<.1){
+    float timber=smoothstep(2.17,2.21,v_uv.y);
+    float plank=fract(v_uv.x/.24);
+    tint=mix(tint,vec3(.37,.29,.21)*(.90+.10*smoothstep(.02,.12,plank)),timber);
+  }
+  if(abs(v_kind-48.)<.1){
+    float phase=fract(v_uv.x/.28),footprint=fwidth(v_uv.x)/.28;
+    if(footprint<.45 && phase>.72)discard;
+    tint*=mix(.76,1.,smoothstep(.04,.17,phase));
+  }
+  if(abs(v_kind-49.)<.1){
+    vec2 grid=abs(fract(v_uv/vec2(1.05,1.7))-.5);
+    float joint=smoothstep(.475,.497,max(grid.x,grid.y))*(1.-smoothstep(.12,.45,fwidth(v_uv.x)));
+    tint=mix(tint,vec3(.60,.62,.62),joint);
+  }
   ${ENGINEERING_FRAGMENT}
   ${GREEN_EAST_FRAGMENT}
 ${SURFACE_FRAGMENT}

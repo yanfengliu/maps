@@ -251,7 +251,7 @@ test('mapped gables have an exact ridge and flat/skillion raised edges have ston
     if (!['gabled','flat','skillion'].includes(shape)) continue;
     let highestRoof = -Infinity, highestClosure = -Infinity;
     for (let i = 0; i < geometry.roofs.length; i += VERTEX_FLOATS) if (geometry.roofs[i + 12] === index) {
-      if (geometry.roofs[i + 11] === 0 || geometry.roofs[i+11]===9) highestRoof = Math.max(highestRoof, geometry.roofs[i + 2]);
+      if (geometry.roofs[i + 11] === 0 || geometry.roofs[i+11]===9 || geometry.roofs[i+11]===31) highestRoof = Math.max(highestRoof, geometry.roofs[i + 2]);
       if (geometry.roofs[i + 11] === 2 || feature.properties.detailFlatShell&&Math.abs(geometry.roofs[i+5])<.001) highestClosure = Math.max(highestClosure, geometry.roofs[i + 2]);
     }
     assert.ok(Math.abs(highestRoof - feature.properties.height) < 0.0001, `${feature.properties.id} roof does not reach its source height`);

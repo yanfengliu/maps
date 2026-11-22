@@ -1,3 +1,4 @@
+import {currentBuilding} from '../src/former-campus-buildings.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -6,7 +7,7 @@ import {runInNewContext} from 'node:vm';
 
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8').replaceAll('\r\n','\n');
 const body=(name,text=source)=>stripTypeScriptTypes(text.match(new RegExp(`(?:async )?function ${name}\\([\\s\\S]*?\\n\\}`))[0]);
-const fixture=()=>({sourceReady:false,styleAvailable:true,fetchJson:async path=>path.includes('buildings')?{type:'FeatureCollection',features:[{properties:{id:'way/1',height:8,base:0},geometry:{type:'Polygon'}}]}:{type:'FeatureCollection',features:[]},prepareBuildingDetails:x=>x,buildingPlaces:()=>[],PLACES:[],SCULPTURE_PLACES:[],map:{isStyleLoaded:()=>false},addCampusLayers(){this.attached=(this.attached??0)+1;},checkReady(){},showError:message=>assert.fail(message),attached:0});
+const fixture=()=>({currentBuilding,sourceReady:false,styleAvailable:true,fetchJson:async path=>path.includes('buildings')?{type:'FeatureCollection',features:[{properties:{id:'way/1',height:8,base:0},geometry:{type:'Polygon'}}]}:{type:'FeatureCollection',features:[]},prepareBuildingDetails:x=>x,buildingPlaces:()=>[],PLACES:[],SCULPTURE_PLACES:[],map:{isStyleLoaded:()=>false},addCampusLayers(){this.attached=(this.attached??0)+1;},checkReady(){},showError:message=>assert.fail(message),attached:0});
 
 test('campus starts after style parsing without waiting for delayed regional tiles',async()=>{
  const context=fixture();context.addCampusLayers=()=>context.attached++;

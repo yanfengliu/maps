@@ -73,7 +73,7 @@ export function buildingPlaces(features: readonly { properties: Record<string, u
     const id = feature.properties?.id;
     const center = geometryCenter(feature.geometry);
     return typeof name === 'string' && name.trim() && typeof id === 'string' && center
-      ? [{ id: `building-${id}`, name, subtitle: hospitalVisitorMap(id)?.address ?? (id===GREEN_EAST_ID?'Green Library · Stanford University':'Building · Stanford University'), center, zoom: 18, campus: true, buildingId: id }]
+      ? [{ id: `building-${id}`, name, subtitle: id==='way/1169967277'?'The Lodge · 672 Lomita · Stanford University':hospitalVisitorMap(id)?.address ?? (id===GREEN_EAST_ID?'Green Library · Stanford University':'Building · Stanford University'), center, zoom: 18, campus: true, buildingId: id }]
       : [];
   });
 }

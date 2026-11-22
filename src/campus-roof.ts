@@ -1,3 +1,4 @@
+import {TILED_EDGE_WIDTH} from './tiled-perimeter.ts';
 import {greenEastRoof} from './green-east.ts';
 import {GREEN_EAST_ID} from './green-east-architecture.ts';
 import { CAMPUS_ROOF_PROFILES } from './campus-roof-profile.ts';
@@ -14,8 +15,8 @@ export function campusRoof(id:string,component:number,rings:Point[][]){
  if(id===GREEN_EAST_ID)return greenEastRoof(oriented[0]);
  const model=evaluateRoofSkeleton(oriented,profile),points:Point[]=model.vertices.map(([x,y])=>[x,y]),times=new Map(points.map((p,i)=>[p,model.vertices[i][2]]));
  let triangles=model.triangles.map(t=>t.map(i=>points[i]) as [Point,Point,Point]);
- const braun=id===BRAUN_MUSIC_ID,edgeWidth=.9;
- if(braun){
+ const braun=id===BRAUN_MUSIC_ID,edgeWidth=braun?.9:TILED_EDGE_WIDTH[id];
+ if(edgeWidth){
   // Stanford documents a flat photovoltaic roof; the department photograph
   // shows narrow red tile edging. Split planar faces at that authored width.
   const split:[Point,Point,Point][]=[];
@@ -33,10 +34,10 @@ export function campusRoof(id:string,component:number,rings:Point[][]){
  let longest=0,axis:Point=[1,0];
  for(const [i,a] of rings[0].entries()){const b=rings[0][(i+1)%rings[0].length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);if(l>longest){longest=l;axis=[(b[0]-a[0])/l,(b[1]-a[1])/l];}}
  return {triangles,
-  fraction:(p:Point)=>braun?.75*Math.min(1,(times.get(p)??0)/edgeWidth):(times.get(p)??0)/model.maximumTime,
+  fraction:(p:Point)=>edgeWidth?(braun?.75:1)*Math.min(1,(times.get(p)??0)/edgeWidth):(times.get(p)??0)/model.maximumTime,
   edge:(a:Point,b:Point):Point[]=>[a,b],
   uv:(p:Point):Point=>[p[0]*axis[0]+p[1]*axis[1],-p[0]*axis[1]+p[1]*axis[0]],
-  flat:(tri:[Point,Point,Point])=>braun&&tri.every(p=>(times.get(p)??0)>=edgeWidth-1e-8),
+  flat:(tri:[Point,Point,Point])=>Boolean(edgeWidth)&&tri.every(p=>(times.get(p)??0)>=edgeWidth-1e-8),
  };
 }
 

@@ -1,3 +1,4 @@
+import {BASEBALL_FRONT} from './baseball-seating.ts';
 import earcut from 'earcut';
 import { STADIUM_CONCOURSE_ID, STADIUM_SEATING_IDS, STADIUM_PRESSBOX_IDS, STADIUM_SCOREBOARD_IDS } from './stadium-architecture.ts';
 import { addStadiumElevation } from './stadium-elevation.ts';
@@ -40,21 +41,22 @@ function face(mesh:MeshWriter,poly:Point[],z:number,tint:Color,kind:number,build
 }
 /** Real row relief within each unchanged source polygon and height envelope.
  * Row counts, aisle spacing and structural thickness are authored estimates. */
-export function addStadiumSeating(mesh:MeshWriter,id:string,ring:Point[],building:number,base:number,height:number,center:Point):boolean{
- if(!STADIUM_SEATING_IDS.has(id))return false;
- const pair=FRONT[id],a=ring[pair[0]],b=ring[pair[1]];
+export function addStadiumSeating(mesh:MeshWriter,id:string,ring:Point[],building:number,base:number,height:number,center:Point,taggedRise?:number):boolean{
+ const baseball=BASEBALL_FRONT[id];
+ if(!baseball&&!STADIUM_SEATING_IDS.has(id))return false;
+ const pair=baseball??FRONT[id],a=ring[pair[0]],b=ring[pair[1]];
  const length=Math.hypot(b[0]-a[0],b[1]-a[1]),along:Point=[(b[0]-a[0])/length,(b[1]-a[1])/length];
  let outward:Point=[along[1],-along[0]];
  if(dot(outward,[(a[0]+b[0])/2-center[0],(a[1]+b[1])/2-center[1]])<0)outward=[-outward[0],-outward[1]];
  const distances=ring.map(p=>dot(p,outward)),low=Math.min(...distances),high=Math.max(...distances),span=high-low;
- const upper=base>0,rows=upper?22:26,front=base+1,rise=height-front;
+ const upper=base>0,rows=baseball?Math.max(2,Math.min(14,Math.round(span/.86))):upper?22:26,front=baseball?Math.max(base,height-(taggedRise??2)):base+1,rise=height-front;
  const uv=(p:Point):Point=>[dot([p[0]-(a[0]+b[0])/2,p[1]-(a[1]+b[1])/2],along),dot(p,outward)-low];
  for(let row=0;row<rows;row++){
   const start=low+span*row/rows,end=low+span*(row+1)/rows,z=front+rise*(row+1)/rows;
   const strips=clipParts(ring,outward,start,true).flatMap(part=>clipParts(part,outward,end,false));
   // An actual vertical riser closes every tread; all vertices remain in its
   // mapped stand. x UV stays fixed across rows, so material aisles line up.
-  for(const strip of strips){face(mesh,strip,z,RED,31,building,uv);
+  for(const strip of strips){face(mesh,strip,z,baseball?[.42,.22,.23]:RED,31,building,uv);
    const edge=strip.filter(p=>Math.abs(dot(p,outward)-start)<1e-5).sort((p,q)=>dot(p,along)-dot(q,along));
    for(let i=0;i+1<edge.length;i+=2){const p=edge[i],q=edge[i+1];mesh.quad([...p,z-rise/rows],[...q,z-rise/rows],[...q,z],[...p,z],RISER,31,building,[uv(p),uv(q),uv(q),uv(p)]);}
   }
@@ -67,7 +69,7 @@ export function addStadiumSeating(mesh:MeshWriter,id:string,ring:Point[],buildin
   mesh.quad([...p,base],[...q,base],[...q,elevation(q)],[...p,elevation(p)],CONCRETE,2,building);
  }
  // A narrow rear walking strip gives the exact source-height roof closure.
- for(const rear of clipParts(ring,outward,high-Math.min(.22,span*.025),true))face(mesh,rear,height,CONCRETE,9,building,uv);
+ if(!baseball)for(const rear of clipParts(ring,outward,high-Math.min(.22,span*.025),true))face(mesh,rear,height,CONCRETE,9,building,uv);
  return true;
 }
 /** Field is ground-level infill in the existing bowl opening, not a roof over

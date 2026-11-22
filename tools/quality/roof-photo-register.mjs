@@ -5,6 +5,7 @@ const source = JSON.parse(readFileSync(new URL('../../public/data/stanford-build
 const parts = new Map(source.features.map(feature => [feature.properties.id, feature]));
 
 const observations = {
+  'warm-deck': 'The continuous low-slope deck has a warm brown finish.',
   'warm-surface': 'The visible upper surface is warm brown. The ridge or eave arrangement is indistinct.',
   'warm-pitched': 'Light and shadow divide warm-colored pitched roof planes.',
   'light-deck': 'The visible roof is a pale, low-slope deck with a continuous upper surface.',
@@ -51,5 +52,5 @@ export const ROOF_PHOTO_REFERENCES = [...ROOF_PHOTO_CHECKS].filter(([,entry]) =>
   key:'roof-photo-'+id.replace('/','-'),ids:[id],title:parts.get(id).properties.name || id,
   status:'photo-supported',reviewedAt:'2026-11-21',reviewBasis:'Compared registered aerial photographs from two acquisitions and the corresponding isolated baseline roof mesh.',
   observed:entry.finding, limitations:'Overhead observations cover visible surfaces. Wall materials, elevations, exact roof pitch and hidden parts need independent evidence.',
-  sources:entry.sources,
+  sources:entry.observation==='seating'?[...entry.sources,{kind:'document',date:'undated',url:'https://gostanford.com/facilities/klein-field-at-sunken-diamond'}]:entry.sources,
 }));
