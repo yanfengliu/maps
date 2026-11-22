@@ -4,11 +4,13 @@ import {readFileSync} from 'node:fs';
 import {CIVIC_FACADE_PHOTOS} from '../src/civic-facades.ts';
 import {CAMPUS_FRONTAGES,CIVIC_APPEARANCES,civicFacade} from '../src/civic-appearance.ts';
 import {buildBuildingGeometry,prepareBuildingDetails,VERTEX_FLOATS} from '../src/building-geometry.ts';
-import {CIVIC_REFERENCES} from '../tools/quality/civic-refs.mjs';
+import {civicHistory} from '../src/civic-history.ts';
+import {CIVIC_HISTORY_REFERENCES} from '../tools/quality/civic-history-refs.mjs';
+import {CIVIC_PHOTO_REFERENCES} from '../tools/quality/civic-refs.mjs';
 
 const source=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url)));
 test('photographed civic elevations and roof fields are present on the original footprint and within its source height',()=>{
-  for(const record of CIVIC_REFERENCES){
+  for(const record of CIVIC_PHOTO_REFERENCES){
     const id=record.ids[0], appearance=CIVIC_APPEARANCES[id];
     const feature=source.features.find(f=>f.properties.id===id);
     const data=prepareBuildingDetails({type:'FeatureCollection',features:[feature]});
@@ -53,4 +55,19 @@ test('the zinc band crosses split lawn edges continuously and stays off unphotog
   assert.equal(a.material,55); assert.equal(a.u1,b.u0);
   assert.ok(b.u1>a.u1&&a.u1>a.u0);
   assert.equal(face(ring[2],ring[3],-1,0),undefined);
+});
+
+test('former campus structures retain their original source data and warn on selection about the later demolition or replacement',async()=>{
+  const {describeBuildingArchitecture}=await import('../src/building-architecture.ts');
+  assert.equal(CIVIC_HISTORY_REFERENCES.length,5);
+  for(const ref of CIVIC_HISTORY_REFERENCES){
+    const id=ref.ids[0], f=source.features.find(f=>f.properties.id===id);
+    const prepared=prepareBuildingDetails({type:'FeatureCollection',features:[f]}).features[0];
+    assert.equal(prepared.geometry,f.geometry);
+    assert.equal(prepared.properties.height,f.properties.height);
+    assert.equal(describeBuildingArchitecture(prepared.properties),civicHistory(id));
+    assert.match(ref.observed,/former/i);
+    assert.match(prepared.properties.detailHistoricNotice,/^Former site/);
+    assert.equal(ref.status,'document-supported');
+  }
 });

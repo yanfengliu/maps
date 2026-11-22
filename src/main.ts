@@ -151,6 +151,11 @@ function showBuilding(properties: Record<string, unknown>): void {
   const height = Number(referencedHeight?properties.detailRoofHeight:properties.height);
   const source = referencedHeight?'Estimated from reference floors':properties.heightSource === 'osm-height' ? 'Mapped height' : properties.heightSource === 'osm-levels' ? 'From mapped floor count' : 'Estimated height';
   details.innerHTML = `<div class="detail-heading"><div class="place-heading-copy"><h2>${escapeHtml(properties.name || 'Campus building')}</h2><p class="place-context">${Number.isFinite(height) ? `${Math.round(height * 10) / 10} m · ` : ''}${source}${Number.isFinite(properties.detailPodMaximum)?' · West pods up to '+Number(properties.detailPodMaximum).toFixed(1)+' m (city report)':''}</p></div><button class="icon-button close-details" aria-label="Close place details">${icon('close')}</button></div>`;
+  if(typeof properties.detailHistoricNotice==='string'){
+    const notice=document.createElement('p');
+    notice.className='place-context';notice.textContent=properties.detailHistoricNotice;
+    details.append(notice);
+  }
   details.querySelector('.close-details')?.addEventListener('click', closeDetails);
   if(selectedId===CHURCH_ID){
     const button=document.createElement('button');button.id='church-enter';button.className='detail-action';button.innerHTML=`Explore the interior ${icon('arrow')}`;

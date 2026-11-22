@@ -83,3 +83,19 @@ test('contextual building and sculpture cards lead with identity, preserve prove
  runInNewContext(`${handler('showSculpture')}\nshowSculpture('${SCULPTURE_PLACES[0].sculptureId}');`,context);
  assert.match(details.innerHTML,/<h2>The Burghers of Calais<\/h2>/);assert.match(details.innerHTML,/Auguste Rodin · Bronze/);assert.match(details.innerHTML,/About this artwork/);assert.match(details.innerHTML,/id="next-sculpture"/);assert.doesNotMatch(details.innerHTML,/sculpture-campus|View the whole campus/);
 });
+
+test('selection shows the former-site notice on historic footprints and omits it for current sites',async()=>{
+  const {prepareBuildingDetails}=await import('../src/building-geometry.ts');
+  const raw=JSON.parse(readFileSync(new URL('../public/data/stanford-buildings.geojson',import.meta.url)));
+  const parts=prepareBuildingDetails(raw).features;
+  const former=parts.filter(f=>f.properties.detailHistoricNotice);
+  assert.equal(former.length,5);
+  for(const f of [...former,parts.find(f=>f.properties.id==='way/31711531')]){
+    const notes=[];
+    const context={part:f.properties,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,
+      updateSelection(){},setChurchInterior(){},escapeHtml:String,icon:()=>'',
+      document:{createElement:()=>({})},details:{querySelector:()=>null,append:el=>notes.push(el.textContent)}};
+    runInNewContext(handler('showBuilding')+'\nshowBuilding(part)',context);
+    assert.deepEqual(notes,f.properties.detailHistoricNotice?[f.properties.detailHistoricNotice]:[]);
+  }
+});

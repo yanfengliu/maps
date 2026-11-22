@@ -51,7 +51,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; only the Quad has a composed render footprint', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailHistoricNotice, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     assert.equal(detailPodMaximum,properties.id==='relation/1753562'?77.5*.3048:undefined);
     if(properties.id==='relation/35820')assert.notEqual(feature.geometry,original.features[index].geometry,'the source church part is composed out of the rendered Quad');

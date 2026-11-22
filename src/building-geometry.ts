@@ -1,3 +1,4 @@
+import {civicHistoryNotice} from './civic-history.ts';
 import {civicFacade} from './civic-appearance.ts';
 import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
 import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
@@ -82,8 +83,10 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
       geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
+    const historyNotice=civicHistoryNotice(String(p?.id));
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
       ...(podium===undefined?{}:{detailPodiumHeight:podium}),
+      ...(historyNotice?{detailHistoricNotice:historyNotice}:{}),
       ...(p?.id===PASTEUR_300_ID?{detailPodMaximum:PASTEUR_POD_TOP}:{}),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
       ...(quad&&feature.geometry.type==='Polygon'?{detailArcadeCourt:feature.geometry.coordinates[4]}:{}) } };

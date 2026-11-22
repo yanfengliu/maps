@@ -1,3 +1,4 @@
+import {CIVIC_HISTORY_REFERENCES} from './civic-history-refs.mjs';
 import {CIVIC_VIEW_COMPARISONS} from './civic-view-comparisons.mjs';
 import {CIVIC_FACADE_PHOTOS} from '../../src/civic-facades.ts';
 import {CIVIC_APPEARANCES} from '../../src/civic-appearance.ts';
@@ -46,8 +47,10 @@ const visits=Object.entries(CIVIC_FACADE_PHOTOS).map(([id,{name,code,observed}])
     {url:county,kind:'photo',date:'2025'},
   ],
 }));
-export const CIVIC_REFERENCES=[...composed,...visits].map(record=>{
+export const CIVIC_PHOTO_REFERENCES=[...composed,...visits].map(record=>{
   const view=CIVIC_VIEW_COMPARISONS[record.ids[0]];
   return {...record,reviewBasis:record.reviewBasis+
     ' On model revision 76e58c5 the searched part was viewed at zoom '+view.zoom+', pitch '+view.pitch+'° and bearing '+view.bearing+'°. '+view.note};
 });
+
+export const CIVIC_REFERENCES=[...CIVIC_PHOTO_REFERENCES,...CIVIC_HISTORY_REFERENCES];

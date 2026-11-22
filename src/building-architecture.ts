@@ -1,3 +1,4 @@
+import {civicHistory} from './civic-history.ts';
 import {CIVIC_FACADE_PHOTOS} from './civic-facades.ts';
 import {civicAppearance} from './civic-appearance.ts';
 import type * as GeoJSON from 'geojson';
@@ -94,6 +95,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
   const civic=civicAppearance(p.id);
+  const history=civicHistory(String(p.id));
+  if(history)return history;
   if(civic)return civic.description;
   const photo=CIVIC_FACADE_PHOTOS[String(p.id)];
   if(photo)return photo.observed+' The model uses the photographed wall finish. Unseen elevations, dimensions and individual openings are estimates.';
