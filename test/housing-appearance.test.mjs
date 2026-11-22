@@ -26,3 +26,16 @@ test('housing finishes are attached to specific extant footprints with individua
   assert.equal(HOUSING_APPEARANCE['way/232805739'].roofShape, 'hipped');
   assert.equal(HOUSING_APPEARANCE['way/160447376'].roofShape, undefined);
 });
+
+test('the public Stern locator and oblique photograph support all eight named wing decks and the central complex', () => {
+  const wings = [30775651,30775656,30775658,30775659,30775661,30775670,30775698,30775717].map(n => 'way/' + n);
+  for (const id of ['relation/22862', ...wings]) {
+    assert.equal(HOUSING_APPEARANCE[id].roofShape, 'flat');
+    assert.equal(HOUSING_APPEARANCE[id].roof, '#9e604e');
+    const {sources} = HOUSING_REFERENCES.find(r => r.ids.includes(id));
+    assert.ok(sources.some(s => s.kind === 'document' && s.url.includes('Maps_Stern_Hall')));
+    assert.ok(sources.some(s => s.kind === 'photo' && s.url.includes('aerial')));
+  }
+  assert.equal(HOUSING_APPEARANCE['way/30775698'].wall, undefined);
+  assert.equal(HOUSING_APPEARANCE['way/30775717'].wall, undefined);
+});
