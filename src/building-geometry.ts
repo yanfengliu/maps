@@ -1,3 +1,4 @@
+import {ADDRESS_ELEVATIONS} from './address-elevations.ts';
 import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS,facilityModelHeight,addFacilityElevation} from './facility-elevations.ts';
 import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
@@ -68,8 +69,8 @@ export function projectLocal(position: readonly number[]): Point {
   return [(x - MERCATOR_ORIGIN[0]) / METERS_TO_MERCATOR, (MERCATOR_ORIGIN[1] - y) / METERS_TO_MERCATOR];
 }
 
-function roofRise(properties: GeoJSON.GeoJsonProperties): number {
-  const available = Number(properties?.height) - Number(properties?.base);
+function roofRise(properties: GeoJSON.GeoJsonProperties, height = Number(properties?.height)): number {
+  const available = height - Number(properties?.base);
   const shape = buildingArchitecture(properties, Number(properties?.height)).roofShape;
   const mapped = Number(properties?.['osm:roof:height']);
   if (shape === 'flat') return Math.min(0.28, available * 0.1);
@@ -90,9 +91,12 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
     const facility=FACILITY_ELEVATIONS[String(p?.id)];
-    const detailRoofHeight = facilityModelHeight(String(p?.id),Number(p?.base),Number(p?.height),p?.heightSource) ?? (p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height));
+    const house = ADDRESS_ELEVATIONS[String(p?.id)];
+    // The survey establishes occupied levels. The roof height of each level is still a model estimate.
+    const houseHeight = house && p?.heightSource === 'estimated' ? Math.min(Number(p.height), Number(p.base) + house.floors * 3.1 + 0.8) : undefined;
+    const detailRoofHeight = houseHeight ?? facilityModelHeight(String(p?.id),Number(p?.base),Number(p?.height),p?.heightSource) ?? (p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height));
     const detailWallHeight = facility ? Number(p?.base)+(detailRoofHeight-Number(p?.base))*facility.eaveFraction : p?.id===AVERY_ID?Number(p.base)+.15:p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
-      ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
+      ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p, houseHeight);
     const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
     if(quad && quadParts.length){
@@ -108,6 +112,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
+      ...(house ? {detailPlaceName:house.name, detailSurveyHeight:houseHeight !== undefined} : {}),
       ...(FACILITY_NAMES[String(p?.id)]?{detailPlaceName:FACILITY_NAMES[String(p?.id)].name}:{}),
       ...(facility?{detailFacilityCode:facility.code,...(facility.facilityName?{detailFacilityName:facility.facilityName}:{})}:{}),
       ...(podium===undefined?{}:{detailPodiumHeight:podium}),
@@ -217,6 +222,7 @@ export class BuildingGeometryBuilder {
     const feature = this.data.features[building];
     if(!currentBuilding(feature))return;
     const p = feature.properties!;
+    const house = ADDRESS_ELEVATIONS[String(p.id)];
     const height = Number(p.detailRoofHeight), base = Number(p.base), wall = Number(p.detailWallHeight);
     const roofTint = color(p.detailRoofColor??p.roofColor), wallTint = color(p.detailWallColor??p.color);
     const architecture = p.detailArchitecture as BuildingArchitecture;
@@ -293,7 +299,7 @@ export class BuildingGeometryBuilder {
         const signed = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
         const tri:[Point,Point,Point]=[a,signed>0?b:c,signed>0?c:b];
         const deck=campusModel?.flat(tri);
-        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],TILED_EDGE_WIDTH[String(p.id)]?(deck?color('#cbc9bc'):color('#ae7257')):braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
+        this.roofs.triangle(...tri.map(roofPoint) as [Vertex,Vertex,Vertex],TILED_EDGE_WIDTH[String(p.id)]?(deck?color('#cbc9bc'):color('#ae7257')):braun&&!deck?color('#b77d60'):roofTint,deck?(p.id===GREEN_EAST_ID?54:9):house?9:wingRoof&&architecture.profile!=='quad'?17:['flat','skillion'].includes(shape)?9:0,building,wingRoof&&architecture.profile!=='quad'?tri.map(wingRoof.uv) as [Point,Point,Point]:undefined);
       }
       if(p.id===PASTEUR_300_ID)addPasteurPods(this.roofs,building,projectLocal);
       if(braun)addBraunSolar(this.roofs,rings,building,height);
@@ -345,8 +351,16 @@ export class BuildingGeometryBuilder {
             const frontLength=Math.hypot(frontEnd[0]-frontStart[0],frontEnd[1]-frontStart[1]);
             const along=(point:Point)=>((point[0]-frontStart[0])*(frontEnd[0]-frontStart[0])+(point[1]-frontStart[1])*(frontEnd[1]-frontStart[1]))/(frontLength*frontLength)*11.4;
             const u0=libraryFront?along(a):0,u1=libraryFront?along(b):bays*3.8;
-            walls.quad(at(a, base), at(b, base), at(b, shellTop), at(a, shellTop), wallTint, kind, building,
-              [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
+            if (house?.eastLowerWall && nx > 0.85 && rows === 2) {
+              const middle = (base + shellTop) / 2;
+              walls.quad(at(a,base),at(b,base),at(b,middle),at(a,middle),color(house.eastLowerWall),kind,building,
+                [[u0,0],[u1,0],[u1,3.6],[u0,3.6]]);
+              walls.quad(at(a,middle),at(b,middle),at(b,shellTop),at(a,shellTop),wallTint,kind,building,
+                [[u0,3.6],[u1,3.6],[u1,7.2],[u0,7.2]]);
+            } else {
+              walls.quad(at(a, base), at(b, base), at(b, shellTop), at(a, shellTop), wallTint, kind, building,
+                [[u0, 0], [u1, 0], [u1, rows * 3.6], [u0, rows * 3.6]]);
+            }
           }else if(flatShell){
             // A closed shell includes tiny returns and low walls, even when
             // they cannot fit a window. Courtyard rings use the same rule.

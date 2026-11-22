@@ -17,7 +17,7 @@ function inside(p,ring){let yes=false;for(let i=0,j=ring.length-1;i<ring.length;
 function cases(){const out=[];for(const f of prepared.features.filter(currentBuilding)){const p=f.properties;if(!(p.id===BRAUN_MUSIC_ID||p.detailArchitecture.roofShape==='hipped'&&!['quad','quad-wing'].includes(p.detailArchitecture.profile)))continue;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;for(const [component,poly] of polys.entries())out.push({feature:f,key:p.id+'/'+component,rings:orientRoofRings(poly.map(r=>r.slice(0,-1).map(projectLocal))),component});}return out;}
 
 test('every generic hipped campus component has pinned continuous planar roof topology, including concave outlines and courtyards',()=>{
- assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,289);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,288);
  for(const {key,rings} of cases()){
   const profile=CAMPUS_ROOF_PROFILES[key];assert.ok(profile,key);assert.ok(roofSignatureMargin(rings.map(r=>r.map(([x,y])=>[x+profile.offset,y+profile.offset])))>ROOF_SIGNATURE_ROUNDOFF,key+' guard phase');
   const model=evaluateRoofSkeleton(rings,profile),triangles=model.triangles.map(t=>t.map(i=>model.vertices[i])),native=footprint(rings),expected=area(rings[0])-rings.slice(1).reduce((s,r)=>s+area(r),0);
@@ -41,7 +41,9 @@ test('rendered generic hipped surfaces follow source-edge planes rather than sam
   const index=prepared.features.indexOf(feature),p=feature.properties,model=evaluateRoofSkeleton(rings,CAMPUS_ROOF_PROFILES[key]),peak=monitorPeaks.get(p.id)??p.detailRoofHeight,slope=Math.max(0,peak-p.detailWallHeight-.07)/model.maximumTime,main=[];
   const normals=rings.flatMap(r=>r.map((a,i)=>{const b=r[(i+1)%r.length],l=Math.hypot(b[0]-a[0],b[1]-a[1]);return [-(b[1]-a[1])/l*slope,(b[0]-a[0])/l*slope];}));
   for(let i=0;i<mesh.roofs.length;i+=VERTEX_FLOATS*3){
-   if(mesh.roofs[i+12]!==index||![0,17].includes(mesh.roofs[i+11]))continue;
+   // The photographed composition hip uses the smooth roof material over the same source planes.
+   const material=mesh.roofs[i+11];
+   if(mesh.roofs[i+12]!==index||!(material===0||material===17||p.id==='way/232715597'&&material===9))continue;
    const tri=[0,1,2].map(j=>Array.from(mesh.roofs.slice(i+j*VERTEX_FLOATS,i+j*VERTEX_FLOATS+3))),[a,b,c]=tri,d=cross(a,b,c),center=[(a[0]+b[0]+c[0])/3,(a[1]+b[1]+c[1])/3];
    if(!inside(center,rings[0])||rings.slice(1).some(r=>inside(center,r)))continue;
    if(tri.some(v=>v[2]>peak+1e-5)){

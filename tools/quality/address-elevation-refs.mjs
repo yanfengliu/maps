@@ -26,7 +26,7 @@ export const ADDRESS_ELEVATION_REFERENCES = [
   elevation(232715619, 3, '518 Governor’s Avenue', 227, 'east',
     'The house south of 506 has the east-facing facade and projecting southeast garage visible in both the outline and survey. The original way labels this street Governors Avenue South.',
     'Two stories, brick below light plaster, a continuous upstairs balcony, a composition gable and a front-gabled projecting garage.',
-    'The principal gable and a single representative finish are modeled. The attached garage ridge, layered materials, balcony and openings are simplified.'),
+    'The east elevation uses separate lower and upper finishes. The attached garage ridge, balcony, texture and openings are simplified.'),
   elevation(232715620, 1, '525 Los Arboles Avenue', 224, 'west',
     'The stepped footprint runs along the east side of Los Arboles Avenue with a projecting southwest carport, consistent with the survey’s west-facing facade and covered carport.',
     'One-story pale stucco residence with a shallow brown gabled roof. A wide central chimney and large windows are visible on the west elevation.',
