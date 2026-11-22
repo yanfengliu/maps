@@ -44,6 +44,8 @@ Reduced motion is respected. A WebGL-capable browser is required. Loading failur
 
 ## Data and model bounds
 
+The building evidence register includes two dated aerial views for each of the original 521 parts needing references. Its spreadsheet export records what changed, which photographs or plans support it, and which details remain estimates. [Generate the register and roof atlas](tools/quality/README.md).
+
 The campus uses real OpenStreetMap footprints, including multipolygons and courtyards. Mapped heights are used where present; mapped floor counts and missing heights use documented estimates. Memorial Church has a dedicated exterior; Stanford photographs ground the Main Quad, Hoover Tower, Bing Wing and Roble Hall treatments. Sandstone, terracotta and muted windows keep an illustrated map palette. Building cards distinguish OSM levels, official descriptions and estimated facade rows; exact window counts across campus remain unknown. See the [photo references and model limits](docs/work/0_bay-area-stanford/architecture-references.md).
 
 Original source geometry, heights and provenance stay intact. A render-only subtraction removes the church from the overlapping Main Quad outline so both models remain visible while all original courtyard areas stay empty. Most ordinary buildings still use estimated architectural profiles. The [roof atlas](tools/quality/README.md#compare-roofs-with-2025-county-imagery) reproduces overhead comparisons for all 648 mapped parts.
