@@ -51,7 +51,7 @@ function triangleIntersectionArea(subject,clip) {
 test('render preparation leaves source objects and metadata unchanged; the Quad and Stern have composed render footprints', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailPlaceName, detailArcadeCourt, detailArcadeEdges, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailPlaceName, detailArcadeCourt, detailArcadeEdges, detailFacilityCode, detailFacilityName, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     assert.equal(detailPodMaximum,properties.id==='relation/1753562'?77.5*.3048:undefined);
     if(['relation/35820','relation/22862','way/232715573'].includes(properties.id))assert.notEqual(feature.geometry,original.features[index].geometry,'mapped subparts have one render owner');

@@ -1,3 +1,4 @@
+import {FACILITY_ELEVATIONS,facilityModelHeight,addFacilityElevation} from './facility-elevations.ts';
 import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
 import {addAveryStands} from './avery-aquatics.ts';
 import {FACILITY_NAMES} from './photographed-cottages.ts';
@@ -87,8 +88,9 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
   return { ...data, features: data.features.map(feature => {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
-    const detailRoofHeight = p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
-    const detailWallHeight = p?.id===AVERY_ID ? Number(p.base)+.15 : p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
+    const facility=FACILITY_ELEVATIONS[String(p?.id)];
+    const detailRoofHeight = facilityModelHeight(String(p?.id),Number(p?.base),Number(p?.height),p?.heightSource) ?? (p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height));
+    const detailWallHeight = facility ? Number(p?.base)+(detailRoofHeight-Number(p?.base))*facility.eaveFraction : p?.id===AVERY_ID?Number(p.base)+.15:p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
     const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
@@ -106,6 +108,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
       ...(FACILITY_NAMES[String(p?.id)]?{detailPlaceName:FACILITY_NAMES[String(p?.id)].name}:{}),
+      ...(facility?{detailFacilityCode:facility.code,...(facility.facilityName?{detailFacilityName:facility.facilityName}:{})}:{}),
       ...(podium===undefined?{}:{detailPodiumHeight:podium}),
       ...(p?.id===PASTEUR_300_ID?{detailPodMaximum:PASTEUR_POD_TOP}:{}),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
@@ -222,6 +225,7 @@ export class BuildingGeometryBuilder {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
       if(p.id===AVERY_ID){addAveryStands(this.roofs,building,base,height,projectLocal);this.checkBudget(String(p.id));continue;}
+      if(addFacilityElevation(this.roofs,String(p.id),rings[0],building,base,height)){this.checkBudget(String(p.id));continue;}
       if(addFarmExterior(this.roofs,String(p.id),rings[0],building,base,height)){this.checkBudget(String(p.id));continue;}
       if (architecture.profile === 'memorial-church') {
         addMemorialChurch(this.roofs, this.facades, rings[0], building, base, height, wallTint, roofTint);

@@ -1,3 +1,4 @@
+import {FACILITY_ELEVATIONS} from './facility-elevations.ts';
 import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
 import {PHOTO_COTTAGES} from './photographed-cottages.ts';
 import {CLARK_STAGE,LASUEN_RESTROOM,BURNHAM_ENTRANCE} from './courtyard-and-pavilion.ts';
@@ -57,6 +58,8 @@ function defaultBuildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
 }
 
 export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, architecture: BuildingArchitecture) {
+  const facility=FACILITY_ELEVATIONS[String(properties?.id)];
+  if(facility) return {wall:facility.wall,roof:facility.roof};
   if(properties?.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
   if(properties?.id===BAND_SHAK_ID)return {wall:'#bfae97',roof:'#ae9988'};
   const photographed=PHOTO_COTTAGES[String(properties?.id)];
@@ -99,6 +102,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  const facility=FACILITY_ELEVATIONS[String(p.id)];
+  if(facility)return {profile,floors:1,floorSource:'reference-profile',mappedLevels,bayWidth:4,facadeFamily:'generic',roofShape:facility.roofShape,roofSource:'reference-profile'};
   if(p.id===AVERY_ID)return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'fabric-canopies',roofSource:'reference-profile'};
   if(p.id===BAND_SHAK_ID)return {profile:'institutional',floors:mappedLevels??2,floorSource:mappedLevels===null?'estimated':'osm-levels',mappedLevels,bayWidth:4.2,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
   if(p.id===GREEN_EAST_ID)return {profile:'institutional', floors:3, floorSource:'official-description', mappedLevels,
@@ -124,6 +129,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  const facility=FACILITY_ELEVATIONS[String(p.id)];
+  if(facility)return facility.observed+' Dimensions and opening positions are modeled estimates. The inventory retains its original height and provenance.';
   if(p.id===AVERY_ID)return AVERY_DESCRIPTION;
   if(p.id===BAND_SHAK_ID)return BAND_SHAK_DESCRIPTION;
   if(p.id===CLARK_STAGE)return 'The round auditorium is underground. Its courtyard stage and perimeter skylight are the visible exterior. The stage height is estimated.';
