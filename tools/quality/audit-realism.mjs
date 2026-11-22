@@ -195,7 +195,15 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
     const cohort=report.rows.filter(row=>Object.hasOwn(baselineParts,row.id));
     if(cohort.length!==521||!cohort.every(row=>ROOF_PHOTO_CHECKS.has(row.id)))throw Error('The 521-part reference cohort changed');
     for(const row of cohort){
-      row.modelChange = row.id==='way/1169967277'?'duplicate footprint omitted':!currentBuilding({properties:row})?'former footprint omitted':baselineParts[row.id]===partSignatures[row.id]?'geometry and finishes retained':'geometry or finishes updated';
+      if (currentBuilding({properties:row})) {
+        row.modelChange = baselineParts[row.id]===partSignatures[row.id]?'geometry and finishes retained':'geometry or finishes updated';
+      } else if (row.id==='way/1169967277') {
+        row.modelChange = 'duplicate footprint omitted';
+      } else if (row.id==='way/1168128440') {
+        row.modelChange = 'bay represented on parent exterior';
+      } else {
+        row.modelChange = 'former footprint omitted';
+      }
     }
     report.counts.original521={modelChange:countBy(cohort,row=>row.modelChange),evidence:countBy(cohort,row=>row.evidenceStatus)};
   }
