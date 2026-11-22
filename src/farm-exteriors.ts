@@ -44,8 +44,23 @@ export function addFarmExterior(mesh:Mesh,id:string,ring:Point[],owner:number,ba
   const glass=form==='glasshouse',barn=form==='barn',wallTint:Color=glass?[.74,.77,.73]:barn?[.40,.30,.22]:[.69,.48,.30];
   const roof:Color=glass?[.83,.84,.78]:[.73,.74,.69],kind=glass?59:48;
   const eave=base+height*.68,first=mix(a,d,.5),last=mix(b,c,.5);
-  mesh.quad(at(a,eave),at(b,eave),at(last,top),at(first,top),roof,glass?59:2,owner,[[0,0],[long,0],[long,wide/2],[0,wide/2]]);
-  mesh.quad(at(first,top),at(last,top),at(c,eave),at(d,eave),roof,glass?59:2,owner,[[0,wide/2],[long,wide/2],[long,wide],[0,wide]]);
+  const ridge=barn?base+height*.84:top;
+  mesh.quad(at(a,eave),at(b,eave),at(last,ridge),at(first,ridge),roof,glass?59:2,owner,[[0,0],[long,0],[long,wide/2],[0,wide/2]]);
+  mesh.quad(at(first,ridge),at(last,ridge),at(c,eave),at(d,eave),roof,glass?59:2,owner,[[0,wide/2],[long,wide/2],[long,wide],[0,wide]]);
+  if(barn){
+    // The official farm photograph shows two separate raised glazing strips.
+    const onPlan=(u:number,v:number)=>mix(mix(a,b,u),mix(d,c,u),v);
+    for(const [u,v] of [[.16,.45],[.54,.80]]){
+      const corners=[onPlan(u,.41),onPlan(v,.41),onPlan(v,.59),onPlan(u,.59)];
+      const foot=ridge-.18*(ridge-eave);
+      for(const [i,p] of corners.entries()){
+        const q=corners[(i+1)%4],span=length(p,q);
+        mesh.quad(at(p,foot),at(q,foot),at(q,top-.1),at(p,top-.1),i%2===0?[.59,.70,.69]:[.77,.77,.72],59,owner,[[0,0],[span,0],[span,top-.1-foot],[0,top-.1-foot]]);
+        mesh.quad(at(p,top-.1),at(q,top-.1),at(q,top),at(p,top),[.83,.84,.80],2,owner);
+      }
+      mesh.quad(at(corners[0],top),at(corners[1],top),at(corners[2],top),at(corners[3],top),[.81,.81,.75],2,owner);
+    }
+  }
   for(const [i,p] of [a,b,c,d].entries()){
     const q=[b,c,d,a][i],span=length(p,q),end=i%2===1;
     const y=eave-base;
@@ -58,7 +73,7 @@ export function addFarmExterior(mesh:Mesh,id:string,ring:Point[],owner:number,ba
       mesh.quad(at(mix(p,q,u),base),at(mix(p,q,v),base),at(mix(p,q,v),low),at(mix(p,q,u),low),wallTint,kind,owner,[[u*span,0],[v*span,0],[v*span,low-base],[u*span,low-base]]);
     }
     mesh.quad(at(p,low),at(q,low),at(q,eave),at(p,eave),wallTint,kind,owner,[[0,low-base],[span,low-base],[span,y],[0,y]]);
-    if(end)mesh.triangle(at(p,eave),at(q,eave),at(mix(p,q,.5),top),wallTint,kind,owner,[[0,y],[span,y],[span/2,height]]);
+    if(end)mesh.triangle(at(p,eave),at(q,eave),at(mix(p,q,.5),ridge),wallTint,kind,owner,[[0,y],[span,y],[span/2,height]]);
   }
   return true;
 }

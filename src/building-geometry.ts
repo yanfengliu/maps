@@ -1,4 +1,8 @@
-import {CLARK_STAGE,LASUEN_RESTROOM} from './courtyard-and-pavilion.ts';
+import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
+import {addAveryStands} from './avery-aquatics.ts';
+import {FACILITY_NAMES} from './photographed-cottages.ts';
+import {burnhamRoof} from './burnham-entrance.ts';
+import {CLARK_STAGE,LASUEN_RESTROOM,BURNHAM_ENTRANCE} from './courtyard-and-pavilion.ts';
 import {BASEBALL_FIELD,BASEBALL_FRONT} from './baseball-seating.ts';
 import {addFarmExterior} from './farm-exteriors.ts';
 import {currentBuilding} from './former-campus-buildings.ts';
@@ -76,6 +80,7 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 export const STERN_WINGS = new Set(['way/30775651','way/30775656','way/30775658','way/30775659','way/30775661','way/30775670','way/30775698','way/30775717']);
 export function prepareBuildingDetails(data: CampusData): CampusData {
   const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
+  const bandShak=data.features.find(f=>f.properties?.id===BAND_SHAK_ID);
   const sternWings=data.features.filter(f=>STERN_WINGS.has(String(f.properties?.id)));
   const sourceQuad=data.features.find(feature=>feature.properties?.id==='relation/35820');
   const detailArcadeEdges=sourceQuad?.geometry.type==='Polygon'?quadArcadeEdges(sourceQuad.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))):[];
@@ -83,7 +88,7 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     const p = feature.properties;
     const quad = p?.id === 'relation/35820';
     const detailRoofHeight = p?.id===CLARK_STAGE?Number(p.base)+.3:quad ? Math.min(Number(p.height),Number(p.base)+9.5) : referenceGarageHeight(p) ?? Number(p?.height);
-    const detailWallHeight = p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
+    const detailWallHeight = p?.id===AVERY_ID ? Number(p.base)+.15 : p?.id===CLARK_STAGE?Number(p.base)+.18:quad ? Math.min(detailRoofHeight-0.1,Number(p.base)+6.2) : p?.id === 'way/836474103'
       ? Number(p.base) + (Number(p.height) - Number(p.base)) * 0.35 : detailRoofHeight - roofRise(p);
     const podium=podiumHeight(String(p?.id),Number(p?.base),detailRoofHeight);
     let geometry = feature.geometry;
@@ -91,12 +96,16 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
       if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
       geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
     }
+    if(p?.id===AVERY_ID&&geometry.type==='Polygon'&&bandShak?.geometry.type==='Polygon'){
+      geometry=composeBuildingParts(geometry,[bandShak.geometry],projectLocal);
+    }
     if(p?.id==='relation/22862' && sternWings.length){
       if(geometry.type!=='Polygon'||sternWings.some(f=>f.geometry.type!=='Polygon'))throw Error('Changed Stern parent or wing geometry');
       geometry=composeBuildingParts(geometry,sternWings.map(f=>f.geometry as GeoJSON.Polygon),projectLocal);
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
+      ...(FACILITY_NAMES[String(p?.id)]?{detailPlaceName:FACILITY_NAMES[String(p?.id)].name}:{}),
       ...(podium===undefined?{}:{detailPodiumHeight:podium}),
       ...(p?.id===PASTEUR_300_ID?{detailPodMaximum:PASTEUR_POD_TOP}:{}),
       ...(quad||QUAD_WING_IDS.has(String(p?.id))?{detailArcadeEdges}:{}),
@@ -212,6 +221,7 @@ export class BuildingGeometryBuilder {
     for (const [component, polygon] of polygons.entries()) {
       const rings = polygon.map(ring => ring.slice(0, -1).map(projectLocal)).filter(ring => ring.length >= 3);
       if (!rings.length) continue;
+      if(p.id===AVERY_ID){addAveryStands(this.roofs,building,base,height,projectLocal);this.checkBudget(String(p.id));continue;}
       if(addFarmExterior(this.roofs,String(p.id),rings[0],building,base,height)){this.checkBudget(String(p.id));continue;}
       if (architecture.profile === 'memorial-church') {
         addMemorialChurch(this.roofs, this.facades, rings[0], building, base, height, wallTint, roofTint);
@@ -236,7 +246,8 @@ export class BuildingGeometryBuilder {
       for (let i = 0; i < indices.length; i += 3) subdivide(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]], depth, roofTriangles);
       const braun=p.id===BRAUN_MUSIC_ID;
       const campusModel=shape==='hipped'&&!['quad','quad-wing'].includes(architecture.profile)||braun?campusRoof(String(p.id),component,rings):undefined;
-      const wingRoof=architecture.profile==='quad-wing'||architecture.profile==='quad'?quadRoof(String(p.id),component,rings):campusModel;
+      const entrance=p.id===BURNHAM_ENTRANCE?burnhamRoof(rings[0]):undefined;
+      const wingRoof=entrance??(architecture.profile==='quad-wing'||architecture.profile==='quad'?quadRoof(String(p.id),component,rings):campusModel);
       if(wingRoof)roofTriangles=wingRoof.triangles;
       const minY = Math.min(...vertices.map(v => v[1])), maxY = Math.max(...vertices.map(v => v[1]));
       let ridgeAxis: Point = [0, 1], longest = 0;
@@ -246,7 +257,7 @@ export class BuildingGeometryBuilder {
       }
       const across = vertices.map(v => v[0] * ridgeAxis[0] + v[1] * ridgeAxis[1]);
       const ridgeLow = Math.min(...across), ridgeHigh = Math.max(...across), ridgeMiddle = (ridgeLow + ridgeHigh) / 2;
-      if (shape === 'gabled') roofTriangles = splitAtRidge(roofTriangles, ridgeAxis, ridgeMiddle);
+      if (!wingRoof&&shape === 'gabled') roofTriangles = splitAtRidge(roofTriangles, ridgeAxis, ridgeMiddle);
       const distances = new Map<Point, number>();
       let maximumDistance = 0;
       if (!wingRoof&&!['flat','skillion','gabled'].includes(shape)) for (const triangle of roofTriangles) for (const point of triangle) {
@@ -293,7 +304,7 @@ export class BuildingGeometryBuilder {
           const shellTop=flatShell?height:wall-0.12;
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
-          const civic=ringIndex===0&&length>1.8?civicFront?.(a,b,nx,ny):undefined;
+          const civic=ringIndex===0&&length>1.8?(entrance?.frontage(a,b)??civicFront?.(a,b,nx,ny)):undefined;
           if(p.id===LASUEN_RESTROOM){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,47,building,[[0,0],[length,0],[length,shellTop-base],[0,shellTop-base]]);
           }else if(civic){

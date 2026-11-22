@@ -1,3 +1,5 @@
+import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
+import {PHOTO_COTTAGES} from './photographed-cottages.ts';
 import {CLARK_STAGE,LASUEN_RESTROOM,BURNHAM_ENTRANCE} from './courtyard-and-pavilion.ts';
 import {BASEBALL_FRONT} from './baseball-seating.ts';
 import {FARM_FORMS} from './farm-exteriors.ts';
@@ -55,6 +57,10 @@ function defaultBuildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
 }
 
 export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, architecture: BuildingArchitecture) {
+  if(properties?.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
+  if(properties?.id===BAND_SHAK_ID)return {wall:'#bfae97',roof:'#ae9988'};
+  const photographed=PHOTO_COTTAGES[String(properties?.id)];
+  if(photographed)return {wall:CIVIC_FACADE_PHOTOS[String(properties?.id)]?.wall??photographed.wall,roof:photographed.roof};
   if(properties?.id===CLARK_STAGE)return {wall:'#9e9686',roof:'#c5bba6'};
   if(properties?.id===LASUEN_RESTROOM)return {wall:'#c0b299',roof:'#635f55'};
   if(properties?.id===BURNHAM_ENTRANCE)return {wall:'#c8af88',roof:'#aa7158'};
@@ -93,6 +99,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  if(p.id===AVERY_ID)return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'fabric-canopies',roofSource:'reference-profile'};
+  if(p.id===BAND_SHAK_ID)return {profile:'institutional',floors:mappedLevels??2,floorSource:mappedLevels===null?'estimated':'osm-levels',mappedLevels,bayWidth:4.2,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
   if(p.id===GREEN_EAST_ID)return {profile:'institutional', floors:3, floorSource:'official-description', mappedLevels,
     bayWidth:6.2, facadeFamily:'precast-ribbon', roofShape:'hipped', roofSource:'reference-profile'};
   const special = ['memorial-church', 'quad-wing', 'library', 'tower', 'open'].includes(profile);
@@ -102,11 +110,12 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const roble = p.id === 'way/232805733',braun=p.id===BRAUN_MUSIC_ID,garage=garageProfile(p);
   const aerialDeck = AERIAL_DECKS.has(String(p.id));
   const farm=FARM_FORMS[String(p.id)];
+  const cottage=PHOTO_COTTAGES[String(p.id)];
   const siteShape=p.id===CLARK_STAGE||p.id===LASUEN_RESTROOM?'flat':p.id===BURNHAM_ENTRANCE?'gabled':undefined;
-  const photoShape = siteShape ?? (farm?(farm==='canopy'||farm==='array'?'flat':'gabled'):undefined) ?? (TILED_EDGE_WIDTH[String(p.id)]?'hipped':undefined) ?? civicAppearance(p.id)?.roofShape ?? HOUSING_APPEARANCE[String(p.id)]?.roofShape ?? photographedRoof(String(p.id))?.roofShape;
-  const floors = garage?.kind==='open-deck'?garage.levels:braun?2:reference ? reference.facadeBands : roble ? 3 : profile === 'quad' ? 1 : special ? null : mappedLevels !== null ? Math.max(0, mappedLevels - minLevel)
+  const photoShape = cottage?.shape ?? siteShape ?? (farm?(farm==='canopy'||farm==='array'?'flat':'gabled'):undefined) ?? (TILED_EDGE_WIDTH[String(p.id)]?'hipped':undefined) ?? civicAppearance(p.id)?.roofShape ?? HOUSING_APPEARANCE[String(p.id)]?.roofShape ?? photographedRoof(String(p.id))?.roofShape;
+  const floors = cottage ? cottage.bands : garage?.kind==='open-deck'?garage.levels:braun?2:reference ? reference.facadeBands : roble ? 3 : profile === 'quad' ? 1 : special ? null : mappedLevels !== null ? Math.max(0, mappedLevels - minLevel)
     : profile === 'garage' || profile === 'service' && available < 8 ? 1 : Math.max(1, Math.round(available / floorHeight));
-  return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
+  return { profile, floors, floorSource: cottage?'reference-profile':garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
     bayWidth: reference?.bayWidth ?? (profile === 'residential' ? 3.1 : profile === 'modern' ? 2.7 : profile === 'garage' ? 5.4 : profile === 'service' ? 5.8 : 4.2),
     facadeFamily:reference?.family??(unverified?'unverified':'generic'),
     roofShape: String(p['osm:roof:shape'] ?? photoShape ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||LEGACY_ACADEMIC_FLATS.has(String(p.id)) ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
@@ -115,13 +124,15 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  if(p.id===AVERY_ID)return AVERY_DESCRIPTION;
+  if(p.id===BAND_SHAK_ID)return BAND_SHAK_DESCRIPTION;
   if(p.id===CLARK_STAGE)return 'The round auditorium is underground. Its courtyard stage and perimeter skylight are the visible exterior. The stage height is estimated.';
   if(p.id===LASUEN_RESTROOM)return 'The facility photograph shows pale masonry with timber above and a shallow roof. Canopy projections and openings remain approximate.';
   if(p.id===BURNHAM_ENTRANCE)return 'The source covers the projecting entrance of Burnham Pavilion. Its buff masonry and tiled gable follow the facility photograph.';
   if(BASEBALL_FRONT[String(p.id)])return 'At Klein Field the seating terraces face the baseball diamond. The section retains its mapped height and rise. Row count, aisle spacing and seat finish are approximate.';
   const farm = FARM_FORMS[String(p.id)];
   if(farm) {
-    const treatment = {glasshouse:'a pale, framed greenhouse with a pitched roof',barn:'a timber barn with a drive-side opening',shade:'an open gabled shade structure with timber slats',canopy:'a thin canopy standing on two posts',array:'a grid of dark panels on open supports'}[farm];
+    const treatment = {glasshouse:'a pale, framed greenhouse with a pitched roof',barn:'a slatted timber barn with an open end bay and two raised strips of glazing above the ridge',shade:'an open gabled shade structure with timber slats',canopy:'a thin canopy standing on two posts',array:'a grid of dark panels on open supports'}[farm];
     return 'The model shows '+treatment+'. The support spacing, roof pitch and heights are estimates.';
   }
   const civic = civicAppearance(p.id);

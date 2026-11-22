@@ -23,5 +23,5 @@ export const FORMER_CAMPUS_BUILDINGS: Readonly<Record<string,string>> = {
 
 export function currentBuilding(feature: {properties: { [name:string]:unknown } | null}) {
   const id=String(feature.properties?.id);
-  return !Object.hasOwn(FORMER_CAMPUS_BUILDINGS,id)&&!Object.hasOwn(NORTHWEST_QUAD_HALLS,id)&&id!==FORMER_LOU_HENRY_ID;
+  return id!=='way/1169967277'&&!Object.hasOwn(FORMER_CAMPUS_BUILDINGS,id)&&!Object.hasOwn(NORTHWEST_QUAD_HALLS,id)&&id!==FORMER_LOU_HENRY_ID;
 }

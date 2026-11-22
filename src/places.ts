@@ -1,3 +1,4 @@
+import {FACILITY_NAMES} from './photographed-cottages.ts';
 import { STADIUM_CENTER } from './stadium-architecture.ts';
 import { GREEN_EAST_ID } from './green-east-architecture.ts';
 import { hospitalVisitorMap } from './visitor-maps.ts';
@@ -27,6 +28,7 @@ export const STANFORD_CENTER: Position = [-122.1697, 37.4278];
 export const BAY_BOUNDS: [Position, Position] = [[-122.67, 37.20], [-121.69, 38.08]];
 export const PLACES: Place[] = [
   { id: 'stanford', name: 'Stanford University', subtitle: 'Campus · Stanford', center: STANFORD_CENTER, zoom: 15.8, campus: true },
+  { id:'klein-field', name:'Klein Field at Sunken Diamond', subtitle:'Baseball · Stanford University', center:[-122.15874,37.43222], zoom:18.6, campus:true },
   { id: 'stanford-stadium', name: 'Stanford Stadium', subtitle: 'Football stadium · Stanford', center: STADIUM_CENTER, zoom: 17.6, campus: true },
   { id: 'san-francisco', name: 'San Francisco', subtitle: 'City · Northern peninsula', center: [-122.4194, 37.7749], zoom: 12.1 },
   { id: 'oakland', name: 'Oakland', subtitle: 'City · East Bay', center: [-122.2711, 37.8044], zoom: 12.1 },
@@ -46,9 +48,15 @@ export function searchPlaces(query: string, places: readonly Place[]): Place[] {
   const term = normalize(query);
   if (!term) return [];
   const words = term.split(/\s+/);
+  const nameRank=(place:Place)=>{
+    const name=normalize(place.name);
+    if(name===term)return 3;
+    if(name.startsWith(term))return 2;
+    return words.every(word=>name.includes(word))?1:0;
+  };
   return places
     .filter(place => words.every(word => normalize(`${place.name} ${place.subtitle}`).includes(word)))
-    .sort((a, b) => Number(normalize(b.name).startsWith(term)) - Number(normalize(a.name).startsWith(term)) || a.name.localeCompare(b.name))
+    .sort((a, b) => nameRank(b) - nameRank(a) || a.name.localeCompare(b.name))
     .slice(0, 8);
 }
 
@@ -69,11 +77,11 @@ export function geometryCenter(geometry: { type: string; coordinates: unknown })
 
 export function buildingPlaces(features: readonly { properties: Record<string, unknown> | null; geometry: { type: string; coordinates: unknown } }[]): Place[] {
   return features.flatMap(feature => {
-    const name = feature.properties?.name;
+    const name = FACILITY_NAMES[String(feature.properties?.id)]?.name ?? feature.properties?.name;
     const id = feature.properties?.id;
     const center = geometryCenter(feature.geometry);
     return typeof name === 'string' && name.trim() && typeof id === 'string' && center
-      ? [{ id: `building-${id}`, name, subtitle: id==='way/1169967277'?'The Lodge · 672 Lomita · Stanford University':hospitalVisitorMap(id)?.address ?? (id===GREEN_EAST_ID?'Green Library · Stanford University':'Building · Stanford University'), center, zoom: 18, campus: true, buildingId: id }]
+      ? [{ id: `building-${id}`, name, subtitle: FACILITY_NAMES[id]?.subtitle ?? hospitalVisitorMap(id)?.address ?? (id===GREEN_EAST_ID?'Green Library · Stanford University':'Building · Stanford University'), center, zoom: 18, campus: true, buildingId: id }]
       : [];
   });
 }

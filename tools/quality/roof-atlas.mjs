@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {currentBuilding} from '../../src/former-campus-buildings.ts';
 /** Compare the actual exterior mesh, looking down, with dated orthophotography.
  * Local metres use the renderer's own projection. Adjacent crops share imagery. */
 import {readFile, writeFile, mkdir, rename} from 'node:fs/promises';
@@ -61,7 +62,7 @@ function card(feature, faces, index, tiles) {
   const model=faces.map(f=>'<polygon points="'+f.points.map(p=>p.join(',')).join(' ')+'" fill="'+f.color+'" stroke="'+f.color+'" stroke-width="'+width/1400+'"/>').join('');
   const svg=content=>'<svg viewBox="'+view+'" aria-hidden="true">'+content+'</svg>';
   const p=feature.properties;
-  return '<figure id="part-'+index+'"><figcaption>'+index+' · '+escape(p.name||p.id)+'</figcaption><div>'+svg(images.join('')+overlay)+svg(model)+'</div><small>'+escape(p.id)+' · '+p.detailArchitecture.roofShape+'</small></figure>';
+  return '<figure id="part-'+index+'"><figcaption>'+index+' · '+escape(p.name||p.id)+'</figcaption><div>'+svg(images.join('')+overlay)+svg(model)+'</div><small>'+escape(p.id)+' · '+(currentBuilding(feature)?p.detailArchitecture.roofShape:'omitted from current geometry')+'</small></figure>';
 }
 
 function checkJpeg(bytes, url) {

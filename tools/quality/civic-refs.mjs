@@ -1,3 +1,4 @@
+import {AVERY_REFERENCES} from './avery-refs.mjs';
 import {CIVIC_HISTORY_REFERENCES} from './civic-history-refs.mjs';
 import {CIVIC_VIEW_COMPARISONS} from './civic-view-comparisons.mjs';
 import {CIVIC_FACADE_PHOTOS} from '../../src/civic-facades.ts';
@@ -53,4 +54,4 @@ export const CIVIC_PHOTO_REFERENCES=[...composed,...visits].map(record=>{
     ' On model revision 76e58c5 the searched part was viewed at zoom '+view.zoom+', pitch '+view.pitch+'° and bearing '+view.bearing+'°. '+view.note};
 });
 
-export const CIVIC_REFERENCES=[...CIVIC_PHOTO_REFERENCES,...CIVIC_HISTORY_REFERENCES];
+export const CIVIC_REFERENCES=[...CIVIC_PHOTO_REFERENCES,...CIVIC_HISTORY_REFERENCES,...AVERY_REFERENCES];

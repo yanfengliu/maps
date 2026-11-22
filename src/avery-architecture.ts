@@ -1,0 +1,3 @@
+export const AVERY_ID='way/232715573',BAND_SHAK_ID='way/617740744';
+export const AVERY_DESCRIPTION='Avery has an outdoor competition pool between two aluminum grandstands with pale fabric canopies. The 2022 and 2025 aerials locate the stands and the adjoining Band Shak. The canopy sag, support spacing, seat tiers and 10 m source height are estimates.';
+export const BAND_SHAK_DESCRIPTION='The Band Shak occupies its own mapped two-level footprint at the end of Avery Competition Pool. The 2022 and 2025 aerials show a low brown roof and light rooftop fittings. Individual roof fittings and elevations are unresolved.';

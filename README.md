@@ -2,7 +2,7 @@
 
 An Apple Maps-inspired world map that starts at Stanford University, the first campus with authored 3D detail. The regional map uses custom warm cartography over OpenFreeMap's OpenMapTiles data. Regional buildings stay flat; only the supplied Stanford footprints are extruded.
 
-![Stanford in 3D, with the tiled Main Quad in the foreground, the Oval beyond it and lighter laboratory roofs near the medical campus.](docs/images/stanford-campus.jpg)
+![Stanford in 3D, looking across the tiled Main Quad toward the Oval, with pale roof decks and terracotta roof edges in the surrounding campus.](docs/images/stanford-campus.jpg)
 
 <!-- When this preview no longer represents the branch, capture its current map with the controls and attribution visible. Update the image, alt text and viewing directions together. -->
 
@@ -30,7 +30,7 @@ npm run audit
 
 ## Explore
 
-The app starts at Stanford. Zoom in once for the campus view above. Search for Lucie Stern Hall to see the flat-roofed residence wings, or zoom out to explore the globe. Search for **Stanford University** and select the campus suggestion to return. Click a building to see its source height information. Select **Memorial Church** and choose **Explore the interior** to see its cutaway in the surrounding campus. At **Cantor Arts Center**, choose **Explore gallery floors** to browse 30 spaces on two floors. Search **300 Pasteur**, **500 Pasteur** or **Packard Children’s Hospital** to open its official visitor map.
+The app starts at Stanford. Zoom in once for the campus view above. Search for Lucie Stern Hall to see the eight residence wings, Burnham Pavilion for its three-arched entrance, or Klein Field at Sunken Diamond for the stepped baseball stands. Zoom out to explore the globe. Search for **Stanford University** and select the campus suggestion to return. Click a building to see its source height information. Select **Memorial Church** and choose **Explore the interior** to see its cutaway in the surrounding campus. At **Cantor Arts Center**, choose **Explore gallery floors** to browse 30 spaces on two floors. Search **300 Pasteur**, **500 Pasteur** or **Packard Children’s Hospital** to open its official visitor map.
 
 Typing shows local campus suggestions. Press **Enter** or **Search worldwide** to query Photon's OpenStreetMap index; click a suggestion or select one with the arrow keys and press Enter to navigate directly. Worldwide search is not a complete index of real places. Missing businesses, addresses and landmarks may return no results. Requests are explicit, paced and cached; the public service has no availability guarantee. See [Photon's service policy](https://github.com/komoot/photon#demo-server).
 
