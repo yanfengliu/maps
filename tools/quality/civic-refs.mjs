@@ -1,3 +1,4 @@
+import {CIVIC_VIEW_COMPARISONS} from './civic-view-comparisons.mjs';
 import {CIVIC_FACADE_PHOTOS} from '../../src/civic-facades.ts';
 import {CIVIC_APPEARANCES} from '../../src/civic-appearance.ts';
 const county='https://geo.sanjoseca.gov/server/rest/services/Imagery/DPW_ImageryCached2025/MapServer';
@@ -45,4 +46,8 @@ const visits=Object.entries(CIVIC_FACADE_PHOTOS).map(([id,{name,code,observed}])
     {url:county,kind:'photo',date:'2025'},
   ],
 }));
-export const CIVIC_REFERENCES=[...composed,...visits];
+export const CIVIC_REFERENCES=[...composed,...visits].map(record=>{
+  const view=CIVIC_VIEW_COMPARISONS[record.ids[0]];
+  return {...record,reviewBasis:record.reviewBasis+
+    ' On model revision 76e58c5 the searched part was viewed at zoom '+view.zoom+', pitch '+view.pitch+'° and bearing '+view.bearing+'°. '+view.note};
+});
