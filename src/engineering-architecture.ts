@@ -31,7 +31,7 @@ export const ENGINEERING_REFERENCES:Readonly<Record<string,EngineeringReference>
  * estimated massing, but remove the invented glass curtain-wall appearance.
  * This list is an audit backlog, NOT evidence of a modern architectural style. */
 export const UNVERIFIED_ACADEMIC_IDS=new Set([
-  'way/81794792','way/81794794','way/158646537','way/158646543',
+  'way/81794792','way/81794794',
   'way/232805740','way/232841885','way/232841888','way/232841903',
   'way/232841910','way/232841913','way/307364465','way/597085021',
   'way/727171866','way/738808362','way/1038160838','way/1434557267',

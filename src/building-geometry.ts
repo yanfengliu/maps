@@ -1,3 +1,4 @@
+import {civicFacade} from './civic-appearance.ts';
 import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
 import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
 import {roofTriangleUV} from './roof-materials.ts';
@@ -255,6 +256,7 @@ export class BuildingGeometryBuilder {
       }
       if(p.id===PASTEUR_300_ID)addPasteurPods(this.roofs,building,projectLocal);
       if(braun)addBraunSolar(this.roofs,rings,building,height);
+      const civicFront=civicFacade(String(p.id),rings[0]);
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
         for (let i = 0; i < ring.length; i++) {
@@ -266,7 +268,11 @@ export class BuildingGeometryBuilder {
           const shellTop=flatShell?height:wall-0.12;
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
-          if(architecture.facadeFamily==='precast-ribbon'){
+          const civic=ringIndex===0&&length>1.8?civicFront?.(a,b,nx,ny):undefined;
+          if(civic){
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,civic.material,building,
+              [[civic.u0,0],[civic.u1,0],[civic.u1,civic.bands],[civic.u0,civic.bands]]);
+          }else if(architecture.facadeFamily==='precast-ribbon'){
             const bays=Math.max(1,Math.round(length/architecture.bayWidth)),rows=architecture.floors!;
             this.facades.quad(at(a,base),at(b,base),at(b,wall),at(a,wall),wallTint,53,building,[[0,0],[bays,0],[bays,rows],[0,rows]]);
           }else if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){

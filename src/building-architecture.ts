@@ -1,3 +1,4 @@
+import {civicAppearance} from './civic-appearance.ts';
 import type * as GeoJSON from 'geojson';
 import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
@@ -28,6 +29,8 @@ const BRAUN_MUSIC_ID='relation/12460152';
 /** Authored material families, informed by the inspected Stanford photographs. */
 export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
+  const civic=civicAppearance(p.id);
+  if(civic)return {wall:civic.wall,roof:civic.roofColor};
   if(p.id===GREEN_EAST_ID)return {wall:'#c7bdb0',roof:'#ae7259'};
   if(p.id===PASTEUR_300_ID)return {wall:'#ccc9bf',roof:'#c1bfb2'};
   if(p.id===BRAUN_MUSIC_ID)return {wall:'#dfd4bc',roof:'#c8c5b8'};
@@ -51,6 +54,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const p = properties ?? {};
   const type = String(p.building ?? 'yes');
   const name = String(p.name ?? '');
+  const civic=civicAppearance(p.id);
   const reference=ENGINEERING_REFERENCES[String(p.id)],unverified=UNVERIFIED_ACADEMIC_IDS.has(String(p.id));
   const profile: ArchitectureProfile = p.id === 'way/836474103' ? 'memorial-church'
     : p.id === 'relation/35820' ? 'quad'
@@ -82,12 +86,14 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
     bayWidth: reference?.bayWidth ?? (profile === 'residential' ? 3.1 : profile === 'modern' ? 2.7 : profile === 'garage' ? 5.4 : profile === 'service' ? 5.8 : 4.2),
     facadeFamily:reference?.family??(unverified?'unverified':'generic'),
-    roofShape: String(p['osm:roof:shape'] ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
-    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck ? 'reference-profile' : 'estimated' };
+    roofShape: String(p['osm:roof:shape'] ?? civic?.roofShape ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
+    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck||civic?.roofShape ? 'reference-profile' : 'estimated' };
 }
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  const civic=civicAppearance(p.id);
+  if(civic)return civic.description;
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
   if(p.id===PASTEUR_300_ID)return 'The mapped 300 Pasteur footprint is tagged 10 m. Palo Alto records the three existing west pods at up to 77.5 ft (23.6 m). Their roof outlines follow 2025 county imagery. The intermediate levels, relative screen heights and facade spacing are estimates.';

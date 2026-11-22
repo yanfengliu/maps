@@ -1,4 +1,5 @@
 /** Evidence is scoped to observed features, never a claim that a whole model is verified. */
+import {CIVIC_REFERENCES} from './civic-refs.mjs';
 import {FACADE_PHOTOS} from './stanford-facade-photos.mjs';
 export const PINNED_PART_COUNT = 648;
 const survey = 'https://stgenpln.blob.core.windows.net/document/SU_2018GUP_App_Vol4_pt2.pdf';
@@ -20,6 +21,7 @@ const hospitalReview = {reviewedAt:'2026-11-21',reviewBasis:'Architect or Stanfo
 const old = {status:'prior-review',reviewedAt:'2026-10-20',reviewBasis:'Recorded in docs/work/0_bay-area-stanford/architecture-references.md; not newly inspected by this audit.'};
 
 const architecturalReferences = [
+  ...CIVIC_REFERENCES,
   record('additional-aerial-decks',[30754822,109151789,232715633,232715634,232715635,232715636,232715637,232715638,232715639].map(id=>'way/'+id),'Fairchild, Beckman and seven unnamed mapped buildings',
     'The light decks have straight parapet edges and scattered rooftop equipment. No red-tiled hips are visible in these footprints.',
     'The image supports the overall roof form. Mechanical enclosures, precise pitch and elevations are unresolved.',

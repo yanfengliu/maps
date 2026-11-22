@@ -1,3 +1,4 @@
+import {CIVIC_FRAGMENT} from './civic-materials.ts';
 import { hospitalSurfacePicker, type PickCandidate } from './hospital-picking.ts';
 import { HOSPITAL_FRAGMENT } from './hospital-materials.ts';
 import {STOP_SIGN_HELPERS,STOP_SIGN_FRAGMENT} from './stop-sign-materials.ts';
@@ -289,6 +290,7 @@ void main() {
   ${STADIUM_FIELD_FRAGMENT}
   ${STADIUM_ELEVATION_FRAGMENT}
   ${GARAGE_FRAGMENT}
+  ${CIVIC_FRAGMENT}
   ${ENGINEERING_FRAGMENT}
   ${GREEN_EAST_FRAGMENT}
 ${SURFACE_FRAGMENT}
