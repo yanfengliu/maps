@@ -31,3 +31,24 @@ test('public campus plan matches preserve every source ID and both overlap direc
   assert.ok(rows.some(row=>row.status === 'anonymous-footprint'));
   assert.ok(rows.some(row=>row.status === 'within-facility' && row.part));
 });
+
+test('examined visitor photos have individual sources and exclude Stanford’s own placeholder pixels', () => {
+  const {facilities,placeholderSha256} = read('../tools/quality/facility-refs-photos.json');
+  const codes = new Set();
+  for (const {code,status,images} of facilities) {
+    assert.ok(!codes.has(code)); codes.add(code);
+    assert.equal(status === 'exterior-photo', images.length>0);
+    for (const {page,image,sha256,width,height} of images) {
+      const source = new URL(page), photo = new URL(image);
+      assert.ok(['campus-map.stanford.edu','maps.stanford.edu'].includes(source.hostname));
+      assert.ok([...source.searchParams.values()].includes(code));
+      assert.equal(photo.hostname,'campus-map.stanford.edu');
+      assert.ok(photo.pathname.includes('/images_repo/bldg/'+code+'/'));
+      assert.match(sha256,/^[a-f0-9]{64}$/);
+      assert.notEqual(sha256,placeholderSha256);
+      assert.ok(width>0 && height>0);
+    }
+  }
+  assert.equal(facilities.find(f=>f.code==='09-535').status,'placeholder');
+  assert.equal(facilities.find(f=>f.code==='14-411').status,'exterior-photo');
+});

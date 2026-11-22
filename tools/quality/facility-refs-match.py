@@ -18,6 +18,10 @@ from shapely.strtree import STRtree
 
 PUBLIC_LAYER = 'https://campus-map.stanford.edu/kml/Stanford_Buildings.kmz?z=45'
 PINNED_HASH = 'beaf047bdde117bd2c15dd77c7c73035325ca80355f00d1a897503c79ccfb5ee'
+SOURCES = {
+    PINNED_HASH: PUBLIC_LAYER,
+    'fd9c03b47ccb05470b5248d0d9177305b90c9be6fa90bda471668e3d7757d5da': 'https://campus-map.stanford.edu/kml/stanford_bldgs_z15.kmz?z=45'
+}
 
 
 def project(x, y, z=None):
@@ -34,7 +38,7 @@ def coordinates(ring):
 
 
 def read_campus(kmz):
-    if hashlib.sha256(kmz.read_bytes()).hexdigest() != PINNED_HASH:
+    if hashlib.sha256(kmz.read_bytes()).hexdigest() not in SOURCES:
         raise ValueError('Stanford visitor map has changed. Review the new source before matching.')
     with ZipFile(kmz) as archive:
         [member] = [name for name in archive.namelist() if name.lower().endswith('.kml')]
@@ -42,9 +46,13 @@ def read_campus(kmz):
     facilities = {}
     for item in root.findall('.//{*}Placemark'):
         cells = [html.unescape(v.strip()) for v in re.findall(r'<td>([^<>]*)</td>', item.findtext('{*}description') or '', re.I)]
-        if 'BLDG_ID' not in cells:
-            continue
-        code = cells[cells.index('BLDG_ID') + 1]
+        property_code = item.find(".//{*}SimpleData[@name='BLDG_ID']")
+        if property_code is not None:
+            code = (property_code.text or '').strip()
+        elif 'BLDG_ID' in cells:
+            code = cells[cells.index('BLDG_ID') + 1]
+        else:
+            raise ValueError('Footprint is missing its published facility ID field')
         if not code or code == 'NA':
             code = '@' + item.attrib['id']
         elif not re.fullmatch(r'[\w-]+', code):
@@ -90,7 +98,8 @@ def match(kmz, source):
             status = 'anonymous-' + status
         rows.append({'id': prop['id'], 'name': prop.get('name') or '', 'part': prop.get('part',False), 'status': status,
                      'candidates': [{'code': c[3] if not c[3].startswith('@') else None, 'name': c[4] if c[4] != 'NA' else '', 'anonymousPlacemark': c[3][1:] if c[3].startswith('@') else None, 'sourceCoverage': round(c[0],5), 'facilityCoverage': round(c[1],5), 'iou': round(c[2],5)} for c in candidates]})
-    return {'source':PUBLIC_LAYER,'sha256':PINNED_HASH,
+    source_hash = hashlib.sha256(kmz.read_bytes()).hexdigest()
+    return {'source':SOURCES[source_hash],'sha256':source_hash,
             'identifiedFacilityGroups':sum(not code.startswith('@') for code, _, _ in facilities),
             'anonymousFootprints':sum(code.startswith('@') for code, _, _ in facilities),
             'rows':rows}
