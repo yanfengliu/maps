@@ -66,6 +66,11 @@ test('per-part visual notes keep single-facility and overlap-only claims separat
     assert.ok(record.sources[0].url.includes('/'+record.facility+'/'));
     assert.ok(record.reviewBasis.includes('pitch'));
   }
+  const photos=read('../tools/quality/facility-refs-photos.json').facilities;
+  const available=new Set(photos.filter(record=>record.status==='exterior-photo').map(record=>record.code));
+  const required=rows.filter(row=>!row.name && row.status==='footprint' && available.has(row.candidates[0].code));
+  const compared=new Set(FACILITY_EXTERIOR_REFERENCES.flatMap(record=>record.ids));
+  assert.ok(required.length>0 && required.every(row=>compared.has(row.id)),'Every previously unnamed direct footprint with an individual exterior photo needs an observation');
   assert.ok(FACILITY_EXTERIOR_REFERENCES.every(record=>record.scope==='footprint'));
-  assert.ok(FACILITY_CONTEXT_COMPARISONS.every(record=>record.scope!=='footprint'));
+  assert.ok(FACILITY_CONTEXT_COMPARISONS.every(record=>record.scope!=='footprint' && record.status==='context-only'));
 });
