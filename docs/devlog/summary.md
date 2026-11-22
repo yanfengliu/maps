@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — Split The Knoll’s three wings and projected front bay along their shared source edges. The final campus register records 442 individually supported parts from the original queue of 521, plus the 79 that remain inconclusive. [Results and source limits](../work/0_bay-area-stanford/plan.md).
+
 - 2026-11-21 — Corrected the Clock Bell Tower colonnade, Knoll Garage, Main Quad restroom, Sunken Diamond press box and both dugouts. Four county-surveyed houses now follow their photographed roofs and exterior finishes. Two one-story houses previously drew at 10 m. The app preserves their original source heights and identifies the revised 3.9 m as an estimate. [Campus source register](../../tools/quality/README.md).
 
 - 2026-11-21 — The campus audit exports the original 521 rows to a spreadsheet-readable register with both aerial views, available part references, model dispositions and limitations. [Audit command](../../tools/quality/README.md).
