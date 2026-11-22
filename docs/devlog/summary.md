@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — The realism audit now links two aerial photograph crops per part for the 521 previously unreferenced parts. The register retains inconclusive views and changes between acquisitions. [Read the comparison method](../../tools/quality/README.md).
+
 - 2026-11-21 — Added distinct exteriors at 300 and 500 Pasteur and both Packard buildings. [Implementation and limits](../work/0_bay-area-stanford/design.md#hospital-exteriors-and-trees-2026-11-21).
 - 2026-11-21 — Replaced 14 red-tile roof estimates with aerial-supported decks, including five medical courtyards, added reproducible comparisons for all 648 roofs, and recorded 45 photographed elevations. Green Library East Wing can be found by its full name. [Evidence and limits](../work/0_bay-area-stanford/design.md#campus-roofs-and-photographed-entrances-2026-11-21).
 - 2026-11-21 — The 26 mapped needleleaf trees now show layered boughs with correct depth against nearby roofs and trunks. The campus overview averaged 60 fps in paired Apple M3 runs. The close grove measured 17.5 ms median frame time.

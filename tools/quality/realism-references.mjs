@@ -1,4 +1,6 @@
 /** Evidence is scoped to observed features, never a claim that a whole model is verified. */
+import {ROOF_PHOTO_REFERENCES} from './roof-photo-register.mjs';
+import {HOUSING_REFERENCES} from './housing-refs.mjs';
 import {FACADE_PHOTOS} from './stanford-facade-photos.mjs';
 export const PINNED_PART_COUNT = 648;
 const survey = 'https://stgenpln.blob.core.windows.net/document/SU_2018GUP_App_Vol4_pt2.pdf';
@@ -99,4 +101,24 @@ const architecturalReferences = [
 // The architectural groups may cover multiple IDs. Keep those group-specific sources
 // together and use the directory photo as the first individual reference elsewhere.
 const researchedIds = new Set(architecturalReferences.flatMap(reference=>reference.ids));
-export const REALISM_REFERENCES = [...architecturalReferences,...FACADE_PHOTOS.filter(photo=>!researchedIds.has(photo.ids[0]))];
+const previousReferences = [...architecturalReferences,...FACADE_PHOTOS.filter(photo=>!researchedIds.has(photo.ids[0]))];
+
+// A part can have a photographed elevation, a site plan and a roof comparison.
+// Preserve each source and its scope while retaining a single audit record per part.
+export function combinePartReferences(collections) {
+  const byId = new Map();
+  for (const collection of collections) for (const record of collection) for (const id of record.ids) {
+    const previous = byId.get(id);
+    if (!previous) {
+      byId.set(id, {...record,ids:[id], key:record.ids.length === 1 ? record.key : record.key+'-'+id.replace('/','-')});
+      continue;
+    }
+    const sources = new Map([...previous.sources,...record.sources].map(s => [s.url,s]));
+    byId.set(id, {...previous, status:[previous,record].some(r=>r.status==='photo-supported')?'photo-supported':previous.status,
+      observed:previous.observed+' '+record.observed, limitations:previous.limitations+' '+record.limitations,
+      reviewBasis:previous.reviewBasis+' '+record.reviewBasis, sources:[...sources.values()],
+      expected:{...record.expected,...previous.expected}});
+  }
+  return [...byId.values()];
+}
+export const REALISM_REFERENCES = [...previousReferences,...combinePartReferences([HOUSING_REFERENCES,ROOF_PHOTO_REFERENCES])];
