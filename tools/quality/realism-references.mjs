@@ -1,5 +1,6 @@
-import {SUPPLEMENTAL_PART_REFERENCES} from './supplemental-part-refs.mjs';
 /** Evidence is scoped to observed features, never a claim that a whole model is verified. */
+import {ADDRESS_ELEVATION_REFERENCES} from './address-elevation-refs.mjs';
+import {SUPPLEMENTAL_PART_REFERENCES} from './supplemental-part-refs.mjs';
 import {FORMER_REFERENCES} from './former-campus-references.mjs';
 import {PLAN_REFERENCES} from './campus-plan-register.mjs';
 import {MITCHELL_REFERENCES} from './mitchell-refs.mjs';
@@ -129,4 +130,4 @@ export function combinePartReferences(collections) {
   }
   return [...byId.values()];
 }
-export const REALISM_REFERENCES = [...previousReferences,...combinePartReferences([SUPPLEMENTAL_PART_REFERENCES,MITCHELL_REFERENCES,ADDITIONAL_OUTLINE_REFERENCES,NAMED_CAMPUS_REFERENCES,FORMER_REFERENCES,CIVIC_REFERENCES,HOUSING_REFERENCES,FACILITY_EXTERIOR_REFERENCES,PLAN_REFERENCES,ROOF_PHOTO_REFERENCES])];
+export const REALISM_REFERENCES = [...previousReferences,...combinePartReferences([ADDRESS_ELEVATION_REFERENCES,SUPPLEMENTAL_PART_REFERENCES,MITCHELL_REFERENCES,ADDITIONAL_OUTLINE_REFERENCES,NAMED_CAMPUS_REFERENCES,FORMER_REFERENCES,CIVIC_REFERENCES,HOUSING_REFERENCES,FACILITY_EXTERIOR_REFERENCES,PLAN_REFERENCES,ROOF_PHOTO_REFERENCES])];
