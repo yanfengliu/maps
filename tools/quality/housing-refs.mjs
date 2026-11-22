@@ -1,5 +1,17 @@
 /** Each record cites the exterior image matched to that named source footprint. */
 const rde = 'https://rde.stanford.edu';
+const sternAerial = {url: 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/neighborhod-a-aerial_0_0.jpg?itok=0MxwFUUX', kind: 'photo', date: 'undated'};
+const sternPlan = {url: 'https://rde.stanford.edu/sites/default/files/styles/half_width/public/2026-02/20260226_UG_Maps_Stern_Hall.jpg?itok=ZN1LqTyG', kind: 'document', date: '2026-02'};
+
+function residentialEducation(ids, title, photo, page, observed, atStern = false) {
+  return {
+    key: 'housing-' + ids[0].replace('/', '-'), ids, title, status: 'photo-supported', reviewedAt: '2026-11-21', observed,
+    reviewBasis: atStern ? 'Inspected Stanford’s oblique aerial of the entire Stern complex and matched each roof to the specific wing on R&DE’s labeled map.' : 'Inspected Stanford Residential Education’s photograph and its house identification.',
+    limitations: 'Roof equipment, exact color and height, rear elevations and opening spacing are unsurveyed.',
+    sources: [{url: page, kind: 'document', date: 'undated'}, ...(photo ? [{url: photo, kind: 'photo', date: 'undated'}] : []), ...(atStern ? [sternAerial, sternPlan] : [])],
+  };
+}
+
 function reference(id, title, page, photos, observed) {
   return {
     key: 'housing-' + id.replace('/', '-'), ids: [id], title, status: 'photo-supported', reviewedAt: '2026-11-21',
@@ -8,11 +20,98 @@ function reference(id, title, page, photos, observed) {
     sources: [
       {url: rde + '/studenthousing/' + page, kind: 'document', date: 'undated'},
       ...photos.map(photo => ({url: rde + '/sites/default/files/styles/' + photo, kind: 'photo', date: 'undated'})),
+      ...(page === 'stern-hall' ? [sternAerial, sternPlan] : []),
+    ],
+  };
+}
+
+function facilityPhoto(ids, title, code, observed) {
+  return {
+    key: 'housing-facility-' + code.toLowerCase(), ids, title, status: 'photo-supported', reviewedAt: '2026-11-21', observed,
+    reviewBasis: 'The Stanford facility photograph was visually inspected and its facility polygon matched to the OSM footprint using the official campus map.',
+    limitations: 'Only the visible facade and roof portions are documented. Color values, unseen elevations, opening counts and roof heights are estimates.',
+    sources: [
+      {url: 'https://campus-map.stanford.edu/images_repo/bldg/' + code + '/' + code + '-1.jpg', kind: 'photo', date: 'undated'},
+      {url: 'https://campus-map.stanford.edu/index.cfm?ID=' + code, kind: 'document', date: 'undated'},
     ],
   };
 }
 
 export const HOUSING_REFERENCES = [
+  residentialEducation(['relation/22862'], 'Lucie Stern Hall', null, 'https://resed.stanford.edu/houses/stern-hall-houses/burbank-italicarts',
+    'The named central dining block and connected complex have red-brown low-slope decks with light equipment and roof upstands. The aerial and public site plan distinguish the center from the eight residential bars.', true),
+  residentialEducation(['way/30775651'], 'Casa Zapata', 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/casa-zapata-2022_0.jpg?itok=lLiD714u', 'https://resed.stanford.edu/houses/stern-hall-houses/casa-zapata',
+    'Salmon-painted walls, dark rectangular window openings and a linear projecting canopy mark the entrance. The southern bar has a low red-brown roof.', true),
+  residentialEducation(['way/30775659'], 'Burbank House', 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/burbank-2022_0.jpg?itok=lXhgtenW', 'https://resed.stanford.edu/houses/stern-hall-houses/burbank-italicarts',
+    'A coral facade incorporates a recessed strip of windows. The aerial identifies the red low-slope bar east of the central building.', true),
+  residentialEducation(['way/30775661','way/30775670'], 'Twain House East and North', 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/twain-2022_0.jpg?itok=IQcR3o3k', 'https://resed.stanford.edu/houses/stern-hall-houses/twain',
+    'The public map labels two connected Twain bars. Both have low red-brown decks in the oblique aerial. At their junction ochre and orange wall panels frame a metal entrance trellis.', true),
+  residentialEducation(['way/30775698','way/30775717'], 'Larkin House North and West', null, 'https://resed.stanford.edu/houses/stern-hall-houses/larkin',
+    'The site plan places both Larkin bars northwest of the central block. Both have rust-red low-slope roofs in the campus aerial. This view does not resolve separate Larkin wall finishes.', true),
+  residentialEducation(['way/182440071'], 'Trancos', 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/trancos-2022_0.jpg?itok=Fzya3QGA', 'https://resed.stanford.edu/houses/wilbur-hall-houses/trancos-outdoor-house',
+    'The signed house frontage has a pale buff gabled wall with dark trim, and a lower adjoining wing with red tile eaves.'),
+  facilityPhoto(["relation/10248811","way/232805667"], "Enchanted Broccoli Forest", '05-540',
+    "Pale cream two-story wings surround a taller glazed entry with a narrow red-tile roof. Both overlapping OSM polygons correspond to Stanford facility 05-540."),
+  facilityPhoto(["relation/11032551"], "Schiff", '05-750D',
+    "The ochre residential block has an open ground-floor walk, a climbing trellis and a red tiled eave over upper windows."),
+  facilityPhoto(["relation/12565657"], "Lyman Commons", '05-760B',
+    "A low rust-orange common building has wide glazed panels and a straight, shallow metal roof edge."),
+  facilityPhoto(["way/232715623"], "Murray House", '05-712',
+    "Ochre walls enclose a shaded court. The projecting single-story volume carries a red tiled hip; a taller residence rises behind."),
+  facilityPhoto(["way/232715626"], "Avanti", '05-740B',
+    "Terracotta-painted walls and tall pale window frames enclose a low dining wing beside a timber pergola."),
+  facilityPhoto(["way/232715651"], "Middle Earth", '05-740A',
+    "Rust-colored single-story dining wings form paired gable ends with light window trim."),
+  facilityPhoto(["way/232715654"], "Beefeaters", '05-740D',
+    "Red-orange stucco, narrow windows with light trim and a low red tiled roof face the trellis."),
+  facilityPhoto(["way/232715659"], "Bollard", '05-740C',
+    "The dining cottage has orange stucco gable ends, white window trim and a dark green door."),
+  facilityPhoto(["way/232715665"], "Elliott Program Center", '05-720',
+    "The ochre program building has tall narrow glazing and a low sloped red-brown roof above the exterior walk."),
+  facilityPhoto(["way/232715666"], "Ricker Dining Hall", '05-750E',
+    "Warm coral-ochre stucco surrounds large pale-framed windows along the shaded terrace. A timber trellis screens the roof."),
+  facilityPhoto(["way/232715862"], "Lyman Building 3", '05-760C',
+    "Pinkish buff end walls flank a tall vertical stair window with a projecting red metal frame."),
+  facilityPhoto(["way/232715864"], "Lyman Building 1", '05-760A',
+    "The long residential bar has light ochre wall panels, repeated vertical window groups and a narrow darker top band."),
+  facilityPhoto(["way/232805712"], "Kingscote Gardens (OSM Kennedy Grove)", '02-140',
+    "Stanford identifies this footprint as Kingscote Gardens. Gray-green stucco, red window trim, a shaded entry loggia and overhanging eaves address the lawn."),
+  facilityPhoto(["way/232805720"], "Mariposa", '02-916',
+    "Blue-gray horizontal siding, white window trim, a covered porch and a projecting upper bay face the street. The roof is dark gray."),
+  facilityPhoto(["way/232805723"], "Munger Building 1", '02-070A',
+    "The light buff facade has a long eave, projecting balconies and a row of small gabled dormers over the top floor."),
+  facilityPhoto(["way/232805724"], "Munger Building 2", '02-070B',
+    "The light cream front has square windows, recessed balconies and an arched ground opening. Tiled slopes and gabled dormers crown the upper floor."),
+  facilityPhoto(["way/232805725"], "Munger Building 3", '02-070C',
+    "Rectangular windows run beneath deep eaves and a red tiled roof with a row of pale gabled dormers."),
+  facilityPhoto(["way/232805726"], "Munger Building 4", '02-070D',
+    "The palm court has pale walls, large gridded windows and upper dormers under a red tiled roof."),
+  facilityPhoto(["way/232805727"], "Munger Building 5", '02-070E',
+    "A pale colonnade opens onto the palm court. Red tile eaves and gabled dormers frame the upper windows."),
+  facilityPhoto(["way/232805734"], "Rogers", '02-915',
+    "Olive-gray horizontal siding, white-green trim, a two-story bay and a deep porch face the lawn below a brownish hip."),
+  facilityPhoto(["way/232805736"], "Attneave", '02-930',
+    "Two pale buff gabled wings and a central three-arch loggia face the garden. Curved red tiles cap the projecting gables."),
+  facilityPhoto(["way/232805738"], "Sigma Chi", '02-922',
+    "A cream facade has blue-gray shutters, a white center entry and a pitched brown shingle roof with dormers. The sign and Stanford facility ID identify 550 Lasuen."),
+  facilityPhoto(["way/232805742"], "Storey", '02-921',
+    "The symmetrical light beige front has a columned entrance and four dormers, set into a steep slate-gray roof."),
+  facilityPhoto(["way/232805765"], "Lake House", '05-510',
+    "A low shaded entrance has pale stucco beneath a projecting dark weathered tile roof."),
+  facilityPhoto(["way/561917008"], "Jack McDonald Hall", '06-640',
+    "The photograph includes the signed campus residence, with tan walls, dark recessed openings and a projecting red pitched roof."),
+  facilityPhoto(["way/1040231570"], "Ujamaa B", '05-010D',
+    "Golden stucco walls at the marked B wing have dark window surrounds and a green entrance awning. A narrow tiled eave rims the wall."),
+  facilityPhoto(["way/1040629366"], "Naranja", '05-010A',
+    "A cream two-story stucco facade has dark window frames, a green entrance door and a small red-tiled porch gable."),
+  facilityPhoto(["way/1040629368"], "Ujamaa A", '05-010C',
+    "Pale cream courtyard walls and dark window surrounds rise behind an arched entry and red-tiled trim."),
+  facilityPhoto(["way/1040629369"], "Eucalipto", '05-010F',
+    "The pale stucco court wall frames a white projecting entry with a rounded passage and dark window trim beneath tile eaves."),
+  facilityPhoto(["way/1040629370"], "Lakeside Dining", '05-010G',
+    "A row of tall dark arched windows faces the terrace beneath a shallow weathered tile roof; pale piers separate the bays."),
+  facilityPhoto(["way/1169137068"], "Kappa Alpha", '05-530',
+    "The signed entry sits below overlapping low red-tile eaves in a pale golden stucco wall."),
   reference("way/232805657", "Branner Hall", "branner-hall",
     ["full_width/public/2024-07/P1016104-web.jpg?itok=YaSqsxsX"],
     "Buff stucco behind a deep three-arch entrance loggia. The side wing shows narrow light-framed windows."),
