@@ -1,3 +1,4 @@
+import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS,facilityModelHeight,addFacilityElevation} from './facility-elevations.ts';
 import {AVERY_ID,BAND_SHAK_ID} from './avery-architecture.ts';
 import {addAveryStands} from './avery-aquatics.ts';
@@ -309,7 +310,11 @@ export class BuildingGeometryBuilder {
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
           const civic=ringIndex===0&&length>1.8?(entrance?.frontage(a,b)??civicFront?.(a,b,nx,ny)):undefined;
-          if(p.id===LASUEN_RESTROOM){
+          if(MITCHELL_COLUMNS.has(String(p.id))){
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,2,building);
+          }else if(p.id===MITCHELL_UPPER){
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,46,building,[[0,0],[length/7.6,0],[length/7.6,1],[0,1]]);
+          }else if(p.id===LASUEN_RESTROOM){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,47,building,[[0,0],[length,0],[length,shellTop-base],[0,shellTop-base]]);
           }else if(civic){
             walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,civic.material,building,
@@ -355,7 +360,7 @@ export class BuildingGeometryBuilder {
           if(p.id===PASTEUR_300_ID)continue;
           // The studied low-slope decks meet their full-height shell directly.
           // Their photos give no basis for the projecting trim on the generic estimate.
-          if(flatShell && (photographedRoof(String(p.id))?.roofShape==='flat' || HOUSING_APPEARANCE[String(p.id)]?.roofShape==='flat'))continue;
+          if(flatShell && (MITCHELL_COLUMNS.has(String(p.id)) || photographedRoof(String(p.id))?.roofShape==='flat' || HOUSING_APPEARANCE[String(p.id)]?.roofShape==='flat'))continue;
           // The cornice encloses the small raised eave seam; a second wall
           // strip inside that solid trim is redundant. Keep sloped gable ends.
           const z = Math.min(height, wall + 0.07);

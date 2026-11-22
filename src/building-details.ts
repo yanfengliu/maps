@@ -296,6 +296,15 @@ void main() {
     float bar=smoothstep(.46,.49,max(grid.x,grid.y));
     tint=mix(tint*(.93+.055*cos(v_uv.y*1.2)),vec3(.77,.79,.76),bar);
   }
+  if(abs(v_kind-46.)<.1 && u_facadeDetail>.5){
+    float x=fract(v_uv.x),y=v_uv.y;
+    float pier=smoothstep(.065,.085,min(x,1.-x));
+    float mainGlass=step(.12,y)*(1.-step(.73,y));
+    float clerestory=step(.81,y)*(1.-step(.95,y));
+    float mullion=smoothstep(.018,.042,min(fract(x*4.),1.-fract(x*4.)));
+    vec3 glass=mix(vec3(.20,.25,.26),vec3(.31,.38,.39),y);
+    tint=mix(tint,glass,pier*mullion*max(mainGlass,clerestory));
+  }
   if(abs(v_kind-47.)<.1){
     float timber=smoothstep(2.17,2.21,v_uv.y);
     float plank=fract(v_uv.x/.24);

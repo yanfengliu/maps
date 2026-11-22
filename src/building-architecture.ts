@@ -1,3 +1,4 @@
+import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS} from './facility-elevations.ts';
 import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
 import {PHOTO_COTTAGES} from './photographed-cottages.ts';
@@ -58,6 +59,8 @@ function defaultBuildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
 }
 
 export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, architecture: BuildingArchitecture) {
+  if(MITCHELL_COLUMNS.has(String(properties?.id)))return {wall:'#afa99a',roof:'#afa99a'};
+  if(properties?.id===MITCHELL_UPPER)return {wall:'#bdb4a2',roof:'#ae7257'};
   const facility=FACILITY_ELEVATIONS[String(properties?.id)];
   if(facility) return {wall:facility.wall,roof:facility.roof};
   if(properties?.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
@@ -102,6 +105,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  if(MITCHELL_COLUMNS.has(String(p.id)))return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
   const facility=FACILITY_ELEVATIONS[String(p.id)];
   if(facility)return {profile,floors:1,floorSource:'reference-profile',mappedLevels,bayWidth:4,facadeFamily:'generic',roofShape:facility.roofShape,roofSource:'reference-profile'};
   if(p.id===AVERY_ID)return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'fabric-canopies',roofSource:'reference-profile'};
@@ -143,6 +147,8 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
     return 'The model shows '+treatment+'. The support spacing, roof pitch and heights are estimates.';
   }
   const civic = civicAppearance(p.id);
+  if(MITCHELL_COLUMNS.has(String(p.id)))return 'This is one of the concrete supports beneath Mitchell Earth Sciences. The source records its outline and levels. Its concealed upper end and precise elevation remain approximate.';
+  if(p.id===MITCHELL_UPPER)return 'The upper block projects over the plaza. The historic survey shows concrete piers, tall glass bays and clerestory openings below the tiled roof. Two aerial surveys show the pale deck within the roof perimeter.';
   if(TILED_EDGE_WIDTH[String(p.id)])return 'The aerial photographs show a tiled perimeter around a pale, low-slope central deck. The width and pitch are modeled estimates. '+(civic?.description ?? CIVIC_FACADE_PHOTOS[String(p.id)]?.observed ?? 'The remaining elevations are approximate.');
   if(civic)return civic.description;
   const photo=CIVIC_FACADE_PHOTOS[String(p.id)];

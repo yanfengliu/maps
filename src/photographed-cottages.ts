@@ -14,6 +14,7 @@ export const PHOTO_COTTAGES:Readonly<Record<string,Finish>>={
 // Distinct source and campus names remain searchable. The separate Lodge building
 // at 672 Lomita has the reciprocal university facility match.
 export const FACILITY_NAMES:Readonly<Record<string,{name:string;subtitle:string}>>={
+  'way/1508657403':{name:'Mitchell Earth Sciences',subtitle:'397 Panama Mall · Stanford University'},
   'way/232805700':{name:'670 Lomita Drive',subtitle:'Building · Stanford University'},
   'way/232805701':{name:'The Lodge',subtitle:'672 Lomita · Former Breer Library · Stanford University'},
   'way/232715642':{name:'Stanford Visitor Center',subtitle:'Sam McDonald Track House · Stanford University'},

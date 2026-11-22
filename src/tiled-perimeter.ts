@@ -1,6 +1,7 @@
 // Approximate widths in ground metres, read across roof edges in the registered
 // 2022 and 2025 surveys. Render only the visible tile band and upper deck.
 export const TILED_EDGE_WIDTH: Readonly<Record<string,number>> = {
+  'way/1508657403':6.3, // Mitchell Earth Sciences upper block
   'way/81794793':4.5, // Yang and Yamazaki
   'way/81794794':4.3, // Spilker
   'way/307364465':3.5, // Shriram
