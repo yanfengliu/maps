@@ -22,4 +22,4 @@ On the corrected model, all 1,030 nonempty part and buffer counts match between 
 
 ## Round outcome
 
-Changes required at 92507aa. The corrective model and native evidence are queued for independent recheck.
+Changes required at 92507aa. Root confirmed both image hashes, the model digest and matching per-part triangle counts on the corrective revision. An additional external review of that revision was unavailable.
