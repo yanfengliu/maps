@@ -310,10 +310,10 @@ test('material families differentiate sandstone, pink Roble, modern light roofs 
   const find=id=>prepared.features.find(f=>f.properties.id===id).properties;
   assert.equal(find('way/232805733').detailWallColor,'#c8aaa0');
   assert.notEqual(find('relation/35820').detailWallColor,find('way/232805733').detailWallColor);
-  const modern=find('way/109150501'); // Hoover Pavilion uses the generic modern roof family.
+  const modern=find('way/109150501'); // Hoover Pavilion has a photographed pale deck.
   assert.equal(modern.detailArchitecture.profile,'modern');assert.equal(modern.detailArchitecture.roofShape,'flat');
   assert.equal(find('relation/1753562').detailRoofColor,'#c1bfb2');
-  assert.equal(modern.detailRoofColor,'#c1cbc7');assert.equal(modern.roofColor,'#b96f54');
+  assert.equal(modern.detailRoofColor,'#d4d1c7');assert.equal(modern.roofColor,'#b96f54');
   const roble=source.features.findIndex(f=>f.properties.id==='way/232805733'),bing=source.features.findIndex(f=>f.properties.id==='way/232805680');
   for(const index of [roble,bing]){
     let relief=0;for(let i=0;i<geometry.facades.length;i+=VERTEX_FLOATS)if(geometry.facades[i+12]===index&&geometry.facades[i+11]===2)relief++;

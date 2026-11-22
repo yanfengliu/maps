@@ -19,7 +19,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
  for(const [index,feature] of prepared.features.entries()){
   if(!feature.properties.detailFlatShell)continue;
   buildings++;const p=feature.properties,mesh=geometry.roofs,triangles=[];
-  assert.equal(feature.geometry,source.features[index].geometry);
+  if(p.id!=='relation/22862')assert.equal(feature.geometry,source.features[index].geometry);
   assert.equal(p.base,source.features[index].properties.base);
   assert.equal(p.height,source.features[index].properties.height);
   for(let i=0;i<mesh.length;i+=S*3)if(mesh[i+12]===index)triangles.push([0,1,2].map(j=>[...mesh.slice(i+j*S,i+j*S+3)]));
@@ -39,7 +39,7 @@ test('every replacement flat shell closes all source and courtyard edges, includ
    if(p.base===0)covers(-10,0);
   }
  }
- assert.equal(buildings,98);assert.equal(edges,1049);assert.equal(short,82);
+ assert.equal(buildings,157);assert.equal(edges,1778);assert.equal(short,176);
 });
 
 test('native flat caps have a single owner across both LOD thresholds, readiness loss, style recreation and church mode',()=>{
@@ -88,4 +88,19 @@ test('Braun Music retains its specialized tile perimeter and deck, rather than f
  const parts=[];for(const mesh of [geometry.roofs,geometry.facades]){const vertices=[];for(let i=0;i<mesh.length;i+=S)if(mesh[i+12]===index)vertices.push(...mesh.slice(i,i+S));parts.push(vertices);}
  // Independent accepted a312d8a baseline, including deck, tiles, solar and walls.
  assert.equal(createHash('sha256').update(JSON.stringify(parts)).digest('hex'),'f7be9c21688ec4013210fa50bea2c1bba23cdabbb9c8388e72e3fd184c12d440');
+});
+
+test('Stern’s eight photographed wings and central flat deck partition the original relation',()=>{
+  const parent = source.features.find(f=>f.properties.id==='relation/22862');
+  const rendered = prepared.features.find(f=>f.properties.id===parent.properties.id);
+  const area = geometry => polygons(geometry).reduce((sum,polygon)=>sum+polygon.reduce((net,ring,i)=>{
+    const points=ring.map(projectLocal);
+    const a=Math.abs(points.slice(1).reduce((total,[x,y],k)=>total+points[k][0]*y-x*points[k][1],0))/2;
+    return net+(i===0?a:-a);
+  },0),0);
+  const wings=prepared.features.filter(f=>['way/30775651','way/30775656','way/30775658','way/30775659','way/30775661','way/30775670','way/30775698','way/30775717'].includes(f.properties.id));
+  assert.equal(wings.length,8);
+  assert.ok(area(rendered.geometry) < area(parent.geometry)/2);
+  assert.ok(Math.abs(area(rendered.geometry)+wings.reduce((sum,f)=>sum+area(f.geometry),0)-area(parent.geometry))<.01);
+  for(const f of [rendered,...wings])assert.equal(f.properties.detailArchitecture.roofShape,'flat');
 });

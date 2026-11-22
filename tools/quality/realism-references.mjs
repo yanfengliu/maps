@@ -1,4 +1,5 @@
 /** Evidence is scoped to observed features, never a claim that a whole model is verified. */
+import {CIVIC_REFERENCES} from './civic-refs.mjs';
 import {ROOF_PHOTO_REFERENCES} from './roof-photo-register.mjs';
 import {HOUSING_REFERENCES} from './housing-refs.mjs';
 import {FACADE_PHOTOS} from './stanford-facade-photos.mjs';
@@ -121,4 +122,4 @@ export function combinePartReferences(collections) {
   }
   return [...byId.values()];
 }
-export const REALISM_REFERENCES = [...previousReferences,...combinePartReferences([HOUSING_REFERENCES,ROOF_PHOTO_REFERENCES])];
+export const REALISM_REFERENCES = [...previousReferences,...combinePartReferences([CIVIC_REFERENCES,HOUSING_REFERENCES,ROOF_PHOTO_REFERENCES])];

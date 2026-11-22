@@ -1,3 +1,6 @@
+import {civicAppearance} from './civic-appearance.ts';
+import {HOUSING_APPEARANCE} from './housing-appearance.ts';
+import {photographedRoof} from './photographed-roofs.ts';
 import type * as GeoJSON from 'geojson';
 import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
 import { QUAD_WING_IDS } from './quad-architecture.ts';
@@ -26,7 +29,7 @@ const AERIAL_DECKS = new Set(['relation/4720978','relation/4721017','relation/47
 const BRAUN_MUSIC_ID='relation/12460152';
 
 /** Authored material families, informed by the inspected Stanford photographs. */
-export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
+function defaultBuildingMaterials(properties:GeoJSON.GeoJsonProperties,architecture:BuildingArchitecture):{wall:string;roof:string} {
   const p=properties??{},profile=architecture.profile;
   if(p.id===GREEN_EAST_ID)return {wall:'#c7bdb0',roof:'#ae7259'};
   if(p.id===PASTEUR_300_ID)return {wall:'#ccc9bf',roof:'#c1bfb2'};
@@ -44,6 +47,14 @@ export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
     :profile==='modern'?'#d9ddd4':profile==='garage'?'#c9c9b9':profile==='service'?'#d0cdc0':profile==='residential'?'#dfcfb7':'#dbccb1';
   const roof=p.id==='way/232805733'?'#c6bca9':flat?(profile==='modern'?'#c1cbc7':'#c9c8b9'):profile==='memorial-church'||profile==='quad'||profile==='quad-wing'||profile==='library'?'#b66e4e':'#b77d60';
   return {wall,roof};
+}
+
+export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, architecture: BuildingArchitecture) {
+  const civic = civicAppearance(properties?.id);
+  if (civic) return {wall:civic.wall,roof:civic.roofColor};
+  const base = defaultBuildingMaterials(properties, architecture);
+  const id = String(properties?.id), housing = HOUSING_APPEARANCE[id];
+  return {wall:housing?.wall ?? base.wall, roof:housing?.roof ?? photographedRoof(id)?.roof ?? base.roof};
 }
 
 /** Source tags determine the treatment; absent dimensions remain explicit estimates. */
@@ -77,17 +88,20 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const floorHeight = profile === 'residential' ? 3.25 : profile === 'modern' ? 4.1 : 4.2;
   const roble = p.id === 'way/232805733',braun=p.id===BRAUN_MUSIC_ID,garage=garageProfile(p);
   const aerialDeck = AERIAL_DECKS.has(String(p.id));
+  const photoShape = civicAppearance(p.id)?.roofShape ?? HOUSING_APPEARANCE[String(p.id)]?.roofShape ?? photographedRoof(String(p.id))?.roofShape;
   const floors = garage?.kind==='open-deck'?garage.levels:braun?2:reference ? reference.facadeBands : roble ? 3 : profile === 'quad' ? 1 : special ? null : mappedLevels !== null ? Math.max(0, mappedLevels - minLevel)
     : profile === 'garage' || profile === 'service' && available < 8 ? 1 : Math.max(1, Math.round(available / floorHeight));
   return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
     bayWidth: reference?.bayWidth ?? (profile === 'residential' ? 3.1 : profile === 'modern' ? 2.7 : profile === 'garage' ? 5.4 : profile === 'service' ? 5.8 : 4.2),
     facadeFamily:reference?.family??(unverified?'unverified':'generic'),
-    roofShape: String(p['osm:roof:shape'] ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
-    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck ? 'reference-profile' : 'estimated' };
+    roofShape: String(p['osm:roof:shape'] ?? photoShape ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
+    roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck||photoShape ? 'reference-profile' : 'estimated' };
 }
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  const civic = civicAppearance(p.id);
+  if(civic)return civic.description;
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
   if(p.id===PASTEUR_300_ID)return 'The mapped 300 Pasteur footprint is tagged 10 m. Palo Alto records the three existing west pods at up to 77.5 ft (23.6 m). Their roof outlines follow 2025 county imagery. The intermediate levels, relative screen heights and facade spacing are estimates.';
@@ -99,6 +113,10 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   if (!detail || typeof detail !== 'object') return 'Architectural details are modeled; exact window counts have not been surveyed.';
   const reference=ENGINEERING_REFERENCES[String(p.id)];
   if(reference)return `${reference.name}: ${reference.observed} ${reference.estimated} Facade bands describe the exterior composition, not a surveyed floor count.`;
+  if(HOUSING_APPEARANCE[String(p.id)] || photographedRoof(String(p.id))) {
+    const roof = detail.roofSource==='osm-roof-shape' ? 'The mapped roof shape is retained.' : detail.roofSource==='reference-profile' ? 'The roof profile follows the visible form in reference photographs.' : 'Roof pitch and profile remain estimates.';
+    return roof+' '+(HOUSING_APPEARANCE[String(p.id)]?'Exterior finishes follow identifiable Stanford housing photographs.':detail.facadeFamily==='unverified'?'The visible roof color follows aerial photographs. The facade has not yet been checked against an identifiable exterior photograph.':'The visible roof color follows aerial photographs.')+' Heights, window spacing and concealed elevations retain their source or modeled values.';
+  }
   if(detail.facadeFamily==='unverified')return 'This building has not yet been checked against architectural photographs. Its opaque facade and flat roof are conservative model estimates; its academic name does not establish a glass exterior. The mapped footprint and source height are retained.';
   if (detail.profile === 'memorial-church') return 'Memorial Church has a modeled Romanesque exterior with three entrance arches, its current central arched window, flanking triplets, mosaic facade and crossing skylight. Side window spacing and proportions are modeled; the 24 m source height is estimated.';
   if (detail.profile === 'quad') return 'OSM tags list 5 levels for the Main Quad complex. This authored low arcade model uses one arcade band, eaves around 6.2 m and roofs around 9.5 m. These proportions are not a floor survey; window spacing is modeled.';

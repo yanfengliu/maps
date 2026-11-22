@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — Corrected photographed roof forms and finishes, residence exteriors and six civic buildings. The Stern Hall relation now draws only the central remainder between its eight individually modeled flat-roofed wings. [Reference pass](../work/0_bay-area-stanford/plan.md).
+
 - 2026-11-21 — The realism audit now links two aerial photograph crops per part for the 521 previously unreferenced parts. The register retains inconclusive views and changes between acquisitions. [Read the comparison method](../../tools/quality/README.md).
 
 - 2026-11-21 — Added distinct exteriors at 300 and 500 Pasteur and both Packard buildings. [Implementation and limits](../work/0_bay-area-stanford/design.md#hospital-exteriors-and-trees-2026-11-21).

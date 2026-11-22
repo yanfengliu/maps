@@ -1,3 +1,4 @@
+import {civicFacade} from './civic-appearance.ts';
 import {addStopSigns,stopSignPlacements,type StopSignInput,type StopSignCounts} from './stop-signs.ts';
 import {addCampusLandscape,type CampusLandscape,type LandscapeCounts} from './campus-landscape.ts';
 import {roofTriangleUV} from './roof-materials.ts';
@@ -25,6 +26,8 @@ import { addHospitalExterior, addPasteurPods } from './hospital-geometry.ts';
 import { addHoover } from './hoover-geometry.ts';
 import { addCampusSurfaces, type CampusSurfaces, type SurfaceCounts } from './campus-surfaces.ts';
 import { quadArcadeEdges, isOpenQuadFront, type ArcadeEdge } from './quad-fronts.ts';
+import {photographedRoof} from './photographed-roofs.ts';
+import {HOUSING_APPEARANCE} from './housing-appearance.ts';
 import {hasFlatBuildingShell,FLAT_SHELL_FOUNDATION_DEPTH} from './flat-building-shell.ts';
 import {TerrainAnchorBuilder} from './terrain-grounding.ts';
 
@@ -64,8 +67,11 @@ function roofRise(properties: GeoJSON.GeoJsonProperties): number {
 }
 
 /** Derived geometry hints are estimates; the original source height is retained. */
+// These eight source polygons share walls with the enclosing Stern Hall relation.
+export const STERN_WINGS = new Set(['way/30775651','way/30775656','way/30775658','way/30775659','way/30775661','way/30775670','way/30775698','way/30775717']);
 export function prepareBuildingDetails(data: CampusData): CampusData {
   const quadParts = data.features.filter(feature=>/^way\/836474(099|10[0-7])$/.test(String(feature.properties?.id)));
+  const sternWings=data.features.filter(f=>STERN_WINGS.has(String(f.properties?.id)));
   const sourceQuad=data.features.find(feature=>feature.properties?.id==='relation/35820');
   const detailArcadeEdges=sourceQuad?.geometry.type==='Polygon'?quadArcadeEdges(sourceQuad.geometry.coordinates.map(r=>r.slice(0,-1).map(projectLocal))):[];
   return { ...data, features: data.features.map(feature => {
@@ -79,6 +85,10 @@ export function prepareBuildingDetails(data: CampusData): CampusData {
     if(quad && quadParts.length){
       if(geometry.type!=='Polygon' || quadParts.some(part=>part.geometry.type!=='Polygon'))throw new Error('Main Quad/part rendering requires the reviewed Polygon footprints. Review the changed source geometry types.');
       geometry=composeBuildingParts(geometry,quadParts.map(part=>part.geometry as GeoJSON.Polygon),projectLocal);
+    }
+    if(p?.id==='relation/22862' && sternWings.length){
+      if(geometry.type!=='Polygon'||sternWings.some(f=>f.geometry.type!=='Polygon'))throw Error('Changed Stern parent or wing geometry');
+      geometry=composeBuildingParts(geometry,sternWings.map(f=>f.geometry as GeoJSON.Polygon),projectLocal);
     }
     const detailArchitecture=buildingArchitecture(p,detailWallHeight),materials=buildingMaterials(p,detailArchitecture);
     return { ...feature, geometry, properties: { ...p, detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor:materials.wall, detailRoofColor:materials.roof, detailFlatShell:hasFlatBuildingShell(p,detailArchitecture),
@@ -255,6 +265,7 @@ export class BuildingGeometryBuilder {
       }
       if(p.id===PASTEUR_300_ID)addPasteurPods(this.roofs,building,projectLocal);
       if(braun)addBraunSolar(this.roofs,rings,building,height);
+      const civicFront=civicFacade(String(p.id),rings[0]);
       for (const [ringIndex, ring] of rings.entries()) {
         const outward = (signedArea(ring) > 0 ? 1 : -1) * (ringIndex ? -1 : 1);
         for (let i = 0; i < ring.length; i++) {
@@ -266,7 +277,11 @@ export class BuildingGeometryBuilder {
           const shellTop=flatShell?height:wall-0.12;
           const walls=flatShell?this.roofs:this.facades;
           const arcade=isOpenQuadFront(a,b,p.detailArcadeEdges as ArcadeEdge[]??[]);
-          if(architecture.facadeFamily==='precast-ribbon'){
+          const civic=ringIndex===0&&length>1.8?civicFront?.(a,b,nx,ny):undefined;
+          if(civic){
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,civic.material,building,
+              [[civic.u0,0],[civic.u1,0],[civic.u1,civic.bands],[civic.u0,civic.bands]]);
+          }else if(architecture.facadeFamily==='precast-ribbon'){
             const bays=Math.max(1,Math.round(length/architecture.bayWidth)),rows=architecture.floors!;
             this.facades.quad(at(a,base),at(b,base),at(b,wall),at(a,wall),wallTint,53,building,[[0,0],[bays,0],[bays,rows],[0,rows]]);
           }else if(addEngineeringElevation(this.facades,String(p.id),a,b,[nx,ny],base,wall,building,wallTint)){
@@ -305,6 +320,9 @@ export class BuildingGeometryBuilder {
           // 300 Pasteur's podium has a flat continuous roof and closed source
           // walls. Its higher profiles belong only to the three west pods.
           if(p.id===PASTEUR_300_ID)continue;
+          // The studied low-slope decks meet their full-height shell directly.
+          // Their photos give no basis for the projecting trim on the generic estimate.
+          if(flatShell && (photographedRoof(String(p.id))?.roofShape==='flat' || HOUSING_APPEARANCE[String(p.id)]?.roofShape==='flat'))continue;
           // The cornice encloses the small raised eave seam; a second wall
           // strip inside that solid trim is redundant. Keep sloped gable ends.
           const z = Math.min(height, wall + 0.07);

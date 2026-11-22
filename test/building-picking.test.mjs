@@ -33,6 +33,6 @@ test('open arcades and stadium stands retain full-height picking across native c
   }
   for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
   for(const medicalCourt of [4720978,4721017,4721018,4721019,4721020])assert.ok(seen.has('relation/'+medicalCourt),'each medical courtyard must remain selectable');
-  assert.equal(count,38+98,'scope includes all 98 complete flat shells as well as the 38 existing landmark parts');
+  assert.equal(count,38+157,'scope includes all 157 complete flat shells as well as the 38 existing landmark parts');
  }
 });
