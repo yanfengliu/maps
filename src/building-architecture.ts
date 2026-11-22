@@ -1,3 +1,4 @@
+import {CIVIC_FACADE_PHOTOS} from './civic-facades.ts';
 import {civicAppearance} from './civic-appearance.ts';
 import type * as GeoJSON from 'geojson';
 import {GREEN_EAST_ID, GREEN_EAST_DESCRIPTION} from './green-east-architecture.ts';
@@ -6,7 +7,7 @@ import { PASTEUR_300_ID } from './pasteur-pods.ts';
 import { HOSPITAL_EXTERIORS } from './hospital-exteriors.ts';
 import { HOOVER_PART_IDS, HOOVER_DESCRIPTION } from './hoover-architecture.ts';
 import { garageProfile, describeGarage } from './garage-architecture.ts';
-import { ENGINEERING_REFERENCES, UNVERIFIED_ACADEMIC_IDS } from './engineering-architecture.ts';
+import { ENGINEERING_REFERENCES, UNVERIFIED_ACADEMIC_IDS, LEGACY_ACADEMIC_FLATS } from './engineering-architecture.ts';
 import { STADIUM_CONCOURSE_ID, STADIUM_PRESSBOX_IDS, STADIUM_SCOREBOARD_IDS, STADIUM_SEATING_IDS } from './stadium-architecture.ts';
 
 export type ArchitectureProfile = 'memorial-church' | 'quad' | 'quad-wing' | 'library' | 'tower' | 'residential' | 'institutional' | 'modern' | 'garage' | 'service' | 'open';
@@ -46,7 +47,7 @@ export function buildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
   const wall=p.id==='way/232805733'?'#c8aaa0':profile==='memorial-church'?'#d8c29e':profile==='quad'||profile==='quad-wing'?'#cdb58e':profile==='library'?'#d1bd98':profile==='tower'?'#e0cba2'
     :profile==='modern'?'#d9ddd4':profile==='garage'?'#c9c9b9':profile==='service'?'#d0cdc0':profile==='residential'?'#dfcfb7':'#dbccb1';
   const roof=p.id==='way/232805733'?'#c6bca9':flat?(profile==='modern'?'#c1cbc7':'#c9c8b9'):profile==='memorial-church'||profile==='quad'||profile==='quad-wing'||profile==='library'?'#b66e4e':'#b77d60';
-  return {wall,roof};
+  return {wall:CIVIC_FACADE_PHOTOS[String(p.id)]?.wall??wall,roof};
 }
 
 /** Source tags determine the treatment; absent dimensions remain explicit estimates. */
@@ -86,7 +87,7 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   return { profile, floors, floorSource: garage?.kind==='open-deck'?garage.levelSource:braun?'official-description':reference ? 'reference-profile' : roble ? 'official-description' : profile === 'quad' ? 'reference-profile' : special ? 'not-applicable' : mappedLevels !== null ? 'osm-levels' : 'estimated', mappedLevels,
     bayWidth: reference?.bayWidth ?? (profile === 'residential' ? 3.1 : profile === 'modern' ? 2.7 : profile === 'garage' ? 5.4 : profile === 'service' ? 5.8 : 4.2),
     facadeFamily:reference?.family??(unverified?'unverified':'generic'),
-    roofShape: String(p['osm:roof:shape'] ?? civic?.roofShape ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||unverified ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
+    roofShape: String(p['osm:roof:shape'] ?? civic?.roofShape ?? (braun||aerialDeck?'flat':undefined) ?? reference?.roof ?? (profile === 'memorial-church' ? 'compound' : roble||LEGACY_ACADEMIC_FLATS.has(String(p.id)) ? 'flat' : profile === 'residential' ? 'gabled' : ['modern','service','garage','open','tower'].includes(profile) ? 'flat' : 'hipped')),
     roofSource: p['osm:roof:shape'] !== undefined ? 'osm-roof-shape' : braun?'official-description':reference||aerialDeck||civic?.roofShape ? 'reference-profile' : 'estimated' };
 }
 
@@ -94,6 +95,8 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const p = properties ?? {};
   const civic=civicAppearance(p.id);
   if(civic)return civic.description;
+  const photo=CIVIC_FACADE_PHOTOS[String(p.id)];
+  if(photo)return photo.observed+' The model uses the photographed wall finish. Unseen elevations, dimensions and individual openings are estimates.';
   if(HOOVER_PART_IDS.has(String(p.id)))return HOOVER_DESCRIPTION;
   if(p.id===GREEN_EAST_ID)return GREEN_EAST_DESCRIPTION;
   if(p.id===PASTEUR_300_ID)return 'The mapped 300 Pasteur footprint is tagged 10 m. Palo Alto records the three existing west pods at up to 77.5 ft (23.6 m). Their roof outlines follow 2025 county imagery. The intermediate levels, relative screen heights and facade spacing are estimates.';

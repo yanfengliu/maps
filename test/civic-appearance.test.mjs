@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {CIVIC_APPEARANCES,civicFacade} from '../src/civic-appearance.ts';
+import {CIVIC_FACADE_PHOTOS} from '../src/civic-facades.ts';
+import {CAMPUS_FRONTAGES,CIVIC_APPEARANCES,civicFacade} from '../src/civic-appearance.ts';
 import {buildBuildingGeometry,prepareBuildingDetails,VERTEX_FLOATS} from '../src/building-geometry.ts';
 import {CIVIC_REFERENCES} from '../tools/quality/civic-refs.mjs';
 
@@ -14,6 +15,19 @@ test('photographed civic elevations and roof fields are present on the original 
     const prepared=data.features[0],p=prepared.properties;
     assert.equal(prepared.geometry,feature.geometry);
     assert.equal(p.height,feature.properties.height);
+    if(!appearance){
+      const photo=CIVIC_FACADE_PHOTOS[id];assert.equal(p.detailWallColor,photo.wall);
+      assert.ok(record.sources.some(s=>s.kind==='photo'&&s.url.includes('/'+photo.code+'/')));
+      const front=CAMPUS_FRONTAGES[id];
+      if(front){
+        const geometry=buildBuildingGeometry(data);
+        assert.ok([geometry.roofs,geometry.facades].some(mesh=>{
+          for(let i=0;i<mesh.length;i+=VERTEX_FLOATS)if(mesh[i+11]===front.material)return true;
+          return false;
+        }),id+' must emit its photographed elevation');
+      }
+      continue;
+    }
     assert.equal(p.detailArchitecture.roofShape,appearance.roofShape);
     assert.equal(p.detailArchitecture.roofSource,'reference-profile');
     assert.equal(p.detailWallColor,appearance.wall);

@@ -1,3 +1,4 @@
+import {CIVIC_FACADE_PHOTOS} from '../../src/civic-facades.ts';
 import {CIVIC_APPEARANCES} from '../../src/civic-appearance.ts';
 const county='https://geo.sanjoseca.gov/server/rest/services/Imagery/DPW_ImageryCached2025/MapServer';
 const entries=[
@@ -8,7 +9,7 @@ const entries=[
   ['way/158646537','07-535'],
   ['way/158646543','07-590'],
 ];
-export const CIVIC_REFERENCES=entries.map(([id,code,document])=>{
+const composed=entries.map(([id,code,document])=>{
   const civic=CIVIC_APPEARANCES[id];
   return {
     key:'civic-'+id.split('/')[1], ids:[id], title:civic.name, status:'photo-supported',
@@ -23,3 +24,15 @@ export const CIVIC_REFERENCES=entries.map(([id,code,document])=>{
     expected:{roofShape:civic.roofShape},
   };
 });
+
+const visits=Object.entries(CIVIC_FACADE_PHOTOS).map(([id,{name,code,observed}])=>({
+  key:'civic-photo-'+id.split('/')[1],ids:[id],title:name,status:'photo-supported',
+  reviewedAt:'2026-11-21',reviewBasis:'Compared the university facility photograph with the pinned footprint over 2025 county imagery and the official visitor-map building polygon.',
+  observed,limitations:'This is evidence for the pictured elevation and modeled wall color. Other elevations, fine architectural relief, heights and aperture counts remain approximate.',
+  sources:[
+    {url:'https://campus-map.stanford.edu/images_repo/bldg/'+code+'/'+code+'-1.jpg',kind:'photo',date:'undated'},
+    {url:'https://campus-map.stanford.edu/kml/Stanford_Buildings.kmz?z=45',kind:'document',date:'2026 visitor map'},
+    {url:county,kind:'photo',date:'2025'},
+  ],
+}));
+export const CIVIC_REFERENCES=[...composed,...visits];
