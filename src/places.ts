@@ -1,3 +1,4 @@
+import {supplementalName} from './supplemental-architecture.ts';
 import {FACILITY_NAMES} from './photographed-cottages.ts';
 import { STADIUM_CENTER } from './stadium-architecture.ts';
 import { GREEN_EAST_ID } from './green-east-architecture.ts';
@@ -77,7 +78,7 @@ export function geometryCenter(geometry: { type: string; coordinates: unknown })
 
 export function buildingPlaces(features: readonly { properties: Record<string, unknown> | null; geometry: { type: string; coordinates: unknown } }[]): Place[] {
   return features.flatMap(feature => {
-    const name = FACILITY_NAMES[String(feature.properties?.id)]?.name ?? feature.properties?.name;
+    const name = supplementalName(feature.properties?.id) ?? FACILITY_NAMES[String(feature.properties?.id)]?.name ?? feature.properties?.name;
     const id = feature.properties?.id;
     const center = geometryCenter(feature.geometry);
     return typeof name === 'string' && name.trim() && typeof id === 'string' && center

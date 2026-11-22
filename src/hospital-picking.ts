@@ -1,3 +1,4 @@
+import {SUPPLEMENTAL_OPEN_IDS} from './supplemental-architecture.ts';
 import {AVERY_ID} from './avery-architecture.ts';
 import earcut from 'earcut';
 import type {MapGeoJSONFeature} from 'maplibre-gl';
@@ -6,7 +7,7 @@ import {HOSPITAL_EXTERIORS} from './hospital-exteriors.ts';
 import {PASTEUR_300_ID} from './pasteur-pods.ts';
 
 export const HOSPITAL_PICK_IDS=new Set([PASTEUR_300_ID,...Object.keys(HOSPITAL_EXTERIORS)]);
-const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID]);
+const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID,...SUPPLEMENTAL_OPEN_IDS]);
 type Vertex=[number,number,number];
 type Clip=(x:number,y:number,z:number)=>Vertex|null;
 type Surface={index:number;start:number;end:number;mesh:Float32Array};
