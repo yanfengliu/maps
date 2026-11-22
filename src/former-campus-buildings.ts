@@ -1,4 +1,4 @@
-import {FORMER_SPORTS_SITES} from './supplemental-architecture.ts';
+import {FORMER_SPORTS_SITES,KNOLL_BAY} from './supplemental-architecture.ts';
 import {NORTHWEST_QUAD_HALLS,FORMER_LOU_HENRY_ID} from './civic-history.ts';
 
 // The pinned source retains these footprints. Their buildings are absent from
@@ -24,5 +24,6 @@ export const FORMER_CAMPUS_BUILDINGS: Readonly<Record<string,string>> = {
 
 export function currentBuilding(feature: {properties: { [name:string]:unknown } | null}) {
   const id=String(feature.properties?.id);
-  return !FORMER_SPORTS_SITES.has(id)&&id!=='way/1169967277'&&!Object.hasOwn(FORMER_CAMPUS_BUILDINGS,id)&&!Object.hasOwn(NORTHWEST_QUAD_HALLS,id)&&id!==FORMER_LOU_HENRY_ID;
+  // The Knoll's six-vertex bay is already part of its parent exterior.
+  return id!==KNOLL_BAY&&!FORMER_SPORTS_SITES.has(id)&&id!=='way/1169967277'&&!Object.hasOwn(FORMER_CAMPUS_BUILDINGS,id)&&!Object.hasOwn(NORTHWEST_QUAD_HALLS,id)&&id!==FORMER_LOU_HENRY_ID;
 }

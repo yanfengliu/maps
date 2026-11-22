@@ -1,3 +1,4 @@
+import {KNOLL_ASSEMBLY} from './supplemental-architecture.ts';
 import {FACILITY_ELEVATIONS} from './facility-elevations.ts';
 import {BASEBALL_FRONT} from './baseball-seating.ts';
 import {FARM_IDS} from './farm-exteriors.ts';
@@ -32,7 +33,7 @@ export function createQuadArcadeVisibility(){
       // Opacity zero retains per-tier hit testing while the custom mesh owns
       // the opaque surfaces. At fallback the same bounded volumes are visible.
       if(map.getLayer(PASTEUR_POD_LAYER))map.setPaintProperty(PASTEUR_POD_LAYER,'fill-extrusion-opacity',flatShell?0:1);
-      if(flatShell)clauses.push(['!=',['get','detailFlatShell'],true],['!', ['in',['get','id'],['literal',[...FARM_IDS,...Object.keys(FACILITY_ELEVATIONS),...Object.keys(BASEBALL_FRONT)]]]]);
+      if(flatShell)clauses.push(['!=',['get','detailFlatShell'],true],['!', ['in',['get','id'],['literal',[...FARM_IDS,...KNOLL_ASSEMBLY,...Object.keys(FACILITY_ELEVATIONS),...Object.keys(BASEBALL_FRONT)]]]]);
       if(interior)clauses.push(['!=',['get','id'],CHURCH_ID]);
       for(const id of ['stanford-buildings','stanford-roofs'])if(map.getLayer(id))map.setFilter(id,clauses.length?['all',...clauses]:null);
       map.setPaintProperty('stanford-buildings','fill-extrusion-height',detailed

@@ -1,3 +1,4 @@
+import {KNOLL_PARENT} from './supplemental-architecture.ts';
 import {TILED_EDGE_WIDTH} from './tiled-perimeter.ts';
 import {greenEastRoof} from './green-east.ts';
 import {GREEN_EAST_ID} from './green-east-architecture.ts';
@@ -10,7 +11,8 @@ export const BRAUN_MUSIC_ID='relation/12460152';
 /** Analytic source-edge planes replace sampled height fields. The signature
  * phase only avoids floating-point guard boundaries; no position is rounded. */
 export function campusRoof(id:string,component:number,rings:Point[][]){
- const oriented=orientRoofRings(rings),profile=CAMPUS_ROOF_PROFILES[`${id}/${component}`];
+ const key=id===KNOLL_PARENT&&rings[0].length===24?'whole':component;
+ const oriented=orientRoofRings(rings),profile=CAMPUS_ROOF_PROFILES[`${id}/${key}`];
  if(!profile||roofSourceSignature(oriented.map(r=>r.map(([x,y])=>[x+profile.offset,y+profile.offset])))!==profile.signature)throw new Error(`Mapped campus roof footprint changed (${id}/${component}). Regenerate and review its roof topology.`);
  if(id===GREEN_EAST_ID)return greenEastRoof(oriented[0]);
  const model=evaluateRoofSkeleton(oriented,profile),points:Point[]=model.vertices.map(([x,y])=>[x,y]),times=new Map(points.map((p,i)=>[p,model.vertices[i][2]]));

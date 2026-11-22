@@ -1,5 +1,5 @@
 import {NORTH_TICKET_BOOTH,STADIUM_CONCOURSE_ID,STADIUM_SEATING_IDS} from './stadium-architecture.ts';
-import {SUPPLEMENTAL_OPEN_IDS} from './supplemental-architecture.ts';
+import {KNOLL_ASSEMBLY,SUPPLEMENTAL_OPEN_IDS} from './supplemental-architecture.ts';
 import {AVERY_ID} from './avery-architecture.ts';
 import earcut from 'earcut';
 import type {MapGeoJSONFeature} from 'maplibre-gl';
@@ -9,7 +9,7 @@ import {PASTEUR_300_ID} from './pasteur-pods.ts';
 
 export const HOSPITAL_PICK_IDS=new Set([PASTEUR_300_ID,...Object.keys(HOSPITAL_EXTERIORS)]);
 const stadiumMeshes=new Set([STADIUM_CONCOURSE_ID,...STADIUM_SEATING_IDS]);
-const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID,...SUPPLEMENTAL_OPEN_IDS]);
+const exactExteriorIds=new Set([...HOSPITAL_PICK_IDS,AVERY_ID,...SUPPLEMENTAL_OPEN_IDS,...KNOLL_ASSEMBLY]);
 type Vertex=[number,number,number];
 type Clip=(x:number,y:number,z:number)=>Vertex|null;
 type Surface={index:number;start:number;end:number;mesh:Float32Array};
@@ -118,7 +118,7 @@ export function hospitalSurfacePicker(data:CampusData,roofs:Float32Array,facades
     }
     if(!hit&&!stadiumOverlap){
       // Avery keeps its terrain-owned, clipped native apron below the two stands.
-      const native=candidates.find(f=>f.layer.id!=='stanford-roofs'&&!HOSPITAL_PICK_IDS.has(String(f.properties.id)));
+      const native=candidates.find(f=>f.layer.id!=='stanford-roofs'&&!HOSPITAL_PICK_IDS.has(String(f.properties.id))&&!KNOLL_ASSEMBLY.has(String(f.properties.id)));
       return native?String(native.properties.id):null;
     }
     const seen=new Set<string>();

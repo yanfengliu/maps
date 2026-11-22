@@ -93,3 +93,29 @@ export function addPressBoxGlazing(mesh:Mesh,ring:Point[],building:number,base:n
     mesh.quad(at(left,.49),at(right,.49),at(right,.88),at(left,.88),[.34,.36,.35],2,building);
   }
 }
+
+/** The Knoll's south-facing bay shares five exterior edges with the parent.
+ * Facet widths follow those exact edges. Opening proportions are photographic
+ * estimates. Dark wall panels give the recesses their visible depth in shade. */
+export function addKnollFrontBay(mesh:Mesh,edge:number,a:Point,b:Point,normal:Point,base:number,top:number,building:number,tint:Color):void {
+  const at=(along:number,level:number,offset:number):Vertex=>{
+    const p=mix(a,b,along);
+    return [p[0]+normal[0]*offset,p[1]+normal[1]*offset,base+(top-base)*level];
+  };
+  const panel=(left:number,right:number,lo:number,hi:number,offset:number,color:Color)=>
+    mesh.quad(at(left,lo,offset),at(right,lo,offset),at(right,hi,offset),at(left,hi,offset),color,2,building);
+  panel(0,1,0,1,.045,tint);
+  const glass:Color=[.27,.27,.29],trim:Color=[.74,.70,.63];
+  panel(.09,.91,.68,.95,.08,glass);
+  panel(.485,.515,.68,.95,.095,trim);
+  panel(0,1,.63,.665,.12,trim);
+  panel(0,1,.315,.35,.18,trim);
+  panel(0,1,.41,.421,.15,trim);
+  if(edge===0||edge===4)return;
+  panel(.27,.73,.35,.56,.08,glass);
+  const shade:Color=[.25,.22,.19],spring=.17,width=.32;
+  panel(.5-width,.5+width,0,spring,.08,shade);
+  const radius=Math.min(.13,width*Math.hypot(b[0]-a[0],b[1]-a[1])/(top-base));
+  const arch=(angle:number)=>at(.5+width*Math.cos(angle),spring+radius*Math.sin(angle),.08);
+  for(let j=0;j<8;j++)mesh.triangle(at(.5,spring,.08),arch(j*Math.PI/8),arch((j+1)*Math.PI/8),shade,2,building);
+}

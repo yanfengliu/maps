@@ -1,3 +1,4 @@
+import {KNOLL_ASSEMBLY,KNOLL_DATUM} from './supplemental-architecture.ts';
 import type {CustomRenderMethodInput} from 'maplibre-gl';
 import {MERCATOR_ORIGIN,METERS_TO_MERCATOR,projectLocal,type CampusData} from './building-geometry.ts';
 import {HOOVER_PART_IDS} from './hoover-architecture.ts';
@@ -40,11 +41,12 @@ export function buildingTerrainAnchors(data:CampusData):Float32Array {
     const points=rings[0].map(projectLocal),x=points.map(p=>p[0]),y=points.map(p=>p[1]);
     hoover=[(Math.min(...x)+Math.max(...x))/2,(Math.min(...y)+Math.max(...y))/2];break;
   }
-  const stadium=projectLocal(STADIUM_CENTER);
+  const stadium=projectLocal(STADIUM_CENTER),knoll=projectLocal(KNOLL_DATUM);
   data.features.forEach((feature,i)=>{
     const id=String(feature.properties?.id),polygons=feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.coordinates;
     const points=polygons.flatMap(p=>p[0].map(projectLocal)),x=points.map(p=>p[0]),y=points.map(p=>p[1]);
     let point:readonly number[]=[(Math.min(...x)+Math.max(...x))/2,(Math.min(...y)+Math.max(...y))/2];
+    if(KNOLL_ASSEMBLY.has(id))point=knoll;
     if(HOOVER_PART_IDS.has(id)&&hoover)point=hoover;
     if(id===STADIUM_CONCOURSE_ID||STADIUM_SEATING_IDS.has(id)||STADIUM_PRESSBOX_IDS.has(id)||STADIUM_SCOREBOARD_IDS.has(id))point=stadium;
     if(!point.every(Number.isFinite))throw new Error('Building terrain anchor has no finite source footprint.');

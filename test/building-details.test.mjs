@@ -48,13 +48,13 @@ function triangleIntersectionArea(subject,clip) {
   return points.length>=3?area(points):0;
 }
 
-test('render preparation leaves source objects and metadata unchanged; the Quad and Stern have composed render footprints', () => {
+test('render preparation leaves source objects and metadata unchanged; the Quad, Stern, Avery and Knoll have composed render footprints', () => {
   assert.equal(JSON.stringify(original), before);
   detailed.features.forEach((feature, index) => {
-    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailPlaceName, detailSurveyHeight, detailArcadeCourt, detailArcadeEdges, detailFacilityCode, detailFacilityName, ...properties } = feature.properties;
+    const { detailWallHeight, detailRoofHeight, detailArchitecture, detailWallColor, detailRoofColor, detailFlatShell, detailPodMaximum, detailPodiumHeight, detailPlaceName, detailSurveyHeight, detailArcadeCourt, detailArcadeEdges, detailFacilityCode, detailFacilityName, detailMapLabel, ...properties } = feature.properties;
     assert.deepEqual(properties, original.features[index].properties);
     assert.equal(detailPodMaximum,properties.id==='relation/1753562'?77.5*.3048:undefined);
-    if(['relation/35820','relation/22862','way/232715573'].includes(properties.id))assert.notEqual(feature.geometry,original.features[index].geometry,'mapped subparts have one render owner');
+    if(['relation/35820','relation/22862','way/232715573','way/232805659'].includes(properties.id))assert.notEqual(feature.geometry,original.features[index].geometry,'mapped subparts have one render owner');
     else assert.equal(feature.geometry, original.features[index].geometry);
     const envelope=properties.id==='way/324983017'?16:properties.height;
     assert.ok(detailWallHeight >= properties.base && detailWallHeight < envelope, properties.id);

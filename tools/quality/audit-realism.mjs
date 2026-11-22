@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {ADDITIONAL_OUTLINE_ASSESSMENTS} from './additional-outline-refs.mjs';
 import {fingerprints} from './part-model-comparison.mjs';
 import baselineParts from './building-parts-5a1c696.json' with {type:'json'};
+import {KNOLL_BAY} from '../../src/supplemental-architecture.ts';
 import {currentBuilding} from '../../src/former-campus-buildings.ts';
 import {PLAN_MATCHES} from './campus-plan-register.mjs';
 import {ROOF_PHOTO_CHECKS} from './roof-photo-register.mjs';
@@ -199,7 +200,7 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
         row.modelChange = baselineParts[row.id]===partSignatures[row.id]?'geometry and finishes retained':'geometry or finishes updated';
       } else if (row.id==='way/1169967277') {
         row.modelChange = 'duplicate footprint omitted';
-      } else if (row.id==='way/1168128440') {
+      } else if (row.id===KNOLL_BAY) {
         row.modelChange = 'bay represented on parent exterior';
       } else {
         row.modelChange = 'former footprint omitted';
