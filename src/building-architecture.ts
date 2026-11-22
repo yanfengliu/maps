@@ -1,4 +1,5 @@
 import {SUPPLEMENTAL_PARTS,supplementalProfile} from './supplemental-architecture.ts';
+import {ADDRESS_ELEVATIONS} from './address-elevations.ts';
 import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS} from './facility-elevations.ts';
 import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
@@ -64,6 +65,8 @@ export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, archite
   if(properties?.id===MITCHELL_UPPER)return {wall:'#bdb4a2',roof:'#ae7257'};
   const supplemental=SUPPLEMENTAL_PARTS[String(properties?.id)];
   if(supplemental)return {wall:supplemental.wall,roof:supplemental.roof};
+  const house = ADDRESS_ELEVATIONS[String(properties?.id)];
+  if (house) return {wall:house.wall, roof:house.roof};
   const facility=FACILITY_ELEVATIONS[String(properties?.id)];
   if(facility) return {wall:facility.wall,roof:facility.roof};
   if(properties?.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
@@ -111,6 +114,13 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const supplemental=supplementalProfile(String(p.id),mappedLevels);
   if(supplemental)return supplemental;
   if(MITCHELL_COLUMNS.has(String(p.id)))return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
+  const house = ADDRESS_ELEVATIONS[String(p.id)];
+  if (house) {
+    const mappedShape = p['osm:roof:shape'];
+    return {profile:'residential', floors:mappedLevels ?? house.floors,
+      floorSource:mappedLevels === null ? 'official-description' : 'osm-levels', mappedLevels, bayWidth:3.1,
+      facadeFamily:'generic', roofShape:String(mappedShape ?? house.shape), roofSource:mappedShape ? 'osm-roof-shape' : 'reference-profile'};
+  }
   const facility=FACILITY_ELEVATIONS[String(p.id)];
   if(facility)return {profile,floors:1,floorSource:'reference-profile',mappedLevels,bayWidth:4,facadeFamily:'generic',roofShape:facility.roofShape,roofSource:'reference-profile'};
   if(p.id===AVERY_ID)return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'fabric-canopies',roofSource:'reference-profile'};
@@ -138,6 +148,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
 
 export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperties): string {
   const p = properties ?? {};
+  const house = ADDRESS_ELEVATIONS[String(p.id)];
+  if (house) return house.description + ' Eave and ridge heights, opening positions and concealed elevations are estimates.';
   const facility=FACILITY_ELEVATIONS[String(p.id)];
   if(facility)return facility.observed+' Dimensions and opening positions are modeled estimates. The inventory retains its original height and provenance.';
   if(SUPPLEMENTAL_PARTS[String(p.id)])return SUPPLEMENTAL_PARTS[String(p.id)].description;

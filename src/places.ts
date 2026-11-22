@@ -1,3 +1,4 @@
+import {ADDRESS_ELEVATIONS} from './address-elevations.ts';
 import {supplementalName} from './supplemental-architecture.ts';
 import {FACILITY_NAMES} from './photographed-cottages.ts';
 import { STADIUM_CENTER } from './stadium-architecture.ts';
@@ -41,7 +42,7 @@ export const PLACES: Place[] = [
 ];
 
 function normalize(value: string): string {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’]/g, '').toLowerCase().trim();
 }
 
 /** Search remains local: Bay destinations, two reviewed artworks and supplied campus footprints. */
@@ -78,7 +79,7 @@ export function geometryCenter(geometry: { type: string; coordinates: unknown })
 
 export function buildingPlaces(features: readonly { properties: Record<string, unknown> | null; geometry: { type: string; coordinates: unknown } }[]): Place[] {
   return features.flatMap(feature => {
-    const name = supplementalName(feature.properties?.id) ?? FACILITY_NAMES[String(feature.properties?.id)]?.name ?? feature.properties?.name;
+    const name = ADDRESS_ELEVATIONS[String(feature.properties?.id)]?.name ?? supplementalName(feature.properties?.id) ?? FACILITY_NAMES[String(feature.properties?.id)]?.name ?? feature.properties?.name;
     const id = feature.properties?.id;
     const center = geometryCenter(feature.geometry);
     return typeof name === 'string' && name.trim() && typeof id === 'string' && center
