@@ -65,6 +65,7 @@ export const HOUSING_APPEARANCE: Readonly<Record<string, HousingAppearance>> = {
   'way/232715862': {wall: '#c2aa91'}, // Lyman Building 3
   'way/232715864': {wall: '#d0b983'}, // Lyman Building 1
   'way/232805712': {wall: '#b8b9a5'}, // Kennedy Grove
+  'way/232805666': {wall: '#d4d0be', roof: '#67695e', roofShape: 'hipped'}, // Drell House
   'way/232805720': {wall: '#96abb0', roof: '#69717a'}, // Mariposa
   'way/232805723': {wall: '#d7c6b2', roof: '#a86b50'}, // Munger Building 1
   'way/232805724': {wall: '#ddcfb9', roof: '#b37757'}, // Munger Building 2

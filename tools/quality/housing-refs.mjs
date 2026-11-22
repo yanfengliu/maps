@@ -38,6 +38,16 @@ function facilityPhoto(ids, title, code, observed) {
 }
 
 export const HOUSING_REFERENCES = [
+  {
+    key: 'housing-drell', ids: ['way/232805666'], title: 'Drell House', status: 'photo-supported', reviewedAt: '2026-11-21',
+    reviewBasis: 'Inspected the relocation record and the 2016 east elevation photograph at 556 O’Connor Lane in the historic resources survey.',
+    observed: 'Pale painted shingle walls flank a recessed, two-level porch. A dark hip roof carries a central dormer and two turret roofs. Stanford identifies the relocated house as its faculty and staff housing office.',
+    limitations: 'The material and main roof depict the photographed elevation. The individual turrets, dormer and porch are unmodeled. The source floor and height tags are preserved.',
+    sources: [
+      {url: 'https://stgenpln.blob.core.windows.net/document/SU_2018GUP_App_Vol4_pt2.pdf#page=7', kind: 'photo', date: '2016'},
+      {url: 'https://maps.stanford.edu/ada/building-ada.cfm?FACIL_ID=02-908', kind: 'document', date: '2023-04-10'},
+    ],
+  },
   residentialEducation(['relation/22862'], 'Lucie Stern Hall', null, 'https://resed.stanford.edu/houses/stern-hall-houses/burbank-italicarts',
     'The named central dining block and connected complex have red-brown low-slope decks with light equipment and roof upstands. The aerial and public site plan distinguish the center from the eight residential bars.', true),
   residentialEducation(['way/30775651'], 'Casa Zapata', 'https://resed.stanford.edu/sites/g/files/sbiybj18956/files/styles/breakpoint_2xl_2x/public/media/image/casa-zapata-2022_0.jpg?itok=lLiD714u', 'https://resed.stanford.edu/houses/stern-hall-houses/casa-zapata',
