@@ -1,5 +1,7 @@
 # Development log
 
+- 2026-11-21 — The campus audit exports the original 521 rows to a spreadsheet-readable register with both aerial views, available part references, model dispositions and limitations. [Audit command](../../tools/quality/README.md).
+
 - 2026-11-21 — Restored Mitchell Earth Sciences’ 16 individually mapped concrete supports, recessed ground floor, glazed upper façade and tiled roof perimeter. The Stanford facility photograph and the county-filed architectural survey identify the structural system. Added the Mausoleum portico, four low hall exteriors and the softball field house. [Source register](../../tools/quality/README.md).
 
 - 2026-11-21 — Corrected the two covered stands at Avery, the Burnham entrance gable and eight photographed low buildings. Search now selects The Lodge at 672 Lomita independently of its neighbor, and the map draws the three underlying parts once. [Campus roof references](../../tools/quality/README.md).

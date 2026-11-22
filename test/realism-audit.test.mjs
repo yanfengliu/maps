@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {auditInventory,academicNameViolations,validateReference,renderReport,loadRenderReviews,computeModelDigest} from '../tools/quality/audit-realism.mjs';
+import {auditInventory,academicNameViolations,validateReference,renderReport,originalPartTable,loadRenderReviews,computeModelDigest} from '../tools/quality/audit-realism.mjs';
 import {REALISM_REFERENCES,PINNED_PART_COUNT} from '../tools/quality/realism-references.mjs';
 
 const source=JSON.parse(await readFile(new URL('../public/data/stanford-buildings.geojson',import.meta.url),'utf8'));
@@ -131,4 +131,17 @@ test('report includes all inventory rows, distinct limitations and safe searchab
   assert.equal((html.match(/<tr data-status=/g)||[]).length,648);
   assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'));assert.ok(!html.includes('<img src=x'));
   assert.ok(html.includes('No realism percentage or score'));assert.ok(html.includes('Not compared'));assert.ok(html.includes('id="search"'));
+});
+
+test('the original 521 table preserves both dated photo links and the scope of each match',()=>{
+  const report=auditInventory({source,prepared});
+  const [header,...lines]=originalPartTable(report).trimEnd().split('\n');
+  const columns=header.split('\t'), rows=lines.map(line=>line.split('\t'));
+  assert.equal(rows.length,521);
+  assert.equal(new Set(rows.map(row=>row[0])).size,521);
+  assert.ok(rows.every(row=>row.length===columns.length));
+  assert.ok(rows.every(row=>row.at(-1).match(/https:\/\//g)?.length===2));
+  const part=rows.find(row=>row[0]==='way/1509660401');
+  assert.equal(part[columns.indexOf('Evidence')],'document-supported');
+  assert.match(part[columns.indexOf('Part reference URLs')],/2018GUP/);
 });

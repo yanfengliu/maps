@@ -1,5 +1,16 @@
 # Bench accuracy and campus sculpture design
 
+## Part-by-part building reference pass, 2026-11-21
+
+The starting queue was the set of 521 OpenStreetMap building part IDs without an individual architectural reference at `5a1c696`. Its 217 named and 304 unnamed parts remain identifiable even where buildings have since disappeared. Each record has registered 2022 USDA NAIP and 2025 county aerial crops, an overhead comparison against the starting mesh, and a Stanford visitor-plan result. The photographs can establish a roof outline, exposed deck or change between acquisitions. Small, shaded or overlapping footprints can remain inconclusive. A neighboring facade or an institutional name is insufficient to assign an exterior to a part.
+
+Part-level records separate photo observations, documentary support and unresolved estimates. Supporting material includes the two Stanford visitor-map site plans, university facility and athletics photographs, campus and county project documents, and the FEMA/ORNL planimetric footprints derived from May 2024 imagery. Those three FEMA-only confirmations support approximate horizontal outlines. Mitchell’s published architectural survey and mapped column tags together identify the sixteen supports hidden below its upper building. The individual posts retain their mapped heights. The reviewed source files contain no general survey of facade heights, window counts or unseen elevations.
+
+The renderer retains original source indices for geometry, picking and roof heights. Documented former footprints and a duplicated Lomita parent remain in the evidence register and are omitted from the current map. Where an official document describes a newer complex extending outside the pinned footprints, its description records the site change. Rendering an accurate replacement still requires its own outline.
+
+The reproducible [reference audit](../../../tools/quality/README.md) exports the original 521 IDs, individual sources, model decisions and limitations. The model comparison hashes per-part geometry, material identifiers and finishes against the starting revision. A native close-up can be registered separately with its reference key, model digest and image checksum.
+
+
 This design holds the bench and sculpture increment written on 2026-10-20 and merged to `main` on 2026-10-30. It began as three notes at this folder's root: `benches-statues.md`, `bench-accuracy.md` and `campus-sculptures.md`. They were committed in `584733e` and merged in `7dba7ab`, and `git show 7dba7ab:docs/work/0_bay-area-stanford/<name>` recovers each one as written. Their text follows word for word under their own headings, each heading one level lower. The only edit is five missing spaces restored in the first note: "to 21.5", "at 21.1", "from 150,000", "to 160,000" and "the 24MiB". The notes describe the work as it stood before integration. [Integration amendments](#integration-amendments) at the end record what the reviews changed. The review rounds are [reviews/9_integration.md](reviews/9_integration.md) onward.
 
 ## Bench accuracy and campus sculpture

@@ -125,6 +125,17 @@ export function auditInventory({source,prepared,registry=REALISM_REFERENCES,arch
 
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const link=(url,label)=>urlOK(url)?`<a href="${escape(url)}" target="_blank" rel="noreferrer">${escape(label)}</a>`:escape(label);
+// Keep the original work queue usable without a GIS or a running map.
+export function originalPartTable(report) {
+  const byKey=new Map(report.references.map(ref=>[ref.key,ref]));
+  const header=['OpenStreetMap ID','Mapped name','Evidence','Model disposition','Aerial observation','Stanford plan match','Observed features','Limits','Part reference URLs','2022 and 2025 photo URLs'];
+  const lines=report.rows.filter(row=>Object.hasOwn(baselineParts,row.id)).map(row=>{
+    const ref=byKey.get(row.referenceKey), photos=row.roofPhotographs;
+    return [row.id,row.name,row.evidenceStatus,row.modelChange??'geometry not evaluated',photos?.finding,row.campusPlan?.status,ref?.observed,ref?.limitations,ref?.sources.map(s=>s.url).join(' '),photos?.sources.map(s=>s.url).join(' ')];
+  });
+  return [header,...lines].map(line=>line.map(value=>String(value??'').replace(/[\t\r\n]+/g,' ')).join('\t')).join('\n')+'\n';
+}
+
 export function renderReport(report) {
   const refMap=new Map(report.references.map(r=>[r.key,r]));
   const rows=report.rows.map(r=>{const ref=refMap.get(r.referenceKey);return `<tr data-status="${escape(r.evidenceStatus)}"><td><b>${escape(r.name)}</b><br>${escape(r.id)}<br>${escape(r.building)}${r.part?' · part':''}</td><td>${r.modelChange?'<strong>'+escape(r.modelChange)+'</strong><br>Since 5a1c696<br>':''}${escape(r.profile)} / ${escape(r.facadeFamily)}<br>Roof: ${escape(r.roof)} (${escape(r.roofSource)})<br>Facade rows: ${escape(r.floors??'n/a')} (${escape(r.floorSource)})<br>Mapped levels: ${escape(r.mappedLevels??'absent')}</td><td>Source ${escape(r.sourceBase)}–${escape(r.sourceHeight)} m<br>${escape(r.heightMeaning)}<br>Render wall/roof: ${escape(r.renderWallHeight)} / ${escape(r.renderRoofHeight)} m${r.heightAdjusted?'<br><b>Authored envelope differs</b>':''}<details><summary>Source tags</summary><pre>${escape(JSON.stringify(r.sourceTags,null,2))}</pre></details></td><td><b>${escape(r.evidenceStatus)}</b>${ref?`<br>${escape(ref.title)}<br>Reviewed ${escape(ref.reviewedAt)}<p>${escape(ref.observed)}</p><p><b>Limits:</b> ${escape(ref.limitations)}</p>${ref.sources.map(s=>link(s.url,`${s.kind} · ${s.date}`)).join(' · ')}`:''}${r.campusPlan ? `<details><summary>Campus plan · ${escape(r.campusPlan.status)}</summary><ul>${r.campusPlan.candidates.map(c=>'<li>'+escape(c.name||c.anonymousPlacemark)+' · '+Math.round(100*c.sourceCoverage)+'% of source / '+Math.round(100*c.facilityCoverage)+'% of plan</li>').join('')}</ul></details>` : ''}${r.additionalOutline ? `<details><summary>FEMA outline comparison</summary><p>${escape(r.additionalOutline.status.replaceAll('-',' '))}</p>${r.additionalOutline.candidates.map(([id,source,external])=>escape(id)+' · '+Math.round(100*source)+'% of local / '+Math.round(100*external)+'% of FEMA plan').join('<br>')}</details>` : ''}${r.roofPhotographs ? `<details><summary>Two-year roof comparison</summary><p>${escape(r.roofPhotographs.finding)}</p>${r.roofPhotographs.sources.map(s=>link(s.url,s.date)).join(' · ')}</details>` : ''}</td><td>${r.renderReview?`${escape(r.renderReview.result)} · ${escape(r.renderReview.reviewedAt)}<p>${escape(r.renderReview.notes)}</p>`:'Not compared'}<ul>${r.risks.map(x=>`<li>${escape(x)}</li>`).join('')}</ul></td></tr>`;}).join('');
@@ -194,6 +205,7 @@ export async function runAudit({repo=process.cwd(),out=resolve(repo,'artifacts/r
   await mkdir(out,{recursive:true});
   await writeFile(resolve(out,'realism-audit.json'),JSON.stringify(report,null,2)+'\n');
   await writeFile(resolve(out,'realism-audit.html'),renderReport(report));
+  await writeFile(resolve(out,'original-521.tsv'),originalPartTable(report));
   return report;
 }
 

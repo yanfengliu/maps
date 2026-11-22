@@ -1,5 +1,7 @@
 # Campus realism audit
 
+
+Every audit writes `original-521.tsv` alongside its searchable HTML report. Each row links one original part to both dated aerial crops, the available part-specific sources, the observed features and their limits, and the disposition of its model. The TSV opens directly in a spreadsheet.
 Tree material checks: `node tools/quality/create-tree-material-probe.mjs artifacts/tree-materials` emits an ignored Playwright CLI probe that compiles the actual foliage GLSL in its own temporary WebGL2 context. It checks distributed visible gaps and connected palm rachises across several variants, with a solid-fill negative control, and releases that context in `finally`. Regenerate after shader edits. The CPU mask tests are supporting evidence; neither those tests nor this shader-only probe replace native close/opposite/top/steep tree views and comparison with reference photographs.
 
 Run `node tools/quality/audit-realism.mjs` with Node 24. It writes ignored `artifacts/realism-audit/realism-audit.html` and `.json`. `--repo PATH --out PATH` can audit an integration worktree from another checkout. The default builds the real complete campus exterior mesh and reports packed GPU geometry bytes against 24 MiB, two mesh buffers and the triangle cap; textures, church interior and live frame performance are separate. `--skip-geometry` is explicitly reported as not run.
