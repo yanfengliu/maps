@@ -17,7 +17,7 @@ function inside(p,ring){let yes=false;for(let i=0,j=ring.length-1;i<ring.length;
 function cases(){const out=[];for(const f of prepared.features.filter(currentBuilding)){const p=f.properties;if(!(p.id===BRAUN_MUSIC_ID||p.detailArchitecture.roofShape==='hipped'&&!['quad','quad-wing'].includes(p.detailArchitecture.profile)))continue;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;for(const [component,poly] of polys.entries())out.push({feature:f,key:p.id+'/'+component,rings:orientRoofRings(poly.map(r=>r.slice(0,-1).map(projectLocal))),component});}return out;}
 
 test('every generic hipped campus component has pinned continuous planar roof topology, including concave outlines and courtyards',()=>{
- assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,305);
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),CAMPUS_ROOF_SOURCE_SHA256);assert.equal(cases().length,Object.keys(CAMPUS_ROOF_PROFILES).length);assert.equal(cases().length,289);
  for(const {key,rings} of cases()){
   const profile=CAMPUS_ROOF_PROFILES[key];assert.ok(profile,key);assert.ok(roofSignatureMargin(rings.map(r=>r.map(([x,y])=>[x+profile.offset,y+profile.offset])))>ROOF_SIGNATURE_ROUNDOFF,key+' guard phase');
   const model=evaluateRoofSkeleton(rings,profile),triangles=model.triangles.map(t=>t.map(i=>model.vertices[i])),native=footprint(rings),expected=area(rings[0])-rings.slice(1).reduce((s,r)=>s+area(r),0);
@@ -132,7 +132,7 @@ test('the five medical courtyard decks preserve every mapped opening and the pro
 });
 
 test('photo-matched tiled perimeters enclose a coplanar central deck while preserving the complete footprint',()=>{
-  assert.equal(Object.keys(TILED_EDGE_WIDTH).length,11);
+  assert.equal(Object.keys(TILED_EDGE_WIDTH).length,12);
   for (const id of Object.keys(TILED_EDGE_WIDTH)) {
     const feature=prepared.features.find(f=>f.properties.id===id),p=feature.properties;
     assert.equal(p.detailArchitecture.roofSource,'reference-profile');

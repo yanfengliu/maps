@@ -87,3 +87,19 @@ test('Burnham entrance has a street-facing gable, two valleys and three front ar
   assert.equal(arches.length,12);
   assert.ok(Math.abs(Math.max(...arches.map(v=>v[9]))-11.4)<.001);
 });
+
+test('Mitchell preserves sixteen source-column sections and the overhanging upper block without invented roofs or windows on the posts',async()=>{
+  const {MITCHELL_COLUMNS,MITCHELL_UPPER}=await import('../src/mitchell-exterior.ts');
+  assert.equal(MITCHELL_COLUMNS.size,16);
+  for(const id of MITCHELL_COLUMNS){
+    const f=prepared.features.find(f=>f.properties.id===id),p=f.properties;
+    assert.deepEqual(f.geometry,source.features.find(f=>f.properties.id===id).geometry);
+    assert.equal(p.detailArchitecture.floors,null);
+    assert.equal(p.detailArchitecture.roofShape,'flat');
+    assert.deepEqual(new Set(parts.get(id).flat().map(v=>v[11])),new Set([2,9]));
+  }
+  const upper=prepared.features.find(f=>f.properties.id===MITCHELL_UPPER);
+  assert.equal(upper.properties.base,3);
+  assert.equal(upper.properties.detailPlaceName,'Mitchell Earth Sciences');
+  assert.ok(parts.get(MITCHELL_UPPER).some(t=>t[0][11]===46));
+});
