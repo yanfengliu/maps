@@ -1,3 +1,4 @@
+import {SUPPLEMENTAL_PARTS,supplementalProfile} from './supplemental-architecture.ts';
 import {MITCHELL_UPPER,MITCHELL_COLUMNS} from './mitchell-exterior.ts';
 import {FACILITY_ELEVATIONS} from './facility-elevations.ts';
 import {AVERY_ID,AVERY_DESCRIPTION,BAND_SHAK_ID,BAND_SHAK_DESCRIPTION} from './avery-architecture.ts';
@@ -61,6 +62,8 @@ function defaultBuildingMaterials(properties:GeoJSON.GeoJsonProperties,architect
 export function buildingMaterials(properties: GeoJSON.GeoJsonProperties, architecture: BuildingArchitecture) {
   if(MITCHELL_COLUMNS.has(String(properties?.id)))return {wall:'#afa99a',roof:'#afa99a'};
   if(properties?.id===MITCHELL_UPPER)return {wall:'#bdb4a2',roof:'#ae7257'};
+  const supplemental=SUPPLEMENTAL_PARTS[String(properties?.id)];
+  if(supplemental)return {wall:supplemental.wall,roof:supplemental.roof};
   const facility=FACILITY_ELEVATIONS[String(properties?.id)];
   if(facility) return {wall:facility.wall,roof:facility.roof};
   if(properties?.id===AVERY_ID)return {wall:'#c4bcad',roof:'#d0c8b9'};
@@ -105,6 +108,8 @@ export function buildingArchitecture(properties: GeoJSON.GeoJsonProperties, wall
   const tagged = p['osm:building:levels'];
   const numeric = tagged === undefined || tagged === '' ? NaN : Number(tagged);
   const mappedLevels = Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
+  const supplemental=supplementalProfile(String(p.id),mappedLevels);
+  if(supplemental)return supplemental;
   if(MITCHELL_COLUMNS.has(String(p.id)))return {profile:'open',floors:null,floorSource:'not-applicable',mappedLevels,bayWidth:1,facadeFamily:'generic',roofShape:'flat',roofSource:'reference-profile'};
   const facility=FACILITY_ELEVATIONS[String(p.id)];
   if(facility)return {profile,floors:1,floorSource:'reference-profile',mappedLevels,bayWidth:4,facadeFamily:'generic',roofShape:facility.roofShape,roofSource:'reference-profile'};
@@ -135,6 +140,8 @@ export function describeBuildingArchitecture(properties: GeoJSON.GeoJsonProperti
   const p = properties ?? {};
   const facility=FACILITY_ELEVATIONS[String(p.id)];
   if(facility)return facility.observed+' Dimensions and opening positions are modeled estimates. The inventory retains its original height and provenance.';
+  if(SUPPLEMENTAL_PARTS[String(p.id)])return SUPPLEMENTAL_PARTS[String(p.id)].description;
+  if(p.id==='way/690412907')return 'The campus plan and the original ticket-shop tag identify this small part of the North Ticket Booth. The surrounding plan outline is larger, and the frontage is unresolved.';
   if(p.id===AVERY_ID)return AVERY_DESCRIPTION;
   if(p.id===BAND_SHAK_ID)return BAND_SHAK_DESCRIPTION;
   if(p.id===CLARK_STAGE)return 'The round auditorium is underground. Its courtyard stage and perimeter skylight are the visible exterior. The stage height is estimated.';
