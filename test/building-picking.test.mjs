@@ -1,3 +1,4 @@
+import {FACILITY_ELEVATIONS} from '../src/facility-elevations.ts';
 import {BASEBALL_FRONT} from '../src/baseball-seating.ts';
 import {FARM_IDS} from '../src/farm-exteriors.ts';
 import {OPEN_GARAGE_IDS} from '../src/garage-architecture.ts';
@@ -31,7 +32,7 @@ test('open arcades and stadium stands retain full-height picking across native c
    assert.equal(pick,feature.properties.detailRoofHeight);
    if(STADIUM_SEATING_IDS.has(feature.properties.id))assert.ok(pick>=feature.properties.height,'the full seating envelope remains queryable');
    else assert.ok(pick>feature.properties.detailWallHeight,'the whole modeled roof silhouette remains queryable');
-   if(FARM_IDS.includes(feature.properties.id)||BASEBALL_FRONT[feature.properties.id]){
+   if(FARM_IDS.includes(feature.properties.id)||FACILITY_ELEVATIONS[feature.properties.id]||BASEBALL_FRONT[feature.properties.id]){
     const visible=!nativeFilter||featureFilter(nativeFilter,'layers[1].filter').filter({zoom},f);
     assert.equal(visible,!(ready&&zoom>=14),feature.properties.id);
    }else if(ready&&zoom>=15.5&&!feature.properties.detailFlatShell)assert.ok(Math.abs(native-feature.properties.base-.02)<1e-6&&pick>6,'upper silhouettes stay selectable while the visible wall is lowered');
@@ -39,7 +40,7 @@ test('open arcades and stadium stands retain full-height picking across native c
   for(const id of [...OPEN_GARAGE_IDS,...STADIUM_OPEN_PART_IDS,...HOOVER_PART_IDS])assert.ok(seen.has(id),id+' open silhouette must remain selectable');
   for(const medicalCourt of [4720978,4721017,4721018,4721019,4721020])assert.ok(seen.has('relation/'+medicalCourt),'each medical courtyard must remain selectable');
   const flat=data.features.filter(f=>f.properties.detailFlatShell).map(f=>f.properties.id);
-  assert.equal(count,new Set([...flat,...FARM_IDS,...Object.keys(BASEBALL_FRONT)]).size+38);
-  for(const id of FARM_IDS)assert.ok(seen.has(id));
+  assert.equal(count,new Set([...flat,...FARM_IDS,...Object.keys(FACILITY_ELEVATIONS),...Object.keys(BASEBALL_FRONT)]).size+38);
+  for(const id of [...FARM_IDS,...Object.keys(FACILITY_ELEVATIONS)])assert.ok(seen.has(id));
  }
 });

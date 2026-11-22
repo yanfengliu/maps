@@ -56,3 +56,12 @@ test('building cards disclose the referenced parking height without relabelling 
   assert.ok(details.innerHTML.includes(expected));
  }
 });
+
+test('building cards show the individual facility name and distinguish modeled photo height from a mapped height',()=>{
+ for(const [heightSource,expected] of [['estimated','4.3 m · Estimated from exterior photograph'],['osm-height','10 m · Mapped height']]){
+  const details={querySelector:()=>({addEventListener(){}})},context={details,selectedId:null,CHURCH_ID:'church',CANTOR_ID,hospitalVisitorMap,setChurchInterior(){},updateSelection(){},closeDetails(){},escapeHtml:String,icon:()=>''};
+  const properties={id:'way/985743262',name:null,height:10,heightSource,detailRoofHeight:4.3,detailFacilityCode:'09-358',detailFacilityName:'Softball Field House'};
+  runInNewContext(handler('showBuilding')+'\nshowBuilding(properties);',{...context,properties});
+  assert.ok(details.innerHTML.includes('Softball Field House'));assert.ok(details.innerHTML.includes(expected));
+ }
+});

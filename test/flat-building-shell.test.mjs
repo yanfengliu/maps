@@ -39,7 +39,8 @@ test('every replacement flat shell closes all source and courtyard edges, includ
    if(p.base===0)covers(-10,0);
   }
  }
- assert.equal(buildings,149);assert.equal(edges,1764);assert.equal(short,176);
+ // The four-edge softball field house has its own photographed concrete shell.
+ assert.equal(buildings,148);assert.equal(edges,1760);assert.equal(short,176);
 });
 
 test('native flat caps have a single owner across both LOD thresholds, readiness loss, style recreation and church mode',()=>{
