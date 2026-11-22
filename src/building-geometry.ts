@@ -367,7 +367,7 @@ export class BuildingGeometryBuilder {
           }else if(flatShell||knoll){
             // A closed shell includes tiny returns and low walls, even when
             // they cannot fit a window. Courtyard rings use the same rule.
-            walls.quad(at(a,base),at(b,base),at(b,height),at(a,height),wallTint,2,building);
+            walls.quad(at(a,base),at(b,base),at(b,shellTop),at(a,shellTop),wallTint,2,building);
           }
           if(flatShell&&base===0){
             this.roofs.quad(at(a,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,-FLAT_SHELL_FOUNDATION_DEPTH),at(b,base),at(a,base),wallTint,2,building);

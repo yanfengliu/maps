@@ -135,6 +135,10 @@ test('the current Knoll partitions one source footprint among the three original
       const v=geometry.roofs;
       if(v[i+12]===index&&v[i+11]===17&&Math.max(v[i+2],v[i+S+2],v[i+2*S+2])-Math.min(v[i+2],v[i+S+2],v[i+2*S+2])>.2)rises=true;
     }
+    for(let i=0;i<geometry.roofs.length;i+=S){
+      const v=geometry.roofs;
+      if(v[i+12]===index&&v[i+11]===2)assert.ok(v[i+2]<=wing.properties.detailWallHeight+.08,'solid returns and cornices finish at the eaves');
+    }
     assert.ok(rises,wing.properties.id+' retains its own hipped roof');
   }
   assert.ok(Math.abs(areas.reduce((sum,n)=>sum+n,0)/area(parent.geometry.coordinates[0])-1)<1e-8);
